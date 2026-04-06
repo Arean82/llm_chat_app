@@ -1,11 +1,8 @@
-# logic/chat_worker.py
 from PySide6.QtCore import QThread, Signal
 from logic.llm_client import LLMClient
 
 
 class ChatWorker(QThread):
-    """Background thread for LLM API calls"""
-    
     response_received = Signal(str)
     stream_chunk = Signal(str)
     error_occurred = Signal(str)
@@ -20,35 +17,26 @@ class ChatWorker(QThread):
     def run(self):
         try:
             if not self.client.client:
-                self.error_occurred.emit("API key not configured. Please check Settings.")
+                self.error_occurred.emit("API key not configured.")
                 return
                 
+            response = self.client.client.chat.completions.create(
+                model=self.client.current_model,
+                messages=self.messages,
+                temperature=0.7,
+                max_tokens=4096,
+                stream=self.stream
+            )
+            
             if self.stream:
-                # Streaming response
-                response = self.client.client.chat.completions.create(
-                    model=self.client.current_model,
-                    messages=self.messages,
-                    temperature=0.7,
-                    max_tokens=4096,
-                    stream=True
-                )
-                
                 full_response = ""
                 for chunk in response:
                     if chunk.choices[0].delta.content:
                         content = chunk.choices[0].delta.content
                         full_response += content
                         self.stream_chunk.emit(content)
-                
                 self.response_received.emit(full_response)
             else:
-                # Non-streaming response
-                response = self.client.client.chat.completions.create(
-                    model=self.client.current_model,
-                    messages=self.messages,
-                    temperature=0.7,
-                    max_tokens=4096
-                )
                 self.response_received.emit(response.choices[0].message.content)
                 
         except Exception as e:

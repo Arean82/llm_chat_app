@@ -1,6 +1,4 @@
 # main.py
-# This is the entry point of the application. It initializes the QApplication, sets up the main window, and starts the event loop.  
-
 import sys
 import os
 from pathlib import Path
@@ -9,19 +7,22 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt
-from ui.main_window import MainWindow
+from PySide6.QtCore import QFile, QIODevice
+
+from ui.main_window import MainWindowClass
 
 
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
-    # Load stylesheet from ui directory
-    from ui.styles import load_stylesheet
-    app.setStyleSheet(load_stylesheet())
+    # Load stylesheet
+    stylesheet_path = Path(__file__).parent / "resources" / "styles.qss"
+    if stylesheet_path.exists():
+        with open(stylesheet_path, 'r', encoding='utf-8') as f:
+            app.setStyleSheet(f.read())
     
-    window = MainWindow()
+    window = MainWindowClass()
     window.show()
     
     sys.exit(app.exec())

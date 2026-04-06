@@ -17,30 +17,6 @@
             "name": "DeepSeek V3.1",
             "description": "Great for coding and logical analysis",
             "free": true
-        },
-        {
-            "id": "z-ai/glm5",
-            "name": "GLM-5",
-            "description": "Strong for agentic coding tasks",
-            "free": true
-        },
-        {
-            "id": "moonshotai/kimi-k2-instruct-0905",
-            "name": "Kimi K2",
-            "description": "Excellent for long document analysis",
-            "free": true
-        },
-        {
-            "id": "meta/llama-4-scout",
-            "name": "Llama 4 Scout",
-            "description": "Latest Llama model, 10M context",
-            "free": true
-        },
-        {
-            "id": "google/gemma-3-27b-it",
-            "name": "Gemma 3 27B",
-            "description": "Google's open model",
-            "free": true
         }
     ]
 }

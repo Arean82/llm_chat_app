@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>LLM Chat App - NVIDIA NIM</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="main_layout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    
+    <!-- Sidebar Widget -->
+    <widget class="QWidget" name="sidebar_widget">
+     <property name="maximumSize">
+      <size>
+       <width>280</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #1e1e1e;</string>
+     </property>
+     <layout class="QVBoxLayout" name="sidebar_layout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
+      <property name="bottomMargin">
+       <number>10</number>
+      </property>
+      
+      <!-- Header -->
+      <widget class="QLabel" name="header_label">
+       <property name="text">
+        <string>🤖 LLM Chat</string>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      
+      <!-- Model List Label -->
+      <widget class="QLabel" name="models_label">
+       <property name="text">
+        <string>Available Models</string>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+      </widget>
+      
+      <!-- Model List -->
+      <widget class="QListWidget" name="model_list">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>400</height>
+        </size>
+       </property>
+      </widget>
+      
+      <!-- Current Model -->
+      <widget class="QLabel" name="current_model_label">
+       <property name="text">
+        <string>Current: None</string>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: #2d2d2d; padding: 8px; border-radius: 5px;</string>
+       </property>
+      </widget>
+      
+      <!-- Spacer -->
+      <item>
+       <spacer name="vertical_spacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      
+      <!-- Settings Button -->
+      <widget class="QPushButton" name="settings_btn">
+       <property name="text">
+        <string>⚙️ Settings</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">
+         QPushButton {
+          background-color: #0078d4;
+          border: none;
+          border-radius: 5px;
+          padding: 8px;
+          color: white;
+          font-weight: bold;
+         }
+         QPushButton:hover {
+          background-color: #106ebe;
+         }
+        </string>
+       </property>
+      </widget>
+      
+      <!-- Status Label -->
+      <widget class="QLabel" name="status_label">
+       <property name="text">
+        <string>🔴 Not connected</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">padding: 5px;</string>
+       </property>
+      </widget>
+     </layout>
+    </widget>
+    
+    <!-- Chat Area Widget -->
+    <widget class="QWidget" name="chat_widget">
+     <layout class="QVBoxLayout" name="chat_layout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
+      <property name="bottomMargin">
+       <number>10</number>
+      </property>
+      
+      <!-- Chat Display -->
+      <widget class="QTextEdit" name="chat_display">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <family>Consolas</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">
+         QTextEdit {
+          background-color: #1e1e1e;
+          color: #d4d4d4;
+          border: 1px solid #3c3c3c;
+          border-radius: 8px;
+          padding: 10px;
+         }
+        </string>
+       </property>
+      </widget>
+      
+      <!-- Input Area -->
+      <layout class="QHBoxLayout" name="input_layout">
+       <widget class="QLineEdit" name="input_field">
+        <property name="placeholderText">
+         <string>Ask me anything about coding...</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+          QLineEdit {
+           background-color: #2d2d2d;
+           color: #ffffff;
+           border: 1px solid #3c3c3c;
+           border-radius: 5px;
+           padding: 8px;
+          }
+          QLineEdit:focus {
+           border: 1px solid #0078d4;
+          }
+         </string>
+        </property>
+       </widget>
+       
+       <widget class="QPushButton" name="send_btn">
+        <property name="text">
+         <string>Send</string>
+        </property>
+        <property name="fixedWidth">
+         <number>80</number>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+          QPushButton {
+           background-color: #0078d4;
+           border: none;
+           border-radius: 5px;
+           padding: 8px;
+           color: white;
+           font-weight: bold;
+          }
+          QPushButton:hover {
+           background-color: #106ebe;
+          }
+          QPushButton:disabled {
+           background-color: #3c3c3c;
+          }
+         </string>
+        </property>
+       </widget>
+      </layout>
+     </layout>
+    </widget>
+   </layout>
+  </widget>
+  
+  <!-- Menu Bar (Pure Python - will be added in code) -->
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
