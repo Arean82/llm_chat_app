@@ -1,0 +1,12 @@
+# utils/constants.py
+
+APP_NAME = "LLM Chat App"
+APP_VERSION = "1.0.0"
+APP_AUTHOR = "Your Name"
+
+DEFAULT_MODEL = "meta/llama-3.3-70b-instruct"
+DEFAULT_TEMPERATURE = 0.7
+DEFAULT_MAX_TOKENS = 4096
+DEFAULT_TIMEOUT = 60
+
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
