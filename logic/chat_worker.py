@@ -5,6 +5,7 @@ from logic.llm_client import LLMClient
 class ChatWorker(QThread):
     response_received = Signal(str)
     stream_chunk = Signal(str)
+    thinking_chunk = Signal(str)  # New signal for thinking/reasoning
     error_occurred = Signal(str)
     finished = Signal()
     
@@ -31,10 +32,20 @@ class ChatWorker(QThread):
             if self.stream:
                 full_response = ""
                 for chunk in response:
+                    if not getattr(chunk, "choices", None):
+                        continue
+                    
+                    # Handle thinking/reasoning content (for Kimi K2 Thinking)
+                    reasoning = getattr(chunk.choices[0].delta, "reasoning_content", None)
+                    if reasoning:
+                        self.thinking_chunk.emit(reasoning)
+                    
+                    # Handle normal content
                     if chunk.choices[0].delta.content:
                         content = chunk.choices[0].delta.content
                         full_response += content
                         self.stream_chunk.emit(content)
+                        
                 self.response_received.emit(full_response)
             else:
                 self.response_received.emit(response.choices[0].message.content)
@@ -43,3 +54,5 @@ class ChatWorker(QThread):
             self.error_occurred.emit(f"API Error: {str(e)}")
         finally:
             self.finished.emit()
+
+            

@@ -28,3 +28,28 @@ QLineEdit {
     border-radius: 5px;
     padding: 8px;
 }
+
+/* Code block styling */
+pre {
+    background-color: #1e1e1e;
+    border-left: 3px solid #0078d4;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+}
+
+code {
+    font-family: Consolas, monospace;
+    color: #d4d4d4;
+}
+
+/* Inline code */
+p code, li code {
+    background-color: #2d2d2d;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
