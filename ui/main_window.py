@@ -311,6 +311,7 @@ class MainWindowClass(QMainWindow):
         self.current_worker.response_received.connect(self.on_response_complete)
         self.current_worker.error_occurred.connect(self.on_error)
         self.current_worker.finished.connect(self.on_worker_finished)
+        self.current_worker.metrics_received.connect(self.on_metrics_received)
         self.current_worker.start()
         self.set_send_button_generating()
 
@@ -383,6 +384,18 @@ class MainWindowClass(QMainWindow):
                 f"<div style='color: #888888; font-size: 12px; margin-top: 5px; text-align: right;'>"
                 f"⏱️ {elapsed:.2f}s</div>"
             )
+        self.scroll_to_bottom()
+        
+    def on_metrics_received(self, metrics: dict):
+        """Display professional performance metrics below the response"""
+        metrics_html = f"""
+        <div style='display: flex; gap: 15px; justify-content: flex-end; color: #888888; font-size: 11px; margin-top: 8px; padding-top: 5px; border-top: 1px solid #eeeeee;'>
+            <span>⚡ TTFT: {metrics['ttft']}s</span>
+            <span>🚀 Speed: {metrics['tps']} tok/s</span>
+            <span>📝 Tokens: {metrics['prompt_tokens']} in / {metrics['completion_tokens']} out</span>
+        </div>
+        """
+        self.chat_display.append(metrics_html)
         self.scroll_to_bottom()
 
     def on_error(self, error_message: str):
