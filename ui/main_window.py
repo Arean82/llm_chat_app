@@ -2,13 +2,13 @@
 import sys
 import os
 from pathlib import Path
-
+import re
 import markdown
-
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QVBoxLayout, QWidget
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import QEvent, QTimer, Qt, QSettings
 from PySide6.QtGui import QAction
 from PySide6.QtUiTools import QUiLoader
 
@@ -68,6 +68,9 @@ class MainWindowClass(QMainWindow):
         self.chat_history = []
         self.current_worker = None
         self.current_response_text = ""  # Store streaming response
+        self.response_start_time = None  # Track when the response started for timeout handling
+        self.is_generating = False
+        self.stream_start_position = None
         
         self.setup_menu_bar()
         self.setup_connections()
@@ -138,9 +141,10 @@ class MainWindowClass(QMainWindow):
         help_menu.addAction(about_action)
         
     def setup_connections(self):
-        self.send_btn.clicked.connect(self.send_message)
+        self.send_btn.clicked.connect(self.handle_send_stop_toggle)
         self.input_field.returnPressed.connect(self.send_message)
-        self.settings_btn.clicked.connect(self.open_settings)
+        self.settings_btn.clicked.connect(self.handle_auth_button) 
+        #self.settings_btn.clicked.connect(self.open_settings)
         self.model_list.itemClicked.connect(self.on_model_selected)
         
     def load_models(self):
@@ -163,7 +167,14 @@ class MainWindowClass(QMainWindow):
         model_name = item.text().split('\n')[0]
         self.current_model_label.setText(f"Current: {model_name}")
         self.add_system_message(f"Switched to model: {model_name}")
-        
+
+    def handle_auth_button(self):
+        """Toggle between Login and Logout based on current state"""
+        if self.llm_client.has_api_key():
+            self.logout()
+        else:
+            self.open_settings()
+
     def open_settings(self):
         dialog = SettingsDialogClass(self)
         if dialog.exec():
@@ -185,7 +196,7 @@ class MainWindowClass(QMainWindow):
             self.add_system_message("⚠️ No API key found. Click Settings to configure.")
             
     def set_connected_status(self, connected: bool):
-        """Update connection status indicator"""
+        """Update connection status indicator and Auth button"""
         if connected:
             self.status_label.setText("🟢 Connected to NVIDIA NIM")
             self.status_label.setStyleSheet("""
@@ -201,6 +212,25 @@ class MainWindowClass(QMainWindow):
             """)
             self.send_btn.setEnabled(True)
             self.input_field.setEnabled(True)
+            
+            # Update button to Logout (Red)
+            self.settings_btn.setText("🚪 Logout")
+            self.settings_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #d32f2f;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 8px;
+                    color: white;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #b71c1c;
+                }
+                QPushButton:pressed {
+                    background-color: #8e0000;
+                }
+            """)
         else:
             self.status_label.setText("🔴 Not connected - Check Settings")
             self.status_label.setStyleSheet("""
@@ -217,11 +247,31 @@ class MainWindowClass(QMainWindow):
             self.send_btn.setEnabled(False)
             self.input_field.setEnabled(False)
             
+            # Update button to Login (Blue)
+            self.settings_btn.setText("🔓 Login")
+            self.settings_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #0078d4;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 8px;
+                    color: white;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #106ebe;
+                }
+                QPushButton:pressed {
+                    background-color: #005a9e;
+                }
+            """)
+
     def send_message(self):
         user_message = self.input_field.text().strip()
         if not user_message:
             return
-            
+        self.response_start_time = time.perf_counter()  
+
         if not self.llm_client.has_api_key():
             QMessageBox.warning(self, "No API Key", "Please configure your API key in Settings.")
             self.open_settings()
@@ -231,12 +281,11 @@ class MainWindowClass(QMainWindow):
         self.add_user_message(user_message)
         self.chat_history.append({"role": "user", "content": user_message})
         
-        self.send_btn.setEnabled(False)
-        self.input_field.setEnabled(False)
+        # DELETE THIS LINE: self.send_btn.setEnabled(False)
+        self.input_field.setEnabled(False) # Keep this one disabled so they can't type while waiting
         
         self.add_typing_indicator()
-        
-        self.current_response_text = ""  # Reset for new response
+        self.current_response_text = "" 
         
         self.current_worker = ChatWorker(self.llm_client, self.chat_history)
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
@@ -245,7 +294,8 @@ class MainWindowClass(QMainWindow):
         self.current_worker.error_occurred.connect(self.on_error)
         self.current_worker.finished.connect(self.on_worker_finished)
         self.current_worker.start()
-        
+        self.set_send_button_generating()
+
     def add_user_message(self, message: str):
         self.chat_display.append(f"<b>You:</b> {self.escape_html(message)}")
         self.scroll_to_bottom()
@@ -284,44 +334,59 @@ class MainWindowClass(QMainWindow):
             self.remove_typing_indicator()
             # Add assistant label
             self.chat_display.append("<b>🤖 Assistant:</b> ")
-        
+            # Store cursor position AFTER the label for later replacement
+            self.stream_start_position = self.chat_display.textCursor().position()
+
         # Accumulate the response
         self.current_response_text += chunk
-        
+
         # Show plain text during streaming
         cursor = self.chat_display.textCursor()
         cursor.movePosition(cursor.MoveOperation.End)
         self.chat_display.setTextCursor(cursor)
         self.chat_display.insertPlainText(chunk)
         self.scroll_to_bottom()
-        
+    
     def on_response_complete(self, full_response: str):
         self.chat_history.append({"role": "assistant", "content": full_response})
 
-        # Find and remove the streaming plain text
-        cursor = self.chat_display.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        cursor.movePosition(cursor.MoveOperation.StartOfLine, cursor.MoveMode.KeepAnchor)
-
-        selected_text = cursor.selectedText()
-        if "🤖 Assistant:" not in selected_text:
-            cursor.movePosition(cursor.MoveOperation.Up, cursor.MoveMode.KeepAnchor)
-            selected_text = cursor.selectedText()
-
-        if "🤖 Assistant:" in selected_text or "Assistant:" in selected_text:
+        if self.stream_start_position is not None:
+            # Select from where streaming started to the end
+            cursor = self.chat_display.textCursor()
+            cursor.movePosition(cursor.MoveOperation.End)
+            cursor.setPosition(self.stream_start_position, cursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
-            cursor.deletePreviousChar()
 
-            # Convert markdown to HTML with code block support
-            html = markdown.markdown(full_response, extensions=['extra', 'codehilite', 'fenced_code'])
+            # Convert markdown to HTML
+            html = markdown.markdown(
+                full_response, 
+                extensions=['extra', 'codehilite', 'fenced_code']
+            )
 
-            # Add custom styling for code blocks
-            html = html.replace('<pre>', '<pre style="background-color: #1e1e1e; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;">')
-            html = html.replace('<code>', '<code style="font-family: Consolas, monospace; color: #d4d4d4;">')
+            # Style code blocks
+            html = html.replace(
+                '<pre>', 
+                '<pre style="background-color: #1e1e1e; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;">'
+            )
+            html = html.replace(
+                '<code>', 
+                '<code style="font-family: Consolas, monospace; color: #d4d4d4;">'
+            )
 
-            self.chat_display.insertHtml(f"<b>🤖 Assistant:</b><br>{html}<br>")
+            self.chat_display.insertHtml(f"<br>{html}<br>")
+
+            self.stream_start_position = None
+        else:
+            # Fallback: just append the formatted message
+            self.add_assistant_message(full_response)
 
         self.current_response_text = ""
+        if self.response_start_time:
+            elapsed = time.perf_counter() - self.response_start_time
+            self.chat_display.append(
+                f"<div style='color: #888888; font-size: 12px; margin-top: 5px; text-align: right;'>"
+                f"⏱️ {elapsed:.2f}s</div>"
+            )
         self.scroll_to_bottom()
 
     def on_error(self, error_message: str):
@@ -329,6 +394,7 @@ class MainWindowClass(QMainWindow):
         self.add_system_message(f"Error: {error_message}")
         
     def on_worker_finished(self):
+        self.set_send_button_idle()
         self.send_btn.setEnabled(True)
         self.input_field.setEnabled(True)
         self.input_field.setFocus()
@@ -352,6 +418,8 @@ class MainWindowClass(QMainWindow):
         self.chat_display.clear()
         self.chat_history = []
         self.current_response_text = ""
+        self.stream_start_position = None
+        self.response_start_time = None
         self.add_system_message("New conversation started")
         
     def save_conversation(self):
@@ -414,10 +482,15 @@ class MainWindowClass(QMainWindow):
     
     def setup_fullscreen(self):
         """Set window to fullscreen and make it responsive"""
-        self.showMaximized()
-        self.ui.chat_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.ui.chat_display.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
+        
+        # Explicitly define the flags to ensure "X" and "_" stay enabled, but "Maximize" is removed
+        flags = self.windowFlags()
+        flags &= ~Qt.WindowType.WindowMaximizeButtonHint  # Remove the square maximize button
+        flags |= Qt.WindowType.WindowCloseButtonHint      # Force keep the "X" button
+        flags |= Qt.WindowType.WindowMinimizeButtonHint   # Force keep the "_" button
+        self.setWindowFlags(flags)
+        
+        # Keep your existing button connections...
         if hasattr(self.ui, 'logout_btn'):
             self.ui.logout_btn.clicked.connect(self.logout)
 
@@ -425,6 +498,20 @@ class MainWindowClass(QMainWindow):
             self.ui.actionSettings.triggered.connect(self.open_settings)
         if hasattr(self.ui, 'actionLogout'):
             self.ui.actionLogout.triggered.connect(self.logout)
+
+    def changeEvent(self, event):
+        """Lock the window to maximized state (prevent title bar dragging/un-maximize)"""
+        if event.type() == QEvent.Type.WindowStateChange:
+            # Check if the window lost its maximized state AND is not in F11 full-screen
+            is_maximized = self.windowState() & Qt.WindowState.WindowMaximized
+            is_fullscreen = self.windowState() & Qt.WindowState.WindowFullScreen
+            
+            if not is_maximized and not is_fullscreen:
+                # User tried to drag the title bar, snap it back instantly!
+                QTimer.singleShot(0, self.showMaximized)
+                
+        # Let the base class handle all other normal events
+        super().changeEvent(event)
 
     def logout(self):
         """Remove API key and reset connection"""
@@ -456,31 +543,203 @@ class MainWindowClass(QMainWindow):
         """Handle keyboard shortcuts"""
         if event.key() == Qt.Key.Key_F11:
             if self.isFullScreen():
-                self.showNormal()
-                self.showMaximized()
+                self.showMaximized() 
             else:
-                self.showFullScreen()
+                self.showFullScreen() 
         elif event.key() == Qt.Key.Key_Escape and self.isFullScreen():
-            self.showMaximized()
+            self.showMaximized()      
         else:
             super().keyPressEvent(event)
 
     def on_thinking_chunk(self, chunk: str):
         """Handle thinking/reasoning content from models like Kimi K2 Thinking"""
-        # Check if we already have a thinking section
-        cursor = self.chat_display.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
+        text = self.chat_display.toPlainText()
 
         # Check if we need to add a thinking header
-        text = self.chat_display.toPlainText()
-        if "🧠 Thinking..." not in text and not self.current_response_text:
+        if "🧠 Thinking..." not in text:
+            if self.current_response_text == "":
+                self.remove_typing_indicator()
             self.chat_display.append("<i style='color: #888;'>🧠 Thinking...</i>")
-            self.chat_display.append("<i style='color: #666; margin-left: 20px;'>")
+            if self.stream_start_position is None:
+                self.stream_start_position = self.chat_display.textCursor().position()
 
-        # Insert thinking content
+        # Insert thinking content as plain text (will be cleaned up later)
         cursor = self.chat_display.textCursor()
         cursor.movePosition(cursor.MoveOperation.End)
         self.chat_display.setTextCursor(cursor)
         self.chat_display.insertPlainText(chunk)
         self.scroll_to_bottom()
+
+    def setup_chat_styles(self):
+        """Apply modern AI-chat CSS styling to the QTextEdit widget"""
+        self.chat_display.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+                border: none;
+                padding: 20px;
+                font-size: 15px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            /* Standard Paragraphs */
+            p { margin: 8px 0; line-height: 1.6; }
+
+            /* Bold and Italic */
+            b, strong { color: #ffffff; font-weight: 600; }
+            i, em { color: #b0b0b0; }
+
+            /* Lists */
+            ul, ol { margin-left: 20px; margin-top: 5px; margin-bottom: 5px; }
+            li { margin-bottom: 4px; }
+
+            /* Blockquotes */
+            blockquote {
+                border-left: 4px solid #0078d4;
+                background-color: #252526;
+                padding: 10px 15px;
+                margin: 10px 0;
+                border-radius: 0 5px 5px 0;
+                color: #cccccc;
+            }
+
+            /* Tables */
+            table {
+                border-collapse: collapse;
+                margin: 10px 0;
+                width: 100%;
+                background-color: #252526;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+            th, td {
+                border: 1px solid #404040;
+                padding: 8px 12px;
+                text-align: left;
+            }
+            th { background-color: #2d2d2d; color: #ffffff; font-weight: bold; }
+
+            /* Inline Code */
+            code:not(pre code) {
+                background-color: #2d2d2d;
+                color: #ce9178;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: Consolas, 'Courier New', monospace;
+                font-size: 13px;
+            }   
+
+            /* User/Assistant Labels */
+            b { font-size: 14px; }
+        """)
+
+    def format_ai_response(self, text: str) -> str:
+        """Convert markdown to HTML and apply AI-style code block formatting"""
+        # Convert markdown to HTML
+        html = markdown.markdown(text, extensions=['extra', 'fenced_code'])
+
+        # Regex to find fenced code blocks and wrap them in a styled container
+        # Matches: <pre><code class="language-python">...</code></pre>
+        pattern = r'<pre><code(?:\s+class="language-(\w+)")?>(.*?)</code></pre>'
+
+        def replacer(match):
+            lang = match.group(1) or "code"
+            code_content = match.group(2)
+
+            # Build a modern code block container
+            return f'''
+            <div style="background-color: #1e1e1e; border-radius: 8px; margin: 12px 0; overflow: hidden; border: 1px solid #404040; font-family: Consolas, 'Courier New', monospace;">
+                <div style="background-color: #2d2d2d; padding: 8px 15px; color: #858585; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; border-bottom: 1px solid #404040;">
+                    {lang.upper()}
+                </div>
+                <pre style="margin: 0; padding: 15px; background-color: #1e1e1e; overflow-x: auto; color: #d4d4d4; font-size: 14px; line-height: 1.5;"><code>{code_content}</code></pre>
+            </div>
+            '''
+
+        # Apply the regex replacement (re.DOTALL ensures it works for multi-line code)
+        formatted_html = re.sub(pattern, replacer, html, flags=re.DOTALL)
+
+        return formatted_html
+
+    def set_send_button_idle(self):
+        """Change button back to 'Send' mode"""
+        self.is_generating = False  # <-- UPDATE FLAG
+        self.send_btn.setText("Send")
+        self.send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0078d4;
+                border: none;
+                border-radius: 5px;
+                padding: 8px;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover { background-color: #106ebe; }
+            QPushButton:pressed { background-color: #005a9e; }
+            QPushButton:disabled { background-color: #3c3c3c; color: #888; }
+        """)
+
+    def set_send_button_generating(self):
+        """Change button to 'Stop' mode"""
+        self.is_generating = True
+        self.send_btn.setEnabled(True)  # <-- ADD THIS
+        self.send_btn.setText("Stop")
+        self.send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+                border: none;
+                border-radius: 5px;
+                padding: 8px;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover { background-color: #b71c1c; }
+            QPushButton:pressed { background-color: #8e0000; }
+        """)
+
+    def stop_generation(self):
+        """Stop the ongoing AI response forcefully"""
+        # 1. Save to a local variable and clear the class variable IMMEDIATELY
+        # This prevents the race condition with on_worker_finished
+        worker = self.current_worker
+        self.current_worker = None  
+        
+        # 2. Safely terminate the local worker variable
+        if worker and worker.isRunning():
+            worker.terminate()
+            worker.wait()
+            
+        # 3. Now update the UI (this will finally run without crashing)
+        self.remove_typing_indicator()
+        
+        if self.response_start_time:
+            elapsed = time.perf_counter() - self.response_start_time
+            self.chat_display.append(
+                f"<i style='color: #ff9800;'>⏹️ Generation terminated by user ({elapsed:.2f}s)</i><br>"
+            )
+        elif self.current_response_text:
+            self.chat_display.append("<br><i style='color: #ff9800;'>⏹️ Generation terminated by user.</i><br>")
+        else:
+            self.chat_display.append("<br><i style='color: #ff9800;'>⏹️ Generation terminated by user.</i><br>")
+        
+        # ---> ADD THIS BLOCK TO FIX THE 400 ERROR <---
+        if self.current_response_text:
+            # Save the partial text to history so the API doesn't see two "user" messages in a row
+            self.chat_history.append({"role": "assistant", "content": self.current_response_text})
+        # ------------------------------------------------
+
+        self.stream_start_position = None
+        self.current_response_text = ""
+        self.response_start_time = None
+        
+        # 4. Force button back to Send
+        self.set_send_button_idle()
+        self.input_field.setEnabled(True)
+        self.input_field.setFocus()
+
+    def handle_send_stop_toggle(self):
+        """Route the button click based on current state"""
+        if self.is_generating:
+            self.stop_generation()
+        else:
+            self.send_message()
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
+    <width>1300</width>
     <height>700</height>
    </rect>
   </property>
@@ -20,7 +20,7 @@
    <string>LLM Chat App - NVIDIA NIM</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="main_layout" stretch="3,7">
+   <layout class="QHBoxLayout" name="main_layout" stretch="0,1">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -152,30 +152,6 @@ QListWidget::item:hover {
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="logout_btn">
-         <property name="styleSheet">
-          <string notr="true">QPushButton {
-    background-color: #d32f2f;
-    border: none;
-    border-radius: 5px;
-    padding: 8px;
-    color: white;
-    font-weight: bold;
-    margin-top: 5px;
-}
-QPushButton:hover {
-    background-color: #b71c1c;
-}
-QPushButton:pressed {
-    background-color: #9a0007;
-}</string>
-         </property>
-         <property name="text">
-          <string>🚪Logout </string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QPushButton" name="settings_btn">
          <property name="styleSheet">
           <string notr="true">QPushButton {
@@ -194,7 +170,7 @@ QPushButton:pressed {
 }</string>
          </property>
          <property name="text">
-          <string>⚙️ Settings</string>
+          <string>🔓 Login</string>
          </property>
         </widget>
        </item>
@@ -221,12 +197,21 @@ QPushButton:pressed {
     </item>
     <item>
      <widget class="QWidget" name="chat_area" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="styleSheet">
-       <string notr="true">#chat-area {
-    background-color: #252526;
+       <string notr="true">#chat_area {
+    background-color: #1e1e1e;
 }</string>
       </property>
-      <layout class="QVBoxLayout" name="chat_layout">
+      <layout class="QVBoxLayout" name="chat_layout" stretch="1,0">
+       <property name="spacing">
+        <number>10</number>
+       </property>
        <property name="leftMargin">
         <number>10</number>
        </property>
@@ -249,11 +234,11 @@ QPushButton:pressed {
          </property>
          <property name="styleSheet">
           <string notr="true">QTextEdit {
-    background-color: #1e1e1e;
+    background-color: #252526;
     color: #d4d4d4;
     border: 1px solid #3c3c3c;
     border-radius: 8px;
-    padding: 10px;
+    padding: 15px;
 }</string>
          </property>
          <property name="readOnly">
@@ -321,12 +306,13 @@ QPushButton:disabled {
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1000</width>
+     <width>1300</width>
      <height>22</height>
     </rect>
    </property>
@@ -373,7 +359,6 @@ QMenu::item:selected {
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew_Conversation">
    <property name="text">
     <string>New Conversation</string>
