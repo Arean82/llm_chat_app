@@ -44,12 +44,13 @@ class MainWindowClass(QMainWindow):
         
         self.setCentralWidget(self.ui)
         
-        # NEW WIDGETS (No more sidebar/status_label)
+        # WIDGETS
         self.chat_display = self.ui.chat_display
         self.input_field = self.ui.input_field
         self.send_btn = self.ui.send_btn
         self.model_btn = self.ui.model_btn
         self.auth_btn = self.ui.auth_btn
+        self.upload_btn = self.ui.upload_btn 
 
         # STATE VARIABLES
         self.llm_client = LLMClient()
@@ -60,6 +61,7 @@ class MainWindowClass(QMainWindow):
         self.response_start_time = None
         self.is_generating = False
         self.stream_start_position = None
+        self.attached_files = [] 
         
         # SETUP
         self.setup_menu_bar()   
@@ -103,6 +105,7 @@ class MainWindowClass(QMainWindow):
         self.input_field.returnPressed.connect(self.send_message)
         self.model_btn.clicked.connect(self.show_model_popup)
         self.auth_btn.clicked.connect(self.handle_auth_button)
+        self.upload_btn.clicked.connect(self.handle_upload)
         
     def load_models(self):
         pass # Models handled by popup now
@@ -218,9 +221,44 @@ class MainWindowClass(QMainWindow):
     # CHAT & STREAMING LOGIC
     # ---------------------------------------------------------
 
+    def handle_upload(self):
+        """Open file dialog and read file content into memory"""
+        if self.is_generating:
+            return
+            
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Attach File", "", 
+            "Code & Text Files (*.py *.js *.txt *.md *.json *.csv *.xml *.html *.css *.yaml *.yml);;All Files (*)"
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    
+                file_name = Path(file_path).name
+                self.attached_files.append({'name': file_name, 'content': content})
+                
+                # Update input field to show attachment
+                current_text = self.input_field.text()
+                if not current_text:
+                    self.input_field.setPlaceholderText(f"📎 {len(self.attached_files)} file(s) attached. Type your message...")
+                    
+                self.add_system_message(f"📎 Attached: {file_name}")
+                
+            except Exception as e:
+                self.add_system_message(f"❌ Failed to read file: {str(e)}")
+
+    def clear_attachments(self):
+        """Clear attached files and reset UI"""
+        self.attached_files = []
+        self.input_field.setPlaceholderText("") # Reset placeholder
+
     def send_message(self):
         user_message = self.input_field.text().strip()
-        if not user_message:
+        
+        # Don't send if typing, but allow sending if only files are attached
+        if not user_message and not self.attached_files:
             return
             
         if not self.llm_client.has_api_key():
@@ -235,14 +273,39 @@ class MainWindowClass(QMainWindow):
 
         self.response_start_time = time.perf_counter()  
         self.input_field.clear()
-        self.add_user_message(user_message)
-        self.chat_history.append({"role": "user", "content": user_message})
+        
+        # --- NEW: FORMAT ATTACHMENTS ---
+        final_prompt = user_message
+        if self.attached_files:
+            attachment_blocks = []
+            for f in self.attached_files:
+                # Format file nicely so the AI understands it's reading a file
+                attachment_blocks.append(f"--- File: {f['name']} ---\n```\n{f['content']}\n```")
+            
+            # Combine attachments and user message
+            combined_text = "\n\n".join(attachment_blocks)
+            if user_message:
+                final_prompt = f"{combined_text}\n\nUser Request: {user_message}"
+            else:
+                final_prompt = f"{combined_text}\n\nPlease review the attached file(s)."
+                
+            self.clear_attachments() # Clear after building the prompt
+        # --- END NEW ---
+
+        # Send to UI
+        if user_message:
+            self.add_user_message(user_message)
+        else:
+            self.add_user_message("📎 Sent attached file(s) for review.")
+            
+        # Send to LLM
+        self.chat_history.append({"role": "user", "content": final_prompt})
         
         self.input_field.setEnabled(False)
         self.add_typing_indicator()
         self.current_response_text = "" 
         
-        self.current_worker = ChatWorker(self.llm_client, self.chat_history)
+        self.current_worker = ChatWorker(self.llm_client, self.chat_history)        
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
@@ -342,6 +405,7 @@ class MainWindowClass(QMainWindow):
     # ---------------------------------------------------------
 
     def stop_generation(self):
+        self.clear_attachments()        
         worker = self.current_worker
         self.current_worker = None  
         
@@ -576,6 +640,7 @@ class MainWindowClass(QMainWindow):
             self.llm_client.current_model = None
 
             self.clear_chat()
+            self.clear_attachments() 
             
             # FORCE button to Login
             self.auth_btn.setText("Login")
