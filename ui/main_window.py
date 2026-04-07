@@ -132,6 +132,7 @@ class MainWindowClass(QMainWindow):
         
         # FORCE button state on startup
         if has_key:
+            self.llm_client.set_api_key(api_key) 
             self.auth_btn.setText("Logout")
             self.auth_btn.setStyleSheet("""
                 QPushButton { background-color: #d32f2f; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
@@ -155,12 +156,12 @@ class MainWindowClass(QMainWindow):
             
         self.set_chat_enabled(has_key and has_model)
         
-        if not has_key:
-            QTimer.singleShot(100, self.open_settings)
-        elif not has_model:
-            QTimer.singleShot(100, self.show_model_popup)
-        else:
-            self.add_system_message("Ready to chat.")
+        #if not has_key:
+        #    QTimer.singleShot(100, self.open_settings)
+        #elif not has_model:
+        #    QTimer.singleShot(100, self.show_model_popup)
+        #else:
+        #    self.add_system_message("Ready to chat.")
 
     def handle_auth_button(self):
         if self.llm_client.has_api_key():
@@ -507,6 +508,27 @@ class MainWindowClass(QMainWindow):
             if not is_maximized and not is_fullscreen:
                 QTimer.singleShot(0, self.showMaximized)
         super().changeEvent(event)
+
+    def showEvent(self, event):
+        """Show popups AFTER the main window is fully rendered"""
+        super().showEvent(event)
+        
+        # Only run this logic the very first time the window opens
+        if hasattr(self, '_initial_popups_shown'):
+            return
+            
+        self._initial_popups_shown = True
+        
+        settings = QSettings("LLMChatApp", "Settings")
+        api_key = settings.value("api_key", "")
+        model_id = settings.value("current_model_id", "")
+        
+        if not api_key:
+            self.open_settings()      # Opens Login popup
+        elif not model_id:
+            self.show_model_popup()   # Opens Model popup
+        else:
+            self.add_system_message("Ready to chat.")
 
     def logout(self):
         reply = QMessageBox.question(
