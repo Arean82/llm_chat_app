@@ -26,7 +26,11 @@ class ModelPopupClass(QDialog):
         # Take the layout from the loaded UI and apply it to this Dialog
         if self.ui and self.ui.layout():
             self.setLayout(self.ui.layout())
-        # -------------------------
+
+        # Set proper title and size
+        self.setWindowTitle("Select Model")
+        self.setMinimumSize(550, 450)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         self.setup_table()
         self.populate_models()
@@ -37,6 +41,10 @@ class ModelPopupClass(QDialog):
 
     def setup_table(self):
         table = self.ui.model_table
+
+        # Clear .ui file defaults first so the 3 columns apply correctly
+        table.clear()
+
         table.setColumnCount(3)
         table.setHorizontalHeaderLabels(["Active", "Model Name", "Description"])
         table.setSelectionBehavior(QAbstractItemView.SelectRows)

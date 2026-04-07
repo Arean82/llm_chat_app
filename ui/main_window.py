@@ -10,7 +10,7 @@ import time
 import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QVBoxLayout, QWidget, QApplication
 from PySide6.QtCore import QEvent, QTimer, Qt, QSettings
 from PySide6.QtGui import QAction
 from PySide6.QtUiTools import QUiLoader
@@ -34,7 +34,9 @@ class MainWindowClass(QMainWindow):
         if not ui_file.exists():
             self.setup_fallback_ui()
             return
-        
+
+        self.setWindowTitle("LLM Chat Application")
+
         self.ui = loader.load(str(ui_file))
         if self.ui is None:
             self.setup_fallback_ui()
@@ -184,6 +186,9 @@ class MainWindowClass(QMainWindow):
                 else:
                     self.set_chat_enabled(True)
                     self.model_btn.setEnabled(True)
+            return True   # <-- ADD THIS: User clicked Save
+        else:
+            return False  # <-- ADD THIS: User clicked Cancel/X
 
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
@@ -524,7 +529,10 @@ class MainWindowClass(QMainWindow):
         model_id = settings.value("current_model_id", "")
         
         if not api_key:
-            self.open_settings()      # Opens Login popup
+            success = self.open_settings()      # Opens Login popup
+            if not success:
+                QTimer.singleShot(0, QApplication.instance().quit)
+                return
         elif not model_id:
             self.show_model_popup()   # Opens Model popup
         else:
