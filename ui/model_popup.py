@@ -21,8 +21,13 @@ class ModelPopupClass(QDialog):
         loader = QUiLoader()
         ui_file = Path(__file__).parent.parent / "ui_designer" / "model_popup.ui"
         self.ui = loader.load(str(ui_file), self)
-        self.ui.setParent(self)
-        
+
+        # --- BLANK WINDOW FIX ---
+        # Take the layout from the loaded UI and apply it to this Dialog
+        if self.ui and self.ui.layout():
+            self.setLayout(self.ui.layout())
+        # -------------------------
+
         self.setup_table()
         self.populate_models()
         

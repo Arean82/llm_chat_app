@@ -48,7 +48,7 @@ class MainWindowClass(QMainWindow):
         
         print("UI loaded successfully")
         
-        self.ui.setParent(self)
+        self.setCentralWidget(self.ui)
         
         required_widgets = ['chat_display', 'input_field', 'send_btn', 'settings_btn', 'model_list', 'current_model_label', 'status_label']
         for widget_name in required_widgets:

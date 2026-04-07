@@ -5,7 +5,7 @@ import sys
 import os
 from pathlib import Path
 import re
-import markdown
+
 import time
 import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -40,7 +40,7 @@ class MainWindowClass(QMainWindow):
             self.setup_fallback_ui()
             return
         
-        self.ui.setParent(self)
+        self.setCentralWidget(self.ui)
         
         # NEW WIDGETS (No more sidebar/status_label)
         self.chat_display = self.ui.chat_display
@@ -48,7 +48,10 @@ class MainWindowClass(QMainWindow):
         self.send_btn = self.ui.send_btn
         self.model_btn = self.ui.model_btn
         self.auth_btn = self.ui.auth_btn
-        
+
+        # Force logged-out state immediately
+        self.auth_btn.setText("Login")
+
         # STATE VARIABLES
         self.llm_client = LLMClient()
         self.conversation_manager = ConversationManager()
@@ -75,14 +78,17 @@ class MainWindowClass(QMainWindow):
         layout.addWidget(label)
         self.setCentralWidget(central_widget)
         
+    #def setup_fullscreen(self):
+    #    """Lock window to maximized state"""
+    #    flags = self.windowFlags()
+    #    flags &= ~Qt.WindowType.WindowMaximizeButtonHint  
+    #    flags |= Qt.WindowType.WindowCloseButtonHint      
+    #    flags |= Qt.WindowType.WindowMinimizeButtonHint   
+    #    self.setWindowFlags(flags)
     def setup_fullscreen(self):
         """Lock window to maximized state"""
-        flags = self.windowFlags()
-        flags &= ~Qt.WindowType.WindowMaximizeButtonHint  
-        flags |= Qt.WindowType.WindowCloseButtonHint      
-        flags |= Qt.WindowType.WindowMinimizeButtonHint   
-        self.setWindowFlags(flags)
-        self.showMaximized()
+        # Safer PySide6 method: modifies flags without destroying the window handle
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
 
     def setup_menu_bar(self):
         """Build menu bar purely in Python"""
@@ -252,6 +258,7 @@ class MainWindowClass(QMainWindow):
         self.scroll_to_bottom()
         
     def add_assistant_message(self, message: str):
+        import markdown
         html = markdown.markdown(message, extensions=['extra', 'codehilite', 'fenced_code'])
         html = html.replace('<pre>', '<pre style="background-color: #1e1e1e; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;">')
         html = html.replace('<code>', '<code style="font-family: Consolas, monospace; color: #d4d4d4;">')
@@ -290,6 +297,7 @@ class MainWindowClass(QMainWindow):
         self.scroll_to_bottom()
     
     def on_response_complete(self, full_response: str):
+        import markdown
         self.chat_history.append({"role": "assistant", "content": full_response})
 
         if self.stream_start_position is not None:
@@ -589,6 +597,7 @@ class MainWindowClass(QMainWindow):
         """)
 
     def format_ai_response(self, text: str) -> str:
+        import markdown
         html = markdown.markdown(text, extensions=['extra', 'fenced_code'])
         pattern = r'<pre><code(?:\s+class="language-(\w+)")?>(.*?)</code></pre>'
 

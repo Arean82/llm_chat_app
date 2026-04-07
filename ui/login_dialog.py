@@ -16,7 +16,7 @@ class SettingsDialogClass(QDialog):
         
         # Load UI from .ui file
         loader = QUiLoader()
-        ui_file = Path(__file__).parent.parent / "ui_designer" / "settings_dialog.ui"
+        ui_file = Path(__file__).parent.parent / "ui_designer" / "login_dialog.ui"
         
         # Load the UI
         self.ui = loader.load(str(ui_file))
