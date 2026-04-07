@@ -25,8 +25,8 @@ def main():
             app.setStyleSheet(f.read())
     
     window = MainWindowClass()
-    window.show()
-    window.showMaximized()  # <-- ONLY THIS LINE HERE, nothing else
+    #window.show()
+    window.showMaximized()  
     
     sys.exit(app.exec())
 

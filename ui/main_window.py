@@ -50,7 +50,7 @@ class MainWindowClass(QMainWindow):
         self.auth_btn = self.ui.auth_btn
 
         # Force logged-out state immediately
-        self.auth_btn.setText("Login")
+        # self.auth_btn.setText("Login")
 
         # STATE VARIABLES
         self.llm_client = LLMClient()
@@ -63,7 +63,7 @@ class MainWindowClass(QMainWindow):
         self.stream_start_position = None
         
         # SETUP
-        self.setup_fullscreen()
+        #self.setup_fullscreen()
         self.setup_menu_bar()   
         self.setup_connections()
         self.load_settings()    # Triggers first-run popups
@@ -85,10 +85,10 @@ class MainWindowClass(QMainWindow):
     #    flags |= Qt.WindowType.WindowCloseButtonHint      
     #    flags |= Qt.WindowType.WindowMinimizeButtonHint   
     #    self.setWindowFlags(flags)
-    def setup_fullscreen(self):
-        """Lock window to maximized state"""
-        # Safer PySide6 method: modifies flags without destroying the window handle
-        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
+    #def setup_fullscreen(self):
+    #    """Lock window to maximized state"""
+    #    # Safer PySide6 method: modifies flags without destroying the window handle
+    #    self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
 
     def setup_menu_bar(self):
         """Build menu bar purely in Python"""
