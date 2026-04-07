@@ -13,6 +13,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 ## ✨ Features
 
 - 🚀 **Real-Time Streaming:** Watch the AI generate responses token by token, with zero lag.
+- 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and token usage) displayed beautifully after every response.
 - 📎 **File Attachments:** Upload your code (`.py`, `.js`), text, or data files directly into the chat for instant AI analysis.
 - 🔄 **Multi-Model Support:** Easily switch between powerful models like Llama 3, DeepSeek, Qwen, and Gemma via a clean UI popup.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
