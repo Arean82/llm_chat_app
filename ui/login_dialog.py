@@ -1,5 +1,6 @@
 # ui/login_dialog.py
 # Login dialog for LLM Chat App
+
 import sys
 import os
 from pathlib import Path

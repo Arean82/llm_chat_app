@@ -1,4 +1,4 @@
-#logic/chat_worker.py
+# logic/chat_worker.py
 # This module defines the ChatWorker class, which is responsible for handling the chat interactions with the LLM in a separate thread. It emits signals to update the UI with streaming responses, reasoning content, and any errors that occur during the API call. 
 
 from PySide6.QtCore import QThread, Signal

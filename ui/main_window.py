@@ -51,9 +51,6 @@ class MainWindowClass(QMainWindow):
         self.model_btn = self.ui.model_btn
         self.auth_btn = self.ui.auth_btn
 
-        # Force logged-out state immediately
-        # self.auth_btn.setText("Login")
-
         # STATE VARIABLES
         self.llm_client = LLMClient()
         self.conversation_manager = ConversationManager()
@@ -65,7 +62,6 @@ class MainWindowClass(QMainWindow):
         self.stream_start_position = None
         
         # SETUP
-        #self.setup_fullscreen()
         self.setup_menu_bar()   
         self.setup_connections()
         self.load_settings()    # Triggers first-run popups
@@ -79,18 +75,6 @@ class MainWindowClass(QMainWindow):
         label = QLabel("UI file failed to load.")
         layout.addWidget(label)
         self.setCentralWidget(central_widget)
-        
-    #def setup_fullscreen(self):
-    #    """Lock window to maximized state"""
-    #    flags = self.windowFlags()
-    #    flags &= ~Qt.WindowType.WindowMaximizeButtonHint  
-    #    flags |= Qt.WindowType.WindowCloseButtonHint      
-    #    flags |= Qt.WindowType.WindowMinimizeButtonHint   
-    #    self.setWindowFlags(flags)
-    #def setup_fullscreen(self):
-    #    """Lock window to maximized state"""
-    #    # Safer PySide6 method: modifies flags without destroying the window handle
-    #    self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
 
     def setup_menu_bar(self):
         """Build menu bar purely in Python"""
@@ -109,6 +93,9 @@ class MainWindowClass(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction("Exit", self.close)
         help_menu = menubar.addMenu("Help")
+        help_menu.addAction("Readme", self.show_readme)
+        help_menu.addAction("License", self.show_license)
+        help_menu.addSeparator()
         help_menu.addAction("About", self.show_about)
         
     def setup_connections(self):
@@ -158,13 +145,6 @@ class MainWindowClass(QMainWindow):
             
         self.set_chat_enabled(has_key and has_model)
         
-        #if not has_key:
-        #    QTimer.singleShot(100, self.open_settings)
-        #elif not has_model:
-        #    QTimer.singleShot(100, self.show_model_popup)
-        #else:
-        #    self.add_system_message("Ready to chat.")
-
     def handle_auth_button(self):
         if self.llm_client.has_api_key():
             self.logout()
@@ -186,9 +166,9 @@ class MainWindowClass(QMainWindow):
                 else:
                     self.set_chat_enabled(True)
                     self.model_btn.setEnabled(True)
-            return True   # <-- ADD THIS: User clicked Save
+            return True   #  User clicked Save
         else:
-            return False  # <-- ADD THIS: User clicked Cancel/X
+            return False  #  User clicked Cancel/X
 
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
@@ -480,18 +460,60 @@ class MainWindowClass(QMainWindow):
                 self.add_system_message(f"Conversation loaded from {file_path}")
                 
     def show_about(self):
-        QMessageBox.about(
-            self, "About LLM Chat App",
-            "LLM Chat App\n\n"
-            "A desktop chat application using NVIDIA NIM free API.\n\n"
-            "Features:\n"
-            "- Multiple LLM models\n"
-            "- Streaming responses\n"
-            "- Code highlighting\n"
-            "- Conversation save/load\n\n"
-            "Free tier: 40 requests/minute, unlimited tokens"
-        )
+        about_text = """
+        <div style="font-family: 'Segoe UI', Arial, sans-serif;">
+            <h2 style="color: #0078d4; margin-bottom: 5px;">LLM Chat App</h2>
+            <p><b>Version:</b> 3.0.0<br>
+            <b>Developer:</b> Arean Narrayan</p>
+            
+            <hr style="border: 1px solid #eee; margin: 10px 0;">
+            
+            <p>A sleek, modern desktop application designed to seamlessly connect you 
+            with cutting-edge Large Language Models via the NVIDIA NIM API.</p>
+            
+            <p><b>Key Features:</b></p>
+            <ul>
+                <li>Real-time streaming responses</li>
+                <li>Seamlessly switch between multiple state-of-the-art AI models</li>
+                <li>Rich text and code syntax rendering (Markdown)</li>
+                <li>Save and load conversation histories locally</li>
+                <li>Clean, adaptive user interface</li>
+            </ul>
+            
+            <hr style="border: 1px solid #eee; margin: 10px 0;">
+            
+            <p style="font-size: 11px; color: #666;">
+            Powered by <b>NVIDIA NIM</b> (Free Tier: 40 requests/min)<br>
+            Built with <b>Python</b> & <b>PySide6</b></p>
+        </div>
+        """
         
+        QMessageBox.about(self, "About LLM Chat App", about_text)
+
+    def show_readme(self):
+        from ui.file_viewer import FileViewerDialog
+        # is_markdown=True, wider and taller window
+        dialog = FileViewerDialog(
+            title="Readme", 
+            file_names=["README.md", "README.txt", "README"], 
+            is_markdown=True, 
+            size=(750, 600), 
+            parent=self
+        )
+        dialog.exec()
+
+    def show_license(self):
+        from ui.file_viewer import FileViewerDialog
+        # is_markdown=False, smaller standard window
+        dialog = FileViewerDialog(
+            title="License", 
+            file_names=["LICENSE", "LICENSE.txt", "License"], 
+            is_markdown=False, 
+            size=(630, 410), 
+            parent=self
+        )
+        dialog.exec()
+
     def format_code_blocks(self, text: str) -> str:
         return self.escape_html(text)
         
