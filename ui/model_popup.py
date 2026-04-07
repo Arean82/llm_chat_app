@@ -2,7 +2,7 @@ import sys
 import os
 from pathlib import Path
 
-from PySide6.QtWidgets import QDialog, QCheckBox, QTableWidgetItem, QAbstractItemView
+from PySide6.QtWidgets import QDialog, QCheckBox, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QWidget
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QColor
 
@@ -71,19 +71,25 @@ class ModelPopupClass(QDialog):
         self.ui.model_table.setRowCount(len(self.models_data))
         
         for row, model in enumerate(self.models_data):
-            # Set default dark background for all rows immediately
-            self.set_row_active(row, False)
+            # Col 0: CENTERED CHECKBOX ---
+            container = QWidget()
+            cb_layout = QHBoxLayout(container)
+            cb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter) # Centers it perfectly
+            cb_layout.setContentsMargins(0, 0, 0, 0) # Removes extra spacing
 
-            # Col 0: Checkbox
             checkbox = QCheckBox()
-            checkbox.setStyleSheet("QCheckBox { margin-left: 20px; }")
-            
-            # Store row index in checkbox to know which one was clicked
             checkbox.setProperty("row", row)
             checkbox.stateChanged.connect(self.on_checkbox_toggled)
-            self.ui.model_table.setCellWidget(row, 0, checkbox)
-            
-            # Col 1: Model Name (Need a dummy QTableWidgetItem to allow selection)
+            cb_layout.addWidget(checkbox)
+
+            self.ui.model_table.setCellWidget(row, 0, container)
+
+            # Dummy item for background color
+            dummy_item = QTableWidgetItem()
+            dummy_item.setFlags(dummy_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.ui.model_table.setItem(row, 0, dummy_item)
+                        
+            # Col 1: Model Name
             name_item = QTableWidgetItem(model['name'])
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.ui.model_table.setItem(row, 1, name_item)
@@ -93,9 +99,11 @@ class ModelPopupClass(QDialog):
             desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.ui.model_table.setItem(row, 2, desc_item)
             
-            # Check if this is the currently active model
+            # MUST be at the very end so the items actually exist in the table
             if model['id'] == self.current_model_id:
                 self.set_row_active(row, True)
+            else:
+                self.set_row_active(row, False)
 
     def on_checkbox_toggled(self, state):
         # Get the row from the checkbox property
@@ -117,42 +125,30 @@ class ModelPopupClass(QDialog):
             self.selected_model_id = None
 
     def set_row_active(self, row, is_active):
-        # Handle Checkbox Widget (Column 0)
-        cb = self.ui.model_table.cellWidget(row, 0)
-        if cb:
-            cb.blockSignals(True)
-            cb.setChecked(is_active)
-            cb.blockSignals(False)
-            
-            # Apply background color directly to the checkbox widget
-            if is_active:
-                bg_color = "#1a3d36"  # Dark Teal
-                text_color = "#4caf50" # Green
-            else:
-                bg_color = "#252526"  # Normal dark background (instead of transparent)
-                text_color = "#d4d4d4" # Normal text
-                
-            cb.setStyleSheet(f"""
-                QCheckBox {{ 
-                    background-color: {bg_color}; 
-                    color: {text_color}; 
-                    margin-left: 20px; 
-                    border: none;
-                }}
-                QCheckBox::indicator {{ width: 16px; height: 16px; }}
-            """)
-
-        # Handle Text Items (Columns 1 and 2)
-        color = QColor("#1a3d36") if is_active else QColor("#252526")
-        text_color = QColor("#4caf50") if is_active else QColor("#d4d4d4")
+        # Find checkbox inside the new container widget
+        container = self.ui.model_table.cellWidget(row, 0)
+        if container:
+            cb = container.findChild(QCheckBox)
+            if cb:
+                cb.blockSignals(True)
+                cb.setChecked(is_active)
+                cb.blockSignals(False)
         
-        # Changed range to (1, 3) because column 0 has no 'item', it has a 'widget'
-        for col in range(1, 3):
+        # LIGHT THEME COLORS
+        if is_active:
+            bg_color = QColor("#E3F2FD")  # Light blue
+            text_color = QColor("#0D47A1") # Dark blue text
+        else:
+            bg_color = QColor("#FFFFFF")  # White
+            text_color = QColor("#333333") # Dark gray text
+        
+        # Apply to all 3 columns
+        for col in range(3):
             item = self.ui.model_table.item(row, col)
             if item:
-                item.setBackground(color)
+                item.setBackground(bg_color)
                 item.setForeground(text_color)
-
+                
     def on_apply(self):
         if self.selected_model_id:
             # Save to QSettings
