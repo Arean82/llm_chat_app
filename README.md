@@ -33,7 +33,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/llm_chat_app.git
+   git clone https://github.com/Arean82/llm_chat_app.git
    cd llm_chat_app
    ```
 
