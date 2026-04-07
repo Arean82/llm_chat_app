@@ -71,9 +71,13 @@ class ModelPopupClass(QDialog):
         self.ui.model_table.setRowCount(len(self.models_data))
         
         for row, model in enumerate(self.models_data):
+            # Set default dark background for all rows immediately
+            self.set_row_active(row, False)
+
             # Col 0: Checkbox
             checkbox = QCheckBox()
             checkbox.setStyleSheet("QCheckBox { margin-left: 20px; }")
+            
             # Store row index in checkbox to know which one was clicked
             checkbox.setProperty("row", row)
             checkbox.stateChanged.connect(self.on_checkbox_toggled)
@@ -113,17 +117,37 @@ class ModelPopupClass(QDialog):
             self.selected_model_id = None
 
     def set_row_active(self, row, is_active):
-        # Handle Checkbox (block signals so we don't trigger an infinite loop)
+        # Handle Checkbox Widget (Column 0)
         cb = self.ui.model_table.cellWidget(row, 0)
-        cb.blockSignals(True)
-        cb.setChecked(is_active)
-        cb.blockSignals(False)
+        if cb:
+            cb.blockSignals(True)
+            cb.setChecked(is_active)
+            cb.blockSignals(False)
+            
+            # Apply background color directly to the checkbox widget
+            if is_active:
+                bg_color = "#1a3d36"  # Dark Teal
+                text_color = "#4caf50" # Green
+            else:
+                bg_color = "#252526"  # Normal dark background (instead of transparent)
+                text_color = "#d4d4d4" # Normal text
+                
+            cb.setStyleSheet(f"""
+                QCheckBox {{ 
+                    background-color: {bg_color}; 
+                    color: {text_color}; 
+                    margin-left: 20px; 
+                    border: none;
+                }}
+                QCheckBox::indicator {{ width: 16px; height: 16px; }}
+            """)
+
+        # Handle Text Items (Columns 1 and 2)
+        color = QColor("#1a3d36") if is_active else QColor("#252526")
+        text_color = QColor("#4caf50") if is_active else QColor("#d4d4d4")
         
-        # Handle Row Color
-        color = QColor("#1a3d36") if is_active else QColor("transparent") # Dark Teal
-        text_color = QColor("#4caf50") if is_active else QColor("#d4d4d4") # Green text vs normal text
-        
-        for col in range(3):
+        # Changed range to (1, 3) because column 0 has no 'item', it has a 'widget'
+        for col in range(1, 3):
             item = self.ui.model_table.item(row, col)
             if item:
                 item.setBackground(color)
