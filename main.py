@@ -1,4 +1,6 @@
 # main.py
+# This is the main entry point for the LLM Chat App. It initializes the application and shows the main window.  
+
 import sys
 import os
 from pathlib import Path

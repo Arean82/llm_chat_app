@@ -1,8 +1,9 @@
 # utils/constants.py
+# This file contains constant values used throughout the LLM Chat App.
 
 APP_NAME = "LLM Chat App"
-APP_VERSION = "1.0.0"
-APP_AUTHOR = "Your Name"
+APP_VERSION = "3.0.0"
+APP_AUTHOR = "Arean Narrayan"
 
 DEFAULT_MODEL = "meta/llama-3.3-70b-instruct"
 DEFAULT_TEMPERATURE = 0.7

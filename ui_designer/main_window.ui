@@ -6,21 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1300</width>
+    <width>1000</width>
     <height>700</height>
    </rect>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>1000</width>
-    <height>700</height>
-   </size>
-  </property>
   <property name="windowTitle">
-   <string>LLM Chat App - NVIDIA NIM</string>
+   <string>LLM Chat App</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="main_layout" stretch="0,1">
+   <layout class="QVBoxLayout" name="main_layout" stretch="0,1,0">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -36,137 +30,106 @@
     <property name="bottomMargin">
      <number>0</number>
     </property>
+
+    <!-- TOP BAR -->
     <item>
-     <widget class="QWidget" name="sidebar" native="true">
+     <widget class="QWidget" name="top_bar" native="true">
       <property name="minimumSize">
        <size>
-        <width>250</width>
-        <height>0</height>
+        <width>0</width>
+        <height>50</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>280</width>
-        <height>16777215</height>
+        <width>16777215</width>
+        <height>50</height>
        </size>
       </property>
       <property name="styleSheet">
-       <string notr="true">#sidebar {
-    background-color: #1e1e1e;
-    border-right: 1px solid #3c3c3c;
+       <string notr="true">#top_bar {
+    background-color: #252526;
+    border-bottom: 1px solid #3c3c3c;
 }</string>
       </property>
-      <layout class="QVBoxLayout" name="sidebar_layout">
+      <layout class="QHBoxLayout" name="top_bar_layout">
        <property name="leftMargin">
-        <number>10</number>
+        <number>15</number>
        </property>
        <property name="topMargin">
-        <number>10</number>
+        <number>5</number>
        </property>
        <property name="rightMargin">
-        <number>10</number>
+        <number>15</number>
        </property>
        <property name="bottomMargin">
-        <number>10</number>
+        <number>5</number>
        </property>
        <item>
-        <widget class="QLabel" name="header">
-         <property name="styleSheet">
-          <string notr="true">color: #ffffff;
-font-size: 14px;
-font-weight: bold;
-font-family: Arial;
-padding: 5px;</string>
-         </property>
-         <property name="text">
-          <string>🤖 LLM Chat</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="model_label">
-         <property name="styleSheet">
-          <string notr="true">color: #d4d4d4;
-font-size: 11px;
-font-weight: bold;
-font-family: Arial;
-margin-top: 10px;</string>
-         </property>
-         <property name="text">
-          <string>Available Models</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QListWidget" name="model_list">
-         <property name="maximumSize">
+        <widget class="QPushButton" name="model_btn">
+         <property name="minimumSize">
           <size>
-           <width>16777215</width>
-           <height>400</height>
+           <width>220</width>
+           <height>0</height>
           </size>
          </property>
-         <property name="styleSheet">
-          <string notr="true">QListWidget {
-    background-color: #1e1e1e;
-    color: #d4d4d4;
-    border: 1px solid #3c3c3c;
-    border-radius: 5px;
-    padding: 5px;
-}
-QListWidget::item {
-    padding: 8px;
-    border-bottom: 1px solid #3c3c3c;
-    color: #d4d4d4;
-}
-QListWidget::item:selected {
-    background-color: #0078d4;
-    color: white;
-}
-QListWidget::item:hover {
-    background-color: #2d2d2d;
-}</string>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="current_model_label">
          <property name="styleSheet">
-          <string notr="true">QLabel {
+          <string notr="true">QPushButton {
     background-color: #2d2d2d;
-    color: #d4d4d4;
-    padding: 8px;
-    border-radius: 5px;
-    margin-top: 10px;
     border: 1px solid #3c3c3c;
+    border-radius: 5px;
+    padding: 8px 15px;
+    color: #d4d4d4;
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px;
+}
+QPushButton:hover {
+    background-color: #3c3c3c;
+    border: 1px solid #0078d4;
+}
+QPushButton:disabled {
+    color: #888;
+    border: 1px solid #2d2d2d;
 }</string>
          </property>
          <property name="text">
-          <string>Current: None</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
+          <string>Select Model ▼</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="settings_btn">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="auth_btn">
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="styleSheet">
           <string notr="true">QPushButton {
     background-color: #0078d4;
     border: none;
     border-radius: 5px;
-    padding: 8px;
+    padding: 8px 20px;
     color: white;
     font-weight: bold;
 }
 QPushButton:hover {
     background-color: #106ebe;
-}
-QPushButton:pressed {
-    background-color: #005a9e;
 }</string>
          </property>
          <property name="text">
@@ -174,239 +137,115 @@ QPushButton:pressed {
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QLabel" name="status_label">
-         <property name="styleSheet">
-          <string notr="true">QLabel {
-    padding: 8px;
-    margin-top: 10px;
-    color: #f44336;
-    background-color: #2d2d2d;
-    border-radius: 5px;
-    font-weight: bold;
-    border: 1px solid #3c3c3c;
-}</string>
-         </property>
-         <property name="text">
-          <string>🔴 Not connected</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
     </item>
+
+    <!-- CHAT DISPLAY (MIDDLE) -->
     <item>
-     <widget class="QWidget" name="chat_area" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
+     <widget class="QTextEdit" name="chat_display">
       <property name="styleSheet">
-       <string notr="true">#chat_area {
+       <string notr="true">QTextEdit {
     background-color: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    padding: 20px;
+    font-size: 15px;
 }</string>
       </property>
-      <layout class="QVBoxLayout" name="chat_layout" stretch="1,0">
-       <property name="spacing">
-        <number>10</number>
-       </property>
-       <property name="leftMargin">
-        <number>10</number>
-       </property>
-       <property name="topMargin">
-        <number>10</number>
-       </property>
-       <property name="rightMargin">
-        <number>10</number>
-       </property>
-       <property name="bottomMargin">
-        <number>10</number>
-       </property>
-       <item>
-        <widget class="QTextEdit" name="chat_display">
-         <property name="font">
-          <font>
-           <family>Consolas</family>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QTextEdit {
-    background-color: #252526;
-    color: #d4d4d4;
-    border: 1px solid #3c3c3c;
-    border-radius: 8px;
-    padding: 15px;
-}</string>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="input_layout">
-         <item>
-          <widget class="QLineEdit" name="input_field">
-           <property name="styleSheet">
-            <string notr="true">QLineEdit {
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+
+    <!-- BOTTOM BAR (INPUT) -->
+    <item>
+     <layout class="QHBoxLayout" name="bottom_bar_layout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <property name="leftMargin">
+       <number>15</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>15</number>
+      </property>
+      <property name="bottomMargin">
+       <number>15</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="input_field">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit {
     background-color: #2d2d2d;
     color: #ffffff;
     border: 1px solid #3c3c3c;
-    border-radius: 5px;
-    padding: 8px;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
 }
 QLineEdit:focus {
     border: 1px solid #0078d4;
+}
+QLineEdit:disabled {
+    background-color: #1e1e1e;
+    color: #888;
 }</string>
-           </property>
-           <property name="placeholderText">
-            <string>Ask me anything about coding...</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="send_btn">
-           <property name="maximumSize">
-            <size>
-             <width>80</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
+        </property>
+        <property name="placeholderText">
+         <string>Ask me anything about coding...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="send_btn">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #0078d4;
     border: none;
-    border-radius: 5px;
-    padding: 8px;
+    border-radius: 8px;
+    padding: 12px;
     color: white;
     font-weight: bold;
+    font-size: 14px;
 }
 QPushButton:hover {
     background-color: #106ebe;
 }
-QPushButton:pressed {
-    background-color: #005a9e;
-}
 QPushButton:disabled {
     background-color: #3c3c3c;
+    color: #888;
 }</string>
-           </property>
-           <property name="text">
-            <string>Send</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
+        </property>
+        <property name="text">
+         <string>Send</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1300</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QMenuBar {
-    background-color: #1e1e1e;
-    color: #d4d4d4;
-}
-QMenuBar::item:selected {
-    background-color: #0078d4;
-}
-QMenu {
-    background-color: #1e1e1e;
-    color: #d4d4d4;
-    border: 1px solid #3c3c3c;
-}
-QMenu::item:selected {
-    background-color: #0078d4;
-}</string>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="actionNew_Conversation"/>
-    <addaction name="actionSave_Conversation"/>
-    <addaction name="actionLoad_Conversation"/>
-    <addaction name="separator"/>
-    <addaction name="actionExit"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <addaction name="actionClear_Chat"/>
-   </widget>
-   <widget class="QMenu" name="menuHelp">
-    <property name="title">
-     <string>Help</string>
-    </property>
-    <addaction name="actionAbout"/>
-   </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuView"/>
-   <addaction name="menuHelp"/>
-  </widget>
-  <action name="actionNew_Conversation">
-   <property name="text">
-    <string>New Conversation</string>
-   </property>
-  </action>
-  <action name="actionSave_Conversation">
-   <property name="text">
-    <string>Save Conversation</string>
-   </property>
-  </action>
-  <action name="actionLoad_Conversation">
-   <property name="text">
-    <string>Load Conversation</string>
-   </property>
-  </action>
-  <action name="actionExit">
-   <property name="text">
-    <string>Exit</string>
-   </property>
-  </action>
-  <action name="actionClear_Chat">
-   <property name="text">
-    <string>Clear Chat</string>
-   </property>
-  </action>
-  <action name="actionAbout">
-   <property name="text">
-    <string>About</string>
-   </property>
-  </action>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>actionExit</sender>
-   <signal>triggered()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

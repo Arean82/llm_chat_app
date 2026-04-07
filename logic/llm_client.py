@@ -1,3 +1,6 @@
+# logic/llm_client.py
+# This module defines the LLMClient class, which manages interactions with the NVIDIA LLM API.
+
 import json
 from pathlib import Path
 from openai import OpenAI
@@ -6,7 +9,7 @@ from openai import OpenAI
 class LLMClient:
     def __init__(self):
         self.api_key = None
-        self.current_model = "meta/llama-3.3-70b-instruct"
+        self.current_model = None
         self.base_url = "https://integrate.api.nvidia.com/v1"
         self.client = None
         

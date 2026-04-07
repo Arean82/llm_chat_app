@@ -1,3 +1,6 @@
+# logic/conversation_manager.py
+# ConversationManager is responsible for saving and loading conversations to/from JSON files. It creates a directory for conversations if it doesn't exist and provides methods to save a conversation with a timestamped filename or load a conversation from a specified file path. 
+
 import json
 from datetime import datetime
 from pathlib import Path

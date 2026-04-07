@@ -1,4 +1,6 @@
 # utils/helpers.py
+# This file contains helper functions used throughout the LLM Chat App.
+
 from datetime import datetime
 
 
