@@ -130,7 +130,19 @@ class MainWindowClass(QMainWindow):
         has_key = bool(api_key)
         has_model = bool(model_id)
         
-        self.set_connected_status(has_key)
+        # FORCE button state on startup
+        if has_key:
+            self.auth_btn.setText("Logout")
+            self.auth_btn.setStyleSheet("""
+                QPushButton { background-color: #d32f2f; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
+                QPushButton:hover { background-color: #b71c1c; }
+            """)
+        else:
+            self.auth_btn.setText("Login")
+            self.auth_btn.setStyleSheet("""
+                QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
+                QPushButton:hover { background-color: #106ebe; }
+            """)
         
         if has_model:
             model_name = self.get_model_name_by_id(model_id)
@@ -505,23 +517,30 @@ class MainWindowClass(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             settings = QSettings("LLMChatApp", "Settings")
             settings.remove("api_key")
-            settings.remove("current_model_id") # Clear saved model
+            settings.remove("current_model_id")
 
             self.llm_client.api_key = None
             self.llm_client.client = None
             self.llm_client.current_model = None
 
             self.clear_chat()
-            self.set_connected_status(False)
-            self.set_chat_enabled(False)
             
-            # Reset UI elements
+            # FORCE button to Login
+            self.auth_btn.setText("Login")
+            self.auth_btn.setStyleSheet("""
+                QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
+                QPushButton:hover { background-color: #106ebe; }
+            """)
+            self.auth_btn.update()
+            self.auth_btn.repaint()
+
+            self.set_chat_enabled(False)
             self.model_btn.setText("Select Model ▼")
             self.model_btn.setEnabled(False)
             self.input_field.clear()
 
             self.add_system_message("✅ Logged out successfully.")
-
+            
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F11:
             if self.isFullScreen():
