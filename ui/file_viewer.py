@@ -8,6 +8,9 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextBrowser, QPushButton
 from PySide6.QtCore import Qt, QUrl, QThread, Signal
 from pathlib import Path
 
+from utils.path_utils import get_resource_path
+
+
 class BadgeCacheWorker(QThread):
     """Background thread to download badge images so the UI doesn't freeze"""
     finished = Signal(str) 
@@ -19,7 +22,7 @@ class BadgeCacheWorker(QThread):
     def run(self):
         # FIX: Robust regex that finds src="url" NO MATTER the order of attributes (e.g. alt="..." src="...")
         pattern = r'(<img\s[^>]*?)src="(https?://[^"]+)"'
-        cache_dir = Path(__file__).parent.parent / "resources" / "badge_cache"
+        cache_dir = get_resource_path("resources/badge_cache")
         cache_dir.mkdir(parents=True, exist_ok=True)
         
         def download_and_replace(match):

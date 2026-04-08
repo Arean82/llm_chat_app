@@ -10,6 +10,8 @@ from PySide6.QtWidgets import QDialog, QCheckBox, QHBoxLayout, QTableWidgetItem,
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QColor
 
+from utils.path_utils import get_resource_path
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtUiTools import QUiLoader
 
@@ -23,7 +25,7 @@ class ModelPopupClass(QDialog):
         
         # Load UI
         loader = QUiLoader()
-        ui_file = Path(__file__).parent.parent / "ui_designer" / "model_popup.ui"
+        ui_file = get_resource_path("ui_designer/model_popup.ui")
         self.ui = loader.load(str(ui_file), self)
 
         # --- BLANK WINDOW FIX ---

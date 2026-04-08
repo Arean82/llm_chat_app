@@ -21,14 +21,9 @@ from logic.llm_client import LLMClient
 from logic.chat_worker import ChatWorker
 from logic.conversation_manager import ConversationManager
 
-from PySide6.QtWidgets import QSizePolicy 
+from utils.path_utils import get_resource_path
 
-def get_resource_path(relative_path):
-    try:
-        base_path = Path(sys._MEIPASS)
-    except AttributeError:
-        base_path = Path(__file__).parent.parent
-    return base_path / relative_path
+from PySide6.QtWidgets import QSizePolicy 
 
 class MainWindowClass(QMainWindow):
     def __init__(self):
@@ -546,7 +541,12 @@ class MainWindowClass(QMainWindow):
         
         if not user_message and not self.attached_files:
             return
-            
+
+        if not self.is_connected:
+            QMessageBox.warning(self, "No Internet Connection", 
+                           "Cannot send message. Please check your internet connection and try again.")
+            return
+
         if not self.llm_client.has_api_key():
             QMessageBox.warning(self, "No API Key", "Please configure your API key.")
             self.open_settings()
@@ -686,14 +686,27 @@ class MainWindowClass(QMainWindow):
 
     def on_error(self, error_message: str):
         self.remove_typing_indicator()
-        self.add_system_message(f"Error: {error_message}")
         
-        # Tell the UI we are disconnected
-        if "Connection error" in error_message or "timeout" in error_message.lower():
+        # IMPROVED - Better error classification
+        error_lower = error_message.lower()
+        
+        if "timeout" in error_lower:
+            self.add_system_message("⏰ Connection timeout. Please check your internet connection.")
             self.force_disconnected_state()
+        elif "connection" in error_lower or "network" in error_lower or "internet" in error_lower:
+            self.add_system_message("🌐 Network error detected. Please check your internet connection.")
+            self.force_disconnected_state()
+        elif "api key" in error_lower or "authentication" in error_lower or "unauthorized" in error_lower:
+            self.add_system_message(f"🔑 Authentication error: {error_message}")
+            # Optionally trigger logout or settings dialog
+        elif "rate limit" in error_lower or "too many requests" in error_lower:
+            self.add_system_message("⚠️ Rate limit reached. Please wait a moment before sending more messages.")
+        else:
+            self.add_system_message(f"❌ Error: {error_message}")
         
         # If error happened WHILE AI was generating (e.g., internet dropped)
         if self.is_generating:
+            # Remove the incomplete user message from history so it can be retried
             if self.chat_history and self.chat_history[-1]["role"] == "user":
                 self.chat_history.pop()
             
@@ -707,7 +720,7 @@ class MainWindowClass(QMainWindow):
             self.send_btn.setEnabled(True)
             self.input_field.setEnabled(True)
             self.input_field.setFocus()
-        
+
     def on_worker_finished(self):
         self.set_send_button_idle()
         self.send_btn.setEnabled(True)
