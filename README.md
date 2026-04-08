@@ -24,7 +24,9 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🖥️ **Distraction-Free UI:** Forced maximized, clean light/dark interface so you can focus purely on your prompt.
 - 🌓 **Adaptive Theming** – Instantly switch between Dark and Light modes.
 - 📌 **Persistent Settings** – API keys, models, and theme preferences survive app restarts.
-- 🌐 **Live Connection Status** – Real-time network monitoring with visual indicators (🌐/🔴); automatically recovers from silent disconnects without breaking chat history.
+- 🌐 **Live Connection Status** – Real-time network monitoring with visual indicators (🌐/🔴); automatically recovers from silent disconnects, safely cleans up broken chat history, and instantly unlocks the UI.
+- 🛡️ **Intelligent Error Handling:** Categorizes API errors (timeouts, network drops, rate limits) and shows friendly, actionable messages instead of raw error traces.
+- 🧠 **Smart Context Buffering:** Proactively monitors chat length against model-specific context windows, warning you before the AI runs out of space to reply.
 
 ---
 
@@ -109,7 +111,9 @@ llm_chat_app/
 │
 └── utils/                  # 🛠️ Helpers
     ├── constants.py        
-    └── helpers.py          
+    ├── helpers.py          
+    ├── model_config.py     # 🧠 Model context limits
+    └── path_utils.py       # 📁 PyInstaller & dev path resolver
 ```
 
 ---
