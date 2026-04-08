@@ -44,6 +44,12 @@
         <height>50</height>
        </size>
       </property>
+      <property name="styleSheet">
+       <string notr="true">#top_bar {
+    background-color: #252526;
+    border-bottom: 1px solid #3c3c3c;
+}</string>
+      </property>
       <layout class="QHBoxLayout" name="top_bar_layout">
        <property name="leftMargin">
         <number>15</number>
@@ -68,6 +74,26 @@
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+    background-color: #2d2d2d;
+    border: 1px solid #3c3c3c;
+    border-radius: 5px;
+    padding: 8px 15px;
+    color: #d4d4d4;
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px;
+}
+QPushButton:hover {
+    background-color: #3c3c3c;
+    border: 1px solid #0078d4;
+}
+QPushButton:disabled {
+    color: #888;
+    border: 1px solid #2d2d2d;
+}</string>
+         </property>
          <property name="text">
           <string>Select Model ▼</string>
          </property>
@@ -87,31 +113,22 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="theme_toggle_btn">
-         <property name="minimumSize">
-          <size>
-           <width>40</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>40</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="cursor">
-          <cursorShape>PointingHandCursor</cursorShape>
-         </property>
-         <property name="text">
-          <string>🌙</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QPushButton" name="auth_btn">
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+    background-color: #0078d4;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 20px;
+    color: white;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #106ebe;
+}</string>
          </property>
          <property name="text">
           <string>🔓 Login</string>
@@ -123,6 +140,15 @@
     </item>
     <item>
      <widget class="QTextEdit" name="chat_display">
+      <property name="styleSheet">
+       <string notr="true">QTextEdit {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    padding: 20px;
+    font-size: 15px;
+}</string>
+      </property>
       <property name="readOnly">
        <bool>true</bool>
       </property>
@@ -148,7 +174,7 @@
       <item>
        <widget class="QPushButton" name="upload_btn">
         <property name="styleSheet">
-         <string notr="true">font: 900 22pt "DS-Digital";</string>
+         <string notr="true">font: 900 22pt &quot;DS-Digital&quot;;</string>
         </property>
         <property name="text">
          <string>📎</string>
@@ -157,6 +183,23 @@
       </item>
       <item>
        <widget class="QLineEdit" name="input_field">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #3c3c3c;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+}
+QLineEdit:focus {
+    border: 1px solid #0078d4;
+}
+QLineEdit:disabled {
+    background-color: #1e1e1e;
+    color: #888;
+}</string>
+        </property>
         <property name="placeholderText">
          <string>Ask me anything about coding...</string>
         </property>
@@ -177,7 +220,25 @@
          </size>
         </property>
         <property name="cursor">
-          <cursorShape>PointingHandCursor</cursorShape>
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #0078d4;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+QPushButton:hover {
+    background-color: #106ebe;
+}
+QPushButton:disabled {
+    background-color: #3c3c3c;
+    color: #888;
+}</string>
         </property>
         <property name="text">
          <string>Send</string>

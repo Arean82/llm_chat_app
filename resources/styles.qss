@@ -1,55 +1,237 @@
-QMainWindow {
+/* ============================================
+   DARK THEME (default)
+   ============================================ */
+QMainWindow[theme="dark"] {
     background-color: #252526;
 }
 
-QListWidget {
-    background-color: #1e1e1e;
-    color: #d4d4d4;
+QMainWindow[theme="dark"] #top_bar {
+    background-color: #252526;
+    border-bottom: 1px solid #3c3c3c;
+}
+
+QMainWindow[theme="dark"] #model_btn {
+    background-color: #2d2d2d;
     border: 1px solid #3c3c3c;
     border-radius: 5px;
+    padding: 8px 15px;
+    color: #d4d4d4;
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px;
 }
 
-QPushButton {
-    background-color: #0078d4;
-    border: none;
+QMainWindow[theme="dark"] #model_btn:hover {
+    background-color: #3c3c3c;
+    border: 1px solid #0078d4;
+}
+
+QMainWindow[theme="dark"] #model_btn:disabled {
+    color: #888;
+    border: 1px solid #2d2d2d;
+}
+
+QMainWindow[theme="dark"] #theme_toggle_btn {
+    background-color: #2d2d2d;
+    border: 1px solid #3c3c3c;
     border-radius: 5px;
-    padding: 8px;
-    color: white;
+    font-size: 18px;
 }
 
-QPushButton:hover {
-    background-color: #106ebe;
+QMainWindow[theme="dark"] #theme_toggle_btn:hover {
+    background-color: #3c3c3c;
+    border: 1px solid #0078d4;
 }
 
-QLineEdit {
+QMainWindow[theme="dark"] #chat_display {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    padding: 20px;
+    font-size: 15px;
+}
+
+QMainWindow[theme="dark"] #input_field {
     background-color: #2d2d2d;
     color: #ffffff;
     border: 1px solid #3c3c3c;
-    border-radius: 5px;
-    padding: 8px;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
 }
 
-/* Code block styling */
-pre {
+QMainWindow[theme="dark"] #input_field:focus {
+    border: 1px solid #0078d4;
+}
+
+QMainWindow[theme="dark"] #input_field:disabled {
     background-color: #1e1e1e;
-    border-left: 3px solid #0078d4;
-    padding: 10px;
-    border-radius: 5px;
-    overflow-x: auto;
-    margin: 10px 0;
-    font-family: Consolas, monospace;
-    font-size: 12px;
+    color: #888;
 }
 
-code {
-    font-family: Consolas, monospace;
+QMainWindow[theme="dark"] #send_btn {
+    background-color: #0078d4;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+QMainWindow[theme="dark"] #send_btn:hover {
+    background-color: #106ebe;
+}
+
+QMainWindow[theme="dark"] #send_btn:disabled {
+    background-color: #3c3c3c;
+    color: #888;
+}
+
+QMainWindow[theme="dark"] QListWidget {
+    background-color: #1e1e1e;
     color: #d4d4d4;
+    border: 1px solid #3c3c3c;
+    border-radius: 5px;
 }
 
-/* Inline code */
-p code, li code {
-    background-color: #2d2d2d;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-size: 0.9em;
+QMainWindow[theme="dark"] QScrollBar:vertical {
+    background-color: #1e1e1e;
+    width: 10px;
+    border: none;
+}
+
+QMainWindow[theme="dark"] QScrollBar::handle:vertical {
+    background-color: #555555;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QMainWindow[theme="dark"] QScrollBar::handle:vertical:hover {
+    background-color: #777777;
+}
+
+QMainWindow[theme="dark"] QScrollBar::add-line:vertical,
+QMainWindow[theme="dark"] QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* ============================================
+   LIGHT THEME
+   ============================================ */
+QMainWindow[theme="light"] {
+    background-color: #ffffff;
+}
+
+QMainWindow[theme="light"] #top_bar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+QMainWindow[theme="light"] #model_btn {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 8px 15px;
+    color: #333333;
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+QMainWindow[theme="light"] #model_btn:hover {
+    background-color: #e8e8e8;
+    border: 1px solid #0078d4;
+}
+
+QMainWindow[theme="light"] #model_btn:disabled {
+    color: #aaaaaa;
+    border: 1px solid #e0e0e0;
+    background-color: #f0f0f0;
+}
+
+QMainWindow[theme="light"] #theme_toggle_btn {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 18px;
+}
+
+QMainWindow[theme="light"] #theme_toggle_btn:hover {
+    background-color: #e8e8e8;
+    border: 1px solid #0078d4;
+}
+
+QMainWindow[theme="light"] #chat_display {
+    background-color: #ffffff;
+    color: #333333;
+    border: none;
+    padding: 20px;
+    font-size: 15px;
+}
+
+QMainWindow[theme="light"] #input_field {
+    background-color: #f5f5f5;
+    color: #333333;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+}
+
+QMainWindow[theme="light"] #input_field:focus {
+    border: 1px solid #0078d4;
+    background-color: #ffffff;
+}
+
+QMainWindow[theme="light"] #input_field:disabled {
+    background-color: #f0f0f0;
+    color: #aaaaaa;
+}
+
+QMainWindow[theme="light"] #send_btn {
+    background-color: #0078d4;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+QMainWindow[theme="light"] #send_btn:hover {
+    background-color: #106ebe;
+}
+
+QMainWindow[theme="light"] #send_btn:disabled {
+    background-color: #e0e0e0;
+    color: #aaaaaa;
+}
+
+QMainWindow[theme="light"] QListWidget {
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+}
+
+QMainWindow[theme="light"] QScrollBar:vertical {
+    background-color: #f5f5f5;
+    width: 10px;
+    border: none;
+}
+
+QMainWindow[theme="light"] QScrollBar::handle:vertical {
+    background-color: #c0c0c0;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QMainWindow[theme="light"] QScrollBar::handle:vertical:hover {
+    background-color: #a0a0a0;
+}
+
+QMainWindow[theme="light"] QScrollBar::add-line:vertical,
+QMainWindow[theme="light"] QScrollBar::sub-line:vertical {
+    height: 0px;
 }
