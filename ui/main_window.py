@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import re
 
+import socket 
+
 import time
 import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -48,10 +50,11 @@ class MainWindowClass(QMainWindow):
         self.input_field = self.ui.input_field
         self.send_btn = self.ui.send_btn
         self.model_btn = self.ui.model_btn
-        self.model_desc_label = self.ui.model_desc_label  # <--- ADDED
+        self.model_desc_label = self.ui.model_desc_label  # Added reference to model description label
         self.auth_btn = self.ui.auth_btn
         self.upload_btn = self.ui.upload_btn 
         self.theme_toggle_btn = self.ui.theme_toggle_btn
+        self.connection_status_btn = self.ui.connection_status_btn 
 
         # STATE VARIABLES
         self.llm_client = LLMClient()
@@ -64,6 +67,12 @@ class MainWindowClass(QMainWindow):
         self.stream_start_position = None
         self.attached_files = []
         self.current_theme = "dark"  # "dark" or "light"
+
+        # Connection Status Monitor
+        self.is_connected = True
+        self.connection_check_timer = QTimer(self)
+        self.connection_check_timer.timeout.connect(self.background_check_connection)
+        self.connection_check_timer.start(10000) # Check every 10 seconds normally
 
         # SETUP
         self.setup_menu_bar()   
@@ -295,6 +304,42 @@ class MainWindowClass(QMainWindow):
     # ---------------------------------------------------------
     # END THEME SYSTEM
     # ---------------------------------------------------------
+
+    def check_internet(self, host="8.8.8.8", port=53, timeout=1):
+        """Returns True if actual internet connection is available."""
+        try:
+            socket.create_connection((host, port), timeout)
+            return True
+        except OSError:
+            return False
+
+    def background_check_connection(self):
+        """Silent background check. Updates icon based on status."""
+        connected = self.check_internet()
+        
+        # Only update UI if the status actually changed
+        if connected != self.is_connected:
+            self.is_connected = connected
+            self.update_connection_icon()
+
+    def update_connection_icon(self):
+        """Updates the globe icon and adjusts check speed."""
+        if self.is_connected:
+            self.connection_status_btn.setText("🌐")
+            self.connection_check_btn.setToolTip("Connected") # Update tooltip
+            self.connection_check_timer.setInterval(10000) # Slow down to 10s when connected
+        else:
+            self.connection_status_btn.setText("🔴")
+            self.connection_status_btn.setToolTip("Disconnected - Checking...")
+            self.connection_check_timer.setInterval(3000)  # Speed up to 3s when disconnected
+
+    def force_disconnected_state(self):
+        """Immediately force UI to disconnected state (called on API errors)."""
+        if self.is_connected:
+            self.is_connected = False
+            self.update_connection_icon()
+            # Trigger an immediate check in 3 seconds
+            self.connection_check_timer.start(3000)
 
     def setup_menu_bar(self):
         """Build menu bar purely in Python"""
@@ -570,6 +615,11 @@ class MainWindowClass(QMainWindow):
             cursor.deletePreviousChar()
         
     def on_stream_chunk(self, chunk: str):
+        # We are receiving data, so we are definitely connected
+        if not self.is_connected:
+            self.is_connected = True
+            self.update_connection_icon()
+
         if self.current_response_text == "":
             self.remove_typing_indicator()
             self.chat_display.append("<b>🤖 Assistant:</b> ")
@@ -626,6 +676,26 @@ class MainWindowClass(QMainWindow):
     def on_error(self, error_message: str):
         self.remove_typing_indicator()
         self.add_system_message(f"Error: {error_message}")
+        
+        # Tell the UI we are disconnected
+        if "Connection error" in error_message or "timeout" in error_message.lower():
+            self.force_disconnected_state()
+        
+        # If error happened WHILE AI was generating (e.g., internet dropped)
+        if self.is_generating:
+            if self.chat_history and self.chat_history[-1]["role"] == "user":
+                self.chat_history.pop()
+            
+            self.is_generating = False
+            self.stream_start_position = None
+            self.current_response_text = ""
+            self.response_start_time = None
+            self.current_worker = None
+            
+            self.set_send_button_idle()
+            self.send_btn.setEnabled(True)
+            self.input_field.setEnabled(True)
+            self.input_field.setFocus()
         
     def on_worker_finished(self):
         self.set_send_button_idle()
