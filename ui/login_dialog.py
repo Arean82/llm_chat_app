@@ -5,6 +5,8 @@ import sys
 import os
 from pathlib import Path
 
+from utils.path_utils import get_resource_path
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QDialog, QMessageBox, QVBoxLayout, QLineEdit, QPushButton, QLabel
@@ -17,7 +19,7 @@ class SettingsDialogClass(QDialog):
         
         # Load UI from .ui file
         loader = QUiLoader()
-        ui_file = Path(__file__).parent.parent / "ui_designer" / "login_dialog.ui"
+        ui_file = get_resource_path("ui_designer/login_dialog.ui")
         
         # Load the UI
         self.ui = loader.load(str(ui_file))
