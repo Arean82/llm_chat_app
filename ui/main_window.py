@@ -1,6 +1,5 @@
 # ui/main_window.py
 # Main application window for LLM Chat App
-# This file defines the MainWindowClass, which is responsible for the main user interface of the application. It loads the UI from a .ui file created with Qt Designer, sets up connections for buttons and menu actions, and implements the core logic for sending messages, receiving streamed responses, handling themes, and managing conversations. The class interacts with LLMClient for API communication and ConversationManager for saving/loading chats. It also includes error handling and dynamic UI updates based on user interactions and application state.    
 
 import sys
 import os
@@ -49,6 +48,7 @@ class MainWindowClass(QMainWindow):
         self.input_field = self.ui.input_field
         self.send_btn = self.ui.send_btn
         self.model_btn = self.ui.model_btn
+        self.model_desc_label = self.ui.model_desc_label  # <--- ADDED
         self.auth_btn = self.ui.auth_btn
         self.upload_btn = self.ui.upload_btn 
         self.theme_toggle_btn = self.ui.theme_toggle_btn
@@ -344,12 +344,13 @@ class MainWindowClass(QMainWindow):
             self.refresh_auth_button_style()
         
         if has_model:
-            model_name = self.get_model_name_by_id(model_id)
-            self.model_btn.setText(f"🤖 {model_name} ▼")
+            self.update_model_ui(model_id)
             self.model_btn.setEnabled(True)
             self.llm_client.set_model(model_id)
         else:
             self.model_btn.setText("Select Model ▼")
+            self.model_desc_label.setText("")
+            self.model_desc_label.setVisible(False)
             self.model_btn.setEnabled(False)
             
         self.set_chat_enabled(has_key and has_model)
@@ -390,7 +391,9 @@ class MainWindowClass(QMainWindow):
             if selected_id:
                 self.llm_client.set_model(selected_id)
                 model_name = self.get_model_name_by_id(selected_id)
-                self.model_btn.setText(f"🤖 {model_name} ▼")
+                
+                self.update_model_ui(selected_id)
+                
                 self.model_btn.setEnabled(True)
                 self.set_chat_enabled(self.llm_client.has_api_key())
                 self.add_system_message(f"Switched to model: {model_name}")
@@ -404,6 +407,31 @@ class MainWindowClass(QMainWindow):
                     if m['id'] == model_id:
                         return m['name']
         return model_id 
+
+    def update_model_ui(self, model_id):
+        """Updates the model button text and the description label."""
+        models_file = Path(__file__).parent.parent / "resources" / "models.json"
+        name = model_id
+        desc = ""
+        
+        if models_file.exists():
+            with open(models_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                for m in data.get("models", []):
+                    if m['id'] == model_id:
+                        name = m.get('name', model_id)
+                        desc = m.get('description', '')
+                        break
+
+        # Update button
+        self.model_btn.setText(f"🤖 {name} ▼")
+        
+        # Update description label
+        if desc:
+            self.model_desc_label.setText(desc)
+            self.model_desc_label.setVisible(True)
+        else:
+            self.model_desc_label.setVisible(False)
 
     def set_chat_enabled(self, enabled):
         self.input_field.setEnabled(enabled)
@@ -738,8 +766,9 @@ class MainWindowClass(QMainWindow):
                 saved_model_id = data.get("model_id", "")
                 if saved_model_id:
                     self.llm_client.set_model(saved_model_id)
-                    model_name = self.get_model_name_by_id(saved_model_id)
-                    self.model_btn.setText(f"🤖 {model_name} ▼")
+                    
+                    self.update_model_ui(saved_model_id)
+                    
                     self.model_btn.setEnabled(True)
                     self.set_chat_enabled(True)
                 
@@ -895,6 +924,8 @@ class MainWindowClass(QMainWindow):
         self.set_chat_enabled(False)
         
         self.model_btn.setText("Select Model ▼")
+        self.model_desc_label.setText("")
+        self.model_desc_label.setVisible(False)
         self.model_btn.setEnabled(False)
         self.input_field.clear()
 

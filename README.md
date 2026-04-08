@@ -5,7 +5,7 @@
 
 A sleek, dark-themed desktop chat application built with Python and PySide6. It interfaces with the NVIDIA NIM API (via the OpenAI SDK) to provide streaming LLM responses, markdown rendering, and conversation management.
 
-[Features](#-features) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&-Data-Storage](#-configuration-&-data-storage) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[License](#-license)
+[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&-Data-Storage](#-configuration-&-data-storage) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[License](#-license)
 
 
 ---
@@ -22,8 +22,18 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🚅 **Smart Offline Caching:** Local asset caching ensures instant UI loading, even on the very first run.
 - 🔐 **Secure State Memory:** Remembers your API keys and selected models securely in your OS backend (no plain-text config files!).
 - 🖥️ **Distraction-Free UI:** Forced maximized, clean light/dark interface so you can focus purely on your prompt.
+- 🌓 **Adaptive Theming** – Instantly switch between Dark and Light modes.
+- 📌 **Persistent Settings** – API keys, models, and theme preferences survive app restarts.
 
 ---
+
+## 🎨 User Interface Highlights
+
+- 🌙 / ☀️ **Theme Toggle**: Click the icon in the top bar to switch themes instantly.
+- 🏷️ **Model Info Label**: A subtle italic label next to the dropdown populates with the model description so you know its capabilities at a glance.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
