@@ -23,6 +23,13 @@ from logic.conversation_manager import ConversationManager
 
 from PySide6.QtWidgets import QSizePolicy 
 
+def get_resource_path(relative_path):
+    try:
+        base_path = Path(sys._MEIPASS)
+    except AttributeError:
+        base_path = Path(__file__).parent.parent
+    return base_path / relative_path
+
 class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -30,7 +37,8 @@ class MainWindowClass(QMainWindow):
         print("MainWindowClass.__init__ starting...")
         
         loader = QUiLoader()
-        ui_file = Path(__file__).parent.parent / "ui_designer" / "main_window.ui"
+        #ui_file = Path(__file__).parent.parent / "ui_designer" / "main_window.ui"
+        ui_file = get_resource_path("ui_designer/main_window.ui")
         
         if not ui_file.exists():
             self.setup_fallback_ui()
@@ -104,7 +112,9 @@ class MainWindowClass(QMainWindow):
         self.style().polish(self)
 
         # Load the QSS file
-        qss_file = Path(__file__).parent.parent / "styles" / "styles.qss"
+        #qss_file = Path(__file__).parent.parent / "resources" / "styles.qss"
+        qss_file = get_resource_path("resources/styles.qss")
+
         if qss_file.exists():
             with open(qss_file, 'r', encoding='utf-8') as f:
                 self.setStyleSheet(f.read())
@@ -444,7 +454,8 @@ class MainWindowClass(QMainWindow):
                 self.add_system_message(f"Switched to model: {model_name}")
 
     def get_model_name_by_id(self, model_id):
-        models_file = Path(__file__).parent.parent / "resources" / "models.json"
+        models_file = get_resource_path("resources/models.json")
+
         if models_file.exists():
             with open(models_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -455,7 +466,7 @@ class MainWindowClass(QMainWindow):
 
     def update_model_ui(self, model_id):
         """Updates the model button text and the description label."""
-        models_file = Path(__file__).parent.parent / "resources" / "models.json"
+        models_file = get_resource_path("resources/models.json")
         name = model_id
         desc = ""
         
