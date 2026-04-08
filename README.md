@@ -18,7 +18,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🔄 **Multi-Model Support:** Easily switch between powerful models like Llama 3, DeepSeek, Qwen, and Gemma via a clean UI popup.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
-- 💾 **Conversation Manager:** Save your chat histories as JSON files and load them up anytime.
+- 💾 **Smart Conversation Management:** Save and load chat histories as JSON files. It automatically saves and restores the exact model used for the session.
 - 🚅 **Smart Offline Caching:** Local asset caching ensures instant UI loading, even on the very first run.
 - 🔐 **Secure State Memory:** Remembers your API keys and selected models securely in your OS backend (no plain-text config files!).
 - 🖥️ **Distraction-Free UI:** Forced maximized, clean light/dark interface so you can focus purely on your prompt.

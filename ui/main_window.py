@@ -519,21 +519,38 @@ class MainWindowClass(QMainWindow):
             return
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Conversation", "", "JSON Files (*.json);;All Files (*)")
         if file_path:
-            self.conversation_manager.save_conversation(self.chat_history, file_path)
+            # Get the current model ID
+            current_model = self.llm_client.current_model or ""
+            # Pass it to the save function
+            self.conversation_manager.save_conversation(self.chat_history, file_path, current_model)
             self.add_system_message(f"Conversation saved to {file_path}")
             
     def load_conversation(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Load Conversation", "", "JSON Files (*.json);;All Files (*)")
         if file_path:
-            conversation = self.conversation_manager.load_conversation(file_path)
-            if conversation:
+            data = self.conversation_manager.load_conversation(file_path)
+            messages = data.get("messages", [])
+            
+            if messages:
                 self.clear_chat()
-                self.chat_history = conversation
-                for msg in conversation:
+                self.chat_history = messages
+                
+                # --- NEW: Restore the model from the JSON ---
+                saved_model_id = data.get("model_id", "")
+                if saved_model_id:
+                    self.llm_client.set_model(saved_model_id)
+                    model_name = self.get_model_name_by_id(saved_model_id)
+                    self.model_btn.setText(f"🤖 {model_name} ▼")
+                    self.model_btn.setEnabled(True)
+                    self.set_chat_enabled(True)
+                # -------------------------------------------
+                
+                for msg in messages:
                     if msg["role"] == "user":
                         self.add_user_message(msg["content"])
                     elif msg["role"] == "assistant":
                         self.add_assistant_message(msg["content"])
+                        
                 self.add_system_message(f"Conversation loaded from {file_path}")
                 
     def show_about(self):
@@ -638,39 +655,60 @@ class MainWindowClass(QMainWindow):
             self.add_system_message("Ready to chat.")
 
     def logout(self):
-        reply = QMessageBox.question(
-            self, "Logout", 
-            "Are you sure you want to logout? This will clear your session.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            settings = QSettings("LLMChatApp", "Settings")
-            settings.remove("api_key")
-            settings.remove("current_model_id")
-
-            self.llm_client.api_key = None
-            self.llm_client.client = None
-            self.llm_client.current_model = None
-
-            self.clear_chat()
-            self.clear_attachments() 
+        # Step 1: Check if there's chat history to save
+        if self.chat_history:
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Icon.Question)
+            msg_box.setWindowTitle("Unsaved Session")
+            msg_box.setText("You have an active chat session.")
+            msg_box.setInformativeText("Do you want to save it before logging out?")
             
-            # FORCE button to Login
-            self.auth_btn.setText("Login")
-            self.auth_btn.setStyleSheet("""
-                QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
-                QPushButton:hover { background-color: #106ebe; }
-            """)
-            self.auth_btn.update()
-            self.auth_btn.repaint()
-
-            self.set_chat_enabled(False)
-            self.model_btn.setText("Select Model ▼")
-            self.model_btn.setEnabled(False)
-            self.input_field.clear()
-
-            self.add_system_message("✅ Logged out successfully.")
+            save_btn = msg_box.addButton("Save", QMessageBox.ButtonRole.AcceptRole)
+            discard_btn = msg_box.addButton("Don't Save", QMessageBox.ButtonRole.DestructiveRole)
+            cancel_btn = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
             
+            msg_box.exec()
+            
+            if msg_box.clickedButton() == save_btn:
+                file_path, _ = QFileDialog.getSaveFileName(self, "Save Conversation", "", "JSON Files (*.json)")
+                if file_path:
+                    current_model = self.llm_client.current_model or ""
+                    self.conversation_manager.save_conversation(self.chat_history, file_path, current_model)
+                else:
+                    return # User canceled the save dialog, stop logout
+            elif msg_box.clickedButton() == cancel_btn:
+                return # User hit cancel, stop logout
+        else:
+            # Step 2: If no chat history, ask standard confirmation
+            reply = QMessageBox.question(
+                self, "Logout", 
+                "Are you sure you want to logout?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return # User hit No, stop logout
+
+        # Step 3: ACTUAL LOGOUT (Only reached if they confirmed)
+        settings = QSettings("LLMChatApp", "Settings")
+        settings.remove("api_key")
+        settings.remove("current_model_id")
+        settings.sync()
+
+        self.llm_client.api_key = None
+        self.llm_client.client = None
+        self.llm_client.current_model = None
+
+        self.clear_chat()
+        self.clear_attachments()
+        self.set_connected_status(False)
+        self.set_chat_enabled(False)
+        
+        self.model_btn.setText("Select Model ▼")
+        self.model_btn.setEnabled(False)
+        self.input_field.clear()
+
+        self.add_system_message("✅ Logged out successfully.")
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F11:
             if self.isFullScreen():
