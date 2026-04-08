@@ -31,6 +31,13 @@ QMainWindow[theme="dark"] #model_btn:disabled {
     border: 1px solid #2d2d2d;
 }
 
+QMainWindow[theme="dark"] #model_desc_label {
+    color: #888888;
+    font-size: 12px;
+    font-style: italic;
+    padding-left: 10px;
+}
+
 QMainWindow[theme="dark"] #theme_toggle_btn {
     background-color: #2d2d2d;
     border: 1px solid #3c3c3c;
@@ -148,6 +155,13 @@ QMainWindow[theme="light"] #model_btn:disabled {
     color: #aaaaaa;
     border: 1px solid #e0e0e0;
     background-color: #f0f0f0;
+}
+
+QMainWindow[theme="light"] #model_desc_label {
+    color: #666666;
+    font-size: 12px;
+    font-style: italic;
+    padding-left: 10px;
 }
 
 QMainWindow[theme="light"] #theme_toggle_btn {
