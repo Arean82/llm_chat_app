@@ -24,6 +24,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🖥️ **Distraction-Free UI:** Forced maximized, clean light/dark interface so you can focus purely on your prompt.
 - 🌓 **Adaptive Theming** – Instantly switch between Dark and Light modes.
 - 📌 **Persistent Settings** – API keys, models, and theme preferences survive app restarts.
+- 🌐 **Live Connection Status** – Real-time network monitoring with visual indicators (🌐/🔴); automatically recovers from silent disconnects without breaking chat history.
 
 ---
 

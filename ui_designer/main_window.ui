@@ -113,6 +113,31 @@
         </spacer>
        </item>
        <item>
+        <widget class="QPushButton" name="connection_status_btn">
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">font: 12pt &quot;Segoe UI&quot;;</string>
+         </property>
+         <property name="text">
+          <string>🌐</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="theme_toggle_btn">
          <property name="minimumSize">
           <size>
@@ -125,6 +150,11 @@
            <width>40</width>
            <height>40</height>
           </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
          </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
