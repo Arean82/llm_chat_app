@@ -22,6 +22,7 @@ from logic.chat_worker import ChatWorker
 from logic.conversation_manager import ConversationManager
 
 from utils.path_utils import get_resource_path
+from utils.model_config import get_context_limit
 
 from PySide6.QtWidgets import QSizePolicy 
 
@@ -131,6 +132,7 @@ class MainWindowClass(QMainWindow):
             self.set_send_button_generating()
         else:
             self.set_send_button_idle()
+        self.chat_display.setStyleSheet(self.get_chat_styles())
 
     def toggle_theme(self):
         """Switch between dark and light theme."""
@@ -331,7 +333,7 @@ class MainWindowClass(QMainWindow):
         """Updates the globe icon and adjusts check speed."""
         if self.is_connected:
             self.connection_status_btn.setText("🌐")
-            self.connection_check_btn.setToolTip("Connected") # Update tooltip
+            self.connection_status_btn.setToolTip("Connected") # Update tooltip
             self.connection_check_timer.setInterval(10000) # Slow down to 10s when connected
         else:
             self.connection_status_btn.setText("🔴")
@@ -581,6 +583,73 @@ class MainWindowClass(QMainWindow):
             
         self.chat_history.append({"role": "user", "content": final_prompt})
         
+        # ==========================================
+        # Model-aware context length checking
+        # ==========================================
+        estimated_chars = sum(len(msg["content"]) for msg in self.chat_history)
+        char_limit = get_context_limit(self.llm_client.current_model)
+        usage_percent = (estimated_chars / char_limit) * 100
+
+        if estimated_chars > char_limit:
+            if char_limit >= 1_000_000:
+                limit_display = f"{char_limit // 1_000_000} million characters"
+            else:
+                limit_display = f"{char_limit:,} characters"
+            
+            reply = QMessageBox.question(self, "Conversation Too Long",
+                f"This conversation has reached {estimated_chars:,} characters.\n"
+                f"The {self.llm_client.current_model} model has a limit of {limit_display}.\n\n"
+                f"Starting a new conversation is recommended to avoid errors.\n\n"
+                f"Start a new conversation?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self.chat_history.pop()
+                self.new_conversation()
+                return
+
+        elif usage_percent > 80:
+            limit_display = f"{char_limit // 1_000_000}M chars" if char_limit >= 1_000_000 else f"{char_limit:,} chars"
+            self.add_system_message(f"⚠️ Context usage at {usage_percent:.0f}% ({limit_display}). Consider starting a new conversation soon.")
+        # ==========================================
+
+        # ==========================================
+        # RESPONSE BUFFER CHECK
+        # ==========================================
+        RESPONSE_BUFFER_CHARS = 64_000  # Reserve ~64k characters for response
+
+        estimated_chars = sum(len(msg.get("content", "")) for msg in self.chat_history)
+        char_limit = get_context_limit(self.llm_client.current_model)
+        remaining = char_limit - estimated_chars
+
+        if estimated_chars + RESPONSE_BUFFER_CHARS > char_limit:
+            limit_display = f"{char_limit // 1_000_000}M chars" if char_limit >= 1_000_000 else f"{char_limit:,} chars"
+
+            # FIX: Handle negative remaining space safely
+            if remaining <= 0:
+                remaining_display = "0 chars"
+            elif remaining >= 1000:
+                remaining_display = f"{remaining // 1_000}K chars"
+            else:
+                remaining_display = f"{remaining} chars"
+
+            reply = QMessageBox.warning(self, "Context Limit Reached",
+                f"Your conversation is using too much context ({estimated_chars:,} chars).\n"
+                f"The {self.llm_client.current_model} model only has {remaining_display} left.\n\n"
+                f"This is not enough space for a full AI response. Start a new conversation?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self.chat_history.pop()
+                self.new_conversation()
+                return
+            else:
+                self.add_system_message(f"⚠️ Warning: Only {remaining_display} left. The AI's response may be cut off.")
+
+        # NOTE: You can completely remove the old "usage_percent > 80" check, 
+        # because this buffer check replaces it in a much smarter way!
+        # ==========================================
+
         self.input_field.setEnabled(False)
         self.add_typing_indicator()
         self.current_response_text = "" 
@@ -686,10 +755,10 @@ class MainWindowClass(QMainWindow):
 
     def on_error(self, error_message: str):
         self.remove_typing_indicator()
-        
+
         # IMPROVED - Better error classification
         error_lower = error_message.lower()
-        
+
         if "timeout" in error_lower:
             self.add_system_message("⏰ Connection timeout. Please check your internet connection.")
             self.force_disconnected_state()
@@ -703,19 +772,19 @@ class MainWindowClass(QMainWindow):
             self.add_system_message("⚠️ Rate limit reached. Please wait a moment before sending more messages.")
         else:
             self.add_system_message(f"❌ Error: {error_message}")
-        
+
         # If error happened WHILE AI was generating (e.g., internet dropped)
         if self.is_generating:
             # Remove the incomplete user message from history so it can be retried
             if self.chat_history and self.chat_history[-1]["role"] == "user":
                 self.chat_history.pop()
-            
+
             self.is_generating = False
             self.stream_start_position = None
             self.current_response_text = ""
             self.response_start_time = None
             self.current_worker = None
-            
+
             self.set_send_button_idle()
             self.send_btn.setEnabled(True)
             self.input_field.setEnabled(True)
@@ -972,26 +1041,27 @@ class MainWindowClass(QMainWindow):
             self.add_system_message("Ready to chat.")
 
     def logout(self):
+        # 1. Handle saving the current chat (your existing logic)
         if self.chat_history:
             msg_box = QMessageBox(self)
             msg_box.setIcon(QMessageBox.Icon.Question)
             msg_box.setWindowTitle("Unsaved Session")
             msg_box.setText("You have an active chat session.")
             msg_box.setInformativeText("Do you want to save it before logging out?")
-            
+
             save_btn = msg_box.addButton("Save", QMessageBox.ButtonRole.AcceptRole)
             discard_btn = msg_box.addButton("Don't Save", QMessageBox.ButtonRole.DestructiveRole)
             cancel_btn = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
-            
+
             msg_box.exec()
-            
+
             if msg_box.clickedButton() == save_btn:
                 file_path, _ = QFileDialog.getSaveFileName(self, "Save Conversation", "", "JSON Files (*.json)")
                 if file_path:
                     current_model = self.llm_client.current_model or ""
                     self.conversation_manager.save_conversation(self.chat_history, file_path, current_model)
                 else:
-                    return
+                    return # User canceled the save dialog
             elif msg_box.clickedButton() == cancel_btn:
                 return
         else:
@@ -1003,6 +1073,7 @@ class MainWindowClass(QMainWindow):
             if reply == QMessageBox.StandardButton.No:
                 return
 
+        # 2. Clear all states (your existing logic)
         settings = QSettings("LLMChatApp", "Settings")
         settings.remove("api_key")
         settings.remove("current_model_id")
@@ -1016,7 +1087,7 @@ class MainWindowClass(QMainWindow):
         self.clear_attachments()
         self.set_connected_status(False)
         self.set_chat_enabled(False)
-        
+
         self.model_btn.setText("Select Model ▼")
         self.model_desc_label.setText("")
         self.model_desc_label.setVisible(False)
@@ -1024,6 +1095,11 @@ class MainWindowClass(QMainWindow):
         self.input_field.clear()
 
         self.add_system_message("✅ Logged out successfully.")
+
+        # 3. NEW: Force login popup, close app if they hit 'X' or cancel
+        success = self.open_settings()
+        if not success:
+            QTimer.singleShot(0, QApplication.instance().quit)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F11:
