@@ -20,7 +20,7 @@ def main():
     app.setStyle("Fusion")
     
     # Load stylesheet
-    stylesheet_path = get_resource_path("resources/styles.qss")
+    stylesheet_path = Path(__file__).parent / "resources" / "styles.qss"
     if stylesheet_path.exists():
         with open(stylesheet_path, 'r', encoding='utf-8') as f:
             app.setStyleSheet(f.read())
