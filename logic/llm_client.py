@@ -25,7 +25,8 @@ class LLMClient:
         self.current_model = model_id
         
     def get_available_models(self):
-        models_file = Path(__file__).parent.parent / "resources" / "models.json"
+        from utils.path_utils import get_models_path
+        models_file = get_models_path()
         with open(models_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         return data["models"]

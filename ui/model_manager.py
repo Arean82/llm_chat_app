@@ -239,8 +239,12 @@ class ModelManagerDialog(QDialog):
                 QPushButton:hover { background-color: #d0d0d0; }
             """)
 
+    #def get_models_file_path(self):
+    #    return get_resource_path("resources/models.json")
+    
     def get_models_file_path(self):
-        return get_resource_path("resources/models.json")
+        from utils.path_utils import get_models_path
+        return get_models_path()
 
     def load_models(self):
         models_file = self.get_models_file_path()
