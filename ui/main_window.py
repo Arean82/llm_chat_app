@@ -351,6 +351,8 @@ class MainWindowClass(QMainWindow):
     def setup_menu_bar(self):
         """Build menu bar purely in Python"""
         menubar = self.menuBar()
+
+        # File menu with conversation management
         file_menu = menubar.addMenu("File")
         file_menu.addAction("New Conversation", self.new_conversation)
         file_menu.addSeparator()
@@ -358,6 +360,13 @@ class MainWindowClass(QMainWindow):
         file_menu.addAction("Load Conversation", self.load_conversation)
         file_menu.addSeparator()
         file_menu.addAction("Exit", self.close)
+
+        # Settings menu with Model Manager
+        settings_menu = menubar.addMenu("Settings")
+        settings_menu.addAction("📦 Model Manager", self.show_model_manager)
+        # settings_menu.addAction("🔑 API Key", self.handle_auth_button)
+
+        # Help menu with placeholder actions
         help_menu = menubar.addMenu("Help")
         help_menu.addAction("Readme", self.show_readme)
         help_menu.addAction("License", self.show_license)
@@ -1164,3 +1173,13 @@ class MainWindowClass(QMainWindow):
             '''
         formatted_html = re.sub(pattern, replacer, html, flags=re.DOTALL)
         return formatted_html
+    
+    def show_model_manager(self):
+        from ui.model_manager import ModelManagerDialog
+        dialog = ModelManagerDialog(theme=self.current_theme, parent=self)
+        dialog.exec()
+
+        # Refresh the model button UI in case models changed
+        current_model_id = QSettings("LLMChatApp", "Settings").value("current_model_id", "")
+        if current_model_id:
+            self.update_model_ui(current_model_id)

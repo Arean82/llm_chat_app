@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ModelEditDialog</class>
+ <widget class="QDialog" name="ModelEditDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>520</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Add / Edit Model</string>
+  </property>
+
+  <layout class="QVBoxLayout">
+
+   <!-- Title -->
+   <item>
+    <widget class="QLabel" name="dialogTitle">
+     <property name="text">
+      <string>➕ Add New Model</string>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Form -->
+   <item>
+    <widget class="QGroupBox" name="formGroup">
+     <property name="title">
+      <string>Model Details</string>
+     </property>
+
+     <layout class="QFormLayout">
+
+      <!-- Model ID -->
+      <item row="0" column="0">
+       <widget class="QLabel">
+        <property name="text"><string>Model ID:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="id_input">
+        <property name="placeholderText">
+         <string>e.g., meta/llama-3.3-70b-instruct</string>
+        </property>
+       </widget>
+      </item>
+
+      <!-- Display Name -->
+      <item row="1" column="0">
+       <widget class="QLabel">
+        <property name="text"><string>Display Name:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="name_input">
+        <property name="placeholderText">
+         <string>e.g., Llama 3.3 70B</string>
+        </property>
+       </widget>
+      </item>
+
+      <!-- Description -->
+      <item row="2" column="0">
+       <widget class="QLabel">
+        <property name="text"><string>Description:</string></property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="desc_input">
+        <property name="placeholderText">
+         <string>e.g., Best for general coding and reasoning</string>
+        </property>
+       </widget>
+      </item>
+
+      <!-- Checkbox -->
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="free_checkbox">
+        <property name="text">
+         <string>Available on free tier</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+
+     </layout>
+    </widget>
+   </item>
+
+   <!-- Buttons -->
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Ok|QDialogButtonBox::Cancel</set>
+     </property>
+    </widget>
+   </item>
+
+  </layout>
+ </widget>
+</ui>
