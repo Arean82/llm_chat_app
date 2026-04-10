@@ -16,6 +16,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and token usage) displayed beautifully after every response.
 - 📎 **File Attachments:** Upload your code (`.py`, `.js`), text, or data files directly into the chat for instant AI analysis.
 - 🔄 **Multi-Model Support:** Easily switch between powerful models like Llama 3, DeepSeek, Qwen, and Gemma via a clean UI popup.
+- 📦 **Model Manager:** Add, edit, or remove models directly from the UI. Changes save instantly to `models.json` — no manual file editing needed.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
 - 💾 **Smart Conversation Management:** Save and load chat histories as JSON files. It automatically saves and restores the exact model used for the session.
@@ -94,19 +95,23 @@ llm_chat_app/
 │   └── badge_cache/        # ⚡ Auto-generated offline image cache
 │
 ├── ui_designer/            # 🎨 Qt Designer UI files
-│   ├── main_window.ui      
-│   ├── model_popup.ui      
-│   └── settings_dialog.ui  
+│   ├── login_dialog.ui      
+│   ├── main_window.ui  
+│   ├── model_edit_dialog.ui
+│   ├── model_manager.ui    
+│   └── model_popup.ui
 │
-├── ui/                     # 🧩 Python UI logic
-│   ├── main_window.py      # Main app controller
-│   ├── login_dialog.py     # API Key auth
-│   ├── model_popup.py      # Model selector
-│   └── file_viewer.py      # Readme/License viewer
+├── ui/                       # 🧩 Python UI logic
+│   ├── file_viewer.py        # Readme/License viewer
+│   ├── login_dialog.py       # API Key authentication
+│   ├── main_window.py        # Main app controller
+│   ├── model_edit_dialog.py  # Model add/edit/delete manager
+│   ├── model_manager.py      # Model add/edit/delete manager
+│   └── model_popup.py        # Model selector
 │
-├── logic/                  # ⚙️ Backend engine
-│   ├── llm_client.py       # NVIDIA API wrapper
-│   ├── chat_worker.py      # Threading for streaming
+├── logic/                       # ⚙️ Backend engine
+│   ├── llm_client.py            # NVIDIA API wrapper
+│   ├── chat_worker.py           # Threading for streaming
 │   └── conversation_manager.py 
 │
 └── utils/                  # 🛠️ Helpers
