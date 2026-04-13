@@ -593,70 +593,41 @@ class MainWindowClass(QMainWindow):
         self.chat_history.append({"role": "user", "content": final_prompt})
         
         # ==========================================
-        # Model-aware context length checking
+        # Model-aware context length & buffer checking
         # ==========================================
-        estimated_chars = sum(len(msg["content"]) for msg in self.chat_history)
-        char_limit = get_context_limit(self.llm_client.current_model)
-        usage_percent = (estimated_chars / char_limit) * 100
-
-        if estimated_chars > char_limit:
-            if char_limit >= 1_000_000:
-                limit_display = f"{char_limit // 1_000_000} million characters"
-            else:
-                limit_display = f"{char_limit:,} characters"
-            
-            reply = QMessageBox.question(self, "Conversation Too Long",
-                f"This conversation has reached {estimated_chars:,} characters.\n"
-                f"The {self.llm_client.current_model} model has a limit of {limit_display}.\n\n"
-                f"Starting a new conversation is recommended to avoid errors.\n\n"
-                f"Start a new conversation?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
-            if reply == QMessageBox.StandardButton.Yes:
-                self.chat_history.pop()
-                self.new_conversation()
-                return
-
-        elif usage_percent > 80:
-            limit_display = f"{char_limit // 1_000_000}M chars" if char_limit >= 1_000_000 else f"{char_limit:,} chars"
-            self.add_system_message(f"⚠️ Context usage at {usage_percent:.0f}% ({limit_display}). Consider starting a new conversation soon.")
-        # ==========================================
-
-        # ==========================================
-        # RESPONSE BUFFER CHECK
-        # ==========================================
-        RESPONSE_BUFFER_CHARS = 64_000  # Reserve ~64k characters for response
-
+        RESPONSE_BUFFER = 64_000  # Reserve ~64k characters for AI response
+        
         estimated_chars = sum(len(msg.get("content", "")) for msg in self.chat_history)
         char_limit = get_context_limit(self.llm_client.current_model)
-        remaining = char_limit - estimated_chars
-
-        if estimated_chars + RESPONSE_BUFFER_CHARS > char_limit:
-            limit_display = f"{char_limit // 1_000_000}M chars" if char_limit >= 1_000_000 else f"{char_limit:,} chars"
-
-            # FIX: Handle negative remaining space safely
-            if remaining <= 0:
+        remaining_space = char_limit - estimated_chars
+        usage_percent = (estimated_chars / char_limit) * 100
+        
+        # Format display strings once to avoid duplication
+        limit_display = f"{char_limit // 1_000_000}M chars" if char_limit >= 1_000_000 else f"{char_limit:,} chars"
+        
+        if remaining_space < RESPONSE_BUFFER:
+            # HARD BLOCK: Not enough space for AI to reply
+            if remaining_space <= 0:
                 remaining_display = "0 chars"
-            elif remaining >= 1000:
-                remaining_display = f"{remaining // 1_000}K chars"
+            elif remaining_space >= 1000:
+                remaining_display = f"{remaining_space // 1_000}K chars"
             else:
-                remaining_display = f"{remaining} chars"
-
+                remaining_display = f"{remaining_space} chars"
+                
             reply = QMessageBox.warning(self, "Context Limit Reached",
-                f"Your conversation is using too much context ({estimated_chars:,} chars).\n"
-                f"The {self.llm_client.current_model} model only has {remaining_display} left.\n\n"
-                f"This is not enough space for a full AI response. Start a new conversation?",
+                f"Context usage is at {usage_percent:.0f}% ({estimated_chars:,} chars).\n"
+                f"The model only has {remaining_display} left for its response.\n\n"
+                f"Start a new conversation?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
+            
             if reply == QMessageBox.StandardButton.Yes:
                 self.chat_history.pop()
                 self.new_conversation()
                 return
-            else:
-                self.add_system_message(f"⚠️ Warning: Only {remaining_display} left. The AI's response may be cut off.")
-
-        # NOTE: You can completely remove the old "usage_percent > 80" check, 
-        # because this buffer check replaces it in a much smarter way!
+                
+        elif usage_percent > 80:
+            # SOFT WARNING: Only fires if the hard block didn't trigger first
+            self.add_system_message(f"⚠️ Context usage at {usage_percent:.0f}% ({limit_display}). Consider starting a new conversation soon.")
         # ==========================================
 
         self.input_field.setEnabled(False)
@@ -672,7 +643,7 @@ class MainWindowClass(QMainWindow):
         self.current_worker.metrics_received.connect(self.on_metrics_received)
         self.current_worker.start()
         self.set_send_button_generating()
-
+        
     def add_user_message(self, message: str):
         self.chat_display.append(f"<b>You:</b> {self.escape_html(message)}")
         self.scroll_to_bottom()
