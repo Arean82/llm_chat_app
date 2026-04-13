@@ -1,8 +1,4 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec file for LLM Chat App
-# One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
-# One_dir can be used to specify the output directory for the built application.
-# One_file can be used to create a single executable file, but it may increase the build time and the size of the executable.   
 
 a = Analysis(
     ['main.py'],
@@ -17,7 +13,10 @@ a = Analysis(
         'openai',
         'certifi',
         'urllib3',
-        'charset_normalizer'
+        'charset_normalizer',
+        'requests',  
+        'tiktoken',  
+        'pydantic'   
     ],
     hookspath=[],
     hooksconfig={},
@@ -39,19 +38,29 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
+    [],
+    exclude_binaries=True,
     name='LLM Chat App',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=False,  
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
     icon='resources/app_icon.ico',
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='LLM Chat App'
 )
