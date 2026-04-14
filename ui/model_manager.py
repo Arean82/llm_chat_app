@@ -49,7 +49,8 @@ class ModelManagerDialog(QDialog):
         self.header_label = self.findChild(object, "headerLabel")
         self.count_label = self.findChild(object, "countLabel")
         self.info_label = self.findChild(object, "infoLabel")
-        self.table = self.findChild(object, "table")
+        self.tabWidget = self.findChild(object, "tabWidget")
+        #self.table = self.findChild(object, "table")
         self.add_btn = self.findChild(object, "add_btn")
         self.edit_btn = self.findChild(object, "edit_btn")
         self.delete_btn = self.findChild(object, "delete_btn")
@@ -57,12 +58,110 @@ class ModelManagerDialog(QDialog):
         self.refresh_btn = self.findChild(object, "refresh_btn")
         self.fetch_free_btn = self.findChild(object, "fetch_free_btn")
         self.fetch_paid_btn = self.findChild(object, "fetch_paid_btn")
+        self.generate_desc_btn = self.findChild(object, "generate_desc_btn")
 
-        self.setup_table()
+        #self.setup_table()
         self.setup_connections()
         self.load_models()
         self.populate_table()
         self.apply_theme()
+
+    def populate_table(self):
+        """Dynamically create tabs for each developer"""
+        from collections import defaultdict
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+
+        # Group models by developer
+        models_by_developer = defaultdict(list)
+
+        for model in self.models:
+            developer = model.get('developer', 'Other')
+            if not developer:
+                developer = 'Other'
+            models_by_developer[developer].append(model)
+
+        # Clear existing tabs
+        self.tabWidget.clear()
+
+        # Create a tab for each developer
+        for developer, models in sorted(models_by_developer.items()):
+            # Create container widget
+            tab_widget = QWidget()
+            layout = QVBoxLayout(tab_widget)
+
+            # Create table with 3 columns (removed Model ID)
+            table = QTableWidget()
+            table.setColumnCount(3)
+            table.setHorizontalHeaderLabels(["Display Name", "Description", "Free"])
+            table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+            table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+            table.setAlternatingRowColors(True)
+            table.verticalHeader().setVisible(False)
+
+            # Set column widths
+            table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+            table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+
+            # Populate rows
+            table.setRowCount(len(models))
+            for row, model in enumerate(models):
+                # Column 0: Display Name
+                table.setItem(row, 0, QTableWidgetItem(model.get("name", "")))
+
+                # Column 1: Description
+                table.setItem(row, 1, QTableWidgetItem(model.get("description", "")))
+
+                # Column 2: Free/Paid
+                is_free = model.get("free", True)
+                free_text = "✅ Free" if is_free else "💰 Paid"
+                free_item = QTableWidgetItem(free_text)
+                free_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                free_item.setForeground(QColor("#4caf50") if is_free else QColor("#ff9800"))
+                table.setItem(row, 2, free_item)
+
+            table.resizeRowsToContents()
+
+            # Store models for this tab
+            table.setProperty("developer", developer)
+            table.setProperty("models", models)
+
+            # Connect selection signal
+            table.itemSelectionChanged.connect(lambda t=table: self.on_table_selection_changed(t))
+
+            layout.addWidget(table)
+
+            # Add tab with count
+            self.tabWidget.addTab(tab_widget, f"{developer} ({len(models)})")
+
+        self.update_count_label()
+
+    def on_table_selection_changed(self, table):
+        """Store reference to currently selected table and model"""
+        self.current_table = table
+        self.current_developer = table.property("developer")
+        self.current_models = table.property("models")
+
+        # Get selected row
+        current_row = table.currentRow()
+        if current_row >= 0 and self.current_models:
+            self.current_selected_model = self.current_models[current_row]
+            print(f"Selected: {self.current_selected_model.get('name')}")  # Debug
+        else:
+            self.current_selected_model = None
+
+    def get_selected_row_index(self):
+        """Get selected row from current active table"""
+        if hasattr(self, 'current_table') and self.current_table:
+            row = self.current_table.currentRow()
+            return row if row >= 0 else None
+        return None
+
+    def get_selected_model(self):
+        """Get the currently selected model"""
+        if hasattr(self, 'current_selected_model') and self.current_selected_model:
+            return self.current_selected_model
+        return None
 
     def setup_table(self):
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -81,10 +180,11 @@ class ModelManagerDialog(QDialog):
         self.delete_btn.clicked.connect(self.delete_model)
         self.refresh_btn.clicked.connect(self.refresh_models)
         self.close_btn.clicked.connect(self.accept)
-        self.table.doubleClicked.connect(self.edit_model)
+        #self.table.doubleClicked.connect(self.edit_model)
 
         self.fetch_free_btn.clicked.connect(self.fetch_free_models_from_nvidia)
         self.fetch_paid_btn.clicked.connect(self.fetch_paid_models_from_nvidia)
+        self.generate_desc_btn.clicked.connect(self.generate_descriptions) 
 
     def apply_theme(self):
         if self.theme == "dark":
@@ -280,37 +380,6 @@ class ModelManagerDialog(QDialog):
     def update_count_label(self):
         self.count_label.setText(f"{len(self.models)} model(s)")
 
-    def populate_table(self):
-        self.table.setRowCount(len(self.models))
-        for row, model in enumerate(self.models):
-            from PySide6.QtWidgets import QTableWidgetItem
-
-            id_item = QTableWidgetItem(model.get("id", ""))
-            id_item.setData(Qt.ItemDataRole.UserRole, row)
-            self.table.setItem(row, 0, id_item)
-
-            self.table.setItem(row, 1, QTableWidgetItem(model.get("name", "")))
-            #self.table.setItem(row, 2, QTableWidgetItem(model.get("description", "")))
-
-            # Description with Top-Left alignment for wrapping
-            desc_text = model.get("description", "")
-            desc_item = QTableWidgetItem(desc_text)
-            self.table.setItem(row, 2, desc_item)
-
-            is_free = model.get("free", True)
-            free_text = "✅ Free" if is_free else "💰 Paid"
-            free_item = QTableWidgetItem(free_text)
-            free_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            free_item.setForeground(QColor("#4caf50") if is_free else QColor("#ff9800"))
-            self.table.setItem(row, 3, free_item)
-
-        self.update_count_label()
-        self.table.resizeRowsToContents()
-
-    def get_selected_row_index(self):
-        row = self.table.currentRow()
-        return row if row >= 0 else None
-
     def add_model(self):
         dialog = ModelEditDialog(theme=self.theme, parent=self)
         if dialog.exec():
@@ -326,25 +395,32 @@ class ModelManagerDialog(QDialog):
 
             self.models.append(new_model)
             self.save_models()
-            self.populate_table()
-            self.table.selectRow(len(self.models) - 1)
-            self.table.scrollToBottom()
+            #self.populate_table()
+            #self.table.selectRow(len(self.models) - 1)
+            #self.table.scrollToBottom()
 
     def edit_model(self):
-        row = self.get_selected_row_index()
-        if row is None:
+        """Edit the currently selected model"""
+        selected_model = self.get_selected_model()
+        if selected_model is None:
             QMessageBox.information(self, "No Selection", "Please select a model to edit.")
             return
 
-        model_data = self.models[row]
-        dialog = ModelEditDialog(model_data=model_data, theme=self.theme, parent=self)
+        print(f"Editing model: {selected_model.get('name')}")  # Debug
+
+        dialog = ModelEditDialog(model_data=selected_model, theme=self.theme, parent=self)
 
         if dialog.exec():
             updated_model = dialog.get_model_data()
-            self.models[row] = updated_model
+
+            # Update in self.models
+            for i, model in enumerate(self.models):
+                if model["id"] == selected_model["id"]:
+                    self.models[i] = updated_model
+                    break
+                
             self.save_models()
-            self.populate_table()
-            self.table.selectRow(row)
+            self.populate_table()  # Refresh display
 
     def delete_model(self):
         row = self.get_selected_row_index()
@@ -373,25 +449,24 @@ class ModelManagerDialog(QDialog):
         self.load_models()
         self.populate_table()
 
-
     def fetch_free_models_from_nvidia(self):
         """Fetch models in background - closes dialog after confirmation"""
-        
+
         # Check if fetch is already running
         if ModelManagerDialog._fetch_in_progress:
             QMessageBox.warning(self, "Fetch Already Running", "Model fetch is already in progress.")
             return
-        
+
         from logic.llm_client import LLMClient
         from workers.model_fetch_worker import ModelFetchWorker
-        
+
         settings = QSettings("LLMChatApp", "Settings")
         api_key = settings.value("api_key", "")
-        
+
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")
             return
-        
+
         # Show confirmation
         reply = QMessageBox.question(
             self,
@@ -404,39 +479,36 @@ class ModelManagerDialog(QDialog):
             f"Continue?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply != QMessageBox.StandardButton.Yes:
             return
-        
+
         # Set lock
         ModelManagerDialog._fetch_in_progress = True
-        
+
         # Get logger instance
         from workers.update_logger import get_logger
         logger = get_logger()
         logger.add_log("Starting model fetch from NVIDIA API", "INFO")
-        
+
         # Create and start worker
         self.fetch_worker = ModelFetchWorker(api_key)
         self.fetch_worker.progress.connect(self._on_fetch_progress)
         self.fetch_worker.finished.connect(self._on_fetch_finished)
         self.fetch_worker.error.connect(self._on_fetch_error)
-        
+
         self.fetch_worker.start()
-        
+
         # CLOSE THE DIALOG
         self.accept()  # This closes Model Manager
 
 
     def _on_fetch_progress(self, current, total, model_name, status):
-        """Update progress during fetch"""
-        percentage = int((current / total) * 100)
-        self.progress_dialog.setValue(percentage)
-        self.progress_dialog.setLabelText(
-            f"Status: {status}\n"
-            f"Model: {model_name}\n"
-            f"Progress: {current} of {total} ({percentage}%)"
-        )
+        """Update progress - log to console and logger"""
+        from workers.update_logger import get_logger
+        logger = get_logger()
+        logger.add_log(f"[{current}/{total}] {model_name}: {status}", "INFO")
+        print(f"[{current}/{total}] {model_name}: {status}")
     
     def _on_fetch_finished(self, working_models):
         """Save results and refresh"""
@@ -453,8 +525,6 @@ class ModelManagerDialog(QDialog):
         self.load_models()
         self.populate_table()
         
-        self.progress_dialog.close()
-        
         QMessageBox.information(
             self,
             "Fetch Complete",
@@ -463,12 +533,6 @@ class ModelManagerDialog(QDialog):
         )
         
         # Release lock and restore UI
-        self._reset_fetch_state()
-    
-    def _on_fetch_error(self, error_msg):
-        """Handle fetch error"""
-        self.progress_dialog.close()
-        QMessageBox.critical(self, "Fetch Failed", f"Error: {error_msg}")
         self._reset_fetch_state()
     
     def _cancel_fetch(self):
@@ -510,108 +574,43 @@ class ModelManagerDialog(QDialog):
         event.accept()
     
     def fetch_paid_models_from_nvidia(self):
-        """
-        Fetch paid models (requires subscription).
-        """
+        """Fetch paid models and MERGE with existing free models"""
         from logic.llm_client import LLMClient
+        from workers.update_logger import get_logger
         
-        # Check if API key is set
         settings = QSettings("LLMChatApp", "Settings")
-        api_key = settings.value("api_key", "") 
-
-        if not api_key:
-            QMessageBox.warning(
-                self,
-                "API Key Required",
-                "Please set your NVIDIA API key in the main window first."
-            )
-            return  
-
-        # Store original button text
-        original_text = self.fetch_paid_btn.text()
+        api_key = settings.value("api_key", "")
         
-        # Show progress indicator
-        self.setCursor(Qt.CursorShape.WaitCursor)
-        self.fetch_paid_btn.setEnabled(False)
-        self.fetch_paid_btn.setText("⏳ Fetching...")   
-
-        try:
-            # Initialize client
-            client = LLMClient()
-            client.set_api_key(api_key)
-            
-            # Fetch ALL models first
-            result = client.fetch_nvidia_catalog_models()
-            
-            # Filter paid models if API provides that info
-            paid_models = self._filter_paid_models(result["all"])
-            
-            if not paid_models:
-                QMessageBox.information(
-                    self,
-                    "No Paid Models",
-                    "No paid models found with your current API key.\n\n"
-                    "This could mean:\n"
-                    "1. You're using a free API key (no paid model access)\n"
-                    "2. You don't have an active subscription\n\n"
-                    "Upgrade your NVIDIA API plan to access paid models."
-                )
-                return
-            
-            # Check what will be removed before merging
-            api_model_ids = {m["id"] for m in paid_models}
-            existing_ids = {m["id"] for m in self.models}
-            removed_ids = existing_ids - api_model_ids  
-
-            # Ask for confirmation if models will be removed
-            if removed_ids:
-                reply = QMessageBox.question(
-                    self,
-                    "Deprecated Models Found",
-                    f"{len(removed_ids)} model(s) no longer exist in NVIDIA's catalog and will be removed:\n\n"
-                    f"{', '.join(list(removed_ids)[:10])}\n"
-                    f"{'...' if len(removed_ids) > 10 else ''}\n\n"
-                    f"Continue?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
-                if reply != QMessageBox.StandardButton.Yes:
-                    return
-            
-            # Merge with existing models (this also removes deprecated ones)
-            merged_models = self._merge_models_with_api(paid_models)
-            
-            # Save to file
-            self._save_models_to_file(merged_models)
-            
-            # Reload and refresh display
-            self.load_models()
-            self.populate_table()
-            
-            # Show detailed success message
-            added_count = len([m for m in paid_models if m["id"] not in existing_ids])
-            removed_count = len(removed_ids)
-            
-            message = f"✅ Updated paid models from NVIDIA API:\n"
-            message += f"   • {len(paid_models)} total paid models\n"
-            if added_count > 0:
-                message += f"   • {added_count} new models added\n"
-            if removed_count > 0:
-                message += f"   • {removed_count} deprecated models removed\n"
-            
-            QMessageBox.information(self, "Success", message)
-            
-        except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Failed to fetch paid models: {str(e)}"
-            )
-        finally:
-            # RESTORE button
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-            self.fetch_paid_btn.setEnabled(True)
-            self.fetch_paid_btn.setText(original_text)  
-    
+        if not api_key:
+            QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")
+            return
+        
+        # Show confirmation
+        reply = QMessageBox.question(
+            self,
+            "Fetch Paid Models",
+            f"This will fetch paid models accessible with your API key.\n\n"
+            f"Paid models will be ADDED to your existing free models.\n\n"
+            f"Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        
+        ModelManagerDialog._fetch_in_progress = True
+        self.accept()  # Close dialog
+        
+        logger = get_logger()
+        logger.add_log("Starting paid models fetch...", "INFO")
+        
+        # Create and start worker for paid models
+        from workers.paid_model_fetch_worker import PaidModelFetchWorker
+        self.paid_fetch_worker = PaidModelFetchWorker(api_key)
+        self.paid_fetch_worker.progress.connect(self._on_paid_fetch_progress)
+        self.paid_fetch_worker.finished.connect(self._on_paid_fetch_finished)
+        self.paid_fetch_worker.error.connect(self._on_paid_fetch_error)
+        self.paid_fetch_worker.start() 
 
     def _filter_paid_models(self, all_models: list) -> list:
         """
@@ -782,4 +781,79 @@ class ModelManagerDialog(QDialog):
             json.dump(data, f, indent=4, ensure_ascii=False)
 
         print(f"✅ Saved {len(models)} models to {models_file}")
+
+    def generate_descriptions(self):
+        """Generate descriptions for models using a selected model"""
+        from workers.update_logger import get_logger
+        from PySide6.QtWidgets import QInputDialog
+
+        # Find models without descriptions
+        models_to_update = []
+        for model in self.models:
+            desc = model.get('description', '')
+            if not desc or len(desc) < 10 or desc == "No description available":
+                models_to_update.append(model)
+
+        if not models_to_update:
+            QMessageBox.information(self, "No Models", "All models already have descriptions.")
+            return
+
+        # Get list of models that can be used for generation (chat models)
+        available_generators = [m for m in self.models if m.get('free', True)]
+        generator_names = [m.get('name', m['id']) for m in available_generators]
+
+        # Select model to use for generation
+        selected_name, ok = QInputDialog.getItem(
+            self,
+            "Select Generator Model",
+            f"Choose a model to generate descriptions for {len(models_to_update)} models:",
+            generator_names,
+            0,
+            False
+        )
+
+        if not ok or not selected_name:
+            return
+
+        # Find selected model
+        selected_model = next((m for m in available_generators if m.get('name', m['id']) == selected_name), None)
+        if not selected_model:
+            return
+
+        # Get API key
+        settings = QSettings("LLMChatApp", "Settings")
+        api_key = settings.value("api_key", "")
+
+        if not api_key:
+            QMessageBox.warning(self, "API Key Required", "Please set your API key first.")
+            return
+
+        # Close dialog and run in background
+        ModelManagerDialog._fetch_in_progress = True
+        self.accept()
+
+        # Start worker
+        from workers.description_generator import DescriptionGeneratorWorker
+        self.generator_worker = DescriptionGeneratorWorker(api_key, selected_model['id'], models_to_update)
+        self.generator_worker.progress.connect(self._on_generation_progress)
+        self.generator_worker.finished.connect(self._on_generation_finished)
+        self.generator_worker.error.connect(self._on_generation_error)
+        self.generator_worker.start()
+
+    def _on_generation_progress(self, current, total, model_name, status):
+        from workers.update_logger import get_logger
+        logger = get_logger()
+        logger.add_log(f"[{current}/{total}] {model_name}: {status}", "INFO")
+
+    def _on_generation_finished(self):
+        from workers.update_logger import get_logger
+        logger = get_logger()
+        logger.add_log("Description generation complete!", "SUCCESS")
+        ModelManagerDialog._fetch_in_progress = False
+
+    def _on_generation_error(self, error_msg):
+        from workers.update_logger import get_logger
+        logger = get_logger()
+        logger.add_log(f"Generation error: {error_msg}", "ERROR")
+        ModelManagerDialog._fetch_in_progress = False
 

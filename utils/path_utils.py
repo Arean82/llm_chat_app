@@ -13,7 +13,14 @@ def get_resource_path(relative_path):
         base_path = Path(sys._MEIPASS)
     except AttributeError:
         base_path = Path(__file__).parent.parent
-    return base_path / relative_path
+    
+    full_path = base_path / relative_path
+    
+    # Create parent directory if it doesn't exist (for writable paths)
+    if relative_path.startswith("resources/"):
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    return full_path
 
 def get_models_path():
     """Get path for models.json in resources folder"""

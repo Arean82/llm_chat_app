@@ -1,4 +1,6 @@
 # workers/model_fetch_worker.py
+# This file runs in a background thread to fetch, test, and generate descriptions for NVIDIA NIM models.
+
 from PySide6.QtCore import QThread, Signal
 from openai import OpenAI
 from workers.update_logger import get_logger
@@ -14,6 +16,8 @@ class ModelFetchWorker(QThread):
         self.base_url = "https://integrate.api.nvidia.com/v1"
         self.working_count = 0
         self.logger = get_logger()
+        # Use a reliable model for generating descriptions
+        self.description_model = "meta/llama-4-scout-17b-16e-instruct"
         
     def run(self):
         try:
@@ -24,6 +28,21 @@ class ModelFetchWorker(QThread):
                 api_key=self.api_key,
                 timeout=15.0
             )
+            
+            # First, verify the description model works
+            try:
+                test_desc = client.chat.completions.create(
+                    model=self.description_model,
+                    messages=[{"role": "user", "content": "Hi"}],
+                    max_tokens=5,
+                    timeout=5.0
+                )
+                self.logger.add_log(f"Description model '{self.description_model}' is ready", "INFO")
+            except Exception as e:
+                self.logger.add_log(f"Description model failed: {str(e)}. Will try alternatives.", "WARNING")
+                # Fallback to gemma if llama fails
+                self.description_model = "google/gemma-3-27b-it"
+                self.logger.add_log(f"Using fallback description model: {self.description_model}", "INFO")
             
             response = client.models.list()
             all_models = response.data
@@ -52,17 +71,21 @@ class ModelFetchWorker(QThread):
                     
                     self.logger.add_log(f"✓ {model_id} - testing passed", "INFO")
                     
-                    # Generate description
+                    # Generate description using dedicated model
                     self.progress.emit(i + 1, total, model_id, "Generating description...")
                     self.logger.add_log(f"  Generating description for {model_id}...", "INFO")
                     
+                    # Extract model name for better description
+                    model_name = model_id.split('/')[-1] if '/' in model_id else model_id
+                    developer = model_id.split('/')[0] if '/' in model_id else "NVIDIA"
+                    
                     desc_response = client.chat.completions.create(
-                        model=model_id,
+                        model=self.description_model,
                         messages=[
-                            {"role": "system", "content": "You are a technical writer. Respond with ONLY one short sentence (15-30 words)."},
-                            {"role": "user", "content": f"Describe yourself ({model_id}) in one sentence. What are you best at?"}
+                            {"role": "system", "content": "You are a technical writer. Output ONLY one short sentence (15-30 words). Be specific and factual."},
+                            {"role": "user", "content": f"Write a one-sentence description of the AI model '{model_name}' from {developer}. What is it best at? Mention its key strength (coding, reasoning, multilingual, vision, math, etc.)."}
                         ],
-                        max_tokens=60,
+                        max_tokens=80,
                         temperature=0.3,
                         timeout=10.0
                     )
@@ -70,11 +93,30 @@ class ModelFetchWorker(QThread):
                     description = desc_response.choices[0].message.content.strip()
                     description = description.strip('"\'')
                     
+                    # Clean up common issues
+                    if description.startswith("Here is a one-sentence description") or description.startswith("Here's"):
+                        # Try one more time with stricter prompt
+                        desc_response = client.chat.completions.create(
+                            model=self.description_model,
+                            messages=[
+                                {"role": "system", "content": "Output ONLY the description. No prefixes, no explanations."},
+                                {"role": "user", "content": f"Describe {model_name} in 15-30 words."}
+                            ],
+                            max_tokens=80,
+                            temperature=0.2,
+                            timeout=10.0
+                        )
+                        description = desc_response.choices[0].message.content.strip()
+                        description = description.strip('"\'')
+                    
+                    if not description or len(description) < 10:
+                        description = f"{model_name} from {developer} - AI model for general purpose tasks."
+                    
                     working_models.append({
                         "id": model_id,
                         "name": self._format_name(model_id),
-                        "description": description if description else "No description available",
-                        "developer": model_id.split('/')[0] if '/' in model_id else "NVIDIA",
+                        "description": description,
+                        "developer": developer.capitalize(),
                         "free": True,
                     })
                     
@@ -82,7 +124,11 @@ class ModelFetchWorker(QThread):
                     self.logger.add_log(f"✓ {model_id} - description generated ({self.working_count}/{total})", "SUCCESS")
                     
                 except Exception as e:
-                    self.logger.add_log(f"✗ {model_id} - failed: {str(e)[:50]}", "WARNING")
+                    error_msg = str(e)
+                    # Truncate long error messages for log readability
+                    if len(error_msg) > 100:
+                        error_msg = error_msg[:100] + "..."
+                    self.logger.add_log(f"✗ {model_id} - failed: {error_msg}", "WARNING")
                     continue
                 
                 # Rate limit safety
@@ -101,6 +147,12 @@ class ModelFetchWorker(QThread):
             name = model_id.split('/')[-1]
         else:
             name = model_id
+        # Remove common suffixes
+        name = name.replace('-instruct', '').replace('-chat', '').replace('-preview', '')
         name = name.replace('-', ' ').replace('_', ' ')
+        # Capitalize properly
         words = name.split()
-        return ' '.join(word.capitalize() for word in words)
+        formatted = ' '.join(word.capitalize() for word in words)
+        return formatted
+    
+    

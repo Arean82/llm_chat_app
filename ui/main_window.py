@@ -369,6 +369,7 @@ class MainWindowClass(QMainWindow):
         # Log menu
         log_menu = menubar.addMenu("Log")
         log_menu.addAction("📋 View Update Log", self.show_update_log)
+        log_menu.addAction("🗑️ Clear Log", self.clear_update_log)
 
         # Help menu with placeholder actions
         help_menu = menubar.addMenu("Help")
@@ -523,10 +524,22 @@ class MainWindowClass(QMainWindow):
     # LOG LOGIC
     # ---------------------------------------------------------
     def show_update_log(self):
-        from ui.log_dialog import LogDialog
-        dialog = LogDialog(self)
+        from ui.log_viewer import LogViewerDialog
+        dialog = LogViewerDialog(self)
         dialog.exec()
 
+    def clear_update_log(self):
+        from workers.update_logger import get_logger
+        reply = QMessageBox.question(
+            self,
+            "Clear Log",
+            "Are you sure you want to clear all update logs?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            logger = get_logger()
+            logger.clear()
+    
     # ---------------------------------------------------------
     # CHAT & STREAMING LOGIC
     # ---------------------------------------------------------

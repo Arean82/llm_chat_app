@@ -39,6 +39,20 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QPushButton" name="generate_desc_btn">
+       <property name="text">
+        <string>✨ Generate Descriptions</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="close_btn">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -49,31 +63,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QTableWidget" name="table">
-     <property name="columnCount">
-      <number>4</number>
-     </property>
-     <column>
-      <property name="text">
-       <string>Model ID</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Display Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Description</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Free</string>
-      </property>
-     </column>
-    </widget>
+    <widget class="QTabWidget" name="tabWidget"/>
    </item>
    <item>
     <layout class="QHBoxLayout">
@@ -99,6 +89,19 @@
       </widget>
      </item>
      <item>
+      <spacer name="horizontalSpacer2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
       <widget class="QPushButton" name="fetch_free_btn">
        <property name="text">
         <string>🆓 Fetch Models</string>
@@ -113,48 +116,11 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer2">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="close_btn">
-       <property name="text">
-        <string>Close</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="refresh_btn">
        <property name="text">
         <string>🔄 Refresh</string>
        </property>
       </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout">
-     <item>
-      <spacer name="horizontalSpacer3">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>
