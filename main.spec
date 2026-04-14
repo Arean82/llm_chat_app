@@ -10,14 +10,19 @@ a = Analysis(
     binaries=[],
     datas=[
         ('resources', 'resources'),
-        ('ui_designer', 'ui_designer')
+        ('ui_designer', 'ui_designer'),
+        ('workers', 'workers')  # ADD THIS - include workers folder
     ],
     hiddenimports=[
         'markdown',
         'openai',
         'certifi',
         'urllib3',
-        'charset_normalizer'
+        'charset_normalizer',
+        'PySide6.QtCore',      # ADD THIS
+        'PySide6.QtWidgets',   # ADD THIS
+        'PySide6.QtGui',       # ADD THIS
+        'PySide6.QtUiTools'    # ADD THIS
     ],
     hookspath=[],
     hooksconfig={},
@@ -47,7 +52,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=False,  # Keep False for production, change to True for debugging
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
