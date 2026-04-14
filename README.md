@@ -5,7 +5,7 @@
 
 A sleek, dark-themed desktop chat application built with Python and PySide6. It interfaces with the NVIDIA NIM API (via the OpenAI SDK) to provide streaming LLM responses, markdown rendering, and conversation management.
 
-[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&-Data-Storage](#-configuration-&-data-storage) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
+[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&-Data-Storage](#-configuration-&-data-storage) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
 
 ---
 
@@ -27,6 +27,11 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🌐 **Live Connection Status** – Real-time network monitoring with visual indicators (🌐/🔴); automatically recovers from silent disconnects, safely cleans up broken chat history, and instantly unlocks the UI.
 - 🛡️ **Intelligent Error Handling:** Categorizes API errors (timeouts, network drops, rate limits) and shows friendly, actionable messages instead of raw error traces.
 - 🧠 **Smart Context Buffering:** Proactively monitors chat length against model-specific context windows, warning you before the AI runs out of space to reply.
+- 🔄 **Background Model Fetching:** Fetch and test all available NVIDIA models in the background. Model Manager closes automatically, progress visible in real-time via the Log menu.
+- 📋 **Real-time Log Viewer:** Track model fetching progress, success/failures, and description generation with color-coded, filterable logs (INFO, WARNING, ERROR, SUCCESS, DEBUG).
+- ✨ **AI-Powered Description Generation:** Generate one-sentence descriptions for any model using your choice of working model (Llama 4, Gemma 3, etc.). Descriptions persist across app restarts.
+- 🏷️ **Developer Tabs:** Models are automatically grouped by developer (Google, Meta, NVIDIA, etc.) in the Model Manager for easier browsing.
+- 💰 **Paid Model Support:** Fetch paid models (requires subscription) and merge them with existing free models without losing data.
 
 ---
 
@@ -34,6 +39,8 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 
 - 🌙 / ☀️ **Theme Toggle**: Click the icon in the top bar to switch themes instantly.
 - 🏷️ **Model Info Label**: A subtle italic label next to the dropdown populates with the model description so you know its capabilities at a glance.
+- 📋 **Log Menu:** View real-time update logs with filtering by log level. Clear logs when needed.
+- ✨ **Generate Descriptions Button:** In Model Manager, select any working model to automatically generate descriptions for all models missing them.
 
 ---
 
@@ -87,37 +94,43 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 ```text
 llm_chat_app/
 │
-├── main.py                 # 🚀 Entry point
-├── resources/              # 📦 Static assets & caches
-│   ├── models.json         # 🤖 Available model list
-│   ├── styles.qss          # 🎨 Global stylesheet
-│   └── badge_cache/        # ⚡ Auto-generated offline image cache
-│
-├── ui_designer/            # 🎨 Qt Designer UI files
+├── main.py                         # 🚀 Entry point
+├── resources/                      # 📦 Static assets & caches
+│   ├── models.json                 # 🤖 Available model list
+│   ├── styles.qss                  # 🎨 Global stylesheet
+│   └── badge_cache/                # ⚡ Auto-generated offline image cache
+│        
+├── ui_designer/                    # 🎨 Qt Designer UI files
 │   ├── login_dialog.ui      
 │   ├── main_window.ui  
 │   ├── model_edit_dialog.ui
 │   ├── model_manager.ui    
 │   └── model_popup.ui
 │
-├── ui/                       # 🧩 Python UI logic
-│   ├── file_viewer.py        # Readme/License viewer
-│   ├── login_dialog.py       # API Key authentication
-│   ├── main_window.py        # Main app controller
-│   ├── model_edit_dialog.py  # Model add/edit/delete manager
-│   ├── model_manager.py      # Model add/edit/delete manager
-│   └── model_popup.py        # Model selector
+├── ui/                             # 🧩 Python UI logic
+│   ├── file_viewer.py              # Readme/License viewer
+│   ├── login_dialog.py             # API Key authentication
+│   ├── main_window.py              # Main app controller
+│   ├── model_edit_dialog.py        # Model add/edit/delete manager
+│   ├── model_manager.py            # Model add/edit/delete manager
+│   └── model_popup.py              # Model selector
 │
-├── logic/                       # ⚙️ Backend engine
-│   ├── llm_client.py            # NVIDIA API wrapper
-│   ├── chat_worker.py           # Threading for streaming
+├── logic/                          # ⚙️ Backend engine
+│   ├── llm_client.py               # NVIDIA API wrapper
+│   ├── chat_worker.py              # Threading for streaming
 │   └── conversation_manager.py 
+├── workers/                        # 🧵 Background workers
+│   ├── chat_worker.py              # Streaming responses
+│   ├── model_fetch_worker.py       # Fetch & test models
+│   ├── paid_model_fetch_worker.py  # Paid model support
+│   ├── description_generator.py    # AI description generation
+│   └── update_logger.py            # Real-time logging
 │
-└── utils/                  # 🛠️ Helpers
-    ├── constants.py        
-    ├── helpers.py          
-    ├── model_config.py     # 🧠 Model context limits
-    └── path_utils.py       # 📁 PyInstaller & dev path resolver
+└── utils/                          # 🛠️ Helpers
+    ├── constants.py                
+    ├── helpers.py                  
+    ├── model_config.py             # 🧠 Model context limits
+    └── path_utils.py               # 📁 PyInstaller & dev path resolver
 ```
 
 ---
@@ -137,6 +150,18 @@ This application does not use local `.env` files or plaintext config files for s
   - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
   - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
 - **Chat Histories:** Saved as standard `.json` files in `~/LLMChatApp/conversations/`.
+
+---
+
+## 📋 Log System
+
+The application features a comprehensive logging system for background operations:
+
+- **Real-time Updates:** All fetch and generation progress appears instantly in the Log Viewer
+- **Color-coded Levels:** INFO (green), SUCCESS (blue), WARNING (yellow), ERROR (red), DEBUG (purple)
+- **Filterable:** Toggle specific log levels on/off
+- **Persistent Storage:** Logs saved to `resources/update_log.txt` and survive app restarts
+- **Background Operations:** Model fetching and description generation run without blocking the UI
 
 ---
 
