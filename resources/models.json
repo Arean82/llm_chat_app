@@ -1,58 +1,368 @@
 {
     "models": [
         {
-            "id": "meta/llama-3.3-70b-instruct",
-            "name": "Llama 3.3 70B",
-            "description": "Best for general coding and reasoning",
-            "free": true
+            "description": "I'm a technical writer, skilled at creating concise, informative content, and best at crafting user manuals, guides, and documentation for complex software and hardware systems.",
+            "developer": "abacusai",
+            "free": true,
+            "id": "abacusai/dracarys-llama-3.1-70b-instruct",
+            "name": "Dracarys Llama 3.1 70b Instruct"
         },
         {
-            "id": "qwen/qwen3.5-397b-a17b",
-            "name": "Qwen 3.5 397B",
-            "description": "Excellent for Chinese content and general tasks",
-            "free": true
+            "description": "Baichuan2-13b-chat 是一位善于回答自然语言处理和人工智能相关问题的开源程序员，擅长提供有关人工智能技术和应用的专业建议。",
+            "developer": "baichuan-inc",
+            "free": true,
+            "id": "baichuan-inc/baichuan2-13b-chat",
+            "name": "Baichuan2 13b Chat"
         },
         {
-            "id": "deepseek-ai/deepseek-v3.1",
-            "name": "DeepSeek V3.1",
-            "description": "Great for coding and logical analysis",
-            "free": true
+            "description": "<think>\nOkay, so I need to describe myself as DeepSeek-R1-Distill-LLaMA-8B in one short sentence, highlighting what I'm best at. Let me think about this.\n\nFirst, I know that DeepSeek-R1-Distill-LLaMA-",
+            "developer": "deepseek-ai",
+            "free": true,
+            "id": "deepseek-ai/deepseek-r1-distill-llama-8b",
+            "name": "Deepseek R1 Distill Llama 8b"
         },
         {
-            "id": "z-ai/glm5",
-            "name": "GLM-5",
-            "description": "Strong for agentic coding tasks",
-            "free": true
+            "description": "I'm a large language model created by Google/Gemma, adept at generating human-quality text and assisting with various writing and creative tasks.",
+            "developer": "google",
+            "free": true,
+            "id": "google/gemma-3-12b-it",
+            "name": "Gemma 3 12b It"
         },
         {
-            "id": "moonshotai/kimi-k2-instruct-0905",
-            "name": "Kimi K2",
-            "description": "Excellent for long document analysis",
-            "free": true
+            "description": "I am Gemma, a large language model created by Google DeepMind, designed to process and generate text-based responses. \n\nI am best at understanding and responding to a wide range of prompts and questions.",
+            "developer": "google",
+            "free": true,
+            "id": "google/gemma-3-1b-it",
+            "name": "Gemma 3 1b It"
         },
         {
-            "id": "moonshotai/kimi-k2-thinking",
-            "name": "Kimi K2 Thinking",
-            "description": "Advanced reasoning with thinking process visible",
-            "free": true
-        },
-        {
-            "id": "meta/llama-4-scout",
-            "name": "Llama 4 Scout",
-            "description": "Latest Llama model, 10M context",
-            "free": true
-        },
-        {
+            "description": "I am Gemma, an open-weights AI assistant from Google DeepMind, adept at understanding and generating human-like text based on provided prompts.",
+            "developer": "google",
+            "free": true,
             "id": "google/gemma-3-27b-it",
-            "name": "Gemma 3 27B",
-            "description": "Google's open model",
-            "free": true
+            "name": "Gemma 3 27b It"
         },
         {
+            "description": "I’m Gemma, a large language model excelling at generating coherent and informative text based on your prompts and instructions.",
+            "developer": "google",
+            "free": true,
+            "id": "google/gemma-3-4b-it",
+            "name": "Gemma 3 4b It"
+        },
+        {
+            "description": "I am Gemma, an open-weights AI assistant created by Google DeepMind, best at understanding and generating human-like text from text and image inputs.",
+            "developer": "google",
+            "free": true,
+            "id": "google/gemma-3n-e4b-it",
+            "name": "Gemma 3n E4b It"
+        },
+        {
+            "description": "I am a large language model developed by Google, specializing in generating high-quality technical documentation and providing precise, context-aware responses to complex queries.",
+            "developer": "google",
+            "free": true,
+            "id": "google/gemma-4-31b-it",
+            "name": "Gemma 4 31b It"
+        },
+        {
+            "description": "I am a technical writer specializing in creating clear and concise documentation, particularly for complex technical systems.",
+            "developer": "gotocompany",
+            "free": true,
+            "id": "gotocompany/gemma-2-9b-cpt-sahabatai-instruct",
+            "name": "Gemma 2 9b Cpt Sahabatai Instruct"
+        },
+        {
+            "description": "No",
+            "developer": "ibm",
+            "free": true,
+            "id": "ibm/granite-guardian-3.0-8b",
+            "name": "Granite Guardian 3.0 8b"
+        },
+        {
+            "description": "I am a Large Language Model trained by iGenius, a technical writer. I am best at providing detailed, helpful, safe, and polite answers to user questions.",
+            "developer": "igenius",
+            "free": true,
+            "id": "igenius/italia_10b_instruct_16k",
+            "name": "Italia 10b Instruct 16k"
+        },
+        {
+            "description": "I'm a highly advanced language model, exceling in generating human-like text, answering questions, and providing helpful information on a wide range of topics.",
+            "developer": "institute-of-science-tokyo",
+            "free": true,
+            "id": "institute-of-science-tokyo/llama-3.1-swallow-70b-instruct-v0.1",
+            "name": "Llama 3.1 Swallow 70b Instruct V0.1"
+        },
+        {
+            "description": "I am a highly advanced language model designed for technical writing, excelling in generating clear, concise, and accurate technical documentation.",
+            "developer": "institute-of-science-tokyo",
+            "free": true,
+            "id": "institute-of-science-tokyo/llama-3.1-swallow-8b-instruct-v0.1",
+            "name": "Llama 3.1 Swallow 8b Instruct V0.1"
+        },
+        {
+            "description": "I'm a knowledgeable AI assistant, best at providing helpful, concise information and answering diverse queries.",
+            "developer": "marin",
+            "free": true,
+            "id": "marin/marin-8b-instruct",
+            "name": "Marin 8b Instruct"
+        },
+        {
+            "description": "I am a technical writer specializing in providing clear, concise, and user-friendly documentation for the Mediatek Breeze-7b Instruct, ensuring seamless user experiences.",
+            "developer": "mediatek",
+            "free": true,
+            "id": "mediatek/breeze-7b-instruct",
+            "name": "Breeze 7b Instruct"
+        },
+        {
+            "description": "I'm a technical writer, skilled at creating concise and informative content, best at crafting clear, step-by-step instructions and explanations for complex technical topics.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.1-70b-instruct",
+            "name": "Llama 3.1 70b Instruct"
+        },
+        {
+            "description": "I am a large language model, specifically a Meta Llama 3.1-8b-instruct model, best at generating human-like responses and answering a wide range of questions and topics.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.1-8b-instruct",
+            "name": "Llama 3.1 8b Instruct"
+        },
+        {
+            "description": "I'm a large language model designed to generate human-like text, exceling at answering questions, providing explanations, and assisting with writing tasks.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.2-11b-vision-instruct",
+            "name": "Llama 3.2 11b Vision Instruct"
+        },
+        {
+            "description": "I am a meta-llama, a 3.2-1b-instruct, designed to generate human-like text, best at crafting clear, concise, and informative content.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.2-1b-instruct",
+            "name": "Llama 3.2 1b Instruct"
+        },
+        {
+            "description": "I'm a large language model, specifically a meta Llama-3.2-3b, excelling at generating human-like text, answering questions, and providing informative responses on a wide range of topics.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.2-3b-instruct",
+            "name": "Llama 3.2 3b Instruct"
+        },
+        {
+            "description": "I'm a technical writer, skilled at creating concise and informative content, best at producing clear and accurate documentation for complex technical topics and systems.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.2-90b-vision-instruct",
+            "name": "Llama 3.2 90b Vision Instruct"
+        },
+        {
+            "description": "I'm a technical writer, best at creating concise and informative content.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-3.3-70b-instruct",
+            "name": "Llama 3.3 70b Instruct"
+        },
+        {
+            "description": "I'm a technical writer, and I'm best at creating clear, concise content that effectively communicates complex technical information to various audiences.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama-4-maverick-17b-128e-instruct",
+            "name": "Llama 4 Maverick 17b 128e Instruct"
+        },
+        {
+            "description": "I'm a technical writer skilled at crafting clear, concise, and user-friendly documentation, exceling at breaking down complex concepts into accessible, step-by-step guides.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama3-70b-instruct",
+            "name": "Llama3 70b Instruct"
+        },
+        {
+            "description": "I'm a technical writer with expertise in crafting clear, concise documentation and user guides, effectively communicating complex information to diverse audiences.",
+            "developer": "meta",
+            "free": true,
+            "id": "meta/llama3-8b-instruct",
+            "name": "Llama3 8b Instruct"
+        },
+        {
+            "description": "Microsoft/Phi-3-medium-128k-instruct is an AI model designed to understand and generate human-like text, excelling in tasks such as conversation, content creation, and language translation.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3-medium-128k-instruct",
+            "name": "Phi 3 Medium 128k Instruct"
+        },
+        {
+            "description": "I am Microsoft's Phi-3, a 3-billion-parameter artificial intelligence model designed to understand and generate human-like text, excelling particularly in language understanding and creative content generation.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3-medium-4k-instruct",
+            "name": "Phi 3 Medium 4k Instruct"
+        },
+        {
+            "description": "I am a Microsoft Phi-3 Mini with 128k of memory, excelling at processing natural language and providing informative responses.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3-mini-128k-instruct",
+            "name": "Phi 3 Mini 128k Instruct"
+        },
+        {
+            "description": "I am a Phi, a powerful AI developed by Microsoft, specializing in providing accurate information and assisting users with a wide range of tasks.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3-mini-4k-instruct",
+            "name": "Phi 3 Mini 4k Instruct"
+        },
+        {
+            "description": "I am Phi-3, an AI developed by Microsoft, excelling in understanding and generating human-like text.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3-small-128k-instruct",
+            "name": "Phi 3 Small 128k Instruct"
+        },
+        {
+            "description": "I am Phi-3, an AI developed by Microsoft, excelling at processing and generating human-like text based on given prompts.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3-small-8k-instruct",
+            "name": "Phi 3 Small 8k Instruct"
+        },
+        {
+            "description": "I am Microsoft Phi, a Phi-3.5-mini language model, and I excel at understanding and generating human-like text based on provided prompts.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-3.5-mini-instruct",
+            "name": "Phi 3.5 Mini Instruct"
+        },
+        {
+            "description": "<think>\n\nOkay, I need to describe myself in one sentence, and then say what I'm best at. Let's start with the description. The user mentioned \"Microsoft Phi-4 mini-flash reasoning.\" So, I should mention that I'm a technical enthusiast, probably into software and hardware related. Maybe",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-4-mini-flash-reasoning",
+            "name": "Phi 4 Mini Flash Reasoning"
+        },
+        {
+            "description": "I am Microsoft Phi-4, an advanced multimodal AI, excelling in understanding and generating human-like text, images, and audio content across various applications.",
+            "developer": "microsoft",
+            "free": true,
+            "id": "microsoft/phi-4-multimodal-instruct",
+            "name": "Phi 4 Multimodal Instruct"
+        },
+        {
+            "description": "<think>The user is asking me to describe myself as a minimax AI model in one sentence, and also asking what I'm best at. However, the system prompt says I should respond with ONLY one short sentence (15-30 words).\n\nLet me craft a response that fits within 15-30 words and",
+            "developer": "minimaxai",
+            "free": true,
+            "id": "minimaxai/minimax-m2.5",
+            "name": "Minimax M2.5"
+        },
+        {
+            "description": "I am a highly capable language model developed by Mistral AI, excelling at understanding and generating human-like text based on given prompts.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/devstral-2-123b-instruct-2512",
+            "name": "Devstral 2 123b Instruct 2512"
+        },
+        {
+            "description": "Mamba-codestral-7b-v0.1 is a state-of-the-art code interpreter and debugger, capable of executing Python code, providing step-by-step explanations, and identifying and resolving errors.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mamba-codestral-7b-v0.1",
+            "name": "Mamba Codestral 7b V0.1"
+        },
+        {
+            "description": "I am a cutting-edge AI model, Mistral AI/Mathstral-7b-v0.1, designed to excel in generating human-like text, translating languages, and understanding context. I am particularly skilled at maintaining a high level of accuracy and coherence in",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mathstral-7b-v0.1",
+            "name": "Mathstral 7b V0.1"
+        },
+        {
+            "description": "I’m a versatile AI assistant excelling at **clear technical writing, concise explanations, and adapting complex topics** into structured, reader-friendly content.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/ministral-14b-instruct-2512",
+            "name": "Ministral 14b Instruct 2512"
+        },
+        {
+            "description": "I am a technical writer specialized in creating clear and concise documentation for AI models like Mistral-7B.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-7b-instruct-v0.2",
+            "name": "Mistral 7b Instruct V0.2"
+        },
+        {
+            "description": "I am a versatile technical writer, excelling in creating clear, concise, and accurate documentation.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-7b-instruct-v0.3",
+            "name": "Mistral 7b Instruct V0.3"
+        },
+        {
+            "description": "I'm a large language model optimized for generating human-like text, excelling at explaining complex concepts clearly and assisting with diverse technical writing tasks.",
+            "developer": "mistralai",
+            "free": true,
             "id": "mistralai/mistral-large-3-675b-instruct-2512",
-            "name": "Mistral Large 3",
-            "description": "675B parameter model for complex tasks",
-            "free": true
+            "name": "Mistral Large 3 675b Instruct 2512"
+        },
+        {
+            "description": "I am a highly efficient text-generation model, best at understanding and generating human-like text based on given prompts.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-medium-3-instruct",
+            "name": "Mistral Medium 3 Instruct"
+        },
+        {
+            "description": "I'm a versatile AI model designed for natural language understanding and generation, excelling in technical writing and concise responses.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-nemotron",
+            "name": "Mistral Nemotron"
+        },
+        {
+            "description": "I'm a technical writer AI model best at explaining complex technical information clearly and concisely.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-small-24b-instruct",
+            "name": "Mistral Small 24b Instruct"
+        },
+        {
+            "description": "I'm a technical writer specialized in creating clear, concise documentation and instructions.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-small-3.1-24b-instruct-2503",
+            "name": "Mistral Small 3.1 24b Instruct 2503"
+        },
+        {
+            "description": "I'm a compact, efficient language model optimized for clear, concise technical writing and information delivery.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mistral-small-4-119b-2603",
+            "name": "Mistral Small 4 119b 2603"
+        },
+        {
+            "description": "I am a language model, excelling in generating human-like text based on the data I've been trained on, capable of assisting with tasks such as translation, summarization, and answering questions.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mixtral-8x22b-instruct-v0.1",
+            "name": "Mixtral 8x22b Instruct V0.1"
+        },
+        {
+            "description": "I am an advanced AI model (mistralai/mixtral-8x7b-instruct-v0.1) that excels in generating high-quality, accurate, and contextually relevant technical writing outputs.",
+            "developer": "mistralai",
+            "free": true,
+            "id": "mistralai/mixtral-8x7b-instruct-v0.1",
+            "name": "Mixtral 8x7b Instruct V0.1"
+        },
+        {
+            "description": "I am Kimi-k2-instruct, a concise, precise technical writer who excels at distilling complex AI concepts into clear, actionable guidance.",
+            "developer": "moonshotai",
+            "free": true,
+            "id": "moonshotai/kimi-k2-instruct",
+            "name": "Kimi K2 Instruct"
+        },
+        {
+            "description": "I’m a concise, code-savvy technical writer who excels at turning complex docs into crystal-clear, user-ready guidance.",
+            "developer": "moonshotai",
+            "free": true,
+            "id": "moonshotai/kimi-k2-instruct-0905",
+            "name": "Kimi K2 Instruct 0905"
         }
     ]
 }

@@ -99,6 +99,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="fetch_free_btn">
+       <property name="text">
+        <string>🆓 Fetch Models</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="fetch_paid_btn">
+       <property name="text">
+        <string>💎 Paid Models</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer2">
        <property name="orientation">
         <enum>Qt::Orientation::Horizontal</enum>

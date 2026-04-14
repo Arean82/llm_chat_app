@@ -366,6 +366,10 @@ class MainWindowClass(QMainWindow):
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         # settings_menu.addAction("🔑 API Key", self.handle_auth_button)
 
+        # Log menu
+        log_menu = menubar.addMenu("Log")
+        log_menu.addAction("📋 View Update Log", self.show_update_log)
+
         # Help menu with placeholder actions
         help_menu = menubar.addMenu("Help")
         help_menu.addAction("Readme", self.show_readme)
@@ -491,6 +495,9 @@ class MainWindowClass(QMainWindow):
         # Update description label
         if desc:
             self.model_desc_label.setText(desc)
+            self.model_desc_label.setWordWrap(True)
+            self.model_desc_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+            self.model_desc_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.model_desc_label.setVisible(True)
         else:
             self.model_desc_label.setVisible(False)
@@ -512,6 +519,13 @@ class MainWindowClass(QMainWindow):
                 QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
                 QPushButton:hover { background-color: #106ebe; }
             """)
+    # ---------------------------------------------------------
+    # LOG LOGIC
+    # ---------------------------------------------------------
+    def show_update_log(self):
+        from ui.log_dialog import LogDialog
+        dialog = LogDialog(self)
+        dialog.exec()
 
     # ---------------------------------------------------------
     # CHAT & STREAMING LOGIC
@@ -1147,10 +1161,17 @@ class MainWindowClass(QMainWindow):
     
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog
+
+        # Check if fetch is running
+        if ModelManagerDialog._fetch_in_progress:
+            QMessageBox.warning(
+                self,
+                "Fetch in Progress",
+                "Model fetch is already running in background.\n\n"
+                "Check 'Log' menu for real-time updates.\n"
+                "Please wait for it to complete."
+            )
+            return
+
         dialog = ModelManagerDialog(theme=self.current_theme, parent=self)
         dialog.exec()
-
-        # Refresh the model button UI in case models changed
-        current_model_id = QSettings("LLMChatApp", "Settings").value("current_model_id", "")
-        if current_model_id:
-            self.update_model_ui(current_model_id)
