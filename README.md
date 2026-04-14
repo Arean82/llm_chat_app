@@ -225,7 +225,11 @@ If you want to build the distributable installers yourself, follow the OS-specif
 ### Step 1: Build the Executable (All OS)
 Run this from the project root. It reads the `main.spec` file automatically:
 ```bash
-pyinstaller main.spec
+# One-dir build (default)
+pyinstaller main_onedir.spec
+
+# One-file build
+pyinstaller main_onefile.spec
 ```
 This outputs a folder containing the executable and all required assets to `dist/LLM Chat App/`. **Test this executable before proceeding to package it!**
 
