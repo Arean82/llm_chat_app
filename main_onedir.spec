@@ -40,38 +40,14 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
-exe = EXE(
+coll = COLLECT(
     pyz,
     a.scripts,
     a.binaries,
     a.zipfiles,
     a.datas,
-    name='LLM Chat App',
-    debug=False,
-    bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon='resources/app_icon.ico',
+    upx_exclude=[],
+    name='LLM Chat App'
 )
-
-if is_onefile:
-    # One-file build - just the exe
-    app = exe
-else:
-    # One-dir build - collect all files
-    app = COLLECT(
-        exe,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        strip=False,
-        upx=True,
-        upx_exclude=[],
-        name='LLM Chat App'
-    )

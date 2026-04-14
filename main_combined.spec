@@ -1,7 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec file for LLM Chat App
 # One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
+# One_dir can be used to specify the output directory for the built application.
 # One_file can be used to create a single executable file, but it may increase the build time and the size of the executable.   
+# Gives Both OneDIr and OneFile Build
 
 a = Analysis(
     ['main.py'],
@@ -58,4 +60,15 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='resources/app_icon.ico',
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='LLM Chat App'
 )

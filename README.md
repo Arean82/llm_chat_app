@@ -95,6 +95,9 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 llm_chat_app/
 │
 ├── main.py                         # 🚀 Entry point
+├── main_onedir.spec                # PyInstaller spec - One-dir build
+├── main_onefile.spec               # PyInstaller spec - One-file build
+├── main_combined.spec              # PyInstaller spec - Both builds
 ├── resources/                      # 📦 Static assets & caches
 │   ├── models.json                 # 🤖 Available model list
 │   ├── styles.qss                  # 🎨 Global stylesheet
@@ -223,15 +226,25 @@ If you want to build the distributable installers yourself, follow the OS-specif
    *(Note: To generate the `.icns` for macOS, you must run `iconutil` on a Mac).*
 
 ### Step 1: Build the Executable (All OS)
-Run this from the project root. It reads the `main.spec` file automatically:
+Run this from the project root. The project includes three spec files for different build types:
+
 ```bash
-# One-dir build (default)
+# One-dir build (folder with exe + dependencies)
 pyinstaller main_onedir.spec
 
-# One-file build
+# One-file build (single executable)
 pyinstaller main_onefile.spec
+
+# Combined build (creates both One-file and One-dir)
+pyinstaller main_combined.spec
 ```
-This outputs a folder containing the executable and all required assets to `dist/LLM Chat App/`. **Test this executable before proceeding to package it!**
+
+**Build outputs:**
+- One-dir: `dist/LLM Chat App/` (folder containing the executable and all dependencies)
+- One-file: `dist/LLM Chat App.exe` (single executable file)
+- Combined: Both outputs are generated simultaneously
+
+**Test the executable** before proceeding to package it!
 
 ### Step 2: Create the OS Installer
 
