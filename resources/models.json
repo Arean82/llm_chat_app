@@ -1,74 +1,11 @@
 {
     "models": [
         {
-            "description": "dracarys-llama-3.1-70b-instruct, by AbacusAI, is a powerful, open-weights language model excelling at complex reasoning and coding tasks due to its extensive 70 billion parameter size.",
-            "developer": "Abacusai",
-            "free": true,
-            "id": "abacusai/dracarys-llama-3.1-70b-instruct",
-            "name": "Dracarys Llama 3.1 70b"
-        },
-        {
-            "description": "Baichuan2-13b-chat is an open-source, 13-billion parameter chat model excelling in strong coding capabilities and general-purpose language understanding tasks.",
-            "developer": "Baichuan-inc",
-            "free": true,
-            "id": "baichuan-inc/baichuan2-13b-chat",
-            "name": "Baichuan2 13b"
-        },
-        {
-            "description": "Deepseek-R1-Distill-Llama-8B is an 8-billion parameter language model distilled from Deepseek-R1, excelling particularly at complex coding tasks and demonstrating strong reasoning abilities.",
-            "developer": "Deepseek-ai",
-            "free": true,
-            "id": "deepseek-ai/deepseek-r1-distill-llama-8b",
-            "name": "Deepseek R1 Distill Llama 8b"
-        },
-        {
-            "description": "Deepseek-r1-distill-qwen-32b is a 32-billion parameter language model distilled from Deepseek-RW-33B, excelling particularly in complex coding tasks and demonstrating strong reasoning abilities.",
-            "developer": "Deepseek-ai",
-            "free": true,
-            "id": "deepseek-ai/deepseek-r1-distill-qwen-32b",
-            "name": "Deepseek R1 Distill Qwen 32b"
-        },
-        {
-            "description": "Deepseek-V3.1 is a 72B parameter language model excelling in code generation and execution, demonstrating strong performance across multiple programming languages and complex coding tasks.",
-            "developer": "Deepseek-ai",
-            "free": true,
-            "id": "deepseek-ai/deepseek-v3.1",
-            "name": "Deepseek V3.1"
-        },
-        {
-            "description": "Gemma-2-27b-it is a multilingual, open-weights language model from Google excelling in Italian language tasks, demonstrating strong reasoning and coding capabilities.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/gemma-2-27b-it",
-            "name": "Gemma 2 27b It"
-        },
-        {
             "description": "Gemma-2-2B-it is a 2 billion parameter, Italian-focused language model excelling at code generation and demonstrating strong general language understanding capabilities.",
             "developer": "Google",
             "free": true,
             "id": "google/gemma-2-2b-it",
             "name": "Gemma 2 2b It"
-        },
-        {
-            "description": "Gemma-2-9b-it is a 9 billion parameter, Italian-focused language model excelling in code generation and demonstrating strong general language understanding capabilities.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/gemma-2-9b-it",
-            "name": "Gemma 2 9b It"
-        },
-        {
-            "description": "Gemma-3-12b-it is a multilingual Italian-focused large language model excelling at code generation and reasoning in both Italian and English, built from the Gemma architecture.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/gemma-3-12b-it",
-            "name": "Gemma 3 12b It"
-        },
-        {
-            "description": "Gemma-3-1b-it is a 1 billion parameter, Italian-focused language model excelling at natural language understanding and generation within the Italian language.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/gemma-3-1b-it",
-            "name": "Gemma 3 1b It"
         },
         {
             "description": "Gemma-3-27b-it is a multilingual, open-weights AI model from Google excelling in Italian language understanding and generation, alongside strong general reasoning capabilities.",
@@ -78,130 +15,32 @@
             "name": "Gemma 3 27b It"
         },
         {
-            "description": "Gemma-3-4B-it is a multilingual, open-weights language model from Google excelling at Italian language understanding and generation tasks, demonstrating strong reasoning capabilities.",
+            "description": "Gemma-3-4b-it is a 4 billion parameter, Italian-focused language model excelling at code generation and reasoning within the Italian language, built upon the Gemma architecture.",
             "developer": "Google",
             "free": true,
             "id": "google/gemma-3-4b-it",
             "name": "Gemma 3 4b It"
         },
         {
-            "description": "Gemma-3n-e2b-it is a 3 billion parameter, English-only iteration of the Gemma family, excelling at code generation and demonstrating strong general language understanding.",
+            "description": "Gemma-3n-e2b-it is a 3 billion parameter, English-focused language model excelling at code generation and natural language processing tasks, demonstrating strong reasoning capabilities.",
             "developer": "Google",
             "free": true,
             "id": "google/gemma-3n-e2b-it",
             "name": "Gemma 3n E2b It"
         },
         {
-            "description": "Gemma-3n-e4b-it is a 3 billion parameter, English-focused language model excelling at code generation and natural language processing tasks within resource-constrained environments.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/gemma-3n-e4b-it",
-            "name": "Gemma 3n E4b It"
-        },
-        {
-            "description": "Gemma-4-31b-it is a multilingual Italian-focused large language model excelling at code generation and reasoning tasks, built from the Gemma base model.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/gemma-4-31b-it",
-            "name": "Gemma 4 31b It"
-        },
-        {
-            "description": "Gemma-7b is an open-weights AI model from Google, excelling in coding tasks and demonstrating strong general language understanding capabilities across multiple languages.",
+            "description": "Gemma-7b is an open-weights AI model from Google excelling at coding tasks, demonstrating strong performance in generating and understanding various programming languages.",
             "developer": "Google",
             "free": true,
             "id": "google/gemma-7b",
             "name": "Gemma 7b"
         },
         {
-            "description": "Shieldgemma-9b is a 9 billion parameter, open-weights language model from Google DeepMind excelling at code generation and demonstrating strong reasoning capabilities across diverse tasks.",
-            "developer": "Google",
-            "free": true,
-            "id": "google/shieldgemma-9b",
-            "name": "Shieldgemma 9b"
-        },
-        {
-            "description": "gemma-2-9b-cpt-sahabatai-instruct is a multilingual instruction-following model by GoToCompany, demonstrating strong capabilities in code generation and completion tasks.",
-            "developer": "Gotocompany",
-            "free": true,
-            "id": "gotocompany/gemma-2-9b-cpt-sahabatai-instruct",
-            "name": "Gemma 2 9b Cpt Sahabatai"
-        },
-        {
-            "description": "ibm’s Granite Guardian 3.0-8b is a multilingual, 8-billion parameter language model excelling at code generation and natural language processing tasks across multiple languages.",
-            "developer": "Ibm",
-            "free": true,
-            "id": "ibm/granite-guardian-3.0-8b",
-            "name": "Granite Guardian 3.0 8b"
-        },
-        {
-            "description": "italia_10b_instruct_16k is a 10 billion parameter, Italian-focused language model excelling at following instructions and demonstrating strong reasoning capabilities in Italian and English.",
-            "developer": "Igenius",
-            "free": true,
-            "id": "igenius/italia_10b_instruct_16k",
-            "name": "Italia 10b Instruct 16k"
-        },
-        {
-            "description": "Llama-3.1-swallow-70b-instruct-v0.1, developed by the Institute of Science Tokyo, excels at complex reasoning and instruction-following, particularly demonstrating strong coding capabilities in multiple languages.",
-            "developer": "Institute-of-science-tokyo",
-            "free": true,
-            "id": "institute-of-science-tokyo/llama-3.1-swallow-70b-instruct-v0.1",
-            "name": "Llama 3.1 Swallow 70b V0.1"
-        },
-        {
-            "description": "Llama-3.1-swallow-8b-instruct-v0.1, developed by the Institute of Science Tokyo, excels at complex reasoning and instruction-following, particularly demonstrating strong coding capabilities in multiple languages.",
-            "developer": "Institute-of-science-tokyo",
-            "free": true,
-            "id": "institute-of-science-tokyo/llama-3.1-swallow-8b-instruct-v0.1",
-            "name": "Llama 3.1 Swallow 8b V0.1"
-        },
-        {
-            "description": "Marin-8B-Instruct is an open-weights language model excelling at coding tasks, demonstrating strong performance in generating and understanding various programming languages.",
-            "developer": "Marin",
-            "free": true,
-            "id": "marin/marin-8b-instruct",
-            "name": "Marin 8b"
-        },
-        {
-            "description": "Breeze-7B-Instruct, developed by MediaTek, is a quantized language model excelling at code generation and instruction following, particularly for mobile and edge devices.",
-            "developer": "Mediatek",
-            "free": true,
-            "id": "mediatek/breeze-7b-instruct",
-            "name": "Breeze 7b"
-        },
-        {
-            "description": "Meta’s llama-3.1-405b-instruct is a large language model excelling at complex reasoning tasks and generating helpful, harmless responses across diverse prompts.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama-3.1-405b-instruct",
-            "name": "Llama 3.1 405b"
-        },
-        {
-            "description": "Meta’s Llama 3-70B-Instruct is an open-weights large language model excelling at complex reasoning tasks, demonstrating strong performance in coding, and following instructions effectively.",
+            "description": "Meta’s llama-3.1-70b-instruct is a large language model excelling at complex reasoning tasks, demonstrating significant improvements in coding, math, and following nuanced instructions.",
             "developer": "Meta",
             "free": true,
             "id": "meta/llama-3.1-70b-instruct",
             "name": "Llama 3.1 70b"
-        },
-        {
-            "description": "Meta’s llama-3.1-8b-instruct is an 8-billion parameter large language model excelling at following instructions and demonstrating strong reasoning capabilities across diverse tasks.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama-3.1-8b-instruct",
-            "name": "Llama 3.1 8b"
-        },
-        {
-            "description": "Meta’s `llama-3.2-11b-vision-instruct` is an open-weights large multimodal model excelling at detailed image understanding and following complex, visually-grounded instructions.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama-3.2-11b-vision-instruct",
-            "name": "Llama 3.2 11b Vision"
-        },
-        {
-            "description": "Meta’s llama-3-2-1b-instruct is a 1.1 billion parameter language model excelling at following instructions and demonstrating strong reasoning capabilities for its size.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama-3.2-1b-instruct",
-            "name": "Llama 3.2 1b"
         },
         {
             "description": "Meta’s llama-3-2-3b-instruct is a compact, open-source large language model excelling at freeform text generation and following instructions, demonstrating strong reasoning capabilities for its size.",
@@ -211,13 +50,6 @@
             "name": "Llama 3.2 3b"
         },
         {
-            "description": "Meta’s llama-3.2-90b-vision-instruct is a large multimodal model excelling at complex reasoning tasks involving both visual and textual inputs, demonstrating strong instruction following.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama-3.2-90b-vision-instruct",
-            "name": "Llama 3.2 90b Vision"
-        },
-        {
             "description": "Meta’s Llama 3 70B Instruct is an open-weights large language model excelling at complex reasoning, coding, and following instructions with improved overall performance.",
             "developer": "Meta",
             "free": true,
@@ -225,7 +57,7 @@
             "name": "Llama 3.3 70b"
         },
         {
-            "description": "Llama-4-Maverick-17B-128E-Instruct is a fine-tuned language model excelling at complex reasoning and coding tasks, demonstrating strong performance on benchmarks requiring logical inference.",
+            "description": "Llama-4-Maverick-17B-128E-Instruct is a fine-tuned language model excelling at complex reasoning and coding tasks, demonstrating strong performance on benchmarks requiring multi-step problem solving.",
             "developer": "Meta",
             "free": true,
             "id": "meta/llama-4-maverick-17b-128e-instruct",
@@ -239,105 +71,21 @@
             "name": "Llama Guard 4 12b"
         },
         {
-            "description": "Meta’s Llama 3-70B-Instruct is an open-weights large language model excelling at complex reasoning, following instructions, and generating human-quality text across diverse tasks.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama3-70b-instruct",
-            "name": "Llama3 70b"
-        },
-        {
-            "description": "Meta’s Llama 3 8B-Instruct is an open-source large language model excelling at free-form reasoning, following instructions, and generating human-quality text across diverse prompts.",
-            "developer": "Meta",
-            "free": true,
-            "id": "meta/llama3-8b-instruct",
-            "name": "Llama3 8b"
-        },
-        {
-            "description": "Microsoft’s phi-3-medium-128k-instruct is a 7 billion parameter language model excelling at complex reasoning and coding tasks, despite its relatively small size.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3-medium-128k-instruct",
-            "name": "Phi 3 Medium 128k"
-        },
-        {
-            "description": "Microsoft’s phi-3-medium-4k-instruct is a 7B parameter language model excelling at complex reasoning and coding tasks, despite its relatively small size.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3-medium-4k-instruct",
-            "name": "Phi 3 Medium 4k"
-        },
-        {
-            "description": "Microsoft’s phi-3-mini-128k-instruct is a small language model excelling at complex reasoning and coding tasks, despite its relatively compact 3.8 billion parameters.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3-mini-128k-instruct",
-            "name": "Phi 3 Mini 128k"
-        },
-        {
-            "description": "Microsoft’s phi-3-mini-4k-instruct is a 3.8 billion parameter language model excelling at complex reasoning and instruction following, despite its relatively small size.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3-mini-4k-instruct",
-            "name": "Phi 3 Mini 4k"
-        },
-        {
-            "description": "Microsoft’s phi-3-small-128k-instruct is a 3.8 billion parameter language model excelling at complex reasoning and coding tasks, despite its relatively small size.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3-small-128k-instruct",
-            "name": "Phi 3 Small 128k"
-        },
-        {
-            "description": "Microsoft’s phi-3-small-8k-instruct is a 3.8 billion parameter language model excelling at complex reasoning and coding tasks, despite its relatively small size.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3-small-8k-instruct",
-            "name": "Phi 3 Small 8k"
-        },
-        {
-            "description": "Microsoft’s phi-3.5-mini-instruct is a small language model excelling at coding and general reasoning tasks, despite its 3.8 billion parameters.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3.5-mini-instruct",
-            "name": "Phi 3.5 Mini"
-        },
-        {
-            "description": "Microsoft’s phi-3.5-vision-instruct is a small language and vision model excelling at detailed image understanding and generating coherent, human-like text responses.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-3.5-vision-instruct",
-            "name": "Phi 3.5 Vision"
-        },
-        {
-            "description": "Microsoft’s phi-4-mini-flash-reasoning is a 3.8B parameter language model demonstrating strong reasoning capabilities, particularly excelling at code generation and execution tasks.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-4-mini-flash-reasoning",
-            "name": "Phi 4 Mini Flash Reasoning"
-        },
-        {
-            "description": "Microsoft’s phi-4-mini-instruct is a 3.8B parameter language model demonstrating strong reasoning capabilities—particularly for coding tasks—despite its small size.",
-            "developer": "Microsoft",
-            "free": true,
-            "id": "microsoft/phi-4-mini-instruct",
-            "name": "Phi 4 Mini"
-        },
-        {
-            "description": "Microsoft’s phi-4-multimodal-instruct is a 7B parameter model excelling at visual instruction following and demonstrating strong coding capabilities, despite its relatively small size.",
+            "description": "Microsoft’s phi-4-multimodal-instruct is a 7B parameter model excelling at visual instruction following and demonstrating strong coding capabilities despite its relatively small size.",
             "developer": "Microsoft",
             "free": true,
             "id": "microsoft/phi-4-multimodal-instruct",
             "name": "Phi 4 Multimodal"
         },
         {
-            "description": "Minimax-m2.7 is an open-weights language model excelling at complex reasoning and coding tasks, demonstrating strong performance on benchmarks like HumanEval and GSM8K.",
+            "description": "minimax-m2.5 is an open-weights language model excelling at code generation and completion, demonstrating strong performance across multiple programming languages.",
             "developer": "Minimaxai",
             "free": true,
-            "id": "minimaxai/minimax-m2.7",
-            "name": "Minimax M2.7"
+            "id": "minimaxai/minimax-m2.5",
+            "name": "Minimax M2.5"
         },
         {
-            "description": "Devstral-2-123B-instruct-2512 is a 123-billion parameter, open-weights language model from Mistral AI excelling at code generation and instruction following.",
+            "description": "Devstral-2-123B-instruct-2512 is a 123 billion parameter, open-weights language model by Mistral AI, excelling at code generation and instruction following tasks.",
             "developer": "Mistralai",
             "free": true,
             "id": "mistralai/devstral-2-123b-instruct-2512",
@@ -351,35 +99,14 @@
             "name": "Magistral Small 2506"
         },
         {
-            "description": "Mamba-codestral-7b-v0.1 is a 7 billion parameter, sparsely-gated mixture-of-experts language model by Mistral AI, excelling specifically at code generation and completion tasks.",
-            "developer": "Mistralai",
-            "free": true,
-            "id": "mistralai/mamba-codestral-7b-v0.1",
-            "name": "Mamba Codestral 7b V0.1"
-        },
-        {
-            "description": "mathstral-7b-v0.1 is a 7 billion parameter language model by Mistral AI, excelling in complex mathematical reasoning and problem-solving tasks.",
-            "developer": "Mistralai",
-            "free": true,
-            "id": "mistralai/mathstral-7b-v0.1",
-            "name": "Mathstral 7b V0.1"
-        },
-        {
-            "description": "Mistral-14B-Instruct-2512 is a 14-billion parameter, openly available language model excelling at reasoning and following instructions, particularly demonstrating strong coding capabilities.",
+            "description": "Mistral-14B-Instruct-2512 is a 14-billion parameter, openly available language model excelling at following instructions and demonstrating strong reasoning capabilities across diverse tasks.",
             "developer": "Mistralai",
             "free": true,
             "id": "mistralai/ministral-14b-instruct-2512",
             "name": "Ministral 14b 2512"
         },
         {
-            "description": "Mistral 7B Instruct v0.2 is a 7-billion parameter, open-weight language model excelling at following instructions and demonstrating strong reasoning capabilities across diverse tasks.",
-            "developer": "Mistralai",
-            "free": true,
-            "id": "mistralai/mistral-7b-instruct-v0.2",
-            "name": "Mistral 7b V0.2"
-        },
-        {
-            "description": "Mistral 7B Instruct v0.3 is a 7-billion parameter, open-weight language model excelling at following instructions and demonstrating strong reasoning capabilities across diverse tasks.",
+            "description": "Mistral 7B Instruct v0.3 is a small, yet powerful, language model excelling at following instructions and demonstrating strong reasoning capabilities for its size.",
             "developer": "Mistralai",
             "free": true,
             "id": "mistralai/mistral-7b-instruct-v0.3",
@@ -400,28 +127,14 @@
             "name": "Mistral Medium 3"
         },
         {
-            "description": "Mistral-Nemotron is an open-weights, 7B parameter language model excelling in multilingual text generation and reasoning, particularly demonstrating strong performance across numerous languages.",
+            "description": "Mistral-Nemotron is an open-weights, 7B parameter language model excelling in multilingual reasoning and coding tasks across numerous programming languages and natural languages.",
             "developer": "Mistralai",
             "free": true,
             "id": "mistralai/mistral-nemotron",
             "name": "Mistral Nemotron"
         },
         {
-            "description": "Mistral Small 24B Instruct is a 24 billion parameter, open-weights language model excelling at code generation and reasoning, demonstrating strong performance across multiple benchmarks.",
-            "developer": "Mistralai",
-            "free": true,
-            "id": "mistralai/mistral-small-24b-instruct",
-            "name": "Mistral Small 24b"
-        },
-        {
-            "description": "Mistral-Small-3.1-24B-Instruct-2503 is a 24 billion parameter, English-first language model excelling at coding and reasoning tasks, demonstrating strong performance despite its relatively small size.",
-            "developer": "Mistralai",
-            "free": true,
-            "id": "mistralai/mistral-small-3.1-24b-instruct-2503",
-            "name": "Mistral Small 3.1 24b 2503"
-        },
-        {
-            "description": "Mistral Small 4 119B-2603 is a 7 billion parameter language model excelling in code generation and reasoning, demonstrating strong performance despite its compact size.",
+            "description": "Mistral Small 4 119B-2603 is a 7 billion parameter language model excelling at code generation and demonstrating strong reasoning capabilities for its size.",
             "developer": "Mistralai",
             "free": true,
             "id": "mistralai/mistral-small-4-119b-2603",
@@ -442,32 +155,25 @@
             "name": "Mixtral 8x7b V0.1"
         },
         {
-            "description": "Kimi-K2-Instruct, developed by Moonshot AI, excels at complex reasoning and coding tasks due to its exceptionally large 32K context window, enabling it to process extensive information.",
+            "description": "Kimi-K2-Instruct is a large language model by Moonshot AI excelling at complex reasoning and coding tasks, particularly with its exceptionally long 200K context window.",
             "developer": "Moonshotai",
             "free": true,
             "id": "moonshotai/kimi-k2-instruct",
             "name": "Kimi K2"
         },
         {
-            "description": "Kimi-K2-Instruct-0905 is a large language model excelling at complex reasoning and long-context understanding, particularly demonstrated through its strong coding capabilities and detailed response generation.",
+            "description": "Kimi-K2-Instruct-0905 is a large language model by Moonshot AI excelling at complex reasoning and long-context understanding, particularly demonstrated through proficient coding abilities.",
             "developer": "Moonshotai",
             "free": true,
             "id": "moonshotai/kimi-k2-instruct-0905",
             "name": "Kimi K2 0905"
         },
         {
-            "description": "Kimi-K2-Thinking, developed by Moonshot AI, excels at complex reasoning and long-context understanding, particularly demonstrating strong performance in coding and logical problem-solving.",
+            "description": "Kimi-K2-Thinking, developed by Moonshot AI, excels at complex reasoning and long-context understanding, particularly demonstrating strong capabilities in coding and detailed analysis.",
             "developer": "Moonshotai",
             "free": true,
             "id": "moonshotai/kimi-k2-thinking",
             "name": "Kimi K2 Thinking"
-        },
-        {
-            "description": "Kimi-K2.5 is a large language model by Moonshot AI excelling at complex reasoning and coding tasks, boasting a 200K context window for extensive input.",
-            "developer": "Moonshotai",
-            "free": true,
-            "id": "moonshotai/kimi-k2.5",
-            "name": "Kimi K2.5"
         },
         {
             "description": "GLiner-PII, developed by NVIDIA, is a 70B parameter language model excelling at identifying and redacting Personally Identifiable Information (PII) from text with high accuracy.",
@@ -477,6 +183,13 @@
             "name": "Gliner Pii"
         },
         {
+            "description": "Nvidia’s ising-calibration-1-35b-a3b is a large language model excelling at code generation and completion, particularly for Python, demonstrating strong programming proficiency.",
+            "developer": "Nvidia",
+            "free": true,
+            "id": "nvidia/ising-calibration-1-35b-a3b",
+            "name": "Ising Calibration 1 35b A3b"
+        },
+        {
             "description": "Nvidia’s llama-3.1-nemoguard-8b-content-safety is an 8-billion parameter language model excelling at robust content safety, specifically filtering harmful text generation.",
             "developer": "Nvidia",
             "free": true,
@@ -484,67 +197,32 @@
             "name": "Llama 3.1 Nemoguard 8b Content Safety"
         },
         {
-            "description": "Nvidia’s llama-3.1-nemoguard-8b-topic-control excels at following instructions and maintaining consistent persona across multi-turn conversations, demonstrating strong reasoning capabilities.",
+            "description": "NVIDIA’s llama-3.1-nemoguard-8b-topic-control excels at following instructions and maintaining consistent persona across multi-turn conversations, demonstrating strong reasoning capabilities.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/llama-3.1-nemoguard-8b-topic-control",
             "name": "Llama 3.1 Nemoguard 8b Topic Control"
         },
         {
-            "description": "Nvidia’s llama-3.1-nemotron-70b-reward excels at generating helpful and harmless responses, particularly demonstrating strong reasoning capabilities when fine-tuned with reinforcement learning.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/llama-3.1-nemotron-70b-reward",
-            "name": "Llama 3.1 Nemotron 70b Reward"
-        },
-        {
-            "description": "NVIDIA’s llama-3.1-nemotron-nano-8b-v1 is a compact, 8-billion parameter language model excelling at English-language coding tasks and demonstrating strong reasoning abilities.",
+            "description": "NVIDIA’s llama-3.1-nemotron-nano-8b-v1 is a compact, 8-billion parameter language model excelling at English-language coding tasks and demonstrating strong reasoning capabilities.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/llama-3.1-nemotron-nano-8b-v1",
             "name": "Llama 3.1 Nemotron Nano 8b V1"
         },
         {
-            "description": "NVIDIA’s llama-3.1-nemotron-nano-vl-8b-v1 is a compact, vision-language model excelling at code generation and reasoning from visual inputs, despite its small 8 billion parameter size.",
+            "description": "NVIDIA’s llama-3.1-nemotron-nano-vl-8b-v1 is a compact, vision-language model excelling at code generation and reasoning with strong multilingual capabilities.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
             "name": "Llama 3.1 Nemotron Nano Vl 8b V1"
         },
         {
-            "description": "Nvidia’s llama-3.1-nemotron-safety-guard-8b-v3 is an 8-billion parameter language model excelling at robust safety filtering and refusal of harmful requests, particularly within conversational AI.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
-            "name": "Llama 3.1 Nemotron Safety Guard 8b V3"
-        },
-        {
-            "description": "NVIDIA’s llama-3.1-nemotron-ultra-253b-v1 is a 253 billion parameter language model excelling in complex reasoning and coding tasks, demonstrating strong performance on benchmarks requiring logical inference.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-            "name": "Llama 3.1 Nemotron Ultra 253b V1"
-        },
-        {
-            "description": "NVIDIA’s llama-3.3-nemotron-super-49b-v1 is a large language model excelling in multilingual capabilities, particularly demonstrating strong performance across numerous non-English languages.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/llama-3.3-nemotron-super-49b-v1",
-            "name": "Llama 3.3 Nemotron Super 49b V1"
-        },
-        {
-            "description": "NVIDIA’s llama-3.3-nemotron-super-49b-v1.5 is a large language model excelling in code generation and execution, demonstrating strong performance on complex programming tasks.",
+            "description": "NVIDIA’s llama-3.3-nemotron-super-49b-v1.5 is a large language model excelling in Python coding and demonstrating strong general reasoning capabilities across diverse tasks.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
             "name": "Llama 3.3 Nemotron Super 49b V1.5"
-        },
-        {
-            "description": "NVIDIA’s llama3-chatqa-1.5-8b is an 8-billion parameter chat model excelling at question answering, particularly demonstrating strong reasoning capabilities across diverse knowledge domains.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/llama3-chatqa-1.5-8b",
-            "name": "Llama3qa 1.5 8b"
         },
         {
             "description": "NVIDIA’s nemotron-3-nano-30b-a3b is a 30 billion parameter, open-weights language model excelling at code generation and demonstrating strong reasoning capabilities.",
@@ -561,25 +239,11 @@
             "name": "Nemotron 3 Super 120b A12b"
         },
         {
-            "description": "NVIDIA’s nemotron-3-super-120b-a12b is a 120 billion parameter, sparsely activated transformer model excelling at code generation and reasoning tasks with strong multilingual capabilities.",
+            "description": "NVIDIA’s nemotron-3-super-120b-a12b is a 120 billion parameter, sparsely-activated transformer model excelling at code generation and reasoning tasks with strong multilingual capabilities.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/nemotron-3-super-120b-a12b",
             "name": "Nemotron 3 Super 120b A12b"
-        },
-        {
-            "description": "NVIDIA’s nemotron-4-mini-hindi-4b-instruct is a 4 billion parameter, instruction-following language model excelling at Hindi language tasks and demonstrating strong reasoning capabilities.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/nemotron-4-mini-hindi-4b-instruct",
-            "name": "Nemotron 4 Mini Hindi 4b"
-        },
-        {
-            "description": "NVIDIA’s nemotron-content-safety-reasoning-4b is a 4-billion parameter language model excelling at nuanced reasoning to identify and mitigate harmful content generation.",
-            "developer": "Nvidia",
-            "free": true,
-            "id": "nvidia/nemotron-content-safety-reasoning-4b",
-            "name": "Nemotron Content Safety Reasoning 4b"
         },
         {
             "description": "NVIDIA’s nemotron-mini-4b-instruct is a 4-billion parameter, instruction-following language model excelling at code generation and demonstrating strong reasoning capabilities across diverse tasks.",
@@ -589,14 +253,14 @@
             "name": "Nemotron Mini 4b"
         },
         {
-            "description": "NVIDIA’s nemotron-nano-12b-v2-vl is a multimodal, open-weights language model excelling at coding tasks and demonstrating strong reasoning capabilities with visual inputs.",
+            "description": "NVIDIA’s nemotron-nano-12b-v2-vl is a multimodal, open-weights language model excelling at code generation and reasoning, particularly with visual inputs.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/nemotron-nano-12b-v2-vl",
             "name": "Nemotron Nano 12b V2 Vl"
         },
         {
-            "description": "NVIDIA’s NeMo-Nano-9B-v2 is a compact, open-weights language model excelling at English and Python code generation, demonstrating strong performance despite its relatively small size.",
+            "description": "NVIDIA’s NeMo-Nano-9B-v2 is a 9-billion parameter, open-weights language model excelling at English and Python code generation and completion tasks.",
             "developer": "Nvidia",
             "free": true,
             "id": "nvidia/nvidia-nemotron-nano-9b-v2",
@@ -610,14 +274,14 @@
             "name": "Riva Translate 4b V1.1"
         },
         {
-            "description": "GPT-OSS-120B is an open-weights language model from OpenAI excelling in complex reasoning tasks and demonstrating strong coding capabilities across multiple programming languages.",
+            "description": "GPT-OSS-120B is an open-weights language model by OpenAI demonstrating strong coding capabilities and reasoning skills, particularly excelling in complex software development tasks.",
             "developer": "Openai",
             "free": true,
             "id": "openai/gpt-oss-120b",
             "name": "Gpt Oss 120b"
         },
         {
-            "description": "GPT-OSS-120B is an open-weights language model from OpenAI excelling in complex reasoning tasks and demonstrating strong coding capabilities across multiple programming languages.",
+            "description": "GPT-OSS-120B is an open-weights language model by OpenAI excelling in complex reasoning tasks and demonstrating strong coding capabilities across multiple programming languages.",
             "developer": "Openai",
             "free": true,
             "id": "openai/gpt-oss-120b",
@@ -631,32 +295,11 @@
             "name": "Gpt Oss 20b"
         },
         {
-            "description": "GPT-OSS-20B is an open-weights language model from OpenAI excelling at coding tasks, demonstrating strong performance in generating and understanding various programming languages.",
+            "description": "GPT-OSS-20B is an open-weights language model from OpenAI excelling in coding tasks and demonstrating strong reasoning capabilities, particularly with Python and JavaScript.",
             "developer": "Openai",
             "free": true,
             "id": "openai/gpt-oss-20b",
             "name": "Gpt Oss 20b"
-        },
-        {
-            "description": "Teuken-7b-instruct-commercial-v0.4 is a commercially-usable, 7-billion parameter language model excelling at code generation and instruction following, particularly in Python.",
-            "developer": "Opengpt-x",
-            "free": true,
-            "id": "opengpt-x/teuken-7b-instruct-commercial-v0.4",
-            "name": "Teuken 7b Commercial V0.4"
-        },
-        {
-            "description": "Qwen2-7B-Instruct is a foundational large language model excelling at following instructions and demonstrating strong coding capabilities across multiple programming languages.",
-            "developer": "Qwen",
-            "free": true,
-            "id": "qwen/qwen2-7b-instruct",
-            "name": "Qwen2 7b"
-        },
-        {
-            "description": "Qwen2.5-7B-Instruct is a bilingual (English/Chinese) large language model excelling at following instructions and demonstrating strong coding capabilities, particularly in Python.",
-            "developer": "Qwen",
-            "free": true,
-            "id": "qwen/qwen2.5-7b-instruct",
-            "name": "Qwen2.5 7b"
         },
         {
             "description": "Qwen2.5-Coder-32B-Instruct is a powerful, open-source large language model excelling at code generation and completion across multiple programming languages, demonstrating strong coding capabilities.",
@@ -673,7 +316,7 @@
             "name": "Qwen3 Next 80b A3b"
         },
         {
-            "description": "Qwen3-next-80b-a3b-thinking is an open-source, 80-billion parameter language model excelling in complex reasoning tasks and demonstrating strong coding capabilities across multiple languages.",
+            "description": "Qwen3-next-80b-a3b-thinking is an open-source, 80-billion parameter language model excelling in complex reasoning tasks and demonstrating strong coding capabilities across multiple programming languages.",
             "developer": "Qwen",
             "free": true,
             "id": "qwen/qwen3-next-80b-a3b-thinking",
@@ -687,49 +330,28 @@
             "name": "Qwen3.5 122b A10b"
         },
         {
-            "description": "Qwen-32B is a 32-parameter language model excelling in code generation and reasoning, demonstrating strong performance across multiple benchmarks and supporting extensive multilingual capabilities.",
+            "description": "Qwen3.5-397B-A17B is a 397-billion parameter language model excelling in complex reasoning and coding tasks, demonstrating strong performance across multiple benchmarks.",
             "developer": "Qwen",
             "free": true,
-            "id": "qwen/qwq-32b",
-            "name": "Qwq 32b"
+            "id": "qwen/qwen3.5-397b-a17b",
+            "name": "Qwen3.5 397b A17b"
         },
         {
-            "description": "Rakutenai-7B-Chat is a Japanese and English bilingual language model excelling in code generation and demonstrating strong reasoning capabilities across diverse tasks.",
-            "developer": "Rakuten",
-            "free": true,
-            "id": "rakuten/rakutenai-7b-chat",
-            "name": "Rakutenai 7b"
-        },
-        {
-            "description": "Rakutenai-7B-Instruct is a 7-billion parameter, open-source language model excelling at code generation and instruction following, demonstrating strong performance in programming tasks.",
-            "developer": "Rakuten",
-            "free": true,
-            "id": "rakuten/rakutenai-7b-instruct",
-            "name": "Rakutenai 7b"
-        },
-        {
-            "description": "Sarvam-m is an open-weights multilingual AI model from Sarvam AI, demonstrating strong coding capabilities and excelling at Indian language understanding and generation.",
+            "description": "Sarvam-m is an open-weights multilingual AI model from Sarvam AI, demonstrating strong coding capabilities and excelling at generating and understanding code in multiple Indian languages.",
             "developer": "Sarvamai",
             "free": true,
             "id": "sarvamai/sarvam-m",
             "name": "Sarvam M"
         },
         {
-            "description": "Bielik-11b-v2.3-instruct is an open-source, 11 billion parameter language model excelling at complex reasoning and instruction-following, particularly demonstrated in coding tasks.",
+            "description": "Bielik-11b-v2.3-instruct is an open-source, 11 billion parameter language model excelling at complex reasoning and instruction following, particularly demonstrated in coding tasks.",
             "developer": "Speakleash",
             "free": true,
             "id": "speakleash/bielik-11b-v2.3-instruct",
             "name": "Bielik 11b V2.3"
         },
         {
-            "description": "Bielik-11b-v2.6-instruct is an open-source, 11 billion parameter language model excelling at complex reasoning and instruction-following, particularly demonstrated in coding tasks.",
-            "developer": "Speakleash",
-            "free": true,
-            "id": "speakleash/bielik-11b-v2.6-instruct",
-            "name": "Bielik 11b V2.6"
-        },
-        {
-            "description": "Step-3.5-flash is a 7B parameter language model excelling at rapid code generation and completion, prioritizing speed and efficiency for software development tasks.",
+            "description": "Step-3.5-flash is a fast, open-source language model excelling at code generation and completion, particularly suited for Python and JavaScript tasks due to its efficient architecture.",
             "developer": "Stepfun-ai",
             "free": true,
             "id": "stepfun-ai/step-3.5-flash",
@@ -743,46 +365,11 @@
             "name": "Stockmark 2 100b"
         },
         {
-            "description": "ChatGLM3-6B, developed by THUDM, is an open-source bilingual (Chinese/English) language model excelling at code generation and demonstrating strong general reasoning capabilities.",
-            "developer": "Thudm",
-            "free": true,
-            "id": "thudm/chatglm3-6b",
-            "name": "Chatglm3 6b"
-        },
-        {
-            "description": "Falcon-3-7B-Instruct, developed by TIIUAE, is a 7 billion parameter, open-source language model excelling at following instructions and demonstrating strong coding capabilities.",
-            "developer": "Tiiuae",
-            "free": true,
-            "id": "tiiuae/falcon3-7b-instruct",
-            "name": "Falcon3 7b"
-        },
-        {
-            "description": "Llama-3-swallow-70b-instruct-v0.1 is a fine-tuned language model excelling in complex reasoning and instruction-following, particularly demonstrating strong coding capabilities.",
-            "developer": "Tokyotech-llm",
-            "free": true,
-            "id": "tokyotech-llm/llama-3-swallow-70b-instruct-v0.1",
-            "name": "Llama 3 Swallow 70b V0.1"
-        },
-        {
             "description": "Solar-10.7b-instruct is a powerful, open-source language model by Upstage excelling at coding tasks and demonstrating strong logical reasoning capabilities in English and Korean.",
             "developer": "Upstage",
             "free": true,
             "id": "upstage/solar-10.7b-instruct",
             "name": "Solar 10.7b"
-        },
-        {
-            "description": "eurollm-9b-instruct is a 9 billion parameter, open-source language model excelling at coding tasks and demonstrating strong multilingual capabilities across European languages.",
-            "developer": "Utter-project",
-            "free": true,
-            "id": "utter-project/eurollm-9b-instruct",
-            "name": "Eurollm 9b"
-        },
-        {
-            "description": "`llama-3-taiwan-70b-instruct` is a fine-tuned Llama 3 70B model excelling in complex reasoning and coding tasks, particularly demonstrating strong performance on Taiwanese-specific datasets.",
-            "developer": "Yentinglin",
-            "free": true,
-            "id": "yentinglin/llama-3-taiwan-70b-instruct",
-            "name": "Llama 3 Taiwan 70b"
         },
         {
             "description": "GLM-4.7, developed by Zhipu AI, is a 33 billion parameter bilingual (English/Chinese) large language model excelling at complex reasoning and coding tasks.",

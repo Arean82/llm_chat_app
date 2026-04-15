@@ -534,7 +534,44 @@ class ModelManagerDialog(QDialog):
         
         # Release lock and restore UI
         self._reset_fetch_state()
-    
+
+    def _on_fetch_error(self, error_msg):
+        """Handle fetch error with user-friendly messages"""
+        from workers.update_logger import get_logger
+        logger = get_logger()
+        logger.add_log(f"Fetch error: {error_msg}", "ERROR")
+        
+        error_lower = error_msg.lower()
+        
+        if "410" in error_msg or "gone" in error_lower:
+            friendly_msg = "Some models have reached their end of life (EOL) and are no longer available.\n\nThese models will be automatically removed from your list.\n\nRun 'Fetch Free Models' again to clean up."
+        elif "400" in error_msg or "bad request" in error_lower:
+            friendly_msg = "Some models are not chat-compatible (embedding, vision-only, etc.) and have been skipped.\n\nThis is normal. Only chat models will appear in your list."
+        elif "401" in error_msg or "unauthorized" in error_lower or "invalid" in error_lower:
+            friendly_msg = "Invalid or expired API key.\n\nPlease check your NVIDIA API key and try again."
+        elif "403" in error_msg or "forbidden" in error_lower:
+            friendly_msg = "Access denied. Your API key may not have permission for this operation."
+        elif "404" in error_msg or "not found" in error_lower:
+            friendly_msg = "Model not found. It may have been removed.\n\nRun 'Fetch Free Models' to update your list."
+        elif "408" in error_msg or "timeout" in error_lower:
+            friendly_msg = "Request timed out.\n\nPlease check your internet connection and try again."
+        elif "429" in error_msg or "rate limit" in error_lower or "too many" in error_lower:
+            friendly_msg = "Rate limit exceeded (40 requests per minute).\n\nPlease wait a moment before trying again."
+        elif "500" in error_msg or "502" in error_msg or "503" in error_msg or "504" in error_msg:
+            friendly_msg = "NVIDIA service is temporarily unavailable.\n\nPlease try again later."
+        elif "connection" in error_lower or "network" in error_lower:
+            friendly_msg = "Network connection error.\n\nPlease check your internet connection."
+        else:
+            friendly_msg = f"Failed to fetch models: {error_msg}\n\nCheck the Log menu for details."
+        
+        QMessageBox.critical(
+            None,
+            "Fetch Failed",
+            friendly_msg
+        )
+        
+        self._reset_fetch_state()
+        
     def _cancel_fetch(self):
         """Cancel background fetch"""
         if hasattr(self, 'fetch_worker') and self.fetch_worker.isRunning():
