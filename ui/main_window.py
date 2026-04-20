@@ -5,6 +5,7 @@ import sys
 import os
 from pathlib import Path
 import re
+import base64
 
 import socket 
 
@@ -61,23 +62,24 @@ class ChatDisplay(QTextEdit):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        # Default handling
         super().mousePressEvent(event)
         
-        # Get cursor at click position
         cursor = self.cursorForPosition(event.pos())
         char_format = cursor.charFormat()
         
-        # Check if we clicked a link with href="copy"
-        if char_format.isAnchor() and char_format.anchorHref() == "copy":
-            self.copy_message_content(cursor)
+        if char_format.isAnchor():
+            href = char_format.anchorHref()
+            
+            # --- Case 1: Copy Raw (Whole Message) ---
+            if href == "copy":
+                self.copy_message_content(cursor)
+            
+            # --- Case 2: Copy Code Block ---
+            elif href.startswith("copy_code:"):
+                self.copy_code_content(href)
 
     def copy_message_content(self, cursor):
-        # Get the current block where we clicked
         block = cursor.block()
-        
-        # Try to find the raw data. 
-        # If the Copy button is on a new line, check the previous block.
         data = block.userData()
         if not data:
             prev_block = block.previous()
@@ -85,11 +87,22 @@ class ChatDisplay(QTextEdit):
                 data = prev_block.userData()
         
         if data and hasattr(data, 'text'):
-            # Copy to clipboard
             clipboard = QApplication.clipboard()
             clipboard.setText(data.text)
-            print(f"Copied to clipboard: {data.text[:20]}...")
-                       
+
+    def copy_code_content(self, href):
+        # Extract the base64 encoded code from the href
+        try:
+            # href format: "copy_code:BASE64_STRING"
+            encoded_code = href.split(":", 1)[1]
+            code_text = base64.b64decode(encoded_code).decode('utf-8')
+            
+            clipboard = QApplication.clipboard()
+            clipboard.setText(code_text)
+            print(f"Copied Code Block ({len(code_text)} chars)")
+        except Exception as e:
+            print(f"Error copying code: {e}")
+
 class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -839,10 +852,8 @@ class MainWindowClass(QMainWindow):
             cursor.setPosition(self.stream_start_position, cursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
 
-            # Convert raw markdown to HTML
-            html = markdown.markdown(full_response, extensions=['extra', 'codehilite', 'fenced_code'])
-            html = html.replace('<pre>', f'<pre style="{self.get_code_block_style()}">')
-            html = html.replace('<code>', f'<code style="{self.get_code_text_style()}">')
+            # Use format_ai_response which now includes code block copy buttons
+            html = self.format_ai_response(full_response)
 
             # Insert the formatted response
             self.chat_display.insertHtml(f"<br>{html}<br>")
@@ -1285,6 +1296,8 @@ class MainWindowClass(QMainWindow):
     def format_ai_response(self, text: str) -> str:
         import markdown
         html = markdown.markdown(text, extensions=['extra', 'fenced_code'])
+        
+        # Regex to find code blocks: <pre><code ...>(content)</code></pre>
         pattern = r'<pre><code(?:\s+class="language-(\w+)")?>(.*?)</code></pre>'
 
         if self.current_theme == "dark":
@@ -1294,6 +1307,7 @@ class MainWindowClass(QMainWindow):
             header_text = "#858585"
             header_border = "#404040"
             outer_border = "#404040"
+            link_color = "#0078d4"
         else:
             code_bg = "#f5f5f5"
             code_text = "#333333"
@@ -1301,20 +1315,30 @@ class MainWindowClass(QMainWindow):
             header_text = "#666666"
             header_border = "#e0e0e0"
             outer_border = "#e0e0e0"
+            link_color = "#0056b3"
 
         def replacer(match):
             lang = match.group(1) or "code"
             code_content = match.group(2)
+            
+            # Encode the raw code so we can pass it in the href
+            encoded_code = base64.b64encode(code_content.encode('utf-8')).decode('utf-8')
+            
             return f'''
             <div style="background-color: {code_bg}; border-radius: 8px; margin: 12px 0; overflow: hidden; border: 1px solid {outer_border}; font-family: Consolas, 'Courier New', monospace;">
-                <div style="background-color: {header_bg}; padding: 8px 15px; color: {header_text}; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; border-bottom: 1px solid {header_border};">
-                    {lang.upper()}
+                <div style="background-color: {header_bg}; padding: 8px 15px; color: {header_text}; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; border-bottom: 1px solid {header_border}; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{lang.upper()}</span>
+                    
+                    <a href="copy_code:{encoded_code}" 
+                       style="color: {link_color}; text-decoration: none; font-size: 11px; font-weight: bold; border: 1px solid {link_color}; padding: 2px 8px; border-radius: 4px;">
+                       📋 Copy
+                    </a>
                 </div>
                 <pre style="margin: 0; padding: 15px; background-color: {code_bg}; overflow-x: auto; color: {code_text}; font-size: 14px; line-height: 1.5;"><code>{code_content}</code></pre>
             </div>
             '''
-        formatted_html = re.sub(pattern, replacer, html, flags=re.DOTALL)
-        return formatted_html
+            
+        return re.sub(pattern, replacer, html, flags=re.DOTALL)
     
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog
