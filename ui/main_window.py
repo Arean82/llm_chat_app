@@ -27,6 +27,8 @@ from utils.model_config import get_context_limit
 
 from PySide6.QtWidgets import QSizePolicy 
 
+from ui.system_prompt_manager import SystemPromptManagerClass
+
 class MessageData(QTextBlockUserData):
     """Helper class to store the raw markdown text inside a text block."""
     def __init__(self, text):
@@ -502,6 +504,7 @@ class MainWindowClass(QMainWindow):
         # Settings menu with Model Manager
         settings_menu = menubar.addMenu("Settings")
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
+        settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions) 
         # settings_menu.addAction("🔑 API Key", self.handle_auth_button)
 
         # Log menu
@@ -523,6 +526,13 @@ class MainWindowClass(QMainWindow):
         self.auth_btn.clicked.connect(self.handle_auth_button)
         self.upload_btn.clicked.connect(self.handle_upload)
         self.theme_toggle_btn.clicked.connect(self.toggle_theme)
+
+    def edit_system_instructions(self):
+        """Opens the System Prompt Manager window."""
+        dialog = SystemPromptManagerClass(self)
+        dialog.exec()
+        # Optional: notify user
+        self.add_system_message("ℹ️ Instruction Library updated.")
         
     def load_models(self):
         pass
@@ -799,7 +809,8 @@ class MainWindowClass(QMainWindow):
         self.add_typing_indicator()
         self.current_response_text = "" 
         
-        self.current_worker = ChatWorker(self.llm_client, self.chat_history)        
+        #self.current_worker = ChatWorker(self.llm_client, self.chat_history)    
+        self.current_worker = ChatWorker(self.llm_client, self.get_messages_for_api())    
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
@@ -814,10 +825,8 @@ class MainWindowClass(QMainWindow):
         self.scroll_to_bottom()
         
     def add_assistant_message(self, message: str):
-        import markdown
-        html = markdown.markdown(message, extensions=['extra', 'codehilite', 'fenced_code'])
-        html = html.replace('<pre>', f'<pre style="{self.get_code_block_style()}">')
-        html = html.replace('<code>', f'<code style="{self.get_code_text_style()}">')
+        # Use the new formatter which handles code blocks, language headers, and copy buttons
+        html = self.format_ai_response(message)
         self.chat_display.append(f"<b>🤖 Assistant:</b><br>{html}")
         self.scroll_to_bottom()
         
@@ -997,7 +1006,8 @@ class MainWindowClass(QMainWindow):
             self.current_response_text = ""
             self.add_typing_indicator()
             
-            self.current_worker = ChatWorker(self.llm_client, self.chat_history)
+            #self.current_worker = ChatWorker(self.llm_client, self.chat_history)
+            self.current_worker = ChatWorker(self.llm_client, self.get_messages_for_api())
             self.current_worker.stream_chunk.connect(self.on_stream_chunk)
             self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
             self.current_worker.response_received.connect(self.on_response_complete)
@@ -1220,6 +1230,43 @@ class MainWindowClass(QMainWindow):
         }
         return "".join(html_escape_table.get(c, c) for c in text)
 
+    def get_messages_for_api(self):
+        """
+        Reads the saved instruction library, combines active items,
+        and returns the full message list ready for the API.
+        """
+        # 1. Copy the existing history
+        messages = list(self.chat_history)
+        
+        # 2. Load the saved data
+        from PySide6.QtCore import QSettings
+        import json
+        
+        settings = QSettings("LLMChatApp", "Settings")
+        library_json = settings.value("system_prompt_library", "[]")
+        
+        # 3. Parse the library
+        try:
+            library = json.loads(library_json)
+        except:
+            library = []
+
+        # 4. Filter active instructions
+        active_texts = []
+        for item in library:
+            if item.get('checked', False):
+                # Get the text content
+                instruction_text = item.get('text', '')
+                if instruction_text:
+                    active_texts.append(f"- {instruction_text}")
+
+        # 5. Combine and inject at the start
+        if active_texts:
+            combined_prompt = "Follow these instructions:\n" + "\n".join(active_texts)
+            messages.insert(0, {"role": "system", "content": combined_prompt})
+            
+        return messages
+
     def changeEvent(self, event):
         if event.type() == QEvent.Type.WindowStateChange:
             is_maximized = self.windowState() & Qt.WindowState.WindowMaximized
@@ -1342,82 +1389,90 @@ class MainWindowClass(QMainWindow):
         self.chat_display.setStyleSheet(self.get_chat_styles())
 
     def format_ai_response(self, text: str) -> str:
+        import re
         import markdown
-        
-        # --- 1. Enable the CodeHilite extension ---
-        html = markdown.markdown(text, extensions=['extra', 'fenced_code', 'codehilite'])
-        
-        # --- 2. Define Pygments Colors ---
-        if self.current_theme == "dark":
-            # Dracula / One Dark Theme
-            code_bg = "#1e1e1e"
-            code_text = "#f8f8f2"
-            header_bg = "#282a36"
-            header_text = "#bd93f9"
-            header_border = "#44475a"
-            outer_border = "#44475a"
-            link_color = "#ff79c6" # Pink accent
-            
-            # Pygments Dark CSS
-            pygments_css = """
-            .k { color: #ff79c6; } .s { color: #50fa7b; } .c { color: #6272a4; } 
-            .n { color: #bd93f9; } .o { color: #ff79c6; } .p { color: #f8f8f2; } 
-            .h { color: #ff79c6; } .nf { color: #50fa7b; } .nc { color: #8be9fd; }
-            .bp { color: #ff79c6; } .mi { color: #bd93f9; } .mf { color: #bd93f9; }
-            """
-        else:
-            # Light Theme (VS Code Light)
-            code_bg = "#ffffff"
-            code_text = "#383a42"
-            header_bg = "#f0f0f0"
-            header_text = "#a0a1a7"
-            header_border = "#d1d1d1"
-            outer_border = "#d1d1d1"
-            link_color = "#0066b8"
-            
-            # Pygments Light CSS
-            pygments_css = """
-            .k { color: #0000ff; } .s { color: #a31515; } .c { color: #008000; } 
-            .n { color: #098658; } .o { color: #000000; } .p { color: #383a42; } 
-            .h { color: #a31515; } .nf { color: #795e26; } .nc { color: #008000; }
-            .bp { color: #0000ff; } .mi { color: #098658; } .mf { color: #098658; }
-            """
+        import base64
 
-        # --- 3. Regex Replacement ---
-        # Updated Regex to handle Pygments adding extra classes (e.g., class="language-python codehilite")
-        pattern = r'<pre><code(?:\s+class="(.*?)")?>(.*?)</code></pre>'
+        # Regex to find fenced code blocks
+        code_block_pattern = re.compile(r'```(\w*)\n([\s\S]*?)\n```')
 
         def replacer(match):
-            # Extract language or default to 'code'
-            # match.group(1) looks like "language-python codehilite"
-            full_class = match.group(1) or "code"
-            if "language-" in full_class:
-                lang = full_class.split("language-")[1].split()[0]
+            lang = match.group(1)
+            code = match.group(2)
+
+            # Handle missing language
+            lang_display = lang.upper() if lang else "CODE"
+
+            # Base64 encode the code for the copy link
+            encoded_code = base64.b64encode(code.encode('utf-8')).decode('utf-8')
+
+            # --- DEFINE COLORS EXPLICITLY ---
+            if self.current_theme == "dark":
+                # Dark Mode Colors
+                header_bg = "#2d2d2d"
+                header_text = "#cccccc"
+                header_border = "#3c3c3c"
+                link_color = "#4fc3f7"
+                # Force Dark Code Block Background
+                code_bg = "#1e1e1e" 
+                code_text = "#d4d4d4"
             else:
-                lang = "code"
-                
-            code_content = match.group(2)
-            
-            # Encode for Copy Button
-            encoded_code = base64.b64encode(code_content.encode('utf-8')).decode('utf-8')
-            
-            return f'''
-            <div style="background-color: {code_bg}; border-radius: 8px; margin: 12px 0; overflow: hidden; border: 1px solid {outer_border}; font-family: Consolas, 'Courier New', monospace;">
-                <style>{pygments_css}</style>
-                <div style="background-color: {header_bg}; padding: 8px 15px; color: {header_text}; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; border-bottom: 1px solid {header_border}; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{lang.upper()}</span>
-                    
-                    <a href="copy_code:{encoded_code}" 
-                       style="color: {link_color}; text-decoration: none; font-size: 11px; font-weight: bold; border: 1px solid {link_color}; padding: 2px 8px; border-radius: 4px;">
-                       📋 Copy
-                    </a>
-                </div>
-                <pre style="margin: 0; padding: 15px; background-color: {code_bg}; overflow-x: auto; color: {code_text}; font-size: 14px; line-height: 1.5;"><code class="{full_class}">{code_content}</code></pre>
+                # Light Mode Colors (FIXED)
+                header_bg = "#f0f0f0"
+                header_text = "#333333"
+                header_border = "#cccccc"
+                link_color = "#0078d4"
+                # Force White Code Block Background to fix "black background" issue
+                code_bg = "#ffffff" 
+                # Force Dark Text to fix "ash letters not visible" issue
+                code_text = "#333333"
+
+            # Construct the Wrapper Style
+            wrapper_style = f"background-color: {code_bg}; border: 1px solid {header_border}; border-radius: 5px; overflow: hidden; margin: 10px 0; font-family: Consolas, monospace;"
+
+            # --- Header HTML ---
+            header_div = f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-bottom: 1px solid {header_border}; font-size: 12px; font-weight: bold; background-color: {header_bg}; color: {header_text};">
+                <span>{lang_display}</span>
+                <a href="copy_code:{encoded_code}" style="color: {link_color}; text-decoration: none; cursor: pointer;">Copy Code</a>
             </div>
-            '''
+            """
+
+            # --- Content HTML ---
+            # Convert markdown to HTML (Syntax Highlighting)
+            inner_html = markdown.markdown(f"```{lang}\n{code}\n```", extensions=['codehilite', 'fenced_code'])
             
-        return re.sub(pattern, replacer, html, flags=re.DOTALL)
-      
+            # CRITICAL FIX: Inject inline styles into the <pre> tag to force background and text color
+            # This overrides any global styles.qss or Pygments defaults that cause the black background
+            inner_html = inner_html.replace('<pre', f'<pre style="background-color: {code_bg}; color: {code_text}; margin: 0; border: none; border-radius: 0;"')
+            
+            # Also fix the overflow container
+            content_div = f'<div style="overflow-x: auto;">{inner_html}</div>'
+
+            return f'<div style="{wrapper_style}">{header_div}{content_div}</div>'
+
+        # Process the text
+        parts = []
+        last_pos = 0
+        
+        for match in code_block_pattern.finditer(text):
+            # 1. Add text before code block
+            if match.start() > last_pos:
+                normal_text = text[last_pos:match.start()]
+                # For normal text, use the global theme color implicitly
+                parts.append(markdown.markdown(normal_text, extensions=['extra', 'codehilite', 'fenced_code']))
+
+            # 2. Add processed code block
+            parts.append(replacer(match))
+            last_pos = match.end()
+
+        # 3. Add remaining text
+        if last_pos < len(text):
+            normal_text = text[last_pos:]
+            parts.append(markdown.markdown(normal_text, extensions=['extra', 'codehilite', 'fenced_code']))
+
+        return "".join(parts)
+        
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog
 
