@@ -4,3 +4,4 @@ markdown>=3.4.0
 # For packaging
 pyinstaller>=6.0.0
 # or nuitka>=2.0.0
+Pygments

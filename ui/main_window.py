@@ -1343,37 +1343,67 @@ class MainWindowClass(QMainWindow):
 
     def format_ai_response(self, text: str) -> str:
         import markdown
-        html = markdown.markdown(text, extensions=['extra', 'fenced_code'])
         
-        # Regex to find code blocks: <pre><code ...>(content)</code></pre>
-        pattern = r'<pre><code(?:\s+class="language-(\w+)")?>(.*?)</code></pre>'
-
+        # --- 1. Enable the CodeHilite extension ---
+        html = markdown.markdown(text, extensions=['extra', 'fenced_code', 'codehilite'])
+        
+        # --- 2. Define Pygments Colors ---
         if self.current_theme == "dark":
+            # Dracula / One Dark Theme
             code_bg = "#1e1e1e"
-            code_text = "#d4d4d4"
-            header_bg = "#2d2d2d"
-            header_text = "#858585"
-            header_border = "#404040"
-            outer_border = "#404040"
-            link_color = "#0078d4"
+            code_text = "#f8f8f2"
+            header_bg = "#282a36"
+            header_text = "#bd93f9"
+            header_border = "#44475a"
+            outer_border = "#44475a"
+            link_color = "#ff79c6" # Pink accent
+            
+            # Pygments Dark CSS
+            pygments_css = """
+            .k { color: #ff79c6; } .s { color: #50fa7b; } .c { color: #6272a4; } 
+            .n { color: #bd93f9; } .o { color: #ff79c6; } .p { color: #f8f8f2; } 
+            .h { color: #ff79c6; } .nf { color: #50fa7b; } .nc { color: #8be9fd; }
+            .bp { color: #ff79c6; } .mi { color: #bd93f9; } .mf { color: #bd93f9; }
+            """
         else:
-            code_bg = "#f5f5f5"
-            code_text = "#333333"
-            header_bg = "#e8e8e8"
-            header_text = "#666666"
-            header_border = "#e0e0e0"
-            outer_border = "#e0e0e0"
-            link_color = "#0056b3"
+            # Light Theme (VS Code Light)
+            code_bg = "#ffffff"
+            code_text = "#383a42"
+            header_bg = "#f0f0f0"
+            header_text = "#a0a1a7"
+            header_border = "#d1d1d1"
+            outer_border = "#d1d1d1"
+            link_color = "#0066b8"
+            
+            # Pygments Light CSS
+            pygments_css = """
+            .k { color: #0000ff; } .s { color: #a31515; } .c { color: #008000; } 
+            .n { color: #098658; } .o { color: #000000; } .p { color: #383a42; } 
+            .h { color: #a31515; } .nf { color: #795e26; } .nc { color: #008000; }
+            .bp { color: #0000ff; } .mi { color: #098658; } .mf { color: #098658; }
+            """
+
+        # --- 3. Regex Replacement ---
+        # Updated Regex to handle Pygments adding extra classes (e.g., class="language-python codehilite")
+        pattern = r'<pre><code(?:\s+class="(.*?)")?>(.*?)</code></pre>'
 
         def replacer(match):
-            lang = match.group(1) or "code"
+            # Extract language or default to 'code'
+            # match.group(1) looks like "language-python codehilite"
+            full_class = match.group(1) or "code"
+            if "language-" in full_class:
+                lang = full_class.split("language-")[1].split()[0]
+            else:
+                lang = "code"
+                
             code_content = match.group(2)
             
-            # Encode the raw code so we can pass it in the href
+            # Encode for Copy Button
             encoded_code = base64.b64encode(code_content.encode('utf-8')).decode('utf-8')
             
             return f'''
             <div style="background-color: {code_bg}; border-radius: 8px; margin: 12px 0; overflow: hidden; border: 1px solid {outer_border}; font-family: Consolas, 'Courier New', monospace;">
+                <style>{pygments_css}</style>
                 <div style="background-color: {header_bg}; padding: 8px 15px; color: {header_text}; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; border-bottom: 1px solid {header_border}; display: flex; justify-content: space-between; align-items: center;">
                     <span>{lang.upper()}</span>
                     
@@ -1382,12 +1412,12 @@ class MainWindowClass(QMainWindow):
                        📋 Copy
                     </a>
                 </div>
-                <pre style="margin: 0; padding: 15px; background-color: {code_bg}; overflow-x: auto; color: {code_text}; font-size: 14px; line-height: 1.5;"><code>{code_content}</code></pre>
+                <pre style="margin: 0; padding: 15px; background-color: {code_bg}; overflow-x: auto; color: {code_text}; font-size: 14px; line-height: 1.5;"><code class="{full_class}">{code_content}</code></pre>
             </div>
             '''
             
         return re.sub(pattern, replacer, html, flags=re.DOTALL)
-    
+      
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog
 
