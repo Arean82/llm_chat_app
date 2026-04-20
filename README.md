@@ -16,6 +16,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 📎 **File Attachments:** Upload your code (`.py`, `.js`), text, or data files directly into the chat for instant AI analysis.
 - 🔄 **Multi-Model Support:** Easily switch between powerful models like Llama 3, DeepSeek, Qwen, and Gemma via a clean UI popup.
 - 📦 **Model Manager:** Add, edit, or remove models directly from the UI. Changes save instantly to `models.json` — no manual file editing needed.
+- 🏷️ **System Instruction Library:** Manage custom AI personas and rules. Create instruction sets (e.g., 'Python Expert', 'Friendly Tutor') and toggle them on/off via the Settings menu.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
 - 💾 **Smart Conversation Management:** Save and load chat histories as JSON files. It automatically saves and restores the exact model used for the session.
@@ -41,6 +42,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🏷️ **Model Info Label**: A subtle italic label next to the dropdown populates with the model description so you know its capabilities at a glance.
 - 📋 **Log Menu:** View real-time update logs with filtering by log level. Clear logs when needed.
 - ✨ **Generate Descriptions Button:** In Model Manager, select any working model to automatically generate descriptions for all models missing them.
+- 📝 **System Instructions:** Access the Instruction Library via Settings to create, edit, and toggle system prompts.
 
 ---
 
@@ -83,7 +85,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
    ```
 2. 📸 **First Launch:** A secure login popup will prompt you for your NVIDIA API key (`nvapi-...`).
 3. 🤖 **Select Model:** A popup will let you choose your desired AI model.
-4. 💬 **Start Chatting:** Type your message and press `Enter`.
+4. 💬 **Start Chatting:** Type your message. Press `Enter` to send, or `Shift+Enter` for a new line.
 5. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
 6. ⏹️ **Stop Generation:** Click the red "Stop" button at any time to halt the response.
 
@@ -108,6 +110,7 @@ llm_chat_app/
 │   ├── main_window.ui  
 │   ├── model_edit_dialog.ui
 │   ├── model_manager.ui    
+|   ├── system_prompt_manager.ui 
 │   └── model_popup.ui
 │
 ├── ui/                             # 🧩 Python UI logic
@@ -116,6 +119,7 @@ llm_chat_app/
 │   ├── main_window.py              # Main app controller
 │   ├── model_edit_dialog.py        # Model add/edit/delete manager
 │   ├── model_manager.py            # Model add/edit/delete manager
+│   ├── system_prompt_manager.py    # System Prompt Manager Logi
 │   └── model_popup.py              # Model selector
 │
 ├── logic/                          # ⚙️ Backend engine
@@ -170,10 +174,10 @@ The application features a comprehensive logging system for background operation
 
 ## ⌨️ Keyboard Shortcuts
 
-| Key | Action |
+| **Key** | **Action** |
 | :--- | :--- |
 | `Enter` | Send message |
-| `Stop` | Halt AI generation |
+| `Shift + Enter` | Insert new line |
 | `F11` | Toggle true Fullscreen |
 | `Esc` | Exit true Fullscreen |
 
