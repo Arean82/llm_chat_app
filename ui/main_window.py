@@ -77,6 +77,13 @@ class ChatDisplay(QTextEdit):
             # --- Case 2: Copy Code Block ---
             elif href.startswith("copy_code:"):
                 self.copy_code_content(href)
+                
+            # --- Case 3: Regenerate Response ---
+            elif href == "regenerate":
+                # FIX: Use self.window() to get the MainWindowClass instance
+                main_window = self.window()
+                if main_window:
+                    main_window.regenerate_last_response()
 
     def copy_message_content(self, cursor):
         block = cursor.block()
@@ -398,26 +405,47 @@ class MainWindowClass(QMainWindow):
             return "#e0e0e0"
 
     def get_copy_button_html(self):
-        # Determine link color based on the current theme
-        blue = "#0078d4" if self.current_theme == "dark" else "#0056b3"
-        
+        # Define colors for both buttons based on the current theme
+        if self.current_theme == "dark":
+            blue = "#0078d4"
+            orange = "#ff9800"
+        else:
+            blue = "#0056b3"
+            orange = "#e65100"  # Darker orange for better contrast in light mode
+
         return (
-            f'<div style="text-align: right; margin-top: 10px;">'
+            f'<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">'
+            
+            # --- Regenerate Button ---
+            f'<a href="regenerate" '
+            f'style="display: inline-block; '
+            f'border: 1px solid {orange}; '
+            f'background-color: rgba(255, 152, 0, 0.1); '
+            f'color: {orange}; '
+            f'padding: 6px 15px; '
+            f'border-radius: 6px; '
+            f'text-decoration: none; '
+            f'font-size: 12px; '
+            f'font-weight: bold;">'
+            f'🔄 Regenerate'
+            f'</a>'
+
+            # --- Copy Raw Button ---
             f'<a href="copy" '
             f'style="display: inline-block; '
-            f'border: 1px solid {blue}; '       # Adds the border
-            f'background-color: rgba(0, 120, 212, 0.1); ' # Subtle background fill
-            f'color: {blue}; '                   # Text color
-            f'padding: 6px 15px; '               # Makes it bigger/easier to click
-            f'border-radius: 6px; '              # Rounded corners
-            f'text-decoration: none; '           # Removes underline
+            f'border: 1px solid {blue}; '
+            f'background-color: rgba(0, 120, 212, 0.1); '
+            f'color: {blue}; '
+            f'padding: 6px 15px; '
+            f'border-radius: 6px; '
+            f'text-decoration: none; '
             f'font-size: 12px; '
             f'font-weight: bold;">'
             f'📋 Copy Raw'
             f'</a>'
+            
             f'</div>'
-        )
-    
+        ) 
     # ---------------------------------------------------------
     # END THEME SYSTEM
     # ---------------------------------------------------------
@@ -782,18 +810,7 @@ class MainWindowClass(QMainWindow):
         self.set_send_button_generating()
         
     def add_user_message(self, message: str):
-        # 1. Insert the formatted message
         self.chat_display.append(f"<b>You:</b> {self.escape_html(message)}")
-        
-        # 2. Store the raw text in the current block
-        cursor = self.chat_display.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        block = cursor.block()
-        block.setUserData(MessageData(message))
-        
-        # 3. Append the copy button
-        self.chat_display.insertHtml(self.get_copy_button_html())
-        
         self.scroll_to_bottom()
         
     def add_assistant_message(self, message: str):
@@ -808,7 +825,7 @@ class MainWindowClass(QMainWindow):
         color = self.get_system_message_color()
         self.chat_display.append(f"<i style='color: {color};'>ℹ️ {self.escape_html(message)}</i>")
         self.scroll_to_bottom()
-        
+
     def add_typing_indicator(self):
         self.chat_display.append("<i>🤖 Assistant is typing...</i>")
         self.scroll_to_bottom()
@@ -845,56 +862,45 @@ class MainWindowClass(QMainWindow):
         import markdown
         self.chat_history.append({"role": "assistant", "content": full_response})
 
-        # CASE 1: Normal Streaming Response
         if self.stream_start_position is not None:
             cursor = self.chat_display.textCursor()
             cursor.movePosition(cursor.MoveOperation.End)
             cursor.setPosition(self.stream_start_position, cursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
 
-            # Use format_ai_response which now includes code block copy buttons
+            # 1. Generate the Rich HTML (Markdown + Code Blocks)
             html = self.format_ai_response(full_response)
 
-            # Insert the formatted response
+            # 2. Insert the HTML directly (No bubbles)
             self.chat_display.insertHtml(f"<br>{html}<br>")
             self.stream_start_position = None
             
-            # --- NEW: Add Copy Button & Attach Raw Data ---
-            # 1. Insert the copy button HTML
-            self.chat_display.insertHtml(self.get_copy_button_html())
-            
-            # 2. Move cursor to the block we just created (the button block)
+            # 3. Attach Data for Copying
             cursor = self.chat_display.textCursor()
             cursor.movePosition(QTextCursor.End)
             cursor.movePosition(QTextCursor.StartOfBlock)
-            
-            # 3. Attach the raw data to THIS block.
-            # This way, when the user clicks the link in this block, 
-            # the ChatDisplay class can easily retrieve the data from it.
             block = cursor.block()
             block.setUserData(MessageData(full_response))
-            # ---------------------------------------------
 
-        # CASE 2: Fallback (Non-streamed or direct message)
+            # 4. Append Copy Button
+            self.chat_display.insertHtml(self.get_copy_button_html())
+
         else:
-            self.chat_display.append("<b>🤖 Assistant:</b> ")
+            # Fallback for non-streamed
+            self.chat_display.append("<b>🤖 Assistant:</b> ") 
             
             cursor = self.chat_display.textCursor()
             cursor.movePosition(QTextCursor.StartOfBlock)
             block = cursor.block()
             block.setUserData(MessageData(full_response))
             
-            html = markdown.markdown(full_response, extensions=['extra', 'codehilite', 'fenced_code'])
-            html = html.replace('<pre>', f'<pre style="{self.get_code_block_style()}">')
-            html = html.replace('<code>', f'<code style="{self.get_code_text_style()}">')
-            
+            html = self.format_ai_response(full_response)
             self.chat_display.insertHtml(html)
             self.chat_display.insertHtml(self.get_copy_button_html())
 
-        # Reset streaming state
         self.current_response_text = ""
         
-        # Display generation time
+        # Timing
         if self.response_start_time:
             elapsed = time.perf_counter() - self.response_start_time
             self.chat_display.append(
@@ -962,6 +968,48 @@ class MainWindowClass(QMainWindow):
     def scroll_to_bottom(self):
         scrollbar = self.chat_display.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def regenerate_last_response(self):
+        # 1. Check if we have history
+        if len(self.chat_history) < 2:
+            return
+
+        # 2. The last message should be the Assistant's.
+        # We need to pop it so the LLM generates a fresh one.
+        last_role = self.chat_history[-1]["role"]
+        
+        if last_role == "assistant":
+            # Remove the assistant's response from memory
+            removed = self.chat_history.pop()
+            
+            # Remove the visual content from the chat display
+            # Note: This is a simple visual clear. A more complex way is 
+            # to remove the last specific text block, but clearing the last
+            # line is safer for a quick implementation.
+            cursor = self.chat_display.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            cursor.select(QTextCursor.BlockUnderCursor)
+            cursor.removeSelectedText()
+            # Also try to remove the "Copy Raw" line
+            cursor.deletePreviousChar()
+
+            # 3. Re-trigger the worker
+            self.current_response_text = ""
+            self.add_typing_indicator()
+            
+            self.current_worker = ChatWorker(self.llm_client, self.chat_history)
+            self.current_worker.stream_chunk.connect(self.on_stream_chunk)
+            self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
+            self.current_worker.response_received.connect(self.on_response_complete)
+            self.current_worker.error_occurred.connect(self.on_error)
+            self.current_worker.finished.connect(self.on_worker_finished)
+            self.current_worker.metrics_received.connect(self.on_metrics_received)
+            self.current_worker.start()
+            self.set_send_button_generating()
+            
+            # Add system message for feedback
+            self.add_system_message("🔄 Regenerating response...")
+
 
     # ---------------------------------------------------------
     # STOP GENERATION & TOGGLE
@@ -1356,3 +1404,4 @@ class MainWindowClass(QMainWindow):
 
         dialog = ModelManagerDialog(theme=self.current_theme, parent=self)
         dialog.exec()
+
