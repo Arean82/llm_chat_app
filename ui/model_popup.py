@@ -43,6 +43,7 @@ class ModelPopupClass(QDialog):
         
         # Wire buttons
         self.ui.apply_btn.clicked.connect(self.on_apply)
+        self.ui.cancel_btn.clicked.connect(self.reject)
         # Cancel is already wired in the .ui file to reject()
 
     def setup_table(self):
