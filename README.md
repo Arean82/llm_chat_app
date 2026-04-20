@@ -56,23 +56,23 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Arean82/llm_chat_app.git
-   cd llm_chat_app
+   git clone https://github.com/Arean82/llm_chat_app.git   
+   cd llm_chat_app   
    ```
 
 2. **Create and activate a virtual environment (Optional but recommended):**  
 
    ```bash
-   python -m venv venv
-   # Windows
-   venv\Scripts\activate
-   # macOS/Linux
-   source venv/bin/activate
+   python -m venv venv   
+   # Windows  
+   venv\Scripts\activate   
+   # macOS/Linux   
+   source venv/bin/activate   
    ```
 3. **Install dependencies:**
 
-   ```bash
-   pip install PySide6 openai markdown
+   ```bash   
+   pip install PySide6 openai markdown   
    ```
 
 ---
@@ -81,7 +81,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 
 1. Run the application:
    ```bash
-   python main.py
+   python main.py   
    ```
 2. 📸 **First Launch:** A secure login popup will prompt you for your NVIDIA API key (`nvapi-...`).
 3. 🤖 **Select Model:** A popup will let you choose your desired AI model.

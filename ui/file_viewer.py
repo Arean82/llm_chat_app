@@ -120,17 +120,34 @@ class FileViewerDialog(QDialog):
                 }
             """)
             import markdown
+            
+            # Convert MD to HTML
             html = markdown.markdown(content, extensions=['extra', 'fenced_code', 'codehilite'])
             
+            # FIX: Inject CSS to preserve newlines in code blocks
+            # "white-space: pre-wrap" preserves newlines but also wraps long lines
+            # so you don't have to scroll horizontally forever.
+            style_fix = """
+            <style>
+                pre { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; background-color: #f6f8fa; padding: 10px; border-radius: 4px; }
+                code { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; }
+            </style>
+            """
+            
+            # Prepend the style to the HTML
+            html = style_fix + html
+
             # 1. Show text IMMEDIATELY (no hang). Badges will just be blank for a microsecond.
             self.text_browser.setHtml(html)
             
             # 2. Start background thread to download badges
+            # We pass the 'html' variable which now contains the CSS styles
             self.cache_worker = BadgeCacheWorker(html)
             self.cache_worker.finished.connect(self.on_badges_cached)
             self.cache_worker.start()
             
         else:
+            # ... (Keep your existing plain text logic unchanged) ...
             self.text_browser.setStyleSheet("""
                 QTextBrowser {
                     background-color: #F5F5F5;
@@ -144,6 +161,7 @@ class FileViewerDialog(QDialog):
             """)
             self.text_browser.setPlainText(content)
 
+            
     def on_badges_cached(self, updated_html: str):
         """Slot called by the background thread when downloads are complete"""
         # Preserve the user's scroll position so it doesn't jump to the top
