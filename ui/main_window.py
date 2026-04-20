@@ -12,9 +12,9 @@ import time
 import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QVBoxLayout, QWidget, QApplication
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QTextEdit, QVBoxLayout, QWidget, QApplication
 from PySide6.QtCore import QEvent, QTimer, Qt, QSettings
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QTextBlockUserData, QTextCursor
 from PySide6.QtUiTools import QUiLoader
 
 from logic.llm_client import LLMClient
@@ -26,6 +26,70 @@ from utils.model_config import get_context_limit
 
 from PySide6.QtWidgets import QSizePolicy 
 
+class MessageData(QTextBlockUserData):
+    """Helper class to store the raw markdown text inside a text block."""
+    def __init__(self, text):
+        super().__init__()
+        self.text = text
+
+class ChatDisplay(QTextEdit):
+    """Custom QTextEdit that handles clicking on the 'Copy' link."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Allow links to be clicked
+        self.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse | 
+            Qt.TextInteractionFlag.LinksAccessibleByMouse
+        )
+        # Ensure we track mouse movement
+        self.setMouseTracking(True)
+
+    def mouseMoveEvent(self, event):
+        # Check what is under the mouse cursor
+        cursor = self.cursorForPosition(event.pos())
+        
+        # If the character under the mouse is a link (anchor)
+        if cursor.charFormat().isAnchor():
+            # Force the Hand Cursor
+            self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+        else:
+            # Revert to standard text cursor (IBeam)
+            self.viewport().unsetCursor()
+        
+        # Call parent to keep text selection working
+        super().mouseMoveEvent(event)
+
+    def mousePressEvent(self, event):
+        # Default handling
+        super().mousePressEvent(event)
+        
+        # Get cursor at click position
+        cursor = self.cursorForPosition(event.pos())
+        char_format = cursor.charFormat()
+        
+        # Check if we clicked a link with href="copy"
+        if char_format.isAnchor() and char_format.anchorHref() == "copy":
+            self.copy_message_content(cursor)
+
+    def copy_message_content(self, cursor):
+        # Get the current block where we clicked
+        block = cursor.block()
+        
+        # Try to find the raw data. 
+        # If the Copy button is on a new line, check the previous block.
+        data = block.userData()
+        if not data:
+            prev_block = block.previous()
+            if prev_block.isValid():
+                data = prev_block.userData()
+        
+        if data and hasattr(data, 'text'):
+            # Copy to clipboard
+            clipboard = QApplication.clipboard()
+            clipboard.setText(data.text)
+            print(f"Copied to clipboard: {data.text[:20]}...")
+                       
 class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -48,9 +112,21 @@ class MainWindowClass(QMainWindow):
             return
         
         self.setCentralWidget(self.ui)
+
+        # Swap the standard chat_display with our custom ChatDisplay
+        old_chat = self.ui.chat_display
+        self.chat_display = ChatDisplay(self.ui.centralwidget)
         
+        # Copy geometry and properties from the old widget
+        self.chat_display.setGeometry(old_chat.geometry())
+        self.chat_display.setStyleSheet(old_chat.styleSheet())
+        
+        # Replace the widget in the layout
+        self.ui.main_layout.replaceWidget(old_chat, self.chat_display)
+        old_chat.deleteLater()
+
         # WIDGETS
-        self.chat_display = self.ui.chat_display
+        #self.chat_display = self.ui.chat_display
         self.input_field = self.ui.input_field
         self.send_btn = self.ui.send_btn
         self.model_btn = self.ui.model_btn
@@ -308,6 +384,27 @@ class MainWindowClass(QMainWindow):
         else:
             return "#e0e0e0"
 
+    def get_copy_button_html(self):
+        # Determine link color based on the current theme
+        blue = "#0078d4" if self.current_theme == "dark" else "#0056b3"
+        
+        return (
+            f'<div style="text-align: right; margin-top: 10px;">'
+            f'<a href="copy" '
+            f'style="display: inline-block; '
+            f'border: 1px solid {blue}; '       # Adds the border
+            f'background-color: rgba(0, 120, 212, 0.1); ' # Subtle background fill
+            f'color: {blue}; '                   # Text color
+            f'padding: 6px 15px; '               # Makes it bigger/easier to click
+            f'border-radius: 6px; '              # Rounded corners
+            f'text-decoration: none; '           # Removes underline
+            f'font-size: 12px; '
+            f'font-weight: bold;">'
+            f'📋 Copy Raw'
+            f'</a>'
+            f'</div>'
+        )
+    
     # ---------------------------------------------------------
     # END THEME SYSTEM
     # ---------------------------------------------------------
@@ -672,7 +769,18 @@ class MainWindowClass(QMainWindow):
         self.set_send_button_generating()
         
     def add_user_message(self, message: str):
+        # 1. Insert the formatted message
         self.chat_display.append(f"<b>You:</b> {self.escape_html(message)}")
+        
+        # 2. Store the raw text in the current block
+        cursor = self.chat_display.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        block = cursor.block()
+        block.setUserData(MessageData(message))
+        
+        # 3. Append the copy button
+        self.chat_display.insertHtml(self.get_copy_button_html())
+        
         self.scroll_to_bottom()
         
     def add_assistant_message(self, message: str):
@@ -724,22 +832,58 @@ class MainWindowClass(QMainWindow):
         import markdown
         self.chat_history.append({"role": "assistant", "content": full_response})
 
+        # CASE 1: Normal Streaming Response
         if self.stream_start_position is not None:
             cursor = self.chat_display.textCursor()
             cursor.movePosition(cursor.MoveOperation.End)
             cursor.setPosition(self.stream_start_position, cursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
 
+            # Convert raw markdown to HTML
             html = markdown.markdown(full_response, extensions=['extra', 'codehilite', 'fenced_code'])
             html = html.replace('<pre>', f'<pre style="{self.get_code_block_style()}">')
             html = html.replace('<code>', f'<code style="{self.get_code_text_style()}">')
 
+            # Insert the formatted response
             self.chat_display.insertHtml(f"<br>{html}<br>")
             self.stream_start_position = None
-        else:
-            self.add_assistant_message(full_response)
+            
+            # --- NEW: Add Copy Button & Attach Raw Data ---
+            # 1. Insert the copy button HTML
+            self.chat_display.insertHtml(self.get_copy_button_html())
+            
+            # 2. Move cursor to the block we just created (the button block)
+            cursor = self.chat_display.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            cursor.movePosition(QTextCursor.StartOfBlock)
+            
+            # 3. Attach the raw data to THIS block.
+            # This way, when the user clicks the link in this block, 
+            # the ChatDisplay class can easily retrieve the data from it.
+            block = cursor.block()
+            block.setUserData(MessageData(full_response))
+            # ---------------------------------------------
 
+        # CASE 2: Fallback (Non-streamed or direct message)
+        else:
+            self.chat_display.append("<b>🤖 Assistant:</b> ")
+            
+            cursor = self.chat_display.textCursor()
+            cursor.movePosition(QTextCursor.StartOfBlock)
+            block = cursor.block()
+            block.setUserData(MessageData(full_response))
+            
+            html = markdown.markdown(full_response, extensions=['extra', 'codehilite', 'fenced_code'])
+            html = html.replace('<pre>', f'<pre style="{self.get_code_block_style()}">')
+            html = html.replace('<code>', f'<code style="{self.get_code_text_style()}">')
+            
+            self.chat_display.insertHtml(html)
+            self.chat_display.insertHtml(self.get_copy_button_html())
+
+        # Reset streaming state
         self.current_response_text = ""
+        
+        # Display generation time
         if self.response_start_time:
             elapsed = time.perf_counter() - self.response_start_time
             self.chat_display.append(
@@ -747,7 +891,7 @@ class MainWindowClass(QMainWindow):
                 f"⏱️ {elapsed:.2f}s</div>"
             )
         self.scroll_to_bottom()
-        
+
     def on_metrics_received(self, metrics: dict):
         border_color = self.get_metrics_border_color()
         metrics_html = f"""
