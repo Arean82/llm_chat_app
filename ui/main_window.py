@@ -150,6 +150,7 @@ class MainWindowClass(QMainWindow):
         # WIDGETS
         #self.chat_display = self.ui.chat_display
         self.input_field = self.ui.input_field
+        self.input_field.installEventFilter(self)
         self.send_btn = self.ui.send_btn
         self.model_btn = self.ui.model_btn
         self.model_desc_label = self.ui.model_desc_label  # Added reference to model description label
@@ -521,11 +522,65 @@ class MainWindowClass(QMainWindow):
         
     def setup_connections(self):
         self.send_btn.clicked.connect(self.handle_send_stop_toggle)
-        self.input_field.returnPressed.connect(self.send_message)
+        #self.input_field.returnPressed.connect(self.send_message)
         self.model_btn.clicked.connect(self.show_model_popup)
         self.auth_btn.clicked.connect(self.handle_auth_button)
         self.upload_btn.clicked.connect(self.handle_upload)
         self.theme_toggle_btn.clicked.connect(self.toggle_theme)
+
+    def eventFilter(self, obj, event):
+        """
+        Intercepts key events for the input field to handle Enter/Shift+Enter.
+        """
+        # 1. Check if the event is a Key Press happening on the input_field
+        if obj == self.input_field and event.type() == event.Type.KeyPress:
+            key = event.key()
+            modifiers = event.modifiers()
+
+            # 2. Check if Enter or Return is pressed
+            if key in (Qt.Key_Return, Qt.Key_Enter):
+                
+                # 3. Check if Shift is held down
+                if modifiers == Qt.ShiftModifier:
+                    # Case A: Shift+Enter -> Let the text edit handle it (New Line)
+                    return False 
+                else:
+                    # Case B: Enter Only -> Send Message & Stop the new line
+                    self.send_message()
+                    return True # Return True means "I handled this, don't pass it to the widget"
+
+        # 4. For all other keys/events, use default behavior
+        return super().eventFilter(obj, event)
+
+    def keyPressEvent(self, event):
+        """
+        Handle keyboard events.
+        - Enter: Send Message
+        - Shift+Enter: New Line
+        """
+        # Check if the focus is on the input field
+        if self.input_field.hasFocus():
+            
+            # Check if Enter or Return key is pressed
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                
+                # Check if Shift modifier is held down
+                modifiers = event.modifiers()
+                if modifiers == Qt.ShiftModifier:
+                    # Shift+Enter: Allow default behavior (inserts new line)
+                    super().keyPressEvent(event)
+                else:
+                    # Enter only: Send Message (Prevents new line insertion)
+                    self.send_message()
+                    return # Stop event from processing further
+            
+            # Allow Tab to work normally (focus handling)
+            else:
+                super().keyPressEvent(event)
+        
+        else:
+            # If focus is not on input, handle keys normally
+            super().keyPressEvent(event)
 
     def edit_system_instructions(self):
         """Opens the System Prompt Manager window."""
@@ -723,8 +778,8 @@ class MainWindowClass(QMainWindow):
         self.input_field.setPlaceholderText("")
 
     def send_message(self):
-        user_message = self.input_field.text().strip()
-        
+        #user_message = self.input_field.text().strip()
+        user_message = self.input_field.toPlainText().strip()
         if not user_message and not self.attached_files:
             return
 

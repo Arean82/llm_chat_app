@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
+    <width>1255</width>
     <height>700</height>
    </rect>
   </property>
@@ -208,6 +208,12 @@
       </property>
       <item>
        <widget class="QPushButton" name="upload_btn">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>100</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">font: 900 22pt &quot;DS-Digital&quot;;</string>
         </property>
@@ -217,7 +223,13 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="input_field">
+       <widget class="QTextEdit" name="input_field">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>80</height>
+         </size>
+        </property>
         <property name="placeholderText">
          <string>Ask me anything about coding...</string>
         </property>
@@ -234,7 +246,7 @@
         <property name="maximumSize">
          <size>
           <width>80</width>
-          <height>16777215</height>
+          <height>80</height>
          </size>
         </property>
         <property name="cursor">
