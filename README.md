@@ -235,13 +235,13 @@ Run this from the project root. The project includes three spec files for differ
 
 ```bash
 # One-dir build (folder with exe + dependencies)
-pyinstaller main_onedir.spec
+pyinstaller LLM_Chat_App_onedir.spec
 
 # One-file build (single executable)
-pyinstaller main_onefile.spec
+pyinstaller LLM_Chat_App_onefile.spec
 
 # Combined build (creates both One-file and One-dir)
-pyinstaller main_combined.spec
+pyinstaller LLM_Chat_App_combined.spec
 ```
 
 **Build outputs:**
@@ -267,54 +267,66 @@ pyinstaller main_combined.spec
 
 The installer copies the entire `dist/LLM Chat App/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
-#### 🐧 Linux (AppImage)
-Linux does not use "installers" in the traditional sense. Instead, we package the app as a portable AppImage.
+#### 🐧 Linux (DEB Package)
+Linux users can install and uninstall properly using DEB packages:
+
 ```bash
-# Install AppImage dependencies (Ubuntu/Debian)
-sudo apt install libfuse2
+# Build one-dir first
+pyinstaller LLM_Chat_App_onedir.spec
 
-# Create the AppDir structure
-mkdir -p LLMChatApp.AppDir/usr/bin
-mkdir -p LLMChatApp.AppDir/usr/share/icons/hicolor/256x256/apps
-cp -r "dist/LLM Chat App/"* LLMChatApp.AppDir/usr/bin/
+# Create DEB package structure
+mkdir -p llmchatapp/usr/local/bin
+mkdir -p llmchatapp/usr/share/applications
+mkdir -p llmchatapp/usr/share/icons/hicolor/256x256/apps
+mkdir -p llmchatapp/DEBIAN
 
-# Create the Linux desktop shortcut
-cat << 'EOF' > LLMChatApp.AppDir/LLMChatApp.desktop
+# Copy files
+cp -r "dist/LLM Chat App/"* llmchatapp/usr/local/bin/
+
+# Copy icon
+cp resources/app_icon_linux.png llmchatapp/usr/share/icons/hicolor/256x256/apps/llmchatapp.png
+
+# Create desktop entry
+cat > llmchatapp/usr/share/applications/llmchatapp.desktop << EOF
 [Desktop Entry]
 Name=LLM Chat App
-Exec=AppRun
-Icon=app_icon
+Exec=/usr/local/bin/LLM Chat App
+Icon=llmchatapp
 Type=Application
 Categories=Utility;
 EOF
 
-# Add the icon
-cp resources/app_icon_linux.png LLMChatApp.AppDir/usr/share/icons/hicolor/256x256/apps/app_icon.png
-ln -s LLMChatApp.AppDir/usr/share/icons/hicolor/256x256/apps/app_icon.png LLMChatApp.AppDir/app_icon.png
+# Create control file
+cat > llmchatapp/DEBIAN/control << EOF
+Package: llmchatapp
+Version: 3.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Arean Narrayan
+Description: LLM Chat Application
+ Desktop client for NVIDIA NIM API
+EOF
 
-# Download appimagetool and build the AppImage
-wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-chmod +x appimagetool
-./appimagetool LLMChatApp.AppDir/
+# Build DEB
+dpkg-deb --build llmchatapp llm_chat_app_3.0.0.deb
 ```
-*Output: `LLMChatApp-x86_64.AppImage` (To "uninstall", the user simply deletes this file).*
 
-#### 🍎 macOS (DMG)
-Because our `main.spec` auto-detects Windows icons, we explicitly pass the Mac icon via command line:
+Install: `sudo dpkg -i llm_chat_app_3.0.0.deb`
+Uninstall: `sudo dpkg -r llmchatapp`
+
+#### 🍎 macOS (PKG)
 ```bash
-pyinstaller --onedir --windowed \
-    --name "LLM Chat App" \
-    --icon "resources/app_icon.icns" \
-    --add-data "resources:resources" \
-    --add-data "ui_designer:ui_designer" \
-    --hidden-import markdown --hidden-import openai --hidden-import certifi --hidden-import urllib3 \
-    --exclude-module PyQt5 --exclude-module PyQt6 --exclude-module tkinter \
-    main.py
+# Build one-dir first
+pyinstaller LLM_Chat_App_onedir.spec
 
-# Package into a DMG
-hdiutil create -volname "LLM Chat App" -srcfolder "dist/LLM Chat App.app" -ov -format UDZO "LLM_Chat_App_Mac.dmg"
+# Create PKG installer
+pkgbuild --root "dist/LLM Chat App.app" \
+         --identifier com.llmchatapp \
+         --version 3.0.0 \
+         --install-location /Applications \
+         "LLM_Chat_App_Installer.pkg"
 ```
-*Output: `LLM_Chat_App_Mac.dmg`*
 
 ### 📂 How User Data is Handled
 The compiled app **automatically creates** the following folders on first run alongside the EXE:
@@ -322,6 +334,11 @@ The compiled app **automatically creates** the following folders on first run al
 - `ui_designer/` - Contains all `.ui` files for the interface
 - `resources/badge_cache/` - Cached badge images
 - `resources/update_log.txt` - Application logs
+
+**User conversation data** is saved to:
+- **Windows:** `C:\Users\<User>\LLMChatApp\conversations\`
+- **macOS:** `~/LLMChatApp/conversations/`
+- **Linux:** `~/LLMChatApp/conversations/`
 
 ---
 

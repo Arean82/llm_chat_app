@@ -15,6 +15,8 @@ a = Analysis(
         ('resources/styles.qss', 'resources'),
         ('resources/models.json', 'resources'),
         ('resources/user_prompts.json', 'resources'),
+        ('README.md', '.'),           
+        ('LICENSE', '.'),        
         ('ui_designer/login_dialog.ui', 'ui_designer'),
         ('ui_designer/log_viewer.ui', 'ui_designer'),
         ('ui_designer/main_window.ui', 'ui_designer'),
