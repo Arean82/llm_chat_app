@@ -6,6 +6,7 @@ import re
 import urllib.request
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextBrowser, QPushButton
 from PySide6.QtCore import Qt, QUrl, QThread, Signal
+from PySide6.QtGui import QDesktopServices
 from pathlib import Path
 
 from utils.path_utils import get_resource_path, get_cache_path
@@ -19,7 +20,7 @@ class BadgeCacheWorker(QThread):
         self.html_content = html_content
 
     def run(self):
-        # FIX: Robust regex that finds src="url" NO MATTER the order of attributes (e.g. alt="..." src="...")
+        # Robust regex that finds src="url" NO MATTER the order of attributes
         pattern = r'(<img\s[^>]*?)src="(https?://[^"]+)"'
         cache_dir = get_resource_path("resources/badge_cache")
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -29,7 +30,7 @@ class BadgeCacheWorker(QThread):
             url = match.group(2)
             
             filename = url.split("/")[-1]
-            # FIX: Handle URLs with query parameters (e.g., ?style=flat-square)
+            # Handle URLs with query parameters
             if '?' in filename:
                 filename = filename.split('?')[0]
                 
@@ -40,16 +41,14 @@ class BadgeCacheWorker(QThread):
             
             if not local_path.exists():
                 try:
-                    # FIX: Add User-Agent (shields.io sometimes blocks default Python requests)
+                    # Add User-Agent for shields.io
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                    # FIX: Added 5-second timeout so it can NEVER hang indefinitely
+                    # 5-second timeout
                     with urllib.request.urlopen(req, timeout=5) as response:
                         with open(local_path, 'wb') as f:
                             f.write(response.read())
-                    print(f"[Cache] Downloaded badge: {filename}") # Debug print
                 except Exception as e:
-                    print(f"[Cache] Failed to download {url} - Error: {e}") # Debug print
-                    return match.group(0) # Keep original internet URL if it fails
+                    return match.group(0)  # Keep original URL if download fails
             
             local_url = QUrl.fromLocalFile(str(local_path.absolute())).toString()
             return f'{full_tag_start}src="{local_url}"'
@@ -70,7 +69,8 @@ class FileViewerDialog(QDialog):
         layout.setContentsMargins(15, 15, 15, 15)
         
         self.text_browser = QTextBrowser()
-        self.text_browser.setOpenExternalLinks(True) 
+        self.text_browser.setOpenExternalLinks(True)
+        self.text_browser.anchorClicked.connect(self.on_anchor_clicked)
         
         self.load_file(file_names, is_markdown)
         layout.addWidget(self.text_browser)
@@ -93,6 +93,16 @@ class FileViewerDialog(QDialog):
         """)
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+    
+    def on_anchor_clicked(self, url):
+        """Handle internal anchor links and external URLs"""
+        url_str = url.toString()
+        if url_str.startswith("#"):
+            # Internal anchor - scroll to anchor
+            self.text_browser.scrollToAnchor(url_str[1:])
+        else:
+            # External link - open in default browser
+            QDesktopServices.openUrl(url)
     
     def load_file(self, possible_names: list, is_markdown: bool):
         base_dir = Path(__file__).parent.parent
@@ -124,9 +134,7 @@ class FileViewerDialog(QDialog):
             # Convert MD to HTML
             html = markdown.markdown(content, extensions=['extra', 'fenced_code', 'codehilite'])
             
-            # FIX: Inject CSS to preserve newlines in code blocks
-            # "white-space: pre-wrap" preserves newlines but also wraps long lines
-            # so you don't have to scroll horizontally forever.
+            # Inject CSS to preserve newlines in code blocks
             style_fix = """
             <style>
                 pre { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; background-color: #f6f8fa; padding: 10px; border-radius: 4px; }
@@ -137,17 +145,15 @@ class FileViewerDialog(QDialog):
             # Prepend the style to the HTML
             html = style_fix + html
 
-            # 1. Show text IMMEDIATELY (no hang). Badges will just be blank for a microsecond.
+            # Show text immediately
             self.text_browser.setHtml(html)
             
-            # 2. Start background thread to download badges
-            # We pass the 'html' variable which now contains the CSS styles
+            # Start background thread to download badges
             self.cache_worker = BadgeCacheWorker(html)
             self.cache_worker.finished.connect(self.on_badges_cached)
             self.cache_worker.start()
             
         else:
-            # ... (Keep your existing plain text logic unchanged) ...
             self.text_browser.setStyleSheet("""
                 QTextBrowser {
                     background-color: #F5F5F5;
@@ -161,10 +167,9 @@ class FileViewerDialog(QDialog):
             """)
             self.text_browser.setPlainText(content)
 
-            
     def on_badges_cached(self, updated_html: str):
         """Slot called by the background thread when downloads are complete"""
-        # Preserve the user's scroll position so it doesn't jump to the top
+        # Preserve scroll position
         scroll_pos = self.text_browser.verticalScrollBar().value()
         
         # Inject the HTML with the local image paths

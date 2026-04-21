@@ -11,6 +11,8 @@ import socket
 
 import time
 import json
+
+from logic.api_server import APIServer
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication
@@ -119,7 +121,8 @@ class MainWindowClass(QMainWindow):
         super().__init__()
         
         print("MainWindowClass.__init__ starting...")
-    
+
+        self.api_server = None
         self.current_theme = "dark"
     
         # STATE VARIABLES
@@ -535,11 +538,11 @@ class MainWindowClass(QMainWindow):
         msg_box.setWindowTitle("LLM Chat App")
         msg_box.setText("The application can continue running in the system tray.")
         msg_box.setInformativeText("What would you like to do?")
-        
+
         tray_btn = msg_box.addButton("Minimize to Tray", QMessageBox.ButtonRole.AcceptRole)
         exit_btn = msg_box.addButton("Exit Application", QMessageBox.ButtonRole.DestructiveRole)
         cancel_btn = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
-        
+
         tray_btn.setStyleSheet("""
             QPushButton {
                 background-color: #0078d4;
@@ -553,7 +556,7 @@ class MainWindowClass(QMainWindow):
                 background-color: #005a9e;
             }
         """)
-        
+
         exit_btn.setStyleSheet("""
             QPushButton {
                 background-color: #d32f2f;
@@ -567,7 +570,7 @@ class MainWindowClass(QMainWindow):
                 background-color: #8e0000;
             }
         """)
-        
+
         cancel_btn.setStyleSheet("""
             QPushButton {
                 background-color: #3c3c3c;
@@ -581,11 +584,11 @@ class MainWindowClass(QMainWindow):
                 background-color: #2c2c2c;
             }
         """)
-        
+
         msg_box.exec()
-        
+
         clicked = msg_box.clickedButton()
-        
+
         if clicked == tray_btn:
             event.ignore()
             self.hide_to_tray()
@@ -594,7 +597,7 @@ class MainWindowClass(QMainWindow):
             event.accept()
         else:
             event.ignore()
-            
+
     # ---------------------------------------------------------
     # END THEME SYSTEM
     # ---------------------------------------------------------
@@ -660,10 +663,17 @@ class MainWindowClass(QMainWindow):
         log_menu.addAction("📋 View Update Log", self.show_update_log)
         log_menu.addAction("🗑️ Clear Log", self.clear_update_log)
 
+        # Tools menu:
+        tools_menu = menubar.addMenu("Tools")
+        self.api_server_action = tools_menu.addAction("🌐 Universal API Server")
+        self.api_server_action.triggered.connect(self.toggle_api_server)
+        self.api_server_action.setCheckable(True)
+
         # Help menu with placeholder actions
         help_menu = menubar.addMenu("Help")
         help_menu.addAction("Readme", self.show_readme)
         help_menu.addAction("License", self.show_license)
+        help_menu.addAction("API Documentation", self.api_doc)
         help_menu.addSeparator()
         help_menu.addAction("About", self.show_about)
         
@@ -739,6 +749,73 @@ class MainWindowClass(QMainWindow):
     def load_models(self):
         pass
 
+    # ---------------------------------------------------------
+    # Universal API Server (Maximum Flexibility)
+    # ---------------------------------------------------------
+
+    def toggle_api_server(self, checked):
+        if checked:
+            self.start_api_server()
+        else:
+            self.stop_api_server()
+
+    def start_api_server(self):
+        if self.api_server and self.api_server.running:
+            return
+
+        self.api_server = APIServer(self.llm_client, self.api_send_message)
+        if self.api_server.start():
+            self.api_server_action.setChecked(True)
+            self.api_server_action.setText("Universal API Server (Running)")
+            self.add_system_message(f"🌐 API Server started on port 5000")
+        else:
+            self.api_server_action.setChecked(False)
+            self.add_system_message("❌ Failed to start API Server")
+
+    def stop_api_server(self):
+        if self.api_server:
+            self.api_server.stop()
+            self.api_server = None
+        self.api_server_action.setChecked(False)
+        self.api_server_action.setText("🌐 Universal API Server")
+        self.add_system_message("🌐 API Server stopped")
+
+    def api_send_message(self, user_message):
+        """Synchronous send for API - waits for response"""
+        import queue
+        import time
+
+        response_queue = queue.Queue()
+
+        # Store original handlers
+        original_response = self.on_response_complete
+        original_error = self.on_error
+
+        def sync_response(full_response):
+            response_queue.put(full_response)
+
+        def sync_error(error_msg):
+            response_queue.put(f"Error: {error_msg}")
+
+        # Temporarily override
+        self.on_response_complete = sync_response
+        self.on_error = sync_error
+
+        # Send message
+        self.input_field.setPlainText(user_message)
+        self.send_message()
+
+        # Wait for response (timeout 60 seconds)
+        try:
+            response = response_queue.get(timeout=60)
+        except queue.Empty:
+            response = "Timeout: No response from model"
+
+        # Restore original handlers
+        self.on_response_complete = original_response
+        self.on_error = original_error
+
+        return response
     # ---------------------------------------------------------
     # FIRST-RUN LOGIC & POPUP HANDLERS
     # ---------------------------------------------------------
@@ -1406,6 +1483,24 @@ class MainWindowClass(QMainWindow):
             file_names=["README.md", "README.txt", "README"], 
             is_markdown=True, 
             size=(750, 600), 
+            parent=self
+        )
+        dialog.exec()
+
+    def api_doc(self):
+        """
+        Handler for help_menu.addAction("License", self.api_doc)
+        Now updated to load the API Server documentation.
+        """
+        from ui.file_viewer import FileViewerDialog
+
+        # We pass the filename you created. 
+        # Your FileViewerDialog will find it in the project root.
+        dialog = FileViewerDialog(
+            title="Universal API Server Documentation",
+            file_names=["API_SERVER.md"], 
+            is_markdown=True,
+            size=(800, 600),
             parent=self
         )
         dialog.exec()

@@ -1,11 +1,10 @@
-
 # LLM Chat App
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.6%2B-green)  ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 A sleek, dark-themed desktop chat application built with Python and PySide6. It interfaces with the NVIDIA NIM API (via the OpenAI SDK) to provide streaming LLM responses, markdown rendering, and conversation management.
 
-[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&-Data-Storage](#-configuration-&-data-storage) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
+[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
 
 ---
 
@@ -35,6 +34,8 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 💰 **Paid Model Support:** Fetch paid models (requires subscription) and merge them with existing free models without losing data.
 - 🚀 **One-Click EXE Build:** Standalone executable with automatic resource folder creation on first run - no manual file copying needed.
 - 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
+- 🌐 **Universal API Server:** Start a local OpenAI-compatible API server from Tools menu. Connect any IDE (VS Code, Eclipse, IntelliJ) to your selected LLM model.
+- 🖥️ **VS Code Extension Support:** Use with Continue extension or build custom extension for advanced features like sending entire files, project folders, and applying AI edits directly.
 
 ---
 
@@ -46,24 +47,26 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - ✨ **Generate Descriptions Button:** In Model Manager, select any working model to automatically generate descriptions for all models missing them.
 - 📝 **System Instructions:** Access the Instruction Library via Settings to create, edit, and toggle system prompts.
 - 🔽 **System Tray Icon:** Right-click for menu options, double-click to restore window from tray.
+- **Universal API Server** - Start/stop local API server on port 5000. Checkmark indicates server is running. Compatible with any OpenAI-compatible IDE extension.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Python 3.8 or higher
 - An NVIDIA NIM API Key (Get one free at [build.nvidia.com](https://build.nvidia.com/))
 
 ### Installation
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Arean82/llm_chat_app.git   
    cd llm_chat_app   
    ```
-
-2. **Create and activate a virtual environment (Optional but recommended):**  
+2. **Create and activate a virtual environment (Optional but recommended):**
 
    ```bash
    python -m venv venv   
@@ -74,7 +77,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
    ```
 3. **Install dependencies:**
 
-   ```bash   
+   ```bash
    pip install PySide6 openai markdown   
    ```
 
@@ -92,6 +95,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 5. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
 6. ⏹️ **Stop Generation:** Click the red "Stop" button at any time to halt the response.
 7. 🔽 **System Tray:** Click the X button to choose between exiting completely or minimizing to system tray. Double-click tray icon to restore window.
+8. 🌐 **API Server:** Go to Tools → Universal API Server to start the API. Configure your IDE extension to use `http://localhost:5000/v1`.
 
 ---
 
@@ -108,12 +112,12 @@ llm_chat_app/
 │   ├── models.json                 # 🤖 Available model list
 │   ├── styles.qss                  # 🎨 Global stylesheet
 │   └── badge_cache/                # ⚡ Auto-generated offline image cache
-│        
+│      
 ├── ui_designer/                    # 🎨 Qt Designer UI files
-│   ├── login_dialog.ui      
+│   ├── login_dialog.ui    
 │   ├── main_window.ui  
 │   ├── model_edit_dialog.ui
-│   ├── model_manager.ui    
+│   ├── model_manager.ui  
 |   ├── system_prompt_manager.ui 
 │   └── model_popup.ui
 │
@@ -138,8 +142,8 @@ llm_chat_app/
 │   └── update_logger.py            # Real-time logging
 │
 └── utils/                          # 🛠️ Helpers
-    ├── constants.py                
-    ├── helpers.py                  
+    ├── constants.py              
+    ├── helpers.py                
     ├── model_config.py             # 🧠 Model context limits
     └── path_utils.py               # 📁 PyInstaller & dev path resolver
 ```
@@ -178,13 +182,14 @@ The application features a comprehensive logging system for background operation
 
 ## ⌨️ Keyboard Shortcuts
 
-| **Key** | **Action** |
-| :--- | :--- |
-| `Enter` | Send message |
-| `Shift + Enter` | Insert new line |
-| `F11` | Toggle true Fullscreen |
-| `Esc` | Exit true Fullscreen |
+| **Key**                      | **Action**                                                  |
+| :--------------------------------- | :---------------------------------------------------------------- |
+| `Enter`                          | Send message                                                      |
+| `Shift + Enter`                  | Insert new line                                                   |
+| `F11`                            | Toggle true Fullscreen                                            |
+| `Esc`                            | Exit true Fullscreen                                              |
 | `Close button (X)` or `Alt+F4` | Shows exit options (Exit Application / Minimize to Tray / Cancel) |
+| `Ctrl+Alt+S` | Toggle Universal API Server (if shortcut configured) |
 
 ---
 
@@ -201,6 +206,7 @@ To contribute:
 5. Open a **Pull Request**
 
 **Guidelines:**
+
 - Please follow standard Python [PEP 8](https://peps.python.org/pep-0008/) conventions.
 - Keep the UI consistent with the current light/dark theme logic.
 - If adding new API endpoints, ensure they are handled safely in the `logic/` folder without blocking the main UI thread.
@@ -209,7 +215,7 @@ To contribute:
 
 ## ⚠️ Disclaimer
 
-This software is provided as-is, free of charge, for educational and personal use purposes. 
+This software is provided as-is, free of charge, for educational and personal use purposes.
 
 - **AI Accuracy:** This application interfaces with third-party Large Language Models (LLMs). The developers of this application do not control, endorse, or guarantee the accuracy, completeness, or appropriateness of the AI-generated responses. AI models can produce incorrect, biased, or offensive content.
 - **User Responsibility:** You are solely responsible for any prompts you submit and any outputs you rely on. Always verify critical information generated by AI.
@@ -220,11 +226,12 @@ This software is provided as-is, free of charge, for educational and personal us
 
 ## 🔨 Building from Source (Developer Guide)
 
-If you want to build the distributable installers yourself, follow the OS-specific steps below. 
+If you want to build the distributable installers yourself, follow the OS-specific steps below.
 
 *Note: You must build on the target OS (Windows builds for Windows, Mac builds for Mac, Linux builds for Linux).*
 
 ### Prerequisites
+
 1. Install the app dependencies: `pip install PySide6 openai markdown`
 2. Install PyInstaller: `pip install pyinstaller`
 3. Install Pillow for icon generation: `pip install Pillow`
@@ -232,9 +239,11 @@ If you want to build the distributable installers yourself, follow the OS-specif
    ```bash
    python -c "from PIL import Image; img = Image.open('resources/app_icon.png'); img.save('resources/app_icon.ico', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)]); img.resize((256, 256)).save('resources/app_icon_linux.png'); print('Icons generated!')"
    ```
+
    *(Note: To generate the `.icns` for macOS, you must run `iconutil` on a Mac).*
 
 ### Step 1: Build the Executable (All OS)
+
 Run this from the project root. The project includes three spec files for different build types:
 
 ```bash
@@ -249,11 +258,13 @@ pyinstaller LLM_Chat_App_combined.spec
 ```
 
 **Build outputs:**
+
 - One-dir: `dist/LLM Chat App/` (folder containing the executable and all dependencies)
 - One-file: `dist/LLM Chat App.exe` (single executable file)
 - Combined: Both outputs are generated simultaneously
 
 **First Run Behavior:**
+
 - On first launch, the executable automatically creates `resources` and `ui_designer` folders alongside the EXE
 - Default `models.json`, `user_prompts.json`, `styles.qss`, and `app_icon.png` are copied from the bundle
 - No manual file copying required - everything is handled automatically
@@ -263,6 +274,7 @@ pyinstaller LLM_Chat_App_combined.spec
 ### Step 2: Create the OS Installer
 
 #### 🪟 Windows (Inno Setup)
+
 1. Download and install [Inno Setup](https://jrsoftware.org/isdl.php).
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
@@ -272,6 +284,7 @@ pyinstaller LLM_Chat_App_combined.spec
 The installer copies the entire `dist/LLM Chat App/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
 #### 🐧 Linux (DEB Package)
+
 Linux users can install and uninstall properly using DEB packages:
 
 ```bash
@@ -320,6 +333,7 @@ Install: `sudo dpkg -i llm_chat_app_3.0.0.deb`
 Uninstall: `sudo dpkg -r llmchatapp`
 
 #### 🍎 macOS (PKG)
+
 ```bash
 # Build one-dir first
 pyinstaller LLM_Chat_App_onedir.spec
@@ -333,13 +347,16 @@ pkgbuild --root "dist/LLM Chat App.app" \
 ```
 
 ### 📂 How User Data is Handled
+
 The compiled app **automatically creates** the following folders on first run alongside the EXE:
+
 - `resources/` - Contains `models.json`, `user_prompts.json`, `styles.qss`, `app_icon.png`
 - `ui_designer/` - Contains all `.ui` files for the interface
 - `resources/badge_cache/` - Cached badge images
 - `resources/update_log.txt` - Application logs
 
 **User conversation data** is saved to:
+
 - **Windows:** `C:\Users\<User>\LLMChatApp\conversations\`
 - **macOS:** `~/LLMChatApp/conversations/`
 - **Linux:** `~/LLMChatApp/conversations/`
@@ -349,7 +366,3 @@ The compiled app **automatically creates** the following folders on first run al
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-
-
-

@@ -26,6 +26,8 @@ a = Analysis(
         ('ui_designer/system_prompt_manager.ui', 'ui_designer'),
     ],
     hiddenimports=[
+        'flask',
+        'openai',
         'markdown',
         'openai',
         'certifi',
