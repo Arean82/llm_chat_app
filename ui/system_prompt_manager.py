@@ -1,9 +1,7 @@
 # ui/system_prompt_manager.py
-
-# ui/system_prompt_manager.py
-
 import json
 from pathlib import Path
+from utils.helpers import set_app_icon
 
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QTableWidgetItem, QHeaderView, QLabel, QTextEdit, QPushButton, QVBoxLayout
 from PySide6.QtCore import Qt
@@ -54,7 +52,10 @@ class InstructionEditorDialog(QDialog):
 class SystemPromptManagerClass(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
+        # SET ICON
+        set_app_icon(self)
+                
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/system_prompt_manager.ui")
         self.ui = loader.load(str(ui_file), self)

@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QTextEdit, QVBoxLayout, QWidget, QApplication
 from PySide6.QtCore import QEvent, QTimer, Qt, QSettings
-from PySide6.QtGui import QAction, QTextBlockUserData, QTextCursor
+from PySide6.QtGui import QAction, QPixmap, QTextBlockUserData, QTextCursor
 from PySide6.QtUiTools import QUiLoader
 
 from logic.llm_client import LLMClient
@@ -28,6 +28,8 @@ from utils.model_config import get_context_limit
 from PySide6.QtWidgets import QSizePolicy 
 
 from ui.system_prompt_manager import SystemPromptManagerClass
+
+from utils.helpers import set_app_icon
 
 class MessageData(QTextBlockUserData):
     """Helper class to store the raw markdown text inside a text block."""
@@ -135,6 +137,13 @@ class MainWindowClass(QMainWindow):
         
         self.setCentralWidget(self.ui)
 
+        # Apply Window Icon
+        set_app_icon(self)
+        
+        # Apply Header Logo (The big image inside the bar)
+        # We keep this ONLY for the Main Window, because popups are too small for a header logo
+        self.setup_header_logo() 
+
         # Swap the standard chat_display with our custom ChatDisplay
         old_chat = self.ui.chat_display
         self.chat_display = ChatDisplay(self.ui.centralwidget)
@@ -191,6 +200,29 @@ class MainWindowClass(QMainWindow):
         label = QLabel("UI file failed to load.")
         layout.addWidget(label)
         self.setCentralWidget(central_widget)
+
+    def setup_header_logo(self):
+        """Adds the application logo to the top bar via Python."""
+        # 1. Create the Label widget
+        self.logo_label = QLabel(self.ui.top_bar)
+        self.logo_label.setFixedSize(32, 32)       # Set size (32x32 pixels)
+        self.logo_label.setScaledContents(True)    # Ensure image fills the box
+        self.logo_label.setToolTip("LLM Chat App")
+        
+        # 2. Load the icon image
+        icon_path = get_resource_path("resources/app_icon.png")
+        pixmap = QPixmap(icon_path)
+        
+        if not pixmap.isNull():
+            self.logo_label.setPixmap(pixmap)       # Set the image
+        else:
+            # Fallback if image is missing (shows an emoji instead)
+            self.logo_label.setText("🚀")
+            self.logo_label.setStyleSheet("font-size: 20px; padding-left: 5px;")
+
+        # 3. Insert the label into the top bar layout
+        # index 0 means it goes to the very left, before all other buttons
+        self.ui.top_bar_layout.insertWidget(0, self.logo_label)
 
     # ---------------------------------------------------------
     # THEME SYSTEM

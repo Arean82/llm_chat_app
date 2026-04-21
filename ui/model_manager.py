@@ -12,6 +12,7 @@ from PySide6.QtUiTools import QUiLoader
 
 from ui.model_edit_dialog import ModelEditDialog
 from utils.path_utils import get_resource_path
+from utils.helpers import set_app_icon
 
 class ModelManagerDialog(QDialog):
     """Main dialog for viewing and managing models."""
@@ -21,6 +22,8 @@ class ModelManagerDialog(QDialog):
     def __init__(self, theme="dark", parent=None):
         super().__init__(parent)
 
+        set_app_icon(self) 
+        
         if ModelManagerDialog._fetch_in_progress:
             QMessageBox.warning(
                 self,
