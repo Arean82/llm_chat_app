@@ -21,7 +21,7 @@ class BadgeCacheWorker(QThread):
     def run(self):
         # FIX: Robust regex that finds src="url" NO MATTER the order of attributes (e.g. alt="..." src="...")
         pattern = r'(<img\s[^>]*?)src="(https?://[^"]+)"'
-        cache_dir = Path(__file__).parent.parent / "resources" / "badge_cache"
+        cache_dir = get_resource_path("resources/badge_cache")
         cache_dir.mkdir(parents=True, exist_ok=True)
         
         def download_and_replace(match):
