@@ -57,7 +57,6 @@ class SystemPromptManagerClass(QDialog):
         
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/system_prompt_manager.ui")
-        print(f"DEBUG: Trying to load UI from: {str(ui_file)}")
         self.ui = loader.load(str(ui_file), self)
         if self.ui is None:
             QMessageBox.critical(self, "UI Error", f"Failed to load UI file from:\n{str(ui_file)}\n\nMake sure the file exists in the ui_designer folder.")
@@ -94,17 +93,19 @@ class SystemPromptManagerClass(QDialog):
         self.table_widget.itemChanged.connect(self.on_item_changed)
 
     def load_data_from_settings(self):
-        from PySide6.QtCore import QSettings
-        settings = QSettings("LLMChatApp", "Settings")
-        json_data = settings.value("system_prompt_library", "")
+        """Loads instructions from resources/user_prompts.json"""
+        file_path = get_resource_path("resources/user_prompts.json")
         
-        if json_data:
+        # Check if the file exists
+        if os.path.exists(file_path):
             try:
-                self.instructions = json.loads(json_data)
-            except json.JSONDecodeError:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    self.instructions = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Error loading prompts: {e}")
                 self.instructions = []
         else:
-            # Default instruction if none exist
+            # File doesn't exist, create default list
             self.instructions = [
                 {
                     "id": 1,
@@ -115,10 +116,14 @@ class SystemPromptManagerClass(QDialog):
             ]
 
     def save_data_to_settings(self):
-        from PySide6.QtCore import QSettings
-        settings = QSettings("LLMChatApp", "Settings")
-        json_data = json.dumps(self.instructions)
-        settings.setValue("system_prompt_library", json_data)
+        """Saves instructions to resources/user_prompts.json"""
+        file_path = get_resource_path("resources/user_prompts.json")
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                # indent=4 makes the file human-readable
+                json.dump(self.instructions, f, indent=4)
+        except IOError as e:
+            QMessageBox.critical(self, "Save Error", f"Could not save prompts to:\n{file_path}\n\nError: {e}")
 
     def refresh_table(self):
         self.table_widget.setRowCount(0)

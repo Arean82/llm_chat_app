@@ -1287,26 +1287,27 @@ class MainWindowClass(QMainWindow):
 
     def get_messages_for_api(self):
         """
-        Reads the saved instruction library, combines active items,
-        and returns the full message list ready for the API.
+        Returns the chat history with combined active system instructions injected at the beginning.
         """
         # 1. Copy the existing history
         messages = list(self.chat_history)
         
-        # 2. Load the saved data
-        from PySide6.QtCore import QSettings
+        # 2. Load the System Instruction Library from FILE
         import json
+        import os
+        from utils.path_utils import get_resource_path
         
-        settings = QSettings("LLMChatApp", "Settings")
-        library_json = settings.value("system_prompt_library", "[]")
+        library = []
+        file_path = get_resource_path("resources/user_prompts.json")
         
-        # 3. Parse the library
-        try:
-            library = json.loads(library_json)
-        except:
-            library = []
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    library = json.load(f)
+            except Exception as e:
+                print(f"Error reading user_prompts.json: {e}")
 
-        # 4. Filter active instructions
+        # 3. Filter active instructions
         active_texts = []
         for item in library:
             if item.get('checked', False):
@@ -1315,7 +1316,7 @@ class MainWindowClass(QMainWindow):
                 if instruction_text:
                     active_texts.append(f"- {instruction_text}")
 
-        # 5. Combine and inject at the start
+        # 4. Combine and inject at the start
         if active_texts:
             combined_prompt = "Follow these instructions:\n" + "\n".join(active_texts)
             messages.insert(0, {"role": "system", "content": combined_prompt})
