@@ -13,9 +13,9 @@ import time
 import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QLabel, QTextEdit, QVBoxLayout, QWidget, QApplication
+from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication
 from PySide6.QtCore import QEvent, QTimer, Qt, QSettings
-from PySide6.QtGui import QAction, QPixmap, QTextBlockUserData, QTextCursor
+from PySide6.QtGui import QAction, QIcon, QPixmap, QTextBlockUserData, QTextCursor
 from PySide6.QtUiTools import QUiLoader
 
 from logic.llm_client import LLMClient
@@ -152,6 +152,24 @@ class MainWindowClass(QMainWindow):
         # Apply Window Icon
         set_app_icon(self)
         
+        # System Tray
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon(str(get_resource_path("resources/app_icon.png"))))
+
+        # Tray menu
+        tray_menu = QMenu()
+        minimize_action = tray_menu.addAction("Minimize to Tray")
+        minimize_action.triggered.connect(self.hide_to_tray)
+        restore_action = tray_menu.addAction("Restore")
+        restore_action.triggered.connect(self.restore_from_tray)
+        tray_menu.addSeparator()
+        quit_action = tray_menu.addAction("Quit")
+        quit_action.triggered.connect(self.quit_app)
+
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self.on_tray_activated)
+        self.tray_icon.show()
+
         # Apply Header Logo
         self.setup_header_logo() 
     
@@ -485,6 +503,98 @@ class MainWindowClass(QMainWindow):
             
             f'</div>'
         ) 
+
+    # ---------------------------------------------------------
+    # SYSTEM TRAY
+    # ---------------------------------------------------------    
+
+    def hide_to_tray(self):
+        self.hide()
+        self.tray_icon.showMessage(
+            "LLM Chat App",
+            "Application minimized to system tray. API server still running.",
+            QSystemTrayIcon.MessageIcon.Information,
+            2000
+        )
+
+    def restore_from_tray(self):
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def on_tray_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.restore_from_tray()
+
+    def quit_app(self):
+        self.tray_icon.hide()
+        QApplication.quit()
+
+    def closeEvent(self, event):
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("LLM Chat App")
+        msg_box.setText("The application can continue running in the system tray.")
+        msg_box.setInformativeText("What would you like to do?")
+        
+        tray_btn = msg_box.addButton("Minimize to Tray", QMessageBox.ButtonRole.AcceptRole)
+        exit_btn = msg_box.addButton("Exit Application", QMessageBox.ButtonRole.DestructiveRole)
+        cancel_btn = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+        
+        tray_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0078d4;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+            }
+            QPushButton:pressed {
+                background-color: #005a9e;
+            }
+        """)
+        
+        exit_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+            }
+            QPushButton:pressed {
+                background-color: #8e0000;
+            }
+        """)
+        
+        cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3c3c3c;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+            }
+            QPushButton:pressed {
+                background-color: #2c2c2c;
+            }
+        """)
+        
+        msg_box.exec()
+        
+        clicked = msg_box.clickedButton()
+        
+        if clicked == tray_btn:
+            event.ignore()
+            self.hide_to_tray()
+        elif clicked == exit_btn:
+            self.tray_icon.hide()
+            event.accept()
+        else:
+            event.ignore()
+            
     # ---------------------------------------------------------
     # END THEME SYSTEM
     # ---------------------------------------------------------
@@ -535,8 +645,9 @@ class MainWindowClass(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction("Save Conversation", self.save_conversation)
         file_menu.addAction("Load Conversation", self.load_conversation)
+        file_menu.addAction("Minimize to Tray", self.hide_to_tray)
         file_menu.addSeparator()
-        file_menu.addAction("Exit", self.close)
+        file_menu.addAction("Exit", self.quit_app)
 
         # Settings menu with Model Manager
         settings_menu = menubar.addMenu("Settings")

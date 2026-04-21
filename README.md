@@ -34,6 +34,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🏷️ **Developer Tabs:** Models are automatically grouped by developer (Google, Meta, NVIDIA, etc.) in the Model Manager for easier browsing.
 - 💰 **Paid Model Support:** Fetch paid models (requires subscription) and merge them with existing free models without losing data.
 - 🚀 **One-Click EXE Build:** Standalone executable with automatic resource folder creation on first run - no manual file copying needed.
+- 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
 
 ---
 
@@ -44,6 +45,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 📋 **Log Menu:** View real-time update logs with filtering by log level. Clear logs when needed.
 - ✨ **Generate Descriptions Button:** In Model Manager, select any working model to automatically generate descriptions for all models missing them.
 - 📝 **System Instructions:** Access the Instruction Library via Settings to create, edit, and toggle system prompts.
+- 🔽 **System Tray Icon:** Right-click for menu options, double-click to restore window from tray.
 
 ---
 
@@ -89,6 +91,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 4. 💬 **Start Chatting:** Type your message. Press `Enter` to send, or `Shift+Enter` for a new line.
 5. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
 6. ⏹️ **Stop Generation:** Click the red "Stop" button at any time to halt the response.
+7. 🔽 **System Tray:** Click the X button to choose between exiting completely or minimizing to system tray. Double-click tray icon to restore window.
 
 ---
 
@@ -181,6 +184,7 @@ The application features a comprehensive logging system for background operation
 | `Shift + Enter` | Insert new line |
 | `F11` | Toggle true Fullscreen |
 | `Esc` | Exit true Fullscreen |
+| `Close button (X)` or `Alt+F4` | Shows exit options (Exit Application / Minimize to Tray / Cancel) |
 
 ---
 
