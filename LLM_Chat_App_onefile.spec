@@ -1,21 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec file for LLM Chat App
 # One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
-# One_dir can be used to specify the output directory for the built application.
 # One_file can be used to create a single executable file, but it may increase the build time and the size of the executable.   
-# Gives Both OneDIr and OneFile Build
-
-# -*- mode: python ; coding: utf-8 -*-
-
-# -*- mode: python ; coding: utf-8 -*-
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
     datas=[
-        ('resources', 'resources'),
-        ('ui_designer', 'ui_designer'),
+        ('resources/app_icon.png', 'resources'),
+        ('resources/app_icon.ico', 'resources'),
+        ('resources/styles.qss', 'resources'),
+        ('resources/models.json', 'resources'),
+        ('resources/user_prompts.json', 'resources'),
+        ('ui_designer/login_dialog.ui', 'ui_designer'),
+        ('ui_designer/log_viewer.ui', 'ui_designer'),
+        ('ui_designer/main_window.ui', 'ui_designer'),
+        ('ui_designer/model_edit_dialog.ui', 'ui_designer'),
+        ('ui_designer/model_manager.ui', 'ui_designer'),
+        ('ui_designer/model_popup.ui', 'ui_designer'),
+        ('ui_designer/system_prompt_manager.ui', 'ui_designer'),
     ],
     hiddenimports=[
         'markdown',
@@ -67,8 +71,7 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
-# ===== SINGLE FILE EXECUTABLE (One-File) =====
-exe_onefile = EXE(
+exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
@@ -76,50 +79,8 @@ exe_onefile = EXE(
     a.datas,
     name='LLM Chat App',
     debug=False,
-    bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
     icon='resources/app_icon.ico',
-)
-
-# ===== FOLDER EXECUTABLE (One-Dir) =====
-exe_onedir = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    name='LLM Chat App',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon='resources/app_icon.ico',
-)
-
-coll = COLLECT(
-    exe_onedir,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='LLM Chat App'
 )

@@ -33,6 +33,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - ✨ **AI-Powered Description Generation:** Generate one-sentence descriptions for any model using your choice of working model (Llama 4, Gemma 3, etc.). Descriptions persist across app restarts.
 - 🏷️ **Developer Tabs:** Models are automatically grouped by developer (Google, Meta, NVIDIA, etc.) in the Model Manager for easier browsing.
 - 💰 **Paid Model Support:** Fetch paid models (requires subscription) and merge them with existing free models without losing data.
+- 🚀 **One-Click EXE Build:** Standalone executable with automatic resource folder creation on first run - no manual file copying needed.
 
 ---
 
@@ -97,9 +98,9 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 llm_chat_app/
 │
 ├── main.py                         # 🚀 Entry point
-├── main_onedir.spec                # PyInstaller spec - One-dir build
-├── main_onefile.spec               # PyInstaller spec - One-file build
-├── main_combined.spec              # PyInstaller spec - Both builds
+├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build
+├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build
+├── LLM_Chat_App_combined.spec      # PyInstaller spec - Both builds
 ├── resources/                      # 📦 Static assets & caches
 │   ├── models.json                 # 🤖 Available model list
 │   ├── styles.qss                  # 🎨 Global stylesheet
@@ -248,15 +249,23 @@ pyinstaller main_combined.spec
 - One-file: `dist/LLM Chat App.exe` (single executable file)
 - Combined: Both outputs are generated simultaneously
 
+**First Run Behavior:**
+- On first launch, the executable automatically creates `resources` and `ui_designer` folders alongside the EXE
+- Default `models.json`, `user_prompts.json`, `styles.qss`, and `app_icon.png` are copied from the bundle
+- No manual file copying required - everything is handled automatically
+
 **Test the executable** before proceeding to package it!
 
 ### Step 2: Create the OS Installer
 
 #### 🪟 Windows (Inno Setup)
 1. Download and install [Inno Setup](https://jrsoftware.org/isdl.php).
-2. Open the provided `installer_script.iss` file in Inno Setup.
-3. Go to **Build > Compile** (or press `Ctrl+F9`).
-4. *Output:* `installer_output/LLM_Chat_App_Setup_v3.0.0.exe`
+2. Place `installer_script.iss` in the project root folder.
+3. Open the `installer_script.iss` file in Inno Setup.
+4. Go to **Build > Compile** (or press `Ctrl+F9`).
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v3.0.0.exe`
+
+The installer copies the entire `dist/LLM Chat App/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
 #### 🐧 Linux (AppImage)
 Linux does not use "installers" in the traditional sense. Instead, we package the app as a portable AppImage.
@@ -308,12 +317,11 @@ hdiutil create -volname "LLM Chat App" -srcfolder "dist/LLM Chat App.app" -ov -f
 *Output: `LLM_Chat_App_Mac.dmg`*
 
 ### 📂 How User Data is Handled
-To prevent permission errors (especially on Windows `Program Files`), the compiled app **separates read-only app files from writable user data**:
-- **Read-Only (Internal):** UI files and stylesheets are loaded from the `_internal` folder.
-- **Writable (User Data):** Custom models (`models.json`) and cached images are saved to the OS's secure user data directory:
-  - *Windows:* `C:\Users\<User>\AppData\Roaming\LLMChatApp\`
-  - *macOS:* `~/Library/Application Support/LLMChatApp/`
-  - *Linux:* `~/.local/share/LLMChatApp/`
+The compiled app **automatically creates** the following folders on first run alongside the EXE:
+- `resources/` - Contains `models.json`, `user_prompts.json`, `styles.qss`, `app_icon.png`
+- `ui_designer/` - Contains all `.ui` files for the interface
+- `resources/badge_cache/` - Cached badge images
+- `resources/update_log.txt` - Application logs
 
 ---
 

@@ -119,55 +119,9 @@ class MainWindowClass(QMainWindow):
         super().__init__()
         
         print("MainWindowClass.__init__ starting...")
-        
-        loader = QUiLoader()
-        #ui_file = Path(__file__).parent.parent / "ui_designer" / "main_window.ui"
-        ui_file = get_resource_path("ui_designer/main_window.ui")
-        
-        if not ui_file.exists():
-            self.setup_fallback_ui()
-            return
-
-        self.setWindowTitle("LLM Chat Application")
-
-        self.ui = loader.load(str(ui_file))
-        if self.ui is None:
-            self.setup_fallback_ui()
-            return
-        
-        self.setCentralWidget(self.ui)
-
-        # Apply Window Icon
-        set_app_icon(self)
-        
-        # Apply Header Logo (The big image inside the bar)
-        # We keep this ONLY for the Main Window, because popups are too small for a header logo
-        self.setup_header_logo() 
-
-        # Swap the standard chat_display with our custom ChatDisplay
-        old_chat = self.ui.chat_display
-        self.chat_display = ChatDisplay(self.ui.centralwidget)
-        
-        # Copy geometry and properties from the old widget
-        self.chat_display.setGeometry(old_chat.geometry())
-        self.chat_display.setStyleSheet(old_chat.styleSheet())
-        
-        # Replace the widget in the layout
-        self.ui.main_layout.replaceWidget(old_chat, self.chat_display)
-        old_chat.deleteLater()
-
-        # WIDGETS
-        #self.chat_display = self.ui.chat_display
-        self.input_field = self.ui.input_field
-        self.input_field.installEventFilter(self)
-        self.send_btn = self.ui.send_btn
-        self.model_btn = self.ui.model_btn
-        self.model_desc_label = self.ui.model_desc_label  # Added reference to model description label
-        self.auth_btn = self.ui.auth_btn
-        self.upload_btn = self.ui.upload_btn 
-        self.theme_toggle_btn = self.ui.theme_toggle_btn
-        self.connection_status_btn = self.ui.connection_status_btn 
-
+    
+        self.current_theme = "dark"
+    
         # STATE VARIABLES
         self.llm_client = LLMClient()
         self.conversation_manager = ConversationManager()
@@ -178,21 +132,63 @@ class MainWindowClass(QMainWindow):
         self.is_generating = False
         self.stream_start_position = None
         self.attached_files = []
-        self.current_theme = "dark"  # "dark" or "light"
-
+    
+        loader = QUiLoader()
+        ui_file = get_resource_path("ui_designer/main_window.ui")
+        
+        if not ui_file.exists():
+            self.setup_fallback_ui()
+            return
+    
+        self.setWindowTitle("LLM Chat Application")
+    
+        self.ui = loader.load(str(ui_file))
+        if self.ui is None:
+            self.setup_fallback_ui()
+            return
+        
+        self.setCentralWidget(self.ui)
+    
+        # Apply Window Icon
+        set_app_icon(self)
+        
+        # Apply Header Logo
+        self.setup_header_logo() 
+    
+        # Swap the standard chat_display with our custom ChatDisplay
+        old_chat = self.ui.chat_display
+        self.chat_display = ChatDisplay(self.ui.centralwidget)
+        self.chat_display.setGeometry(old_chat.geometry())
+        self.chat_display.setStyleSheet(old_chat.styleSheet())
+        self.ui.main_layout.replaceWidget(old_chat, self.chat_display)
+        old_chat.deleteLater()
+    
+        # WIDGETS - MOVED UP BEFORE load_settings
+        self.input_field = self.ui.input_field
+        self.input_field.installEventFilter(self)
+        self.send_btn = self.ui.send_btn
+        self.model_btn = self.ui.model_btn
+        self.model_desc_label = self.ui.model_desc_label
+        self.auth_btn = self.ui.auth_btn
+        self.upload_btn = self.ui.upload_btn 
+        self.theme_toggle_btn = self.ui.theme_toggle_btn
+        self.connection_status_btn = self.ui.connection_status_btn 
+    
         # Connection Status Monitor
         self.is_connected = True
         self.connection_check_timer = QTimer(self)
         self.connection_check_timer.timeout.connect(self.background_check_connection)
-        self.connection_check_timer.start(10000) # Check every 10 seconds normally
-
+        self.connection_check_timer.start(10000)
+    
         # SETUP
         self.setup_menu_bar()   
         self.setup_connections()
-        self.load_settings()    # Triggers first-run popups
+        
+        # LOAD SETTINGS LAST - AFTER everything is initialized
+        self.load_settings()
         
         print("MainWindowClass.__init__ completed")
-
+        
     def setup_fallback_ui(self):
         print("Setting up fallback UI...")
         central_widget = QWidget()
@@ -318,18 +314,26 @@ class MainWindowClass(QMainWindow):
             return "font-family: Consolas, monospace; color: #333333;"
 
     def get_system_message_color(self):
+        # Add fallback if theme isn't set yet
+        if not hasattr(self, 'current_theme'):
+            return "#ffd700"  # Default dark mode color
+
         if self.current_theme == "dark":
             return "#ffd700"
         else:
             return "#0078d4"
 
     def get_terminate_color(self):
+        if not hasattr(self, 'current_theme'):
+            return "#ff9800"
         if self.current_theme == "dark":
             return "#ff9800"
         else:
             return "#e65100"
 
     def get_thinking_color(self):
+        if not hasattr(self, 'current_theme'):
+            return "#888"
         if self.current_theme == "dark":
             return "#888"
         else:
@@ -918,6 +922,8 @@ class MainWindowClass(QMainWindow):
         self.scroll_to_bottom()
         
     def add_system_message(self, message: str):
+        if not hasattr(self, 'chat_display'):
+            return  # Skip if chat_display doesn't exist yet
         color = self.get_system_message_color()
         self.chat_display.append(f"<i style='color: {color};'>ℹ️ {self.escape_html(message)}</i>")
         self.scroll_to_bottom()

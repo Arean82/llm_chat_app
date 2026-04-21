@@ -10,15 +10,19 @@ from pathlib import Path
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
     if getattr(sys, 'frozen', False):
-        # Frozen (PyInstaller) - resources next to exe, not in _internal
-        base_path = Path(sys.executable).parent
+        # For .ui files - read from bundle (_MEIPASS)
+        if relative_path.startswith("ui_designer/"):
+            base_path = Path(sys._MEIPASS)
+        else:
+            # For resources - use exe folder (writable)
+            base_path = Path(sys.executable).parent
     else:
         # Development mode
         base_path = Path(__file__).parent.parent
     
     full_path = base_path / relative_path
     
-    # Create parent directory if it doesn't exist (for writable paths)
+    # Create parent directory for writable resource files
     if relative_path.startswith("resources/"):
         full_path.parent.mkdir(parents=True, exist_ok=True)
     
