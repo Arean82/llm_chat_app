@@ -9,9 +9,11 @@ from pathlib import Path
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
-    try:
-        base_path = Path(sys._MEIPASS)
-    except AttributeError:
+    if getattr(sys, 'frozen', False):
+        # Frozen (PyInstaller) - resources next to exe, not in _internal
+        base_path = Path(sys.executable).parent
+    else:
+        # Development mode
         base_path = Path(__file__).parent.parent
     
     full_path = base_path / relative_path
