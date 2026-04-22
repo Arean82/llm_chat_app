@@ -1449,7 +1449,7 @@ class MainWindowClass(QMainWindow):
         about_text = f"""
         <div style="font-family: 'Segoe UI', Arial, sans-serif;">
             <h2 style="color: #0078d4; margin-bottom: 5px;">LLM Chat App</h2>
-            <p><b>Version:</b> 3.0.0<br>
+            <p><b>Version:</b> 4.0.0<br>
             <b>Developer:</b> Arean Narrayan</p>
             
             <hr style="border: 1px solid {border_color}; margin: 10px 0;">

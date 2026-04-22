@@ -279,7 +279,7 @@ pyinstaller LLM_Chat_App_combined.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v3.0.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v4.0.0.exe`
 
 The installer copies the entire `dist/LLM Chat App/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -316,7 +316,7 @@ EOF
 # Create control file
 cat > llmchatapp/DEBIAN/control << EOF
 Package: llmchatapp
-Version: 3.0.0
+Version: 4.0.0
 Section: utils
 Priority: optional
 Architecture: amd64
@@ -326,10 +326,10 @@ Description: LLM Chat Application
 EOF
 
 # Build DEB
-dpkg-deb --build llmchatapp llm_chat_app_3.0.0.deb
+dpkg-deb --build llmchatapp llm_chat_app_4.0.0.deb
 ```
 
-Install: `sudo dpkg -i llm_chat_app_3.0.0.deb`
+Install: `sudo dpkg -i llm_chat_app_4.0.0.deb`
 Uninstall: `sudo dpkg -r llmchatapp`
 
 #### 🍎 macOS (PKG)
@@ -341,7 +341,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Create PKG installer
 pkgbuild --root "dist/LLM Chat App.app" \
          --identifier com.llmchatapp \
-         --version 3.0.0 \
+         --version 4.0.0 \
          --install-location /Applications \
          "LLM_Chat_App_Installer.pkg"
 ```
