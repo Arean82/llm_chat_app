@@ -1,0 +1,56 @@
+<idea-plugin>
+    <id>com.llmchat.plugin</id>
+    <name>LLM Chat App</name>
+    <vendor email="support@llmchat.com" url="https://github.com/Arean82/llm_chat_app">Arean Narrayan</vendor>
+    
+    <description><![CDATA[
+        Connect JetBrains IDE to LLM Chat App.
+        Features: code explanation, fixing, commit messages, docstrings, unit tests, terminal commands.
+    ]]></description>
+    
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.llmchat.LLMChatService"/>
+        <projectActivity implementation="com.llmchat.LLMChatPlugin"/>
+    </extensions>
+    
+    <actions>
+        <action id="LLMChat.SendSelection" class="com.llmchat.actions.SendSelectionAction"
+                text="LLM Chat: Send Selection" description="Send selected code to LLM">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S"/>
+        </action>
+        
+        <action id="LLMChat.FixCode" class="com.llmchat.actions.FixCodeAction"
+                text="LLM Chat: Fix This Code" description="Fix selected code">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="LLMChat.SendSelection"/>
+        </action>
+        
+        <action id="LLMChat.ExplainCode" class="com.llmchat.actions.ExplainCodeAction"
+                text="LLM Chat: Explain This Code" description="Explain selected code">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="LLMChat.FixCode"/>
+        </action>
+        
+        <action id="LLMChat.GenerateCommit" class="com.llmchat.actions.GenerateCommitAction"
+                text="LLM Chat: Generate Commit Message" description="Generate git commit message">
+            <add-to-group group-id="Vcs.MessageActionGroup" anchor="first"/>
+        </action>
+        
+        <action id="LLMChat.GenerateDocstring" class="com.llmchat.actions.GenerateDocstringAction"
+                text="LLM Chat: Generate Docstring" description="Generate docstring for function">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="LLMChat.ExplainCode"/>
+        </action>
+        
+        <action id="LLMChat.GenerateTests" class="com.llmchat.actions.GenerateTestsAction"
+                text="LLM Chat: Generate Unit Tests" description="Generate unit tests">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="LLMChat.GenerateDocstring"/>
+        </action>
+        
+        <action id="LLMChat.TerminalCommand" class="com.llmchat.actions.TerminalCommandAction"
+                text="LLM Chat: Generate Terminal Command" description="Generate terminal command">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>

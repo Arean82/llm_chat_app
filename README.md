@@ -4,7 +4,7 @@
 
 A sleek, dark-themed desktop chat application built with Python and PySide6. It interfaces with the NVIDIA NIM API (via the OpenAI SDK) to provide streaming LLM responses, markdown rendering, and conversation management.
 
-[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
+[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) • [-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
 
 ---
 
@@ -36,7 +36,9 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
 - 🌐 **Universal API Server:** Start a local OpenAI-compatible API server from Tools menu. Connect any IDE (VS Code, Eclipse, IntelliJ) to your selected LLM model.
 - 🖥️ **VS Code Extension Support:** Use with Continue extension or build custom extension for advanced features like sending entire files, project folders, and applying AI edits directly.
-  For detailed API documentation, see [API Documentation](API_SERVER.md)
+
+For detailed API documentation, see [API Documentation](API_SERVER.md)
+For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md)
 
 ---
 
@@ -48,7 +50,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - ✨ **Generate Descriptions Button:** In Model Manager, select any working model to automatically generate descriptions for all models missing them.
 - 📝 **System Instructions:** Access the Instruction Library via Settings to create, edit, and toggle system prompts.
 - 🔽 **System Tray Icon:** Right-click for menu options, double-click to restore window from tray.
-- **Universal API Server** - Start/stop local API server on port 5000. Checkmark indicates server is running. Compatible with any OpenAI-compatible IDE extension.
+- **Universal API Server** - Start/stop local API server on port 5000. Checkmark indicates server is running. Compatible with any OpenAI-compatible IDE or plugin.
 
 ---
 
@@ -109,42 +111,60 @@ llm_chat_app/
 ├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build
 ├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build
 ├── LLM_Chat_App_combined.spec      # PyInstaller spec - Both builds
+├── README.md                       # 📖 Documentation
+├── LICENSE                         # ⚖️ MIT License
+├── API_SERVER.md                   # 📡 API documentation
+├── IDE_INTEGRATION.md              # 🔌 IDE setup guide
+├── requirements.txt                # 📦 Python dependencies
+│
+├── extension/                      # 📦 IDE Extensions
+│   ├── vscode-llm-chat-1.0.0.vsix # VS Code extension
+│   └── jetbrains-llm-chat-1.0.0.zip # JetBrains plugin
+│
 ├── resources/                      # 📦 Static assets & caches
+│   ├── app_icon.png                # 🖼️ Application icon
+│   ├── app_icon.ico                # 🖼️ Windows icon
+│   ├── app_icon.icns               # 🖼️ macOS icon
+│   ├── app_icon_linux.png          # 🖼️ Linux icon
 │   ├── models.json                 # 🤖 Available model list
 │   ├── styles.qss                  # 🎨 Global stylesheet
+│   ├── user_prompts.json           # 📝 System instructions
 │   └── badge_cache/                # ⚡ Auto-generated offline image cache
-│    
+│
 ├── ui_designer/                    # 🎨 Qt Designer UI files
-│   ├── login_dialog.ui  
-│   ├── main_window.ui  
-│   ├── model_edit_dialog.ui
-│   ├── model_manager.ui  
-|   ├── system_prompt_manager.ui 
-│   └── model_popup.ui
+│   ├── login_dialog.ui             # 🔐 Login dialog
+│   ├── log_viewer.ui               # 📋 Log viewer
+│   ├── main_window.ui              # 🖥️ Main window
+│   ├── model_edit_dialog.ui        # ✏️ Model edit dialog
+│   ├── model_manager.ui            # 📦 Model manager
+│   ├── model_popup.ui              # 🤖 Model selector
+│   └── system_prompt_manager.ui    # 📝 System prompt manager
 │
 ├── ui/                             # 🧩 Python UI logic
-│   ├── file_viewer.py              # Readme/License viewer
-│   ├── login_dialog.py             # API Key authentication
-│   ├── main_window.py              # Main app controller
-│   ├── model_edit_dialog.py        # Model add/edit/delete manager
-│   ├── model_manager.py            # Model add/edit/delete manager
-│   ├── system_prompt_manager.py    # System Prompt Manager Logi
-│   └── model_popup.py              # Model selector
+│   ├── file_viewer.py              # 📄 Readme/License viewer
+│   ├── login_dialog.py             # 🔐 API Key authentication
+│   ├── log_viewer.py               # 📋 Log viewer logic
+│   ├── main_window.py              # 🖥️ Main app controller
+│   ├── model_edit_dialog.py        # ✏️ Model add/edit/delete
+│   ├── model_manager.py            # 📦 Model manager logic
+│   ├── model_popup.py              # 🤖 Model selector logic
+│   └── system_prompt_manager.py    # 📝 System prompt logic
 │
 ├── logic/                          # ⚙️ Backend engine
-│   ├── llm_client.py               # NVIDIA API wrapper
-│   ├── chat_worker.py              # Threading for streaming
-│   └── conversation_manager.py 
+│   ├── api_server.py               # 🌐 Universal API server
+│   ├── llm_client.py               # 🔌 NVIDIA API wrapper
+│   ├── chat_worker.py              # 🧵 Threading for streaming
+│   └── conversation_manager.py     # 💾 Save/load conversations
+│
 ├── workers/                        # 🧵 Background workers
-│   ├── chat_worker.py              # Streaming responses
-│   ├── model_fetch_worker.py       # Fetch & test models
-│   ├── paid_model_fetch_worker.py  # Paid model support
-│   ├── description_generator.py    # AI description generation
-│   └── update_logger.py            # Real-time logging
+│   ├── description_generator.py    # ✨ AI description generation
+│   ├── model_fetch_worker.py       # 🔄 Fetch & test models
+│   ├── paid_model_fetch_worker.py  # 💰 Paid model support
+│   └── update_logger.py            # 📋 Real-time logging
 │
 └── utils/                          # 🛠️ Helpers
-    ├── constants.py            
-    ├── helpers.py              
+    ├── constants.py                # 📌 App constants
+    ├── helpers.py                  # 🔧 Helper functions
     ├── model_config.py             # 🧠 Model context limits
     └── path_utils.py               # 📁 PyInstaller & dev path resolver
 ```
@@ -171,15 +191,16 @@ This application does not use local `.env` files or plaintext config files for s
 
 ## 🌐 Universal API Server
 
-Start from **Tools → Universal API Server** (✅ = running). Server runs on `http://localhost:5000`
+- Fully compatible with OpenAI-style API  `/v1/chat/completions` (used by IntelliJ plugin).
+- Start from **Tools → Universal API Server** (✅ = running). Server runs on `http://localhost:5000`
 
 ### Endpoints
 
-| Endpoint                 | Method | Description   |
-| ------------------------ | ------ | ------------- |
-| `/health`              | GET    | Server status |
-| `/v1/models`           | GET    | List model    |
-| `/v1/chat/completions` | POST   | Send message  |
+| Endpoint                 | Method | Description                     |
+| ------------------------ | ------ | ------------------------------- |
+| `/health`              | GET    | Server status                   |
+| `/v1/models`           | GET    | List model                      |
+| `/v1/chat/completions` | POST   | OpenAI-compatible chat endpoint |
 
 ### VS Code Extension
 

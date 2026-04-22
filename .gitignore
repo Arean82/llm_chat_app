@@ -6,4 +6,42 @@ build/*
 dist/*
 installer_output/*
 
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
 
+# PyInstaller
+build/
+dist/
+*.spec.bak
+
+# VS Code extension
+vscode-llm-chat/node_modules/
+vscode-llm-chat/out/
+vscode-llm-chat/*.vsix
+
+# JetBrains plugin
+jetbrains-llm-chat/build/
+jetbrains-llm-chat/.gradle/
+
+# App data
+resources/badge_cache/
+resources/update_log.txt
+resources/models.json
+resources/user_prompts.json
+
+# OS
+.DS_Store
+Thumbs.db
+jetbrains-llm-chat/bin/main/META-INF/plugin.xml
+jetbrains-llm-chat/bin/main/com/llmchat/LLMChatPlugin.kt
+jetbrains-llm-chat/bin/main/com/llmchat/LLMChatService.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/ExplainCodeAction.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/FixCodeAction.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/GenerateCommitAction.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/GenerateDocstringAction.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/GenerateTestsAction.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/SendSelectionAction.kt
+jetbrains-llm-chat/bin/main/com/llmchat/actions/TerminalCommandAction.kt

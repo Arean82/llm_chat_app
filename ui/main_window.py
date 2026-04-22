@@ -671,11 +671,15 @@ class MainWindowClass(QMainWindow):
 
         # Help menu with placeholder actions
         help_menu = menubar.addMenu("Help")
-        help_menu.addAction("Readme", self.show_readme)
-        help_menu.addAction("License", self.show_license)
-        help_menu.addAction("API Documentation", self.api_doc)
+        help_menu.addAction("📖 Readme", self.show_readme)
+        help_menu.addAction("📜 License", self.show_license)
+        help_menu.addAction("📡 API Documentation", self.api_doc)
+        help_menu.addAction("🔌 IDE Integration Guide", self.show_ide_integration)
         help_menu.addSeparator()
-        help_menu.addAction("About", self.show_about)
+        help_menu.addAction("📦 Download VS Code Extension", self.download_vscode_extension)
+        help_menu.addAction("🧩 Download JetBrains Plugin", self.download_jetbrains_plugin)
+        help_menu.addSeparator()
+        help_menu.addAction("ℹ️ About", self.show_about)
         
     def setup_connections(self):
         self.send_btn.clicked.connect(self.handle_send_stop_toggle)
@@ -1505,6 +1509,17 @@ class MainWindowClass(QMainWindow):
         )
         dialog.exec()
 
+    def show_ide_integration(self):
+        from ui.file_viewer import FileViewerDialog
+        dialog = FileViewerDialog(
+            title="IDE Integration Guide",
+            file_names=["IDE_INTEGRATION.md"],
+            is_markdown=True,
+            size=(750, 600),
+            parent=self
+        )
+        dialog.exec()
+
     def show_license(self):
         from ui.file_viewer import FileViewerDialog
         dialog = FileViewerDialog(
@@ -1515,6 +1530,42 @@ class MainWindowClass(QMainWindow):
             parent=self
         )
         dialog.exec()
+
+    def download_vscode_extension(self):
+        import os
+        from pathlib import Path
+        
+        folder = Path(__file__).parent.parent / "extension"
+        if folder.exists():
+            os.startfile(str(folder))
+            QMessageBox.information(
+                self,
+                "VS Code Extension",
+                "The extension folder is now open.\n\n"
+                "Install:\n"
+                "1. VS Code → Extensions → ... → Install from VSIX\n"
+                "2. Select vscode-llm-chat-1.0.0.vsix"
+            )
+        else:
+            QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
+    
+    def download_jetbrains_plugin(self):
+        import os
+        from pathlib import Path
+        
+        folder = Path(__file__).parent.parent / "extension"
+        if folder.exists():
+            os.startfile(str(folder))
+            QMessageBox.information(
+                self,
+                "JetBrains Plugin",
+                "The extension folder is now open.\n\n"
+                "Install:\n"
+                "1. Settings → Plugins → ⚙️ → Install Plugin from Disk\n"
+                "2. Select jetbrains-llm-chat-1.0.0.zip"
+            )
+        else:
+            QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
 
     def format_code_blocks(self, text: str) -> str:
         return self.escape_html(text)

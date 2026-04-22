@@ -139,6 +139,59 @@ class FileViewerDialog(QDialog):
             <style>
                 pre { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; background-color: #f6f8fa; padding: 10px; border-radius: 4px; }
                 code { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; }
+                
+                /* Professional Table Styling */
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 16px 0;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    font-size: 13px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+                
+                th {
+                    background-color: #2c3e50;
+                    color: white;
+                    font-weight: 600;
+                    padding: 12px 15px;
+                    text-align: left;
+                    border: none;
+                }
+                
+                td {
+                    padding: 10px 15px;
+                    border-bottom: 1px solid #e0e0e0;
+                    background-color: #ffffff;
+                }
+                
+                tr:hover td {
+                    background-color: #f5f5f5;
+                }
+                
+                /* Zebra striping for rows */
+                tr:nth-child(even) td {
+                    background-color: #f9f9f9;
+                }
+                
+                tr:nth-child(even):hover td {
+                    background-color: #f0f0f0;
+                }
+                
+                /* First column bold styling */
+                td:first-child {
+                    font-weight: 500;
+                    color: #2c3e50;
+                }
+                
+                /* Code inside tables */
+                table code {
+                    background-color: #f0f0f0;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-family: 'Consolas', 'Courier New', monospace;
+                    font-size: 12px;
+                }
             </style>
             """
             
