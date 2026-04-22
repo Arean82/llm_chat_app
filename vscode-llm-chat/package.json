@@ -1,0 +1,57 @@
+{
+  "name": "vscode-llm-chat",
+  "displayName": "LLM Chat App",
+  "description": "Connect VS Code to LLM Chat App",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "llmchat.sendFile",
+        "title": "LLM Chat: Send Current File"
+      },
+      {
+        "command": "llmchat.sendSelection",
+        "title": "LLM Chat: Send Selected Code"
+      },
+      {
+        "command": "llmchat.sendProject",
+        "title": "LLM Chat: Send Entire Project"
+      },
+      {
+        "command": "llmchat.applyEdit",
+        "title": "LLM Chat: Apply AI Suggestion"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "llmchat.sendSelection",
+          "when": "editorHasSelection",
+          "group": "LLM Chat"
+        },
+        {
+          "command": "llmchat.sendFile",
+          "group": "LLM Chat"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/vscode": "^1.116.0",
+    "typescript": "^5.9.3"
+  }
+}
