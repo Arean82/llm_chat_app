@@ -1,5 +1,9 @@
 # IDE Integration Guide
 
+[Prerequisites](#-prerequisites) • [VS Code Integration](#-vs-code-integration) • [JetBrains IDEs](#-jetbrains-ides) • [Visual Studio 2022](#-visual-studio-2022) • [Troubleshooting](#-troubleshooting) • [API Reference](#-api-reference)
+
+---
+
 ## Prerequisites
 
 1. **LLM Chat App must be running** with API server enabled (Tools → Universal API Server)
