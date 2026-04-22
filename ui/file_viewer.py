@@ -94,15 +94,38 @@ class FileViewerDialog(QDialog):
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
     
+    def scroll_to_anchor(self, anchor):
+        """Scroll to section containing anchor text"""
+        anchor_clean = anchor.lower().replace("-", "").replace("_", "").replace(" ", "")
+
+        # Get all plain text
+        text = self.text_browser.toPlainText()
+        lines = text.split('\n')
+
+        cursor = self.text_browser.textCursor()
+        cursor.movePosition(cursor.MoveOperation.Start)
+
+        for i, line in enumerate(lines):
+            line_clean = line.lower().replace("-", "").replace("_", "").replace(" ", "")
+            if anchor_clean in line_clean:
+                # Move cursor to this line
+                for _ in range(i):
+                    cursor.movePosition(cursor.MoveOperation.Down)
+                self.text_browser.setTextCursor(cursor)
+                return True
+
+        return False
+
     def on_anchor_clicked(self, url):
-        """Handle internal anchor links and external URLs"""
         url_str = url.toString()
         if url_str.startswith("#"):
-            # Internal anchor - scroll to anchor
-            self.text_browser.scrollToAnchor(url_str[1:])
+            anchor = url_str[1:]
+            if not self.scroll_to_anchor(anchor):
+                # Try without special characters
+                self.scroll_to_anchor(anchor.replace("-", "").replace("_", ""))
         else:
-            # External link - open in default browser
             QDesktopServices.openUrl(url)
+
     
     def load_file(self, possible_names: list, is_markdown: bool):
         base_dir = Path(__file__).parent.parent
