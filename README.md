@@ -4,7 +4,7 @@
 
 A sleek, dark-themed desktop chat application built with Python and PySide6. It interfaces with the NVIDIA NIM API (via the OpenAI SDK) to provide streaming LLM responses, markdown rendering, and conversation management.
 
-[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
+[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) •[-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
 
 ---
 
@@ -36,6 +36,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
 - 🌐 **Universal API Server:** Start a local OpenAI-compatible API server from Tools menu. Connect any IDE (VS Code, Eclipse, IntelliJ) to your selected LLM model.
 - 🖥️ **VS Code Extension Support:** Use with Continue extension or build custom extension for advanced features like sending entire files, project folders, and applying AI edits directly.
+  For detailed API documentation, see [API Documentation](API_SERVER.md)
 
 ---
 
@@ -112,9 +113,9 @@ llm_chat_app/
 │   ├── models.json                 # 🤖 Available model list
 │   ├── styles.qss                  # 🎨 Global stylesheet
 │   └── badge_cache/                # ⚡ Auto-generated offline image cache
-│      
+│    
 ├── ui_designer/                    # 🎨 Qt Designer UI files
-│   ├── login_dialog.ui    
+│   ├── login_dialog.ui  
 │   ├── main_window.ui  
 │   ├── model_edit_dialog.ui
 │   ├── model_manager.ui  
@@ -142,8 +143,8 @@ llm_chat_app/
 │   └── update_logger.py            # Real-time logging
 │
 └── utils/                          # 🛠️ Helpers
-    ├── constants.py              
-    ├── helpers.py                
+    ├── constants.py            
+    ├── helpers.py              
     ├── model_config.py             # 🧠 Model context limits
     └── path_utils.py               # 📁 PyInstaller & dev path resolver
 ```
@@ -168,6 +169,34 @@ This application does not use local `.env` files or plaintext config files for s
 
 ---
 
+## 🌐 Universal API Server
+
+Start from **Tools → Universal API Server** (✅ = running). Server runs on `http://localhost:5000`
+
+### Endpoints
+
+| Endpoint                 | Method | Description   |
+| ------------------------ | ------ | ------------- |
+| `/health`              | GET    | Server status |
+| `/v1/models`           | GET    | List model    |
+| `/v1/chat/completions` | POST   | Send message  |
+
+### VS Code Extension
+
+Install `vscode-llm-chat/vscode-llm-chat-1.0.0.vsix`:
+
+1. VS Code Extensions (Ctrl+Shift+X)
+2. Click "..." → "Install from VSIX"
+
+### Other IDEs
+
+Configure any OpenAI-compatible extension with:
+
+- **URL:** `http://localhost:5000/v1`
+- **API Key:** any value
+
+---
+
 ## 📋 Log System
 
 The application features a comprehensive logging system for background operations:
@@ -189,7 +218,7 @@ The application features a comprehensive logging system for background operation
 | `F11`                            | Toggle true Fullscreen                                            |
 | `Esc`                            | Exit true Fullscreen                                              |
 | `Close button (X)` or `Alt+F4` | Shows exit options (Exit Application / Minimize to Tray / Cancel) |
-| `Ctrl+Alt+S` | Toggle Universal API Server (if shortcut configured) |
+| `Ctrl+Alt+S`                     | Toggle Universal API Server (if shortcut configured)              |
 
 ---
 
@@ -236,6 +265,7 @@ If you want to build the distributable installers yourself, follow the OS-specif
 2. Install PyInstaller: `pip install pyinstaller`
 3. Install Pillow for icon generation: `pip install Pillow`
 4. Generate the required OS icon files from your source `resources/app_icon.png`:
+
    ```bash
    python -c "from PIL import Image; img = Image.open('resources/app_icon.png'); img.save('resources/app_icon.ico', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)]); img.resize((256, 256)).save('resources/app_icon_linux.png'); print('Icons generated!')"
    ```

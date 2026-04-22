@@ -4,12 +4,16 @@
   "description": "Connect VS Code to LLM Chat App",
   "version": "1.0.0",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.116.0"
   },
   "categories": [
     "AI",
     "Chat"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Arean82/llm_chat_app"
+  },
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -29,6 +33,34 @@
       {
         "command": "llmchat.applyEdit",
         "title": "LLM Chat: Apply AI Suggestion"
+      },
+      {
+        "command": "llmchat.fixCode",
+        "title": "LLM Chat: Fix This Code"
+      },
+      {
+        "command": "llmchat.explainCode",
+        "title": "LLM Chat: Explain This Code"
+      },
+      {
+        "command": "llmchat.terminalCommand",
+        "title": "LLM Chat: Generate Terminal Command"
+      },
+      {
+        "command": "llmchat.explainError",
+        "title": "LLM Chat: Explain Error"
+      },
+      {
+        "command": "llmchat.generateCommit",
+        "title": "LLM Chat: Generate Commit Message"
+      },
+      {
+        "command": "llmchat.generateDocstring",
+        "title": "LLM Chat: Generate Docstring"
+      },
+      {
+        "command": "llmchat.generateTests",
+        "title": "LLM Chat: Generate Unit Tests"
       }
     ],
     "menus": {
@@ -40,6 +72,26 @@
         },
         {
           "command": "llmchat.sendFile",
+          "group": "LLM Chat"
+        },
+        {
+          "command": "llmchat.fixCode",
+          "when": "editorHasSelection",
+          "group": "LLM Chat"
+        },
+        {
+          "command": "llmchat.explainCode",
+          "when": "editorHasSelection",
+          "group": "LLM Chat"
+        },
+        {
+          "command": "llmchat.generateDocstring",
+          "when": "editorHasSelection",
+          "group": "LLM Chat"
+        },
+        {
+          "command": "llmchat.generateTests",
+          "when": "editorHasSelection",
           "group": "LLM Chat"
         }
       ]
