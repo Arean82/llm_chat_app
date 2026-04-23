@@ -1,7 +1,8 @@
-PySide6>=6.5.0
-openai>=1.0.0
-markdown>=3.4.0
+PySide6
+openai
+markdown
 # For packaging
-pyinstaller>=6.0.0
-# or nuitka>=2.0.0
+pyinstaller
+# or nuitka
 Pygments
+flask
