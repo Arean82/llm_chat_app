@@ -1750,13 +1750,34 @@ class MainWindowClass(QMainWindow):
             QTimer.singleShot(0, QApplication.instance().quit)
 
     def keyPressEvent(self, event):
+        # Check for Ctrl+D (Clear Chat)
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_D:
+            self.clear_chat()
+            event.accept()
+            return
+        
+        # Check for Ctrl+Shift+C (Copy Last Response)
+        if (event.modifiers() == (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier) 
+            and event.key() == Qt.Key.Key_C):
+            self.copy_last_response()
+            event.accept()
+            return
+        
+        # F11 Fullscreen
         if event.key() == Qt.Key.Key_F11:
             if self.isFullScreen():
                 self.showMaximized() 
             else:
                 self.showFullScreen() 
+            event.accept()
+            return
+        
+        # Escape from Fullscreen
         elif event.key() == Qt.Key.Key_Escape and self.isFullScreen():
             self.showMaximized()      
+            event.accept()
+            return
+        
         else:
             super().keyPressEvent(event)
 
