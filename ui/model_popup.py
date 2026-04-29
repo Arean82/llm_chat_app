@@ -71,9 +71,15 @@ class ModelPopupClass(QDialog):
             return
             
         import json
-        with open(models_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        try:
+            with open(models_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
             
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error reading models.json: {e}")
+            self.models_data = []
+            return
+
         self.models_data = data.get("models", [])
         self.ui.model_table.setRowCount(len(self.models_data))
         

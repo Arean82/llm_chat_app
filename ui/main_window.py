@@ -6,13 +6,14 @@ import os
 from pathlib import Path
 import re
 import base64
-
 import socket 
 
 import time
 import json
+import keyring
 
 from logic.api_server import APIServer
+from utils.constants import CONNECTION_CHECK_INTERVAL_CONNECTED_MS, CONNECTION_CHECK_INTERVAL_DISCONNECTED_MS, RESPONSE_BUFFER_CHARS
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication
@@ -187,7 +188,11 @@ class MainWindowClass(QMainWindow):
         # WIDGETS - MOVED UP BEFORE load_settings
         self.input_field = self.ui.input_field
         self.input_field.installEventFilter(self)
+
         self.send_btn = self.ui.send_btn
+        self.send_btn.setToolTip("Send message (Enter)")
+        self.input_field.setToolTip("Type your message. Press Enter to send, Shift+Enter for new line")
+
         self.model_btn = self.ui.model_btn
         self.model_desc_label = self.ui.model_desc_label
         self.auth_btn = self.ui.auth_btn
@@ -199,7 +204,7 @@ class MainWindowClass(QMainWindow):
         self.is_connected = True
         self.connection_check_timer = QTimer(self)
         self.connection_check_timer.timeout.connect(self.background_check_connection)
-        self.connection_check_timer.start(10000)
+        self.connection_check_timer.start(CONNECTION_CHECK_INTERVAL_CONNECTED_MS)
     
         # SETUP
         self.setup_menu_bar()   
@@ -624,11 +629,11 @@ class MainWindowClass(QMainWindow):
         if self.is_connected:
             self.connection_status_btn.setText("🌐")
             self.connection_status_btn.setToolTip("Connected") # Update tooltip
-            self.connection_check_timer.setInterval(10000) # Slow down to 10s when connected
+            self.connection_check_timer.setInterval(CONNECTION_CHECK_INTERVAL_CONNECTED_MS) # Slow down to 10s when connected
         else:
             self.connection_status_btn.setText("🔴")
             self.connection_status_btn.setToolTip("Disconnected - Checking...")
-            self.connection_check_timer.setInterval(3000)  # Speed up to 3s when disconnected
+            self.connection_check_timer.setInterval(CONNECTION_CHECK_INTERVAL_DISCONNECTED_MS) # Speed up to 3s when disconnected
 
     def force_disconnected_state(self):
         """Immediately force UI to disconnected state (called on API errors)."""
@@ -644,18 +649,31 @@ class MainWindowClass(QMainWindow):
 
         # File menu with conversation management
         file_menu = menubar.addMenu("File")
-        file_menu.addAction("New Conversation", self.new_conversation)
+        file_menu.addAction("New Conversation", self.new_conversation, "Ctrl+N")
         file_menu.addSeparator()
-        file_menu.addAction("Save Conversation", self.save_conversation)
-        file_menu.addAction("Load Conversation", self.load_conversation)
-        file_menu.addAction("Minimize to Tray", self.hide_to_tray)
+        file_menu.addAction("Save Conversation", self.save_conversation, "Ctrl+S")
+        file_menu.addAction("Load Conversation", self.load_conversation, "Ctrl+L")
+        file_menu.addAction("Minimize to Tray", self.hide_to_tray, "Ctrl+M")
         file_menu.addSeparator()
-        file_menu.addAction("Exit", self.quit_app)
+        file_menu.addAction("Exit", self.quit_app, "Ctrl+Q")
+
+        # Edit menu with clear chat
+        edit_menu = menubar.addMenu("Edit")
+
+        clear_action = edit_menu.addAction("Clear Chat")
+        clear_action.triggered.connect(self.clear_chat)
+        clear_action.setShortcut("Ctrl+D")
+
+        edit_menu.addSeparator()
+
+        copy_action = edit_menu.addAction("Copy Last Response")
+        copy_action.triggered.connect(self.copy_last_response)
+        copy_action.setShortcut("Ctrl+Shift+C")
 
         # Settings menu with Model Manager
         settings_menu = menubar.addMenu("Settings")
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
-        settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions) 
+        settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
         # settings_menu.addAction("🔑 API Key", self.handle_auth_button)
 
         # Log menu
@@ -899,11 +917,14 @@ class MainWindowClass(QMainWindow):
         models_file = get_resource_path("resources/models.json")
 
         if models_file.exists():
-            with open(models_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                for m in data.get("models", []):
-                    if m['id'] == model_id:
-                        return m['name']
+            try:
+                with open(models_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    for m in data.get("models", []):
+                        if m['id'] == model_id:
+                            return m['name']
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Error loading model names: {e}")
         return model_id 
 
     def update_model_ui(self, model_id):
@@ -913,13 +934,16 @@ class MainWindowClass(QMainWindow):
         desc = ""
         
         if models_file.exists():
-            with open(models_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                for m in data.get("models", []):
-                    if m['id'] == model_id:
-                        name = m.get('name', model_id)
-                        desc = m.get('description', '')
-                        break
+            try:
+                with open(models_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    for m in data.get("models", []):
+                        if m['id'] == model_id:
+                            name = m.get('name', model_id)
+                            desc = m.get('description', '')
+                            break
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Error loading model data: {e}")
 
         # Update button
         self.model_btn.setText(f"🤖 {name} ▼")
@@ -1053,8 +1077,9 @@ class MainWindowClass(QMainWindow):
         # ==========================================
         # Model-aware context length & buffer checking
         # ==========================================
-        RESPONSE_BUFFER = 64_000  # Reserve ~64k characters for AI response
-        
+        #RESPONSE_BUFFER = 64_000  # Reserve ~64k characters for AI response
+        RESPONSE_BUFFER = RESPONSE_BUFFER_CHARS
+
         estimated_chars = sum(len(msg.get("content", "")) for msg in self.chat_history)
         char_limit = get_context_limit(self.llm_client.current_model)
         remaining_space = char_limit - estimated_chars
@@ -1316,8 +1341,13 @@ class MainWindowClass(QMainWindow):
         self.current_worker = None  
         
         if worker and worker.isRunning():
-            worker.terminate()
-            worker.wait()
+            worker.requestInterruption()   # Tell worker to stop gracefully
+            worker.quit()                  # Exit event loop
+            worker.wait(3000)              # Wait up to 3 seconds
+
+            if worker.isRunning():
+                worker.terminate()         # Force stop if still running
+                worker.wait()
             
         self.remove_typing_indicator()
         
@@ -1410,7 +1440,17 @@ class MainWindowClass(QMainWindow):
         self.stream_start_position = None
         self.response_start_time = None
         self.add_system_message("New conversation started")
-        
+
+    def copy_last_response(self):
+        """Copy the last assistant response to clipboard"""
+        for msg in reversed(self.chat_history):
+            if msg["role"] == "assistant":
+                clipboard = QApplication.clipboard()
+                clipboard.setText(msg["content"])
+                self.add_system_message("📋 Last response copied to clipboard")
+                return
+        self.add_system_message("No response to copy")
+
     def save_conversation(self):
         if not self.chat_history:
             QMessageBox.information(self, "Nothing to Save", "No conversation to save.")

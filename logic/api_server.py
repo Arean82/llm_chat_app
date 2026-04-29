@@ -1,3 +1,5 @@
+import threading
+
 from flask import Flask, request, jsonify, Response, stream_with_context
 from threading import Thread
 import time
@@ -13,6 +15,7 @@ class APIServer:
         self.server_thread = None
         self.running = False
         self.conversation_history = {}  # Store history per session
+        self._history_lock = threading.Lock()  # Lock for thread-safe history access
         self.setup_routes()
     
     def setup_routes(self):
@@ -48,12 +51,11 @@ class APIServer:
             if not user_message:
                 return jsonify({"error": "No user message found"}), 400
             
-            # Store conversation history
-            if session_id not in self.conversation_history:
-                self.conversation_history[session_id] = []
-            
-            # Add user message to history
-            self.conversation_history[session_id].append({"role": "user", "content": user_message})
+            # Store conversation history (THREAD-SAFE)
+            with self._history_lock:
+                if session_id not in self.conversation_history:
+                    self.conversation_history[session_id] = []
+                self.conversation_history[session_id].append({"role": "user", "content": user_message})
             
             if stream:
                 def generate():
@@ -62,8 +64,9 @@ class APIServer:
                         full_response += chunk
                         yield f"data: {json.dumps({'choices': [{'delta': {'content': chunk}}]})}\n\n"
                     
-                    # Store assistant response in history
-                    self.conversation_history[session_id].append({"role": "assistant", "content": full_response})
+                    # Store assistant response in history (THREAD-SAFE)
+                    with self._history_lock:
+                        self.conversation_history[session_id].append({"role": "assistant", "content": full_response})
                     yield "data: [DONE]\n\n"
                 
                 return Response(generate(), mimetype='text/event-stream')
@@ -76,8 +79,9 @@ class APIServer:
                     max_tokens=max_tokens
                 )
                 
-                # Store assistant response in history
-                self.conversation_history[session_id].append({"role": "assistant", "content": response})
+                # Store assistant response in history (THREAD-SAFE)
+                with self._history_lock:
+                    self.conversation_history[session_id].append({"role": "assistant", "content": response})
                 
                 return jsonify({
                     "id": "chatcmpl-" + str(int(time.time())),
@@ -101,8 +105,9 @@ class APIServer:
         
         @self.app.route('/v1/chat/history/<session_id>', methods=['DELETE'])
         def clear_history(session_id):
-            if session_id in self.conversation_history:
-                del self.conversation_history[session_id]
+            with self._history_lock:
+                if session_id in self.conversation_history:
+                    del self.conversation_history[session_id]
             return jsonify({"status": "cleared"})
         
         @self.app.route('/health', methods=['GET'])
@@ -123,8 +128,18 @@ class APIServer:
         if self.running:
             return False
         
+        # Check if port 5000 is available
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('localhost', 5000))
+            except OSError:
+                print("ERROR: Port 5000 is already in use")
+                print("Stop other applications using port 5000 (AirPlay, etc.)")
+                return False
+        
         def run():
-            self.app.run(host='localhost', port=self.port, debug=False, use_reloader=False)
+            self.app.run(host='localhost', port=5000, debug=False, use_reloader=False)
         
         self.server_thread = Thread(target=run, daemon=True)
         self.server_thread.start()

@@ -115,6 +115,8 @@ class SystemPromptManagerClass(QDialog):
                     "checked": True
                 }
             ]
+            # Save default list so file gets created
+            self.save_data_to_settings()
 
     def save_data_to_settings(self):
         """Saves instructions to resources/user_prompts.json"""

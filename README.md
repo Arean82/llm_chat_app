@@ -240,6 +240,13 @@ The application features a comprehensive logging system for background operation
 | `Esc`                            | Exit true Fullscreen                                              |
 | `Close button (X)` or `Alt+F4` | Shows exit options (Exit Application / Minimize to Tray / Cancel) |
 | `Ctrl+Alt+S`                     | Toggle Universal API Server (if shortcut configured)              |
+| `Ctrl+N` | New Conversation |
+| `Ctrl+S` | Save Conversation |
+| `Ctrl+L` | Load Conversation |
+| `Ctrl+M` | Minimize to Tray |
+| `Ctrl+Q` | Exit |
+| `Ctrl+D` | Clear Chat |
+| `Ctrl+Shift+C` | Copy Last Response |
 
 ---
 
