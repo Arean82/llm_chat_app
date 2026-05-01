@@ -19,28 +19,57 @@ from ui.main_window import MainWindowClass
 
 
 def copy_bundled_resources():
-    """Copy default resource files from bundle to exe folder on first run"""
+    """
+    Handles resource synchronization for the EXE environment.
+    - System Files (Styles, UI): Always updated to match the EXE version.
+    - User Files (Prompts, Models): Only created if missing to protect user data.
+    """
     if not getattr(sys, 'frozen', False):
         return
     
-    bundle_resources = Path(sys._MEIPASS) / "resources"
-    exe_resources = Path(sys.executable).parent / "resources"
-    exe_resources.mkdir(parents=True, exist_ok=True)
-    
-    # Files to copy if missing
-    files_to_copy = ['models.json', 'user_prompts.json', 'styles.qss', 'app_icon.png']
-    
-    for filename in files_to_copy:
-        src = bundle_resources / filename
-        dst = exe_resources / filename
-        if src.exists() and not dst.exists():
-            shutil.copy2(src, dst)
-    
-    # Copy ui_designer .ui files to exe folder (optional, if needed for editing)
-    bundle_ui = Path(sys._MEIPASS) / "ui_designer"
-    exe_ui = exe_resources.parent / "ui_designer"
-    if bundle_ui.exists() and not exe_ui.exists():
-        shutil.copytree(bundle_ui, exe_ui)
+    try:
+        bundle_dir = Path(sys._MEIPASS)
+        exe_dir = Path(sys.executable).parent
+        
+        # 1. Ensure directories exist
+        (exe_dir / "resources").mkdir(parents=True, exist_ok=True)
+        (exe_dir / "ui_designer").mkdir(parents=True, exist_ok=True)
+
+        # 2. SYSTEM FILES: Always Overwrite (ensures design updates)
+        system_files = [
+            ('resources/styles.qss', 'resources/styles.qss'),
+            ('resources/app_icon.png', 'resources/app_icon.png'),
+        ]
+        
+        for rel_src, rel_dst in system_files:
+            src = bundle_dir / rel_src
+            dst = exe_dir / rel_dst
+            if src.exists():
+                shutil.copy2(src, dst)
+
+        # 3. UI DESIGNER: Always Overwrite the whole folder
+        bundle_ui = bundle_dir / "ui_designer"
+        exe_ui = exe_dir / "ui_designer"
+        if bundle_ui.exists():
+            # Remove old UI folder to ensure a clean sync
+            if exe_ui.exists():
+                shutil.rmtree(exe_ui)
+            shutil.copytree(bundle_ui, exe_ui)
+
+        # 4. USER FILES: Only copy if MISSING (protects user work)
+        user_files = [
+            ('resources/models.json', 'resources/models.json'),
+            ('resources/user_prompts.json', 'resources/user_prompts.json'),
+        ]
+        
+        for rel_src, rel_dst in user_files:
+            src = bundle_dir / rel_src
+            dst = exe_dir / rel_dst
+            if src.exists() and not dst.exists():
+                shutil.copy2(src, dst)
+                
+    except Exception as e:
+        print(f"Resource sync error: {e}")
 
 def main():
     copy_bundled_resources()
