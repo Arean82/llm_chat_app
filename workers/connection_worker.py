@@ -17,12 +17,17 @@ class ConnectionWorker(QThread):
         self._running = True
 
     def run(self):
-        while self._running:
+        while not self.isInterruptionRequested() and self._running:
             connected = self.check_connection()
             self.status_changed.emit(connected)
             
-            # Wait based on status (slower when connected, faster when disconnected)
-            self.msleep(10000 if connected else 3000)
+            # Granular sleep to allow instant interruption
+            # Total wait: 10s if connected, 3s if disconnected
+            wait_time = 10000 if connected else 3000
+            elapsed = 0
+            while elapsed < wait_time and not self.isInterruptionRequested() and self._running:
+                self.msleep(100)
+                elapsed += 100
 
     def check_connection(self):
         try:

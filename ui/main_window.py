@@ -1099,7 +1099,7 @@ class MainWindowClass(QMainWindow):
     def set_send_button_idle(self):
         self.is_generating = False 
         self.send_btn.setText("Send")
-        if self.current_theme == "dark":
+        if self.theme_manager.current_theme == "dark":
             disabled_style = "QPushButton:disabled { background-color: #3c3c3c; color: #888; }"
         else:
             disabled_style = "QPushButton:disabled { background-color: #e0e0e0; color: #aaaaaa; }"
@@ -1207,7 +1207,7 @@ class MainWindowClass(QMainWindow):
                 self.add_system_message(f"Conversation loaded from {file_path}")
                 
     def show_about(self):
-        border_color = "#e0e0e0" if self.current_theme == "light" else "#3c3c3c"
+        border_color = "#e0e0e0" if self.theme_manager.current_theme == "light" else "#3c3c3c"
         about_text = f"""
         <div style="font-family: 'Segoe UI', Arial, sans-serif;">
             <h2 style="color: #0078d4; margin-bottom: 5px;">LLM Chat App</h2>
@@ -1528,6 +1528,18 @@ class MainWindowClass(QMainWindow):
             )
             return
 
-        dialog = ModelManagerDialog(theme=self.current_theme, parent=self)
+        dialog = ModelManagerDialog(theme=self.theme_manager.current_theme, parent=self)
         dialog.exec()
+
+    def closeEvent(self, event):
+        """Ensure background threads are stopped correctly on exit."""
+        if hasattr(self, 'api_manager'):
+            self.api_manager.stop_api_server()
+            
+        if hasattr(self, 'connection_worker'):
+            self.connection_worker.stop()
+            self.connection_worker.requestInterruption()
+            self.connection_worker.wait()
+            
+        event.accept()
 
