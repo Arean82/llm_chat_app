@@ -16,9 +16,15 @@ SetupIconFile=resources\app_icon.ico
 UninstallDisplayIcon={app}\LLM Chat App.exe
 WizardStyle=modern
 PrivilegesRequired=admin
+CloseApplications=yes
+RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[InstallDelete]
+; Clean up old UI files to ensure a fresh sync
+Type: filesandordirs; Name: "{app}\ui_designer"
 
 [Files]
 ; Grab EVERYTHING inside the dist folder (exe, _internal folder, etc.)

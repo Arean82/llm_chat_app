@@ -1,8 +1,18 @@
-PySide6
-openai
-markdown
-# For packaging
-pyinstaller
-# or nuitka
-Pygments
-flask
+# UI Framework
+PySide6>=6.6.0
+
+# LLM & API Clients
+openai>=1.0.0
+requests>=2.31.0
+
+# Text Processing & Rendering
+markdown>=3.5.0
+Pygments>=2.17.0
+
+# Universal API Server
+flask>=3.0.0
+werkzeug>=3.0.0
+
+# Development & Packaging
+pyinstaller>=6.3.0
+Pillow>=10.0.0

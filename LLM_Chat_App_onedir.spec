@@ -8,27 +8,18 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('resources/app_icon.png', 'resources'),
-        ('resources/app_icon.ico', 'resources'),
-        ('resources/styles.qss', 'resources'),
-        ('resources/models.json', 'resources'),
-        ('resources/user_prompts.json', 'resources'),
+        ('resources/', 'resources'),
+        ('ui_designer/', 'ui_designer'),
+        ('extension/', 'extension'),
         ('README.md', '.'),           
         ('LICENSE', '.'),        
         ('API_SERVER.md', '.'),
         ('IDE_INTEGRATION.md', '.'),
-        ('extension/vscode-llm-chat-1.0.0.vsix', 'extension'),
-        ('extension/jetbrains-llm-chat-1.0.0.zip', 'extension'),
-        ('ui_designer/login_dialog.ui', 'ui_designer'),
-        ('ui_designer/log_viewer.ui', 'ui_designer'),
-        ('ui_designer/main_window.ui', 'ui_designer'),
-        ('ui_designer/model_edit_dialog.ui', 'ui_designer'),
-        ('ui_designer/model_manager.ui', 'ui_designer'),
-        ('ui_designer/model_popup.ui', 'ui_designer'),
-        ('ui_designer/system_prompt_manager.ui', 'ui_designer'),
     ],
     hiddenimports=[
         'flask',
+        'werkzeug',
+        'werkzeug.serving',
         'openai',
         'markdown',
         'certifi',
@@ -38,6 +29,7 @@ a = Analysis(
         'PySide6.QtWidgets',
         'PySide6.QtGui',
         'PySide6.QtUiTools',
+        'sqlite3',
         'pysqlite2',
         'queue',
         'threading',
@@ -104,3 +96,18 @@ coll = COLLECT(
     upx=True,
     name='LLM Chat App'
 )
+
+# macOS specific bundle configuration
+import sys
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll,
+        name='LLM Chat App.app',
+        icon='resources/app_icon.icns',
+        bundle_identifier='com.arean82.llmchatapp',
+        info_plist={
+            'NSPrincipalClass': 'NSApplication',
+            'NSAppleScriptEnabled': False,
+            'NSHighResolutionCapable': True,
+        },
+    )

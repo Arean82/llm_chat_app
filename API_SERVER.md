@@ -5,7 +5,7 @@ The **Universal API Server** acts as a bridge between your local LLM and any ext
 [Features](#-features) • [Getting Started](#-getting-started) • [API Endpoints](#-api-endpoints) • [Health Check Example](#-health-check-example) • [Chat Completions](#-chat-completions) • [Code Integration](#-code-integration) • [Testing the API](#-testing-the-api) • [](#-ide-integration-guide) • [Key Technical Notes](#-key-technical-notes)
 
 
-VS Code extension `.vsix` file is available in the `vscode-llm-chat/` folder.
+VS Code extension `.vsix` file is available in the `extension/` folder.
 ---
 
 ## ✨ Features

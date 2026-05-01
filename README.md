@@ -18,9 +18,9 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🏷️ **System Instruction Library:** Manage custom AI personas and rules. Create instruction sets (e.g., 'Python Expert', 'Friendly Tutor') and toggle them on/off via the Settings menu.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
-- 💾 **Smart Conversation Management:** Save and load chat histories as JSON files. It automatically saves and restores the exact model used for the session.
-- 🚅 **Smart Offline Caching:** Local asset caching ensures instant UI loading, even on the very first run.
-- 🔐 **Secure State Memory:** Remembers your API keys and selected models securely in your OS backend (no plain-text config files!).
+- 💾 **Robust History Management:** Uses a high-performance **SQLite** backend with **WAL (Write-Ahead Logging)** mode to ensure data integrity and prevent corruption, even during crashes or power loss.
+- 🚅 **Instant Loading (HTML Cache):** Near-instant conversation loading thanks to an intelligent HTML caching system that pre-renders messages, bypassing heavy markdown parsing during UI refresh.
+- 🔐 **State Memory:** Remembers your API keys, selected models, and theme preferences via `QSettings` (OS-native registry/config).
 - 🖥️ **Distraction-Free UI:** Forced maximized, clean light/dark interface so you can focus purely on your prompt.
 - 🌓 **Adaptive Theming** – Instantly switch between Dark and Light modes.
 - 📌 **Persistent Settings** – API keys, models, and theme preferences survive app restarts.
@@ -32,7 +32,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - ✨ **AI-Powered Description Generation:** Generate one-sentence descriptions for any model using your choice of working model (Llama 4, Gemma 3, etc.). Descriptions persist across app restarts.
 - 🏷️ **Developer Tabs:** Models are automatically grouped by developer (Google, Meta, NVIDIA, etc.) in the Model Manager for easier browsing.
 - 💰 **Paid Model Support:** Fetch paid models (requires subscription) and merge them with existing free models without losing data.
-- 🚀 **One-Click EXE Build:** Standalone executable with automatic resource folder creation on first run - no manual file copying needed.
+- 🚀 **Graceful Resource Management:** Implements **Smart Resource Sync** that detects new EXE versions and updates UI files without destructive wiping. Includes robust cleanup logic to ensure all threads and port 5000 are released on exit.
 - 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
 - 🌐 **Universal API Server:** Start a local OpenAI-compatible API server from Tools menu. Connect any IDE (VS Code, Eclipse, IntelliJ) to your selected LLM model.
 - 🖥️ **VS Code Extension Support:** Use with Continue extension or build custom extension for advanced features like sending entire files, project folders, and applying AI edits directly.
@@ -117,8 +117,8 @@ llm_chat_app/
 ├── IDE_INTEGRATION.md              # 🔌 IDE setup guide
 ├── requirements.txt                # 📦 Python dependencies
 │
-├── extension/                      # 📦 IDE Extensions
-│   ├── vscode-llm-chat-1.0.0.vsix # VS Code extension
+├── extension/                       # 📦 IDE Extensions
+│   ├── vscode-llm-chat-1.0.0.vsix   # VS Code extension
 │   └── jetbrains-llm-chat-1.0.0.zip # JetBrains plugin
 │
 ├── resources/                      # 📦 Static assets & caches
@@ -181,11 +181,11 @@ llm_chat_app/
 
 This application does not use local `.env` files or plaintext config files for sensitive data.
 
-- **API Keys & Settings:** Stored securely using `QSettings`.
+- **API Keys & Settings:** Stored using `QSettings`.
   - *Windows:* Saved in the Registry (`HKEY_CURRENT_USER\Software\LLMChatApp\Settings`).
   - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
   - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
-- **Chat Histories:** Saved as standard `.json` files in `~/LLMChatApp/conversations/`.
+- **Chat Histories:** Saved to a high-performance SQLite database (`chat_history.db`) in `~/LLMChatApp/conversations/` for maximum reliability.
 
 ---
 
@@ -321,11 +321,9 @@ pyinstaller LLM_Chat_App_combined.spec
 - One-file: `dist/LLM Chat App.exe` (single executable file)
 - Combined: Both outputs are generated simultaneously
 
-**First Run Behavior:**
-
-- On first launch, the executable automatically creates `resources` and `ui_designer` folders alongside the EXE
-- Default `models.json`, `user_prompts.json`, `styles.qss`, and `app_icon.png` are copied from the bundle
-- No manual file copying required - everything is handled automatically
+- On first launch, the executable automatically creates `resources` and `ui_designer` folders alongside the EXE.
+- Uses **Smart Sync** to only update files if the version in the EXE is newer, protecting your local changes while ensuring the UI is always up to date.
+- No manual file copying required - everything is handled automatically.
 
 **Test the executable** before proceeding to package it!
 
@@ -341,67 +339,39 @@ pyinstaller LLM_Chat_App_combined.spec
 
 The installer copies the entire `dist/LLM Chat App/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
-#### 🐧 Linux (DEB Package)
+#### 🐧 Linux (DEB & AppImage)
 
-Linux users can install and uninstall properly using DEB packages:
+For Ubuntu/Debian, use the automated build scripts:
 
+**1. Create a DEB Installer:**
 ```bash
-# Build one-dir first
+# Build onedir first
 pyinstaller LLM_Chat_App_onedir.spec
-
-# Create DEB package structure
-mkdir -p llmchatapp/usr/local/bin
-mkdir -p llmchatapp/usr/share/applications
-mkdir -p llmchatapp/usr/share/icons/hicolor/256x256/apps
-mkdir -p llmchatapp/DEBIAN
-
-# Copy files
-cp -r "dist/LLM Chat App/"* llmchatapp/usr/local/bin/
-
-# Copy icon
-cp resources/app_icon_linux.png llmchatapp/usr/share/icons/hicolor/256x256/apps/llmchatapp.png
-
-# Create desktop entry
-cat > llmchatapp/usr/share/applications/llmchatapp.desktop << EOF
-[Desktop Entry]
-Name=LLM Chat App
-Exec=/usr/local/bin/LLM Chat App
-Icon=llmchatapp
-Type=Application
-Categories=Utility;
-EOF
-
-# Create control file
-cat > llmchatapp/DEBIAN/control << EOF
-Package: llmchatapp
-Version: 4.0.0
-Section: utils
-Priority: optional
-Architecture: amd64
-Maintainer: Arean Narrayan
-Description: LLM Chat Application
- Desktop client for NVIDIA NIM API
-EOF
-
-# Build DEB
-dpkg-deb --build llmchatapp llm_chat_app_4.0.0.deb
+# Run the automation script
+bash build_deb.sh
+# Install
+sudo dpkg -i llmchatapp_4.0.0.deb
 ```
 
-Install: `sudo dpkg -i llm_chat_app_4.0.0.deb`
-Uninstall: `sudo dpkg -r llmchatapp`
+**2. Create a Portable AppImage:**
+```bash
+# Build onedir first
+pyinstaller LLM_Chat_App_onedir.spec
+# Run the AppImage script
+bash build_appimage.sh
+```
+
+Uninstall DEB: `sudo apt remove llmchatapp`
 
 #### 🍎 macOS (PKG)
 
-```bash
-# Build one-dir first
-pyinstaller LLM_Chat_App_onedir.spec
+For macOS (Intel & Apple Silicon M1/M2/M3/M4), use the automated build script:
 
-# Create PKG installer
-pkgbuild --root "dist/LLM Chat App.app" \
-         --identifier com.llmchatapp \
-         --version 4.0.0 \
-         --install-location /Applications \
-         "LLM_Chat_App_Installer.pkg"
+```bash
+# Build onedir/bundle first
+pyinstaller LLM_Chat_App_onedir.spec
+# Run the automation script
+bash build_mac.sh
 ```
 
 ### 📂 How User Data is Handled

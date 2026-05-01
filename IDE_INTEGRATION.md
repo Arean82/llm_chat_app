@@ -34,7 +34,7 @@
 
 ### Option B: Official LLM Chat Extension (Full Features)
 
-1. Download `vscode-llm-chat-1.0.0.vsix` from `vscode-llm-chat/` folder
+1. Download `vscode-llm-chat-1.0.0.vsix` from the `extension/` folder in the project root.
 2. VS Code → Extensions (Ctrl+Shift+X) → `...` → Install from VSIX
 3. Reload VS Code
 
@@ -68,7 +68,7 @@
 
 ### Installation
 
-1. Download `jetbrains-llm-chat-1.0.0.zip` from `jetbrains-llm-chat/build/distributions/`
+1. Download `jetbrains-llm-chat-1.0.0.zip` from the `extension/` folder in the project root.
 2. **File → Settings → Plugins** (or **Ctrl+Alt+S**)
 3. Click ⚙️ → **Install Plugin from Disk**
 4. Select the `.zip` file
@@ -133,9 +133,9 @@ A dedicated Visual Studio 2022 extension can be built using the same API. Reques
 | Issue | Solution |
 |-------|----------|
 | "Failed to connect" | Ensure LLM Chat App is running with API server enabled (✅ icon) |
-| Port 5000 conflict | Change port in API server settings (future feature) |
-| No response | Check model is selected in LLM Chat App |
-| Timeout | Increase timeout or check network |
+| Port 5000 conflict | Port 5000 is mandatory for most integrations. On macOS, disable **AirPlay Receiver** in System Settings. On Windows, check for other web services. |
+| No response | Check that a model is selected in LLM Chat App |
+| Timeout | Increase timeout in your IDE settings or check network connectivity |
 
 ---
 

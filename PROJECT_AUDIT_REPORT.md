@@ -9,10 +9,6 @@ This report provides a detailed analysis of the LLM Chat App codebase, focusing 
 
 ## 🔴 High Severity
 
-### 1. Security: Unprotected API Key Storage
-- **Issue:** API keys are stored in `QSettings` (Windows Registry) in plaintext.
-- **Risk:** Any local malware or unauthorized user can retrieve the NVIDIA API key.
-- **Recommendation:** Implement `keyring` storage to utilize the Windows Credential Manager/macOS Keychain.
 
 ---
 
