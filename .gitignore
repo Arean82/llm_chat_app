@@ -1,47 +1,64 @@
-*/__pycache__/*
-#logic/__pycache__/*
-#models/__pycache__/*
-#ui/__pycache__/*
-build/*
-dist/*
-installer_output/*
-
-# Python
+# Python & IDEs
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 venv/
 env/
+.env
+.vscode/
+.idea/
 
-# PyInstaller
+# PyInstaller & Build Artifacts
 build/
 dist/
+*.spec
+!LLM_Chat_App_combined.spec
+!LLM_Chat_App_onefile.spec
+!LLM_Chat_App_onedir.spec
 *.spec.bak
 
-# VS Code extension
+# Windows Installer (Inno Setup)
+installer_output/
+
+# Linux Build Artifacts
+*.deb
+*.AppImage
+*.zsync
+build_deb_pkg/
+LLMChatApp.AppDir/
+appimagetool
+
+# macOS Build Artifacts
+*.pkg
+*.dmg
+
+# User Data & Caches
+resources/badge_cache/
+resources/update_log.txt
+resources/chat_history.db
+update_log.txt
+
+# OS Specific
+.DS_Store
+.DS_Store?
+._*
+ehthumbs.db
+Thumbs.db
+
+# VS Code Extension Source
 vscode-llm-chat/node_modules/
 vscode-llm-chat/out/
 vscode-llm-chat/*.vsix
 
-# JetBrains plugin
+# JetBrains Plugin Source
 jetbrains-llm-chat/build/
 jetbrains-llm-chat/.gradle/
+jetbrains-llm-chat/bin/
+jetbrains-llm-chat/out/
+jetbrains-llm-chat/target/
 
-# App data
-resources/badge_cache/
-resources/update_log.txt
-resources/models.json
-resources/user_prompts.json
-
-# OS
-.DS_Store
-Thumbs.db
-jetbrains-llm-chat/bin/main/META-INF/plugin.xml
-jetbrains-llm-chat/bin/main/com/llmchat/LLMChatPlugin.kt
-jetbrains-llm-chat/bin/main/com/llmchat/LLMChatService.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/ExplainCodeAction.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/FixCodeAction.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/GenerateCommitAction.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/GenerateDocstringAction.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/GenerateTestsAction.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/SendSelectionAction.kt
-jetbrains-llm-chat/bin/main/com/llmchat/actions/TerminalCommandAction.kt
+# Bundled Extensions (the ones being distributed)
+extension/*.vsix
+extension/*.zip
