@@ -18,11 +18,32 @@ from PySide6.QtCore import QFile, QIODevice
 from ui.main_window import MainWindowClass
 
 
+def smart_sync(src: Path, dst: Path):
+    """Only copies src to dst if dst is missing or src is newer/different."""
+    if not src.exists():
+        return False
+    
+    should_copy = False
+    if not dst.exists():
+        should_copy = True
+    else:
+        # Compare modification times and sizes
+        src_stat = src.stat()
+        dst_stat = dst.stat()
+        if src_stat.st_mtime > dst_stat.st_mtime or src_stat.st_size != dst_stat.st_size:
+            should_copy = True
+            
+    if should_copy:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        return True
+    return False
+
 def copy_bundled_resources():
     """
     Handles resource synchronization for the EXE environment.
-    - System Files (Styles, UI): Always updated to match the EXE version.
-    - User Files (Prompts, Models): Only created if missing to protect user data.
+    - System Files: Updated only if the version in the EXE is newer.
+    - User Files: Created only if missing.
     """
     if not getattr(sys, 'frozen', False):
         return
@@ -31,41 +52,35 @@ def copy_bundled_resources():
         bundle_dir = Path(sys._MEIPASS)
         exe_dir = Path(sys.executable).parent
         
-        # 1. Ensure directories exist
-        (exe_dir / "resources").mkdir(parents=True, exist_ok=True)
-        (exe_dir / "ui_designer").mkdir(parents=True, exist_ok=True)
-
-        # 2. SYSTEM FILES: Always Overwrite (ensures design updates)
+        # 1. SYSTEM FILES & UI DESIGNER: Smart Sync (ensures updates without full wipe)
         system_files = [
-            ('resources/styles.qss', 'resources/styles.qss'),
-            ('resources/app_icon.png', 'resources/app_icon.png'),
+            'resources/styles.qss',
+            'resources/app_icon.png',
         ]
         
-        for rel_src, rel_dst in system_files:
-            src = bundle_dir / rel_src
-            dst = exe_dir / rel_dst
-            if src.exists():
-                shutil.copy2(src, dst)
+        for rel_path in system_files:
+            smart_sync(bundle_dir / rel_path, exe_dir / rel_path)
 
-        # 3. UI DESIGNER: Always Overwrite the whole folder
+        # Sync the entire UI designer folder individually
         bundle_ui = bundle_dir / "ui_designer"
         exe_ui = exe_dir / "ui_designer"
         if bundle_ui.exists():
-            # Remove old UI folder to ensure a clean sync
-            if exe_ui.exists():
-                shutil.rmtree(exe_ui)
-            shutil.copytree(bundle_ui, exe_ui)
+            for src_file in bundle_ui.rglob("*"):
+                if src_file.is_file():
+                    rel_path = src_file.relative_to(bundle_ui)
+                    smart_sync(src_file, exe_ui / rel_path)
 
-        # 4. USER FILES: Only copy if MISSING (protects user work)
+        # 2. USER FILES: Only copy if MISSING (protects user work)
         user_files = [
-            ('resources/models.json', 'resources/models.json'),
-            ('resources/user_prompts.json', 'resources/user_prompts.json'),
+            'resources/models.json',
+            'resources/user_prompts.json',
         ]
         
-        for rel_src, rel_dst in user_files:
-            src = bundle_dir / rel_src
-            dst = exe_dir / rel_dst
+        for rel_path in user_files:
+            src = bundle_dir / rel_path
+            dst = exe_dir / rel_path
             if src.exists() and not dst.exists():
+                dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
                 
     except Exception as e:

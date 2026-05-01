@@ -29,10 +29,8 @@ This report provides a detailed analysis of the LLM Chat App codebase, focusing 
 - [x] **Performance: History Rendering Lag**
     - **Status:** FIXED. Implemented an HTML caching system in SQLite. Conversations now load near-instantly by using pre-rendered HTML chunks, bypassing the heavy Markdown parsing loop.
 
-### 5. Resource Management: Destructive Resource Sync
-- **Issue:** `main.py` deletes the entire `ui_designer` folder on startup in frozen mode.
-- **Risk:** Startup failure if files are locked; unnecessary disk wear.
-- **Recommendation:** Perform an incremental sync (only copy changed files).
+- [x] **Resource Management: Smart Resource Sync**
+    - **Status:** FIXED. Replaced the destructive folder-wiping logic with a "Smart Sync" system. The app now compares timestamps and file sizes to ensure that only updated or missing files are copied from the EXE to the local system. This guarantees that your UI updates are applied while preventing redundant disk operations and startup crashes.
 
 ---
 
