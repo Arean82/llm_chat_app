@@ -143,6 +143,7 @@ class MainWindowClass(QMainWindow):
         self.attached_files = []
         self.total_tokens = 0
         self.current_conv_id = None
+        self.chat_html_history = [] # Rendered HTML chunks for caching
     
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/main_window.ui")
@@ -890,20 +891,26 @@ class MainWindowClass(QMainWindow):
         self.set_send_button_generating()
         
     def add_user_message(self, message: str):
-        self.chat_display.append(f"<b>You:</b> {self.formatter.escape_html(message)}")
+        html = f"<b>You:</b> {self.formatter.escape_html(message)}"
+        self.chat_display.append(html)
+        self.chat_html_history.append(html)
         self.scroll_to_bottom()
         
     def add_assistant_message(self, message: str):
         # Use the new formatter which handles code blocks, language headers, and copy buttons
-        html = self.formatter.format_ai_response(message)
-        self.chat_display.append(f"<b>Assistant:</b><br>{html}")
+        html_content = self.formatter.format_ai_response(message)
+        html = f"<b>Assistant:</b><br>{html_content}"
+        self.chat_display.append(html)
+        self.chat_html_history.append(html)
         self.scroll_to_bottom()
         
     def add_system_message(self, message: str):
         if not hasattr(self, 'chat_display'):
             return  # Skip if chat_display doesn't exist yet
         color = self.get_system_message_color()
-        self.chat_display.append(f"<i style='color: {color};'>ℹ️ {self.formatter.escape_html(message)}</i>")
+        html = f"<i style='color: {color};'>ℹ️ {self.formatter.escape_html(message)}</i>"
+        self.chat_display.append(html)
+        self.chat_html_history.append(html)
         self.scroll_to_bottom()
 
     def add_typing_indicator(self):
@@ -949,21 +956,29 @@ class MainWindowClass(QMainWindow):
             cursor.removeSelectedText()
 
             # 1. Generate the Rich HTML (Markdown + Code Blocks)
-            html = self.formatter.format_ai_response(full_response)
+            html_content = self.formatter.format_ai_response(full_response)
 
-            # 2. Insert the HTML directly (No bubbles)
-            self.chat_display.insertHtml(f"<br>{html}<br>")
+            # 2. Insert the HTML directly
+            # Note: "Assistant:" label was already added at the start of streaming
+            self.chat_display.insertHtml(f"<br>{html_content}<br>")
+            
+            # 3. Append Copy Button
+            copy_buttons = self.get_copy_button_html()
+            self.chat_display.insertHtml(copy_buttons)
+            
+            # 4. Construct the FULL block for the HTML cache
+            # We reconstruct it here because we cleared the streaming text above
+            full_html_block = f"<b>Assistant:</b><br>{html_content}<br>{copy_buttons}"
+            self.chat_html_history.append(full_html_block)
+            
             self.stream_start_position = None
             
-            # 3. Attach Data for Copying
+            # 5. Attach Data for Copying
             cursor = self.chat_display.textCursor()
             cursor.movePosition(QTextCursor.End)
             cursor.movePosition(QTextCursor.StartOfBlock)
             block = cursor.block()
             block.setUserData(MessageData(full_response))
-
-            # 4. Append Copy Button
-            self.chat_display.insertHtml(self.get_copy_button_html())
 
         else:
             # Fallback for non-streamed
@@ -1611,6 +1626,7 @@ class MainWindowClass(QMainWindow):
             self.refresh_history_list()
 
         self.chat_history = []
+        self.chat_html_history = []
         self.current_conv_id = None
         self.chat_display.clear()
         self.ui.chat_history_list.clearSelection()
@@ -1634,7 +1650,8 @@ class MainWindowClass(QMainWindow):
             self.chat_history,
             title=title,
             conv_id=self.current_conv_id,
-            model_id=self.ui.model_btn.text()
+            model_id=self.ui.model_btn.text(),
+            messages_html=json.dumps(self.chat_html_history) # Save cached HTML chunks
         )
 
         # 3. Refresh sidebar only if it's a new entry to show the title
@@ -1666,12 +1683,29 @@ class MainWindowClass(QMainWindow):
                 self.chat_history = data["messages"]
                 self.chat_display.clear()
                 
-                # Re-render all messages using the correct formatting logic
-                for msg in self.chat_history:
-                    if msg['role'] == 'user':
-                        self.add_user_message(msg['content'])
-                    else:
-                        self.add_assistant_message(msg['content'])
+                # Check for cached HTML first (much faster)
+                cached_html_json = data.get("messages_html")
+                if cached_html_json:
+                    try:
+                        self.chat_html_history = json.loads(cached_html_json)
+                        for html_chunk in self.chat_html_history:
+                            self.chat_display.append(html_chunk)
+                    except Exception:
+                        # Fallback to re-rendering
+                        self.chat_html_history = []
+                        for msg in self.chat_history:
+                            if msg['role'] == 'user':
+                                self.add_user_message(msg['content'])
+                            else:
+                                self.add_assistant_message(msg['content'])
+                else:
+                    # Re-render all messages if no cache exists
+                    self.chat_html_history = []
+                    for msg in self.chat_history:
+                        if msg['role'] == 'user':
+                            self.add_user_message(msg['content'])
+                        else:
+                            self.add_assistant_message(msg['content'])
                 
                 self.statusBar().showMessage(f"Loaded: {item.text()}", 5000)
                 self.scroll_to_bottom()

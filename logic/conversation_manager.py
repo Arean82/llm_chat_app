@@ -28,9 +28,16 @@ class ConversationManager:
                     title TEXT,
                     timestamp TEXT,
                     model_id TEXT,
-                    messages_json TEXT
+                    messages_json TEXT,
+                    messages_html TEXT
                 )
             ''')
+            # Migration: Ensure messages_html column exists for older databases
+            try:
+                cursor.execute('ALTER TABLE conversations ADD COLUMN messages_html TEXT')
+            except sqlite3.OperationalError:
+                pass 
+
             conn.commit()
         except sqlite3.Error as e:
             print(f"Database initialization error: {e}")
@@ -78,9 +85,10 @@ class ConversationManager:
             if conn:
                 conn.close()
 
-    def save_conversation(self, conversation: list, title: str = "New Conversation", conv_id: int = None, model_id: str = ""):
+    def save_conversation(self, conversation: list, title: str = "New Conversation", conv_id: int = None, model_id: str = "", messages_html: str = None):
         """Saves or updates a conversation in the SQLite DB."""
         messages_json = json.dumps(conversation)
+
         timestamp = datetime.now().isoformat()
         conn = None
         try:
@@ -91,15 +99,15 @@ class ConversationManager:
                 # Update existing
                 cursor.execute('''
                     UPDATE conversations 
-                    SET title = ?, timestamp = ?, messages_json = ? 
+                    SET title = ?, timestamp = ?, messages_json = ?, messages_html = ? 
                     WHERE id = ?
-                ''', (title, timestamp, messages_json, conv_id))
+                ''', (title, timestamp, messages_json, messages_html, conv_id))
             else:
                 # Insert new
                 cursor.execute('''
-                    INSERT INTO conversations (title, timestamp, model_id, messages_json)
-                    VALUES (?, ?, ?, ?)
-                ''', (title, timestamp, model_id, messages_json))
+                    INSERT INTO conversations (title, timestamp, model_id, messages_json, messages_html)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (title, timestamp, model_id, messages_json, messages_html))
                 conv_id = cursor.lastrowid
 
             conn.commit()
@@ -116,7 +124,7 @@ class ConversationManager:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute('SELECT title, timestamp, model_id, messages_json FROM conversations WHERE id = ?', (conv_id,))
+            cursor.execute('SELECT title, timestamp, model_id, messages_json, messages_html FROM conversations WHERE id = ?', (conv_id,))
             row = cursor.fetchone()
             
             if row:
@@ -125,7 +133,8 @@ class ConversationManager:
                     "title": row[0],
                     "timestamp": row[1],
                     "model_id": row[2],
-                    "messages": json.loads(row[3])
+                    "messages": json.loads(row[3]),
+                    "messages_html": row[4]
                 }
         except sqlite3.Error as e:
             print(f"Load error: {e}")

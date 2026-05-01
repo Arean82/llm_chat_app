@@ -126,28 +126,36 @@ class APIServer:
     
     def start(self):
         if self.running:
-            return False
+            return True, "Already running"
         
         # Check if port 5000 is available
         import socket
+        import sys
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.bind(('localhost', 5000))
             except OSError:
-                print("ERROR: Port 5000 is already in use")
-                return False
+                msg = "Port 5000 is already in use."
+                if sys.platform == 'darwin':
+                    msg += " (On macOS, disable 'AirPlay Receiver' in System Settings > General > AirPlay & Handoff)"
+                elif sys.platform == 'win32':
+                    msg += " (Check if another instance or a web service is using this port)"
+                return False, msg
         
-        from werkzeug.serving import make_server
-        self.server = make_server('localhost', 5000, self.app, threaded=True)
-        
-        def run():
-            print(f"API Server starting on http://localhost:5000")
-            self.server.serve_forever()
-        
-        self.server_thread = Thread(target=run, daemon=True)
-        self.server_thread.start()
-        self.running = True
-        return True
+        try:
+            from werkzeug.serving import make_server
+            self.server = make_server('localhost', 5000, self.app, threaded=True)
+            
+            def run():
+                print(f"API Server starting on http://localhost:5000")
+                self.server.serve_forever()
+            
+            self.server_thread = Thread(target=run, daemon=True)
+            self.server_thread.start()
+            self.running = True
+            return True, "Success"
+        except Exception as e:
+            return False, f"Server Error: {str(e)}"
     
     def stop(self):
         if self.server:

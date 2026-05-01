@@ -34,13 +34,15 @@ class ApiManager(QObject):
         # Initialize APIServer with self.api_send_message as the bridge callback
         self.api_server = APIServer(self.window.llm_client, self.api_send_message)
         
-        if self.api_server.start():
+        success, message = self.api_server.start()
+        
+        if success:
             self.window.api_server_action.setChecked(True)
             self.window.api_server_action.setText("Universal API Server (Running)")
             self.window.add_system_message("🌐 API Server started on port 5000")
         else:
             self.window.api_server_action.setChecked(False)
-            self.window.add_system_message("❌ Failed to start API Server (Port 5000 may be in use)")
+            self.window.add_system_message(f"❌ Failed to start API Server: {message}")
 
     def stop_api_server(self):
         """Stop the background Flask server."""
