@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from utils.helpers import set_app_icon
 
-from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QTableWidgetItem, QHeaderView, QLabel, QTextEdit, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QTableWidgetItem, QHeaderView, QLabel, QTextEdit, QPushButton, QVBoxLayout, QLineEdit
 from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
 
@@ -73,6 +73,23 @@ class SystemPromptManagerClass(QDialog):
 
         # Data storage
         self.instructions = [] 
+        
+        # UI ENHANCEMENTS
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("🔍 Search instructions...")
+        self.search_input.textChanged.connect(self.refresh_table)
+        
+        self.preview_text = QTextEdit()
+        self.preview_text.setReadOnly(True)
+        self.preview_text.setPlaceholderText("Select an instruction to preview its content...")
+        self.preview_text.setMaximumHeight(100)
+        
+        # Inject into existing layout
+        main_layout = self.layout()
+        main_layout.insertWidget(2, self.search_input) # Below info label
+        main_layout.insertWidget(4, QLabel("<b>Preview:</b>"))
+        main_layout.insertWidget(5, self.preview_text)
+        
         self.load_data_from_settings()
         self.refresh_table()
 
@@ -89,6 +106,9 @@ class SystemPromptManagerClass(QDialog):
         self.ui.btn_edit.clicked.connect(self.edit_instruction)
         self.ui.btn_delete.clicked.connect(self.delete_instruction)
         self.ui.btn_close.clicked.connect(self.accept)
+        
+        # Connect table selection for preview
+        self.table_widget.itemSelectionChanged.connect(self.update_preview)
         
         # Connect table item changed (for checkboxes)
         self.table_widget.itemChanged.connect(self.on_item_changed)
@@ -130,9 +150,14 @@ class SystemPromptManagerClass(QDialog):
 
     def refresh_table(self):
         self.table_widget.setRowCount(0)
-        self.table_widget.blockSignals(True)  # Prevent triggering itemChanged while filling
+        self.table_widget.blockSignals(True)  
+        
+        search_term = self.search_input.text().lower()
 
         for instr in self.instructions:
+            if search_term and search_term not in instr['name'].lower():
+                continue
+                
             row = self.table_widget.rowCount()
             self.table_widget.insertRow(row)
 
@@ -140,22 +165,35 @@ class SystemPromptManagerClass(QDialog):
             check_item = QTableWidgetItem()
             check_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
             check_item.setCheckState(Qt.Checked if instr.get('checked', False) else Qt.Unchecked)
+            check_item.setData(Qt.UserRole, instr['id']) # Store ID for lookups
             self.table_widget.setItem(row, 0, check_item)
 
             # Name (Column 1)
             name_item = QTableWidgetItem(instr['name'])
-            name_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)  # Make name read-only in table
+            name_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.table_widget.setItem(row, 1, name_item)
 
         self.table_widget.blockSignals(False)
+        self.update_preview()
+
+    def update_preview(self):
+        """Updates the preview area with the currently selected instruction's text."""
+        instr = self.get_selected_instruction()
+        if instr:
+            self.preview_text.setPlainText(instr['text'])
+        else:
+            self.preview_text.clear()
 
     def get_selected_instruction(self):
         row = self.table_widget.currentRow()
         if row < 0:
             return None
-        # Use index to get from list because table order might be sorted or filtered in future
-        # But here table order matches list order for simplicity
-        return self.instructions[row]
+            
+        # Get ID from hidden data to handle filtered view
+        item = self.table_widget.item(row, 0)
+        instr_id = item.data(Qt.UserRole)
+        
+        return next((i for i in self.instructions if i['id'] == instr_id), None)
 
     def add_instruction(self):
         dialog = InstructionEditorDialog(parent=self)
@@ -209,9 +247,13 @@ class SystemPromptManagerClass(QDialog):
         row = item.row()
         col = item.column()
         
-        if col == 0 and row < len(self.instructions):
-            # Update underlying data model
-            is_checked = (item.checkState() == Qt.Checked)
-            self.instructions[row]['checked'] = is_checked
-            self.save_data_to_settings()
+        if col == 0:
+            # Get ID from hidden data
+            instr_id = item.data(Qt.UserRole)
+            instr = next((i for i in self.instructions if i['id'] == instr_id), None)
+            
+            if instr:
+                is_checked = (item.checkState() == Qt.Checked)
+                instr['checked'] = is_checked
+                self.save_data_to_settings()
             

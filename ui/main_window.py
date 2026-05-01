@@ -16,7 +16,7 @@ from logic.api_server import APIServer
 from utils.constants import CONNECTION_CHECK_INTERVAL_CONNECTED_MS, CONNECTION_CHECK_INTERVAL_DISCONNECTED_MS, RESPONSE_BUFFER_CHARS
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication
+from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication, QListWidgetItem, QAbstractItemView
 from PySide6.QtCore import QEvent, QTimer, Qt, QSettings, Signal
 from PySide6.QtGui import QAction, QIcon, QPixmap, QTextBlockUserData, QTextCursor
 from PySide6.QtUiTools import QUiLoader
@@ -142,6 +142,7 @@ class MainWindowClass(QMainWindow):
         self.stream_start_position = None
         self.attached_files = []
         self.total_tokens = 0
+        self.current_conv_id = None
     
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/main_window.ui")
@@ -184,11 +185,15 @@ class MainWindowClass(QMainWindow):
         self.setup_header_logo() 
     
         # Swap the standard chat_display with our custom ChatDisplay
+        # Note: In the new design, chat_display is inside chat_display_panel layout
         old_chat = self.ui.chat_display
-        self.chat_display = ChatDisplay(self.ui.centralwidget)
-        self.chat_display.setGeometry(old_chat.geometry())
-        self.chat_display.setStyleSheet(old_chat.styleSheet())
-        self.ui.main_layout.replaceWidget(old_chat, self.chat_display)
+        self.chat_display = ChatDisplay()
+        
+        # Find the layout that holds the chat display
+        display_layout = self.ui.chat_display_layout
+        display_layout.replaceWidget(old_chat, self.chat_display)
+        
+        old_chat.setParent(None)
         old_chat.deleteLater()
     
         # WIDGETS - MOVED UP BEFORE load_settings
@@ -215,6 +220,18 @@ class MainWindowClass(QMainWindow):
         # SETUP
         self.setup_menu_bar()   
         self.setup_connections()
+        
+        # SIDEBAR CONNECTIONS
+        self.ui.new_chat_btn.clicked.connect(self.start_new_chat)
+        self.ui.delete_all_btn.clicked.connect(self.clear_all_history)
+        self.ui.chat_history_list.itemClicked.connect(self.load_selected_history)
+        
+        # Context menu for individual delete
+        self.ui.chat_history_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.chat_history_list.customContextMenuRequested.connect(self.show_history_context_menu)
+        self.ui.chat_history_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        
+        self.refresh_history_list()
         
         # LOAD SETTINGS LAST - AFTER everything is initialized
         self.load_settings()
@@ -931,7 +948,10 @@ class MainWindowClass(QMainWindow):
             
             html = self.formatter.format_ai_response(full_response)
             self.chat_display.insertHtml(html)
-            self.chat_display.insertHtml(self.get_copy_button_html())
+
+        # AUTO-SAVE TO SQLITE
+        self.auto_save_current_chat()
+        self.chat_display.insertHtml(self.get_copy_button_html())
 
         self.current_response_text = ""
         
@@ -1176,13 +1196,13 @@ class MainWindowClass(QMainWindow):
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Conversation", "", "JSON Files (*.json);;All Files (*)")
         if file_path:
             current_model = self.llm_client.current_model or ""
-            self.conversation_manager.save_conversation(self.chat_history, file_path, current_model)
-            self.add_system_message(f"Conversation saved to {file_path}")
+            self.conversation_manager.export_to_json(self.chat_history, file_path, current_model)
+            self.statusBar().showMessage(f"Conversation exported to {file_path}", 5000)
             
     def load_conversation(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Load Conversation", "", "JSON Files (*.json);;All Files (*)")
         if file_path:
-            data = self.conversation_manager.load_conversation(file_path)
+            data = self.conversation_manager.import_from_json(file_path)
             messages = data.get("messages", [])
             
             if messages:
@@ -1333,10 +1353,11 @@ class MainWindowClass(QMainWindow):
 
     def get_messages_for_api(self):
         """
-        Returns the chat history with combined active system instructions injected at the beginning.
+        Returns the chat history with current library instructions strictly enforced as the first message.
         """
-        # 1. Copy the existing history
-        messages = list(self.chat_history)
+        # 1. Start with the current history, but STRIP OUT any existing system messages
+        # This ensures that our "Live" library instructions are the only ones active.
+        messages = [msg for msg in self.chat_history if msg['role'] != 'system']
         
         # 2. Load the System Instruction Library from FILE
         import json
@@ -1367,7 +1388,17 @@ class MainWindowClass(QMainWindow):
             combined_prompt = "Follow these instructions:\n" + "\n".join(active_texts)
             messages.insert(0, {"role": "system", "content": combined_prompt})
             
-        return messages
+        # 5. Final Sanity Check: Filter out any empty messages (causes API Error 400)
+        final_messages = []
+        for msg in messages:
+            content = msg.get('content', "").strip()
+            if content:
+                final_messages.append({
+                    "role": msg['role'],
+                    "content": content
+                })
+        
+        return final_messages
 
     def changeEvent(self, event):
         if event.type() == QEvent.Type.WindowStateChange:
@@ -1534,7 +1565,10 @@ class MainWindowClass(QMainWindow):
     def closeEvent(self, event):
         """Ensure background threads are stopped correctly on exit."""
         if hasattr(self, 'api_manager'):
-            self.api_manager.stop_api_server()
+            try:
+                self.api_manager.stop_api_server()
+            except Exception:
+                pass
             
         if hasattr(self, 'connection_worker'):
             self.connection_worker.stop()
@@ -1542,4 +1576,171 @@ class MainWindowClass(QMainWindow):
             self.connection_worker.wait()
             
         event.accept()
+
+    def start_new_chat(self):
+        """Saves current chat to DB, then resets for a fresh session."""
+        if self.chat_history:
+            # Generate title
+            title = "New Conversation"
+            for msg in self.chat_history:
+                if msg['role'] == 'user':
+                    title = msg['content'][:30].strip() + "..."
+                    break
+            
+            # Save to SQLite
+            self.conversation_manager.save_conversation(
+                self.chat_history, 
+                title=title, 
+                conv_id=self.current_conv_id
+            )
+            self.refresh_history_list()
+
+        self.chat_history = []
+        self.current_conv_id = None
+        self.chat_display.clear()
+        self.ui.chat_history_list.clearSelection()
+        self.statusBar().showMessage("New conversation started.", 5000)
+
+    def auto_save_current_chat(self):
+        """Silently saves the current state to SQLite. Updates title on first exchange."""
+        if not self.chat_history:
+            return
+
+        # 1. Generate/Refresh Title if needed
+        title = "New Conversation"
+        for msg in self.chat_history:
+            if msg['role'] == 'user':
+                title = msg['content'][:30].strip() + "..."
+                break
+
+        # 2. Save to DB
+        is_new = (self.current_conv_id is None)
+        self.current_conv_id = self.conversation_manager.save_conversation(
+            self.chat_history,
+            title=title,
+            conv_id=self.current_conv_id,
+            model_id=self.ui.model_btn.text()
+        )
+
+        # 3. Refresh sidebar only if it's a new entry to show the title
+        if is_new:
+            self.refresh_history_list()
+
+    def refresh_history_list(self):
+        """Loads all conversations from SQLite into the sidebar."""
+        self.ui.chat_history_list.clear()
+        
+        conversations = self.conversation_manager.get_all_conversations()
+        for conv_id, title, timestamp in conversations:
+            item = QListWidgetItem(title)
+            item.setData(Qt.ItemDataRole.UserRole, conv_id)
+            # Add tooltip with timestamp
+            item.setToolTip(f"Saved: {timestamp}")
+            self.ui.chat_history_list.addItem(item)
+
+    def load_selected_history(self, item):
+        """Loads the selected SQLite conversation into the chat display."""
+        conv_id = item.data(Qt.ItemDataRole.UserRole)
+        if conv_id is None:
+            return
+
+        self.current_conv_id = conv_id
+        try:
+            data = self.conversation_manager.load_conversation(conv_id)
+            if data and "messages" in data:
+                self.chat_history = data["messages"]
+                self.chat_display.clear()
+                
+                # Re-render all messages using the correct formatting logic
+                for msg in self.chat_history:
+                    if msg['role'] == 'user':
+                        self.chat_display.append(f"<b>You:</b> {self.formatter.escape_html(msg['content'])}")
+                    else:
+                        html = self.formatter.format_ai_response(msg['content'])
+                        self.chat_display.append(html)
+                
+                self.statusBar().showMessage(f"Loaded: {item.text()}", 5000)
+                self.scroll_to_bottom()
+        except Exception as e:
+            self.statusBar().showMessage(f"Error loading history: {e}", 5000)
+
+    def clear_all_history(self):
+        """Intelligently deletes selected items, current chat, or everything in SQLite."""
+        selected_items = self.ui.chat_history_list.selectedItems()
+        
+        if selected_items:
+            count = len(selected_items)
+            reply = QMessageBox.question(
+                self, "Delete Selected",
+                f"Delete the {count} selected conversation(s)?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.chat_history = []
+                self.current_conv_id = None
+                for item in selected_items:
+                    conv_id = item.data(Qt.ItemDataRole.UserRole)
+                    if conv_id is not None:
+                        self.conversation_manager.delete_conversation(conv_id)
+                self.start_new_chat()
+                self.refresh_history_list()
+
+        elif self.current_conv_id:
+            reply = QMessageBox.question(
+                self, "Delete Current Chat",
+                "Delete the conversation currently on screen?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.conversation_manager.delete_conversation(self.current_conv_id)
+                self.start_new_chat()
+                self.refresh_history_list()
+        
+        else:
+            reply = QMessageBox.question(
+                self, "Clear All History",
+                "Are you sure you want to delete ALL conversations?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.conversation_manager.clear_all()
+                self.start_new_chat()
+                self.refresh_history_list()
+
+    def show_history_context_menu(self, pos):
+        """Shows a right-click menu to delete a specific conversation."""
+        item = self.ui.chat_history_list.itemAt(pos)
+        if not item:
+            return
+
+        menu = QMenu(self)
+        delete_action = menu.addAction("🗑️ Delete Conversation")
+        
+        action = menu.exec(self.ui.chat_history_list.mapToGlobal(pos))
+        if action == delete_action:
+            self.delete_specific_history(item)
+
+    def delete_specific_history(self, item):
+        """Deletes a single JSON file and removes it from the list."""
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        if not file_path:
+            return
+
+        reply = QMessageBox.question(
+            self, "Delete Conversation",
+            f"Delete '{item.text()}'?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            try:
+                # Clear memory if we are deleting the active chat
+                self.chat_history = []
+                
+                Path(file_path).unlink()
+                self.refresh_history_list()
+                self.start_new_chat()
+                self.statusBar().showMessage("Conversation deleted.", 5000)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Could not delete file: {e}")
 

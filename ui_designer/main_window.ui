@@ -30,18 +30,14 @@
     <property name="bottomMargin">
      <number>0</number>
     </property>
+
+    <!-- Top Bar -->
     <item>
      <widget class="QWidget" name="top_bar" native="true">
       <property name="minimumSize">
        <size>
         <width>0</width>
         <height>50</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>16777215</height>
        </size>
       </property>
       <layout class="QHBoxLayout" name="top_bar_layout">
@@ -88,7 +84,7 @@
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">font: 700 12pt &quot;Segoe UI&quot;;</string>
+          <string notr="true">font: 700 12pt "Segoe UI";</string>
          </property>
          <property name="text">
           <string>🏷️</string>
@@ -103,14 +99,8 @@
            <height>0</height>
           </size>
          </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
          <property name="styleSheet">
-          <string notr="true">font: 600 italic 11pt &quot;Segoe UI&quot;;</string>
+          <string notr="true">font: 600 italic 11pt "Segoe UI";</string>
          </property>
          <property name="text">
           <string/>
@@ -135,7 +125,7 @@
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
          <property name="styleSheet">
-          <string notr="true">font: 12pt &quot;Segoe UI&quot;;</string>
+          <string notr="true">font: 12pt "Segoe UI";</string>
          </property>
          <property name="text">
           <string>🌐</string>
@@ -182,13 +172,251 @@
       </layout>
      </widget>
     </item>
+
+    <!-- Split View: Chat History + Chat Display -->
     <item>
-     <widget class="QTextEdit" name="chat_display">
-      <property name="readOnly">
-       <bool>true</bool>
+     <widget class="QSplitter" name="main_splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+
+      <!-- LEFT: Chat History Panel -->
+      <widget class="QWidget" name="chat_history_panel" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>400</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="chat_history_layout">
+        <property name="spacing">
+         <number>5</number>
+        </property>
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>10</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+
+        <!-- BUTTONS ROW: New Chat + Delete All side by side -->
+        <item>
+         <layout class="QHBoxLayout" name="history_buttons_layout">
+          <property name="spacing">
+           <number>8</number>
+          </property>
+
+          <!-- New Chat Button (expands to fill space) -->
+          <item>
+           <widget class="QPushButton" name="new_chat_btn">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+              QPushButton {
+                  background-color: #2c3e50;
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  font: bold 12px;
+              }
+              QPushButton:hover {
+                  background-color: #34495e;
+              }
+             </string>
+            </property>
+            <property name="text">
+             <string>➕ New Chat</string>
+            </property>
+            <property name="toolTip">
+             <string>Start a new conversation</string>
+            </property>
+           </widget>
+          </item>
+
+          <!-- Delete All Button (fixed width, just icon) -->
+          <item>
+           <widget class="QPushButton" name="delete_all_btn">
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>40</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+              QPushButton {
+                  background-color: #d32f2f;
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  font: bold 18px;
+              }
+              QPushButton:hover {
+                  background-color: #b71c1c;
+              }
+              QPushButton:pressed {
+                  background-color: #8e0000;
+              }
+             </string>
+            </property>
+            <property name="text">
+             <string>🗑️</string>
+            </property>
+            <property name="toolTip">
+             <string>Delete All History</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+
+        <!-- Chat History List with Scrollbar -->
+        <item>
+         <widget class="QScrollArea" name="chat_history_scroll">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>240</width>
+             <height>500</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="history_list_layout">
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+
+            <!-- History items will be dynamically added here -->
+            <item>
+             <widget class="QListWidget" name="chat_history_list">
+              <property name="styleSheet">
+               <string notr="true">
+                QListWidget {
+                    border: none;
+                    outline: none;
+                    background-color: transparent;
+                }
+                QListWidget::item {
+                    padding: 12px;
+                    border-radius: 6px;
+                    margin: 2px;
+                }
+                QListWidget::item:hover {
+                    background-color: #e0e0e0;
+                }
+                QListWidget::item:selected {
+                    background-color: #d0d0d0;
+                }
+               </string>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::SingleSelection</enum>
+              </property>
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectRows</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+
+      <!-- RIGHT: Chat Display Area -->
+      <widget class="QWidget" name="chat_display_panel" native="true">
+       <layout class="QVBoxLayout" name="chat_display_layout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTextEdit" name="chat_display">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">
+            QTextEdit {
+                border: none;
+                background-color: transparent;
+            }
+           </string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
+
+    <!-- Bottom Bar -->
     <item>
      <layout class="QHBoxLayout" name="bottom_bar_layout">
       <property name="spacing">
@@ -215,10 +443,13 @@
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">font: 900 22pt &quot;DS-Digital&quot;;</string>
+         <string notr="true">font: 900 22pt "DS-Digital";</string>
         </property>
         <property name="text">
          <string>📎</string>
+        </property>
+        <property name="toolTip">
+         <string>Attach file</string>
         </property>
        </widget>
       </item>
@@ -232,6 +463,9 @@
         </property>
         <property name="placeholderText">
          <string>Ask me anything about coding...</string>
+        </property>
+        <property name="toolTip">
+         <string>Type your message. Press Enter to send, Shift+Enter for new line</string>
         </property>
        </widget>
       </item>
@@ -254,6 +488,9 @@
         </property>
         <property name="text">
          <string>Send</string>
+        </property>
+        <property name="toolTip">
+         <string>Send message (Enter)</string>
         </property>
        </widget>
       </item>
