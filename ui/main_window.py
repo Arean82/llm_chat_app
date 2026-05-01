@@ -868,7 +868,7 @@ class MainWindowClass(QMainWindow):
     def add_assistant_message(self, message: str):
         # Use the new formatter which handles code blocks, language headers, and copy buttons
         html = self.formatter.format_ai_response(message)
-        self.chat_display.append(f"<b>🤖 Assistant:</b><br>{html}")
+        self.chat_display.append(f"<b>Assistant:</b><br>{html}")
         self.scroll_to_bottom()
         
     def add_system_message(self, message: str):
@@ -879,7 +879,7 @@ class MainWindowClass(QMainWindow):
         self.scroll_to_bottom()
 
     def add_typing_indicator(self):
-        self.chat_display.append("<i>🤖 Assistant is typing...</i>")
+        self.chat_display.append("<i>Assistant is typing...</i>")
         self.scroll_to_bottom()
         
     def remove_typing_indicator(self):
@@ -899,7 +899,7 @@ class MainWindowClass(QMainWindow):
 
         if self.current_response_text == "":
             self.remove_typing_indicator()
-            self.chat_display.append("<b>🤖 Assistant:</b> ")
+            self.chat_display.append("<b>Assistant:</b> ")
             self.stream_start_position = self.chat_display.textCursor().position()
 
         self.current_response_text += chunk
@@ -939,7 +939,7 @@ class MainWindowClass(QMainWindow):
 
         else:
             # Fallback for non-streamed
-            self.chat_display.append("<b>🤖 Assistant:</b> ") 
+            self.chat_display.append("<b>Assistant:</b> ") 
             
             cursor = self.chat_display.textCursor()
             cursor.movePosition(QTextCursor.StartOfBlock)
@@ -1654,10 +1654,9 @@ class MainWindowClass(QMainWindow):
                 # Re-render all messages using the correct formatting logic
                 for msg in self.chat_history:
                     if msg['role'] == 'user':
-                        self.chat_display.append(f"<b>You:</b> {self.formatter.escape_html(msg['content'])}")
+                        self.add_user_message(msg['content'])
                     else:
-                        html = self.formatter.format_ai_response(msg['content'])
-                        self.chat_display.append(html)
+                        self.add_assistant_message(msg['content'])
                 
                 self.statusBar().showMessage(f"Loaded: {item.text()}", 5000)
                 self.scroll_to_bottom()
