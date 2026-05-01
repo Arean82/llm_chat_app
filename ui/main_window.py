@@ -325,10 +325,37 @@ class MainWindowClass(QMainWindow):
             self.restore_from_tray()
 
     def quit_app(self):
+        self._force_exit = True
+        self.close()
+
+    def perform_graceful_cleanup(self):
+        """Consolidated logic to shut down all background processes safely."""
         self.tray_icon.hide()
-        QApplication.quit()
+        
+        if hasattr(self, 'api_manager'):
+            try:
+                self.api_manager.stop_api_server()
+            except Exception:
+                pass
+            
+        if hasattr(self, 'connection_worker'):
+            self.connection_worker.stop()
+            self.connection_worker.requestInterruption()
+            self.connection_worker.wait()
+        
+        # Stop any active generation
+        if self.is_generating:
+            self.stop_generation()
+
+        # Final auto-save to ensure current chat is preserved
+        self.auto_save_current_chat()
 
     def closeEvent(self, event):
+        if hasattr(self, '_force_exit') and self._force_exit:
+            self.perform_graceful_cleanup()
+            event.accept()
+            return
+
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("LLM Chat App")
         msg_box.setText("The application can continue running in the system tray.")
@@ -388,7 +415,8 @@ class MainWindowClass(QMainWindow):
             event.ignore()
             self.hide_to_tray()
         elif clicked == exit_btn:
-            self.tray_icon.hide()
+            # --- GRACEFUL TERMINATION LOGIC ---
+            self.perform_graceful_cleanup()
             event.accept()
         else:
             event.ignore()
@@ -1562,20 +1590,7 @@ class MainWindowClass(QMainWindow):
         dialog = ModelManagerDialog(theme=self.theme_manager.current_theme, parent=self)
         dialog.exec()
 
-    def closeEvent(self, event):
-        """Ensure background threads are stopped correctly on exit."""
-        if hasattr(self, 'api_manager'):
-            try:
-                self.api_manager.stop_api_server()
-            except Exception:
-                pass
-            
-        if hasattr(self, 'connection_worker'):
-            self.connection_worker.stop()
-            self.connection_worker.requestInterruption()
-            self.connection_worker.wait()
-            
-        event.accept()
+
 
     def start_new_chat(self):
         """Saves current chat to DB, then resets for a fresh session."""

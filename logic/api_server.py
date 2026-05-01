@@ -12,7 +12,7 @@ class APIServer:
         self.send_message_callback = send_message_callback
         self.stream_callback = stream_callback
         self.port = 5000
-        self.server_thread = None
+        self.server = None
         self.running = False
         self.conversation_history = {}  # Store history per session
         self._history_lock = threading.Lock()  # Lock for thread-safe history access
@@ -135,11 +135,14 @@ class APIServer:
                 s.bind(('localhost', 5000))
             except OSError:
                 print("ERROR: Port 5000 is already in use")
-                print("Stop other applications using port 5000 (AirPlay, etc.)")
                 return False
         
+        from werkzeug.serving import make_server
+        self.server = make_server('localhost', 5000, self.app, threaded=True)
+        
         def run():
-            self.app.run(host='localhost', port=5000, debug=False, use_reloader=False)
+            print(f"API Server starting on http://localhost:5000")
+            self.server.serve_forever()
         
         self.server_thread = Thread(target=run, daemon=True)
         self.server_thread.start()
@@ -147,6 +150,10 @@ class APIServer:
         return True
     
     def stop(self):
+        if self.server:
+            print("Shutting down API Server...")
+            self.server.shutdown()
+            self.server = None
         self.running = False
         return True
     
