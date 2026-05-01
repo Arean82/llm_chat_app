@@ -17,13 +17,16 @@ from utils.constants import CONNECTION_CHECK_INTERVAL_CONNECTED_MS, CONNECTION_C
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication
-from PySide6.QtCore import QEvent, QTimer, Qt, QSettings
+from PySide6.QtCore import QEvent, QTimer, Qt, QSettings, Signal
 from PySide6.QtGui import QAction, QIcon, QPixmap, QTextBlockUserData, QTextCursor
 from PySide6.QtUiTools import QUiLoader
 
 from logic.llm_client import LLMClient
 from logic.chat_worker import ChatWorker
 from logic.conversation_manager import ConversationManager
+from workers.connection_worker import ConnectionWorker
+from logic.api_manager import ApiManager
+from logic.formatter import MessageFormatter
 
 from utils.path_utils import get_resource_path
 from utils.model_config import get_context_limit
@@ -33,6 +36,7 @@ from PySide6.QtWidgets import QSizePolicy
 from ui.system_prompt_manager import SystemPromptManagerClass
 
 from utils.helpers import set_app_icon
+from ui.theme_manager import ThemeManager
 
 class MessageData(QTextBlockUserData):
     """Helper class to store the raw markdown text inside a text block."""
@@ -123,8 +127,9 @@ class MainWindowClass(QMainWindow):
         
         print("MainWindowClass.__init__ starting...")
 
-        self.api_server = None
-        self.current_theme = "dark"
+        self.theme_manager = ThemeManager(self)
+        self.api_manager = ApiManager(self)
+        self.formatter = MessageFormatter(self.theme_manager)
     
         # STATE VARIABLES
         self.llm_client = LLMClient()
@@ -136,6 +141,7 @@ class MainWindowClass(QMainWindow):
         self.is_generating = False
         self.stream_start_position = None
         self.attached_files = []
+        self.total_tokens = 0
     
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/main_window.ui")
@@ -200,11 +206,11 @@ class MainWindowClass(QMainWindow):
         self.theme_toggle_btn = self.ui.theme_toggle_btn
         self.connection_status_btn = self.ui.connection_status_btn 
     
-        # Connection Status Monitor
+        # Connection Status Monitor (Now in a background thread)
         self.is_connected = True
-        self.connection_check_timer = QTimer(self)
-        self.connection_check_timer.timeout.connect(self.background_check_connection)
-        self.connection_check_timer.start(CONNECTION_CHECK_INTERVAL_CONNECTED_MS)
+        self.connection_worker = ConnectionWorker()
+        self.connection_worker.status_changed.connect(self.on_connection_status_changed)
+        self.connection_worker.start()
     
         # SETUP
         self.setup_menu_bar()   
@@ -248,269 +254,36 @@ class MainWindowClass(QMainWindow):
 
     # ---------------------------------------------------------
     # THEME SYSTEM
-    # ---------------------------------------------------------
-
+    # ---------------------------------------------------------    # THEME DELEGATION (Reduces MainWindow complexity)
     def apply_theme(self, theme: str):
-        """Apply dark or light theme to the entire window."""
-        self.current_theme = theme
-        QSettings("LLMChatApp", "Settings").setValue("theme", theme)
-
-        # Set theme attribute on QMainWindow for QSS selectors
-        self.setProperty("theme", theme)
-        self.style().unpolish(self)
-        self.style().polish(self)
-
-        # Load the QSS file
-        #qss_file = Path(__file__).parent.parent / "resources" / "styles.qss"
-        qss_file = get_resource_path("resources/styles.qss")
-
-        if qss_file.exists():
-            with open(qss_file, 'r', encoding='utf-8') as f:
-                self.setStyleSheet(f.read())
-
-        # Update toggle button icon
-        if theme == "dark":
-            self.theme_toggle_btn.setText("🌙")
-        else:
-            self.theme_toggle_btn.setText("☀️")
-
-        # Apply menu bar theme
-        self.apply_menu_bar_theme(theme)
-
-        # Apply auth button theme (it has dynamic styles)
-        self.refresh_auth_button_style()
-
-        # Apply send button theme based on current state
-        if self.is_generating:
-            self.set_send_button_generating()
-        else:
-            self.set_send_button_idle()
-        self.chat_display.setStyleSheet(self.get_chat_styles())
+        self.theme_manager.apply_theme(theme)
 
     def toggle_theme(self):
-        """Switch between dark and light theme."""
-        if self.current_theme == "dark":
-            self.apply_theme("light")
-        else:
-            self.apply_theme("dark")
-
-    def apply_menu_bar_theme(self, theme: str):
-        if theme == "dark":
-            self.menuBar().setStyleSheet("""
-                QMenuBar { background-color: #1e1e1e; color: #d4d4d4; }
-                QMenuBar::item:selected { background-color: #0078d4; }
-                QMenu { background-color: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; }
-                QMenu::item:selected { background-color: #0078d4; }
-            """)
-        else:
-            self.menuBar().setStyleSheet("""
-                QMenuBar { background-color: #ffffff; color: #333333; border-bottom: 1px solid #e0e0e0; }
-                QMenuBar::item:selected { background-color: #0078d4; color: white; }
-                QMenu { background-color: #ffffff; color: #333333; border: 1px solid #e0e0e0; }
-                QMenu::item:selected { background-color: #0078d4; color: white; }
-            """)
+        self.theme_manager.toggle_theme()
 
     def refresh_auth_button_style(self):
-        """Re-apply auth button style based on current theme and login state."""
-        if self.llm_client.has_api_key():
-            self.auth_btn.setText("🚪 Logout")
-            self.auth_btn.setStyleSheet("""
-                QPushButton { background-color: #d32f2f; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
-                QPushButton:hover { background-color: #b71c1c; }
-            """)
-        else:
-            self.auth_btn.setText("🔓 Login")
-            self.auth_btn.setStyleSheet("""
-                QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
-                QPushButton:hover { background-color: #106ebe; }
-            """)
-
-    def get_code_block_style(self):
-        """Return inline style for code blocks based on current theme."""
-        if self.current_theme == "dark":
-            return 'background-color: #1e1e1e; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;'
-        else:
-            return 'background-color: #f5f5f5; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;'
-
-    def get_code_text_style(self):
-        """Return inline style for code text based on current theme."""
-        if self.current_theme == "dark":
-            return "font-family: Consolas, monospace; color: #d4d4d4;"
-        else:
-            return "font-family: Consolas, monospace; color: #333333;"
+        self.theme_manager.refresh_auth_button_style()
 
     def get_system_message_color(self):
-        # Add fallback if theme isn't set yet
-        if not hasattr(self, 'current_theme'):
-            return "#ffd700"  # Default dark mode color
-
-        if self.current_theme == "dark":
-            return "#ffd700"
-        else:
-            return "#0078d4"
+        return self.theme_manager.get_system_message_color()
 
     def get_terminate_color(self):
-        if not hasattr(self, 'current_theme'):
-            return "#ff9800"
-        if self.current_theme == "dark":
-            return "#ff9800"
-        else:
-            return "#e65100"
+        return self.theme_manager.get_terminate_color()
 
     def get_thinking_color(self):
-        if not hasattr(self, 'current_theme'):
-            return "#888"
-        if self.current_theme == "dark":
-            return "#888"
-        else:
-            return "#888888"
+        return self.theme_manager.get_thinking_color()
 
-    def get_chat_styles(self):
-        """Return full chat display stylesheet based on current theme."""
-        if self.current_theme == "dark":
-            return """
-                QTextEdit {
-                    background-color: #1e1e1e;
-                    color: #e0e0e0;
-                    border: none;
-                    padding: 20px;
-                    font-size: 15px;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                }
-                p { margin: 8px 0; line-height: 1.6; }
-                b, strong { color: #ffffff; font-weight: 600; }
-                i, em { color: #b0b0b0; }
-                ul, ol { margin-left: 20px; margin-top: 5px; margin-bottom: 5px; }
-                li { margin-bottom: 4px; }
-                blockquote {
-                    border-left: 4px solid #0078d4;
-                    background-color: #252526;
-                    padding: 10px 15px;
-                    margin: 10px 0;
-                    border-radius: 0 5px 5px 0;
-                    color: #cccccc;
-                }
-                table {
-                    border-collapse: collapse;
-                    margin: 10px 0;
-                    width: 100%;
-                    background-color: #252526;
-                    border-radius: 5px;
-                    overflow: hidden;
-                }
-                th, td {
-                    border: 1px solid #404040;
-                    padding: 8px 12px;
-                    text-align: left;
-                }
-                th { background-color: #2d2d2d; color: #ffffff; font-weight: bold; }
-                code:not(pre code) {
-                    background-color: #2d2d2d;
-                    color: #ce9178;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-family: Consolas, 'Courier New', monospace;
-                    font-size: 13px;
-                }   
-                b { font-size: 14px; }
-            """
-        else:
-            return """
-                QTextEdit {
-                    background-color: #ffffff;
-                    color: #333333;
-                    border: none;
-                    padding: 20px;
-                    font-size: 15px;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                }
-                p { margin: 8px 0; line-height: 1.6; }
-                b, strong { color: #000000; font-weight: 600; }
-                i, em { color: #666666; }
-                ul, ol { margin-left: 20px; margin-top: 5px; margin-bottom: 5px; }
-                li { margin-bottom: 4px; }
-                blockquote {
-                    border-left: 4px solid #0078d4;
-                    background-color: #f5f5f5;
-                    padding: 10px 15px;
-                    margin: 10px 0;
-                    border-radius: 0 5px 5px 0;
-                    color: #555555;
-                }
-                table {
-                    border-collapse: collapse;
-                    margin: 10px 0;
-                    width: 100%;
-                    background-color: #ffffff;
-                    border-radius: 5px;
-                    overflow: hidden;
-                    border: 1px solid #e0e0e0;
-                }
-                th, td {
-                    border: 1px solid #e0e0e0;
-                    padding: 8px 12px;
-                    text-align: left;
-                }
-                th { background-color: #f5f5f5; color: #333333; font-weight: bold; }
-                code:not(pre code) {
-                    background-color: #f0f0f0;
-                    color: #d63384;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-family: Consolas, 'Courier New', monospace;
-                    font-size: 13px;
-                }   
-                b { font-size: 14px; }
-            """
+    def get_code_block_style(self):
+        return self.theme_manager.get_code_block_style()
+
+    def get_code_text_style(self):
+        return self.theme_manager.get_code_text_style()
 
     def get_metrics_border_color(self):
-        if self.current_theme == "dark":
-            return "#3c3c3c"
-        else:
-            return "#e0e0e0"
+        return self.theme_manager.get_metrics_border_color()
 
     def get_copy_button_html(self):
-        # Define colors for both buttons based on the current theme
-        if self.current_theme == "dark":
-            blue = "#0078d4"
-            orange = "#ff9800"
-        else:
-            blue = "#0056b3"
-            orange = "#e65100"  # Darker orange for better contrast in light mode
-
-        return (
-            f'<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">'
-            
-            # --- Regenerate Button ---
-            f'<a href="regenerate" '
-            f'style="display: inline-block; '
-            f'border: 1px solid {orange}; '
-            f'background-color: rgba(255, 152, 0, 0.1); '
-            f'color: {orange}; '
-            f'padding: 6px 15px; '
-            f'border-radius: 6px; '
-            f'text-decoration: none; '
-            f'font-size: 12px; '
-            f'font-weight: bold;">'
-            f'🔄 Regenerate'
-            f'</a>'
-
-            # --- Copy Raw Button ---
-            f'<a href="copy" '
-            f'style="display: inline-block; '
-            f'border: 1px solid {blue}; '
-            f'background-color: rgba(0, 120, 212, 0.1); '
-            f'color: {blue}; '
-            f'padding: 6px 15px; '
-            f'border-radius: 6px; '
-            f'text-decoration: none; '
-            f'font-size: 12px; '
-            f'font-weight: bold;">'
-            f'📋 Copy Raw'
-            f'</a>'
-            
-            f'</div>'
-        ) 
+        return self.theme_manager.get_copy_button_html()
 
     # ---------------------------------------------------------
     # SYSTEM TRAY
@@ -607,41 +380,26 @@ class MainWindowClass(QMainWindow):
     # END THEME SYSTEM
     # ---------------------------------------------------------
 
-    def check_internet(self, host="8.8.8.8", port=53, timeout=1):
-        """Returns True if actual internet connection is available."""
-        try:
-            socket.create_connection((host, port), timeout)
-            return True
-        except OSError:
-            return False
-
-    def background_check_connection(self):
-        """Silent background check. Updates icon based on status."""
-        connected = self.check_internet()
-        
-        # Only update UI if the status actually changed
+    def on_connection_status_changed(self, connected):
+        """Callback from background connection worker."""
         if connected != self.is_connected:
             self.is_connected = connected
             self.update_connection_icon()
 
     def update_connection_icon(self):
-        """Updates the globe icon and adjusts check speed."""
+        """Updates the globe icon and tooltip based on status."""
         if self.is_connected:
             self.connection_status_btn.setText("🌐")
-            self.connection_status_btn.setToolTip("Connected") # Update tooltip
-            self.connection_check_timer.setInterval(CONNECTION_CHECK_INTERVAL_CONNECTED_MS) # Slow down to 10s when connected
+            self.connection_status_btn.setToolTip("Connected")
         else:
             self.connection_status_btn.setText("🔴")
             self.connection_status_btn.setToolTip("Disconnected - Checking...")
-            self.connection_check_timer.setInterval(CONNECTION_CHECK_INTERVAL_DISCONNECTED_MS) # Speed up to 3s when disconnected
 
     def force_disconnected_state(self):
         """Immediately force UI to disconnected state (called on API errors)."""
         if self.is_connected:
             self.is_connected = False
             self.update_connection_icon()
-            # Trigger an immediate check in 3 seconds
-            self.connection_check_timer.start(3000)
 
     def setup_menu_bar(self):
         """Build menu bar purely in Python"""
@@ -684,7 +442,7 @@ class MainWindowClass(QMainWindow):
         # Tools menu:
         tools_menu = menubar.addMenu("Tools")
         self.api_server_action = tools_menu.addAction("🌐 Universal API Server")
-        self.api_server_action.triggered.connect(self.toggle_api_server)
+        self.api_server_action.triggered.connect(self.api_manager.toggle_api_server)
         self.api_server_action.setCheckable(True)
 
         # Help menu with placeholder actions
@@ -771,73 +529,15 @@ class MainWindowClass(QMainWindow):
     def load_models(self):
         pass
 
-    # ---------------------------------------------------------
-    # Universal API Server (Maximum Flexibility)
-    # ---------------------------------------------------------
-
+    # API SERVER DELEGATION
     def toggle_api_server(self, checked):
-        if checked:
-            self.start_api_server()
-        else:
-            self.stop_api_server()
+        self.api_manager.toggle_api_server(checked)
 
     def start_api_server(self):
-        if self.api_server and self.api_server.running:
-            return
-
-        self.api_server = APIServer(self.llm_client, self.api_send_message)
-        if self.api_server.start():
-            self.api_server_action.setChecked(True)
-            self.api_server_action.setText("Universal API Server (Running)")
-            self.add_system_message(f"🌐 API Server started on port 5000")
-        else:
-            self.api_server_action.setChecked(False)
-            self.add_system_message("❌ Failed to start API Server")
+        self.api_manager.start_api_server()
 
     def stop_api_server(self):
-        if self.api_server:
-            self.api_server.stop()
-            self.api_server = None
-        self.api_server_action.setChecked(False)
-        self.api_server_action.setText("🌐 Universal API Server")
-        self.add_system_message("🌐 API Server stopped")
-
-    def api_send_message(self, user_message):
-        """Synchronous send for API - waits for response"""
-        import queue
-        import time
-
-        response_queue = queue.Queue()
-
-        # Store original handlers
-        original_response = self.on_response_complete
-        original_error = self.on_error
-
-        def sync_response(full_response):
-            response_queue.put(full_response)
-
-        def sync_error(error_msg):
-            response_queue.put(f"Error: {error_msg}")
-
-        # Temporarily override
-        self.on_response_complete = sync_response
-        self.on_error = sync_error
-
-        # Send message
-        self.input_field.setPlainText(user_message)
-        self.send_message()
-
-        # Wait for response (timeout 60 seconds)
-        try:
-            response = response_queue.get(timeout=60)
-        except queue.Empty:
-            response = "Timeout: No response from model"
-
-        # Restore original handlers
-        self.on_response_complete = original_response
-        self.on_error = original_error
-
-        return response
+        self.api_manager.stop_api_server()
     # ---------------------------------------------------------
     # FIRST-RUN LOGIC & POPUP HANDLERS
     # ---------------------------------------------------------
@@ -845,6 +545,7 @@ class MainWindowClass(QMainWindow):
     def load_settings(self):
         settings = QSettings("LLMChatApp", "Settings")
         api_key = settings.value("api_key", "")
+        base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
         model_id = settings.value("current_model_id", "")
         saved_theme = settings.value("theme", "dark")
         
@@ -855,6 +556,7 @@ class MainWindowClass(QMainWindow):
         has_model = bool(model_id)
         
         if has_key:
+            self.llm_client.set_base_url(base_url)
             self.llm_client.set_api_key(api_key) 
             self.refresh_auth_button_style()
         
@@ -881,10 +583,16 @@ class MainWindowClass(QMainWindow):
         dialog = SettingsDialogClass(self)
         if dialog.exec():
             api_key = dialog.get_api_key()
-            if api_key:
+            base_url = dialog.get_base_url()
+
+            if api_key and base_url:
+                self.llm_client.set_base_url(base_url)
                 self.llm_client.set_api_key(api_key)
                 self.set_connected_status(True)
-                QSettings("LLMChatApp", "Settings").setValue("api_key", api_key)
+                
+                settings = QSettings("LLMChatApp", "Settings")
+                settings.setValue("api_key", api_key)
+                settings.setValue("base_url", base_url)
                 
                 if not QSettings("LLMChatApp", "Settings").value("current_model_id"):
                     QTimer.singleShot(100, self.show_model_popup)
@@ -1029,7 +737,7 @@ class MainWindowClass(QMainWindow):
         self.attached_files = []
         self.input_field.setPlaceholderText("")
 
-    def send_message(self):
+    def send_message(self, api_response_queue=None):
         #user_message = self.input_field.text().strip()
         user_message = self.input_field.toPlainText().strip()
         if not user_message and not self.attached_files:
@@ -1075,30 +783,32 @@ class MainWindowClass(QMainWindow):
         self.chat_history.append({"role": "user", "content": final_prompt})
         
         # ==========================================
-        # Model-aware context length & buffer checking
+        # Model-aware context length & TOKEN checking
         # ==========================================
-        #RESPONSE_BUFFER = 64_000  # Reserve ~64k characters for AI response
-        RESPONSE_BUFFER = RESPONSE_BUFFER_CHARS
+        TOKEN_BUFFER = 2000  # Reserve tokens for AI response
 
-        estimated_chars = sum(len(msg.get("content", "")) for msg in self.chat_history)
-        char_limit = get_context_limit(self.llm_client.current_model)
-        remaining_space = char_limit - estimated_chars
-        usage_percent = (estimated_chars / char_limit) * 100
+        # Estimate current message tokens (conservative: ~3 chars per token)
+        estimated_new_tokens = len(final_prompt) // 3
+        current_total_estimate = self.total_tokens + estimated_new_tokens
         
-        # Format display strings once to avoid duplication
-        limit_display = f"{char_limit // 1_000_000}M chars" if char_limit >= 1_000_000 else f"{char_limit:,} chars"
+        token_limit = get_context_limit(self.llm_client.current_model)
+        remaining_tokens = token_limit - current_total_estimate
+        usage_percent = (current_total_estimate / token_limit) * 100
         
-        if remaining_space < RESPONSE_BUFFER:
+        # Format display strings
+        limit_display = f"{token_limit // 1_000}K tokens" if token_limit >= 1000 else f"{token_limit} tokens"
+        
+        if remaining_tokens < TOKEN_BUFFER:
             # HARD BLOCK: Not enough space for AI to reply
-            if remaining_space <= 0:
-                remaining_display = "0 chars"
-            elif remaining_space >= 1000:
-                remaining_display = f"{remaining_space // 1_000}K chars"
+            if remaining_tokens <= 0:
+                remaining_display = "0 tokens"
+            elif remaining_tokens >= 1000:
+                remaining_display = f"{remaining_tokens // 1000}K tokens"
             else:
-                remaining_display = f"{remaining_space} chars"
+                remaining_display = f"{remaining_tokens} tokens"
                 
             reply = QMessageBox.warning(self, "Context Limit Reached",
-                f"Context usage is at {usage_percent:.0f}% ({estimated_chars:,} chars).\n"
+                f"Context usage is at {usage_percent:.0f}% ({current_total_estimate:,} tokens).\n"
                 f"The model only has {remaining_display} left for its response.\n\n"
                 f"Start a new conversation?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -1108,8 +818,8 @@ class MainWindowClass(QMainWindow):
                 self.new_conversation()
                 return
                 
-        elif usage_percent > 80:
-            # SOFT WARNING: Only fires if the hard block didn't trigger first
+        elif usage_percent > 85:
+            # SOFT WARNING
             self.add_system_message(f"⚠️ Context usage at {usage_percent:.0f}% ({limit_display}). Consider starting a new conversation soon.")
         # ==========================================
 
@@ -1123,18 +833,24 @@ class MainWindowClass(QMainWindow):
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
         self.current_worker.error_occurred.connect(self.on_error)
+
+        # If this is an API request, also route results to the response queue
+        if api_response_queue:
+            self.current_worker.response_received.connect(lambda resp: api_response_queue.put(resp))
+            self.current_worker.error_occurred.connect(lambda err: api_response_queue.put(f"Error: {err}"))
+
         self.current_worker.finished.connect(self.on_worker_finished)
         self.current_worker.metrics_received.connect(self.on_metrics_received)
         self.current_worker.start()
         self.set_send_button_generating()
         
     def add_user_message(self, message: str):
-        self.chat_display.append(f"<b>You:</b> {self.escape_html(message)}")
+        self.chat_display.append(f"<b>You:</b> {self.formatter.escape_html(message)}")
         self.scroll_to_bottom()
         
     def add_assistant_message(self, message: str):
         # Use the new formatter which handles code blocks, language headers, and copy buttons
-        html = self.format_ai_response(message)
+        html = self.formatter.format_ai_response(message)
         self.chat_display.append(f"<b>🤖 Assistant:</b><br>{html}")
         self.scroll_to_bottom()
         
@@ -1142,7 +858,7 @@ class MainWindowClass(QMainWindow):
         if not hasattr(self, 'chat_display'):
             return  # Skip if chat_display doesn't exist yet
         color = self.get_system_message_color()
-        self.chat_display.append(f"<i style='color: {color};'>ℹ️ {self.escape_html(message)}</i>")
+        self.chat_display.append(f"<i style='color: {color};'>ℹ️ {self.formatter.escape_html(message)}</i>")
         self.scroll_to_bottom()
 
     def add_typing_indicator(self):
@@ -1188,7 +904,7 @@ class MainWindowClass(QMainWindow):
             cursor.removeSelectedText()
 
             # 1. Generate the Rich HTML (Markdown + Code Blocks)
-            html = self.format_ai_response(full_response)
+            html = self.formatter.format_ai_response(full_response)
 
             # 2. Insert the HTML directly (No bubbles)
             self.chat_display.insertHtml(f"<br>{html}<br>")
@@ -1213,7 +929,7 @@ class MainWindowClass(QMainWindow):
             block = cursor.block()
             block.setUserData(MessageData(full_response))
             
-            html = self.format_ai_response(full_response)
+            html = self.formatter.format_ai_response(full_response)
             self.chat_display.insertHtml(html)
             self.chat_display.insertHtml(self.get_copy_button_html())
 
@@ -1238,6 +954,7 @@ class MainWindowClass(QMainWindow):
         </div>
         """
         self.chat_display.append(metrics_html)
+        self.total_tokens = metrics['prompt_tokens'] + metrics['completion_tokens']
         self.scroll_to_bottom()
 
     def on_error(self, error_message: str):
@@ -1436,6 +1153,7 @@ class MainWindowClass(QMainWindow):
     def clear_chat(self):
         self.chat_display.clear()
         self.chat_history = []
+        self.total_tokens = 0
         self.current_response_text = ""
         self.stream_start_position = None
         self.response_start_time = None
@@ -1608,17 +1326,10 @@ class MainWindowClass(QMainWindow):
             QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
 
     def format_code_blocks(self, text: str) -> str:
-        return self.escape_html(text)
-        
+        return self.formatter.escape_html(text)
+
     def escape_html(self, text: str) -> str:
-        html_escape_table = {
-            "&": "&amp;",
-            '"': "&quot;",
-            "'": "&apos;",
-            ">": "&gt;",
-            "<": "&lt;",
-        }
-        return "".join(html_escape_table.get(c, c) for c in text)
+        return self.formatter.escape_html(text)
 
     def get_messages_for_api(self):
         """
@@ -1801,89 +1512,7 @@ class MainWindowClass(QMainWindow):
         self.chat_display.setStyleSheet(self.get_chat_styles())
 
     def format_ai_response(self, text: str) -> str:
-        import re
-        import markdown
-        import base64
-
-        # Regex to find fenced code blocks
-        code_block_pattern = re.compile(r'```(\w*)\n([\s\S]*?)\n```')
-
-        def replacer(match):
-            lang = match.group(1)
-            code = match.group(2)
-
-            # Handle missing language
-            lang_display = lang.upper() if lang else "CODE"
-
-            # Base64 encode the code for the copy link
-            encoded_code = base64.b64encode(code.encode('utf-8')).decode('utf-8')
-
-            # --- DEFINE COLORS EXPLICITLY ---
-            if self.current_theme == "dark":
-                # Dark Mode Colors
-                header_bg = "#2d2d2d"
-                header_text = "#cccccc"
-                header_border = "#3c3c3c"
-                link_color = "#4fc3f7"
-                # Force Dark Code Block Background
-                code_bg = "#1e1e1e" 
-                code_text = "#d4d4d4"
-            else:
-                # Light Mode Colors (FIXED)
-                header_bg = "#f0f0f0"
-                header_text = "#333333"
-                header_border = "#cccccc"
-                link_color = "#0078d4"
-                # Force White Code Block Background to fix "black background" issue
-                code_bg = "#ffffff" 
-                # Force Dark Text to fix "ash letters not visible" issue
-                code_text = "#333333"
-
-            # Construct the Wrapper Style
-            wrapper_style = f"background-color: {code_bg}; border: 1px solid {header_border}; border-radius: 5px; overflow: hidden; margin: 10px 0; font-family: Consolas, monospace;"
-
-            # --- Header HTML ---
-            header_div = f"""
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-bottom: 1px solid {header_border}; font-size: 12px; font-weight: bold; background-color: {header_bg}; color: {header_text};">
-                <span>{lang_display}</span>
-                <a href="copy_code:{encoded_code}" style="color: {link_color}; text-decoration: none; cursor: pointer;">Copy Code</a>
-            </div>
-            """
-
-            # --- Content HTML ---
-            # Convert markdown to HTML (Syntax Highlighting)
-            inner_html = markdown.markdown(f"```{lang}\n{code}\n```", extensions=['codehilite', 'fenced_code'])
-            
-            # CRITICAL FIX: Inject inline styles into the <pre> tag to force background and text color
-            # This overrides any global styles.qss or Pygments defaults that cause the black background
-            inner_html = inner_html.replace('<pre', f'<pre style="background-color: {code_bg}; color: {code_text}; margin: 0; border: none; border-radius: 0;"')
-            
-            # Also fix the overflow container
-            content_div = f'<div style="overflow-x: auto;">{inner_html}</div>'
-
-            return f'<div style="{wrapper_style}">{header_div}{content_div}</div>'
-
-        # Process the text
-        parts = []
-        last_pos = 0
-        
-        for match in code_block_pattern.finditer(text):
-            # 1. Add text before code block
-            if match.start() > last_pos:
-                normal_text = text[last_pos:match.start()]
-                # For normal text, use the global theme color implicitly
-                parts.append(markdown.markdown(normal_text, extensions=['extra', 'codehilite', 'fenced_code']))
-
-            # 2. Add processed code block
-            parts.append(replacer(match))
-            last_pos = match.end()
-
-        # 3. Add remaining text
-        if last_pos < len(text):
-            normal_text = text[last_pos:]
-            parts.append(markdown.markdown(normal_text, extensions=['extra', 'codehilite', 'fenced_code']))
-
-        return "".join(parts)
+        return self.formatter.format_ai_response(text)
         
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog

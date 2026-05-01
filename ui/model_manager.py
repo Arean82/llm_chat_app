@@ -465,9 +465,10 @@ class ModelManagerDialog(QDialog):
 
         settings = QSettings("LLMChatApp", "Settings")
         api_key = settings.value("api_key", "")
+        base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
 
         if not api_key:
-            QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")
+            QMessageBox.warning(self, "API Key Required", "Please set your API key first.")
             return
 
         # Show confirmation
@@ -495,7 +496,7 @@ class ModelManagerDialog(QDialog):
         logger.add_log("Starting model fetch from NVIDIA API", "INFO")
 
         # Create and start worker
-        self.fetch_worker = ModelFetchWorker(api_key)
+        self.fetch_worker = ModelFetchWorker(api_key, base_url=base_url)
         self.fetch_worker.progress.connect(self._on_fetch_progress)
         self.fetch_worker.finished.connect(self._on_fetch_finished)
         self.fetch_worker.error.connect(self._on_fetch_error)
@@ -620,6 +621,7 @@ class ModelManagerDialog(QDialog):
         
         settings = QSettings("LLMChatApp", "Settings")
         api_key = settings.value("api_key", "")
+        base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
         
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")
@@ -646,7 +648,7 @@ class ModelManagerDialog(QDialog):
         
         # Create and start worker for paid models
         from workers.paid_model_fetch_worker import PaidModelFetchWorker
-        self.paid_fetch_worker = PaidModelFetchWorker(api_key)
+        self.paid_fetch_worker = PaidModelFetchWorker(api_key, base_url=base_url)
         self.paid_fetch_worker.progress.connect(self._on_paid_fetch_progress)
         self.paid_fetch_worker.finished.connect(self._on_paid_fetch_finished)
         self.paid_fetch_worker.error.connect(self._on_paid_fetch_error)

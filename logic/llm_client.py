@@ -13,8 +13,16 @@ class LLMClient:
         self.base_url = "https://integrate.api.nvidia.com/v1"
         self.client = None
         
+    def set_base_url(self, url: str):
+        self.base_url = url
+        if self.api_key:
+            self._reinit_client()
+
     def set_api_key(self, api_key: str):
         self.api_key = api_key
+        self._reinit_client()
+
+    def _reinit_client(self):
         self.client = OpenAI(
             base_url=self.base_url,
             api_key=self.api_key,

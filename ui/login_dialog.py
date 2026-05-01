@@ -34,7 +34,36 @@ class SettingsDialogClass(QDialog):
         self.save_btn = self.ui.findChild(QPushButton, "save_btn")
         self.cancel_btn = self.ui.findChild(QPushButton, "cancel_btn")
         
-        self.setWindowTitle("Settings - NVIDIA NIM API")
+        # --- ADDED: Base URL Field ---
+        from PySide6.QtCore import QSettings
+        settings = QSettings("LLMChatApp", "Settings")
+        saved_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
+        saved_key = settings.value("api_key", "")
+
+        self.url_label = QLabel("API Base URL:")
+        self.url_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        self.url_input = QLineEdit()
+        self.url_input.setText(saved_url)
+        self.url_input.setPlaceholderText("https://integrate.api.nvidia.com/v1")
+        self.url_input.setStyleSheet("""
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border: 1px solid #3c3c3c;
+            border-radius: 5px;
+            padding: 8px;
+        """)
+
+        # Insert into the layout (after instructions, before key_label)
+        layout = self.ui.findChild(QVBoxLayout, "dialog_layout")
+        if layout:
+            # Index 1 is after instructions label
+            layout.insertWidget(1, self.url_label)
+            layout.insertWidget(2, self.url_input)
+
+        if saved_key:
+            self.key_input.setText(saved_key)
+
+        self.setWindowTitle("Settings - LLM Configuration")
         
         self.setup_connections()
         
@@ -44,16 +73,37 @@ class SettingsDialogClass(QDialog):
         
     def save_and_test(self):
         api_key = self.key_input.text().strip()
+        base_url = self.url_input.text().strip()
+
         if not api_key:
-            QMessageBox.warning(self, "Missing API Key", "Please enter your NVIDIA NIM API key.")
+            QMessageBox.warning(self, "Missing API Key", "Please enter your API key.")
             return
             
-        if not api_key.startswith("nvapi-"):
-            QMessageBox.warning(self, "Invalid Format", "API key should start with 'nvapi-'")
+        if not base_url:
+            QMessageBox.warning(self, "Missing Base URL", "Please enter the API base URL.")
             return
+
+        # Optional: Warn if it's NVIDIA but key doesn't match, 
+        # but don't hard block for other providers.
+        if "nvidia.com" in base_url and not api_key.startswith("nvapi-"):
+            reply = QMessageBox.question(
+                self, "Unexpected Format", 
+                "NVIDIA NIM keys usually start with 'nvapi-'. Proceed anyway?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
             
+        from PySide6.QtCore import QSettings
+        settings = QSettings("LLMChatApp", "Settings")
+        settings.setValue("api_key", api_key)
+        settings.setValue("base_url", base_url)
+
         self.accept()
         
     def get_api_key(self) -> str:
         return self.key_input.text().strip()
+
+    def get_base_url(self) -> str:
+        return self.url_input.text().strip()
         

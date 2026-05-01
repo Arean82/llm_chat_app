@@ -1,0 +1,215 @@
+# ui/theme_manager.py
+from PySide6.QtCore import QSettings, Qt
+from PySide6.QtWidgets import QSystemTrayIcon, QMessageBox, QApplication
+from utils.path_utils import get_resource_path
+
+class ThemeManager:
+    """
+    Handles all styling, CSS, and theme-switching logic for the application.
+    Extracting this from MainWindowClass reduces complexity and improves maintainability.
+    """
+    def __init__(self, main_window):
+        self.window = main_window
+        self.current_theme = "dark"
+
+    def apply_theme(self, theme: str):
+        """Apply dark or light theme to the entire window and its components."""
+        self.current_theme = theme
+        QSettings("LLMChatApp", "Settings").setValue("theme", theme)
+
+        # Set theme attribute for QSS selectors
+        self.window.setProperty("theme", theme)
+        self.window.style().unpolish(self.window)
+        self.window.style().polish(self.window)
+
+        # Load the global QSS file
+        qss_file = get_resource_path("resources/styles.qss")
+        if qss_file.exists():
+            with open(qss_file, 'r', encoding='utf-8') as f:
+                self.window.setStyleSheet(f.read())
+
+        # Update UI components
+        self._update_toggle_button()
+        self._apply_menu_bar_theme()
+        self.refresh_auth_button_style()
+        self._update_send_button_style()
+        
+        # Update chat display
+        self.window.chat_display.setStyleSheet(self.get_chat_styles())
+
+    def toggle_theme(self):
+        """Switch between dark and light theme."""
+        new_theme = "light" if self.current_theme == "dark" else "dark"
+        self.apply_theme(new_theme)
+
+    def _update_toggle_button(self):
+        if self.current_theme == "dark":
+            self.window.theme_toggle_btn.setText("🌙")
+        else:
+            self.window.theme_toggle_btn.setText("☀️")
+
+    def _apply_menu_bar_theme(self):
+        if self.current_theme == "dark":
+            self.window.menuBar().setStyleSheet("""
+                QMenuBar { background-color: #1e1e1e; color: #d4d4d4; }
+                QMenuBar::item:selected { background-color: #0078d4; }
+                QMenu { background-color: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; }
+                QMenu::item:selected { background-color: #0078d4; }
+            """)
+        else:
+            self.window.menuBar().setStyleSheet("""
+                QMenuBar { background-color: #ffffff; color: #333333; border-bottom: 1px solid #e0e0e0; }
+                QMenuBar::item:selected { background-color: #0078d4; color: white; }
+                QMenu { background-color: #ffffff; color: #333333; border: 1px solid #e0e0e0; }
+                QMenu::item:selected { background-color: #0078d4; color: white; }
+            """)
+
+    def refresh_auth_button_style(self):
+        """Re-apply auth button style based on current theme and login state."""
+        if self.window.llm_client.has_api_key():
+            self.window.auth_btn.setText("🚪 Logout")
+            self.window.auth_btn.setStyleSheet("""
+                QPushButton { background-color: #d32f2f; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
+                QPushButton:hover { background-color: #b71c1c; }
+            """)
+        else:
+            self.window.auth_btn.setText("🔓 Login")
+            self.window.auth_btn.setStyleSheet("""
+                QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
+                QPushButton:hover { background-color: #106ebe; }
+            """)
+
+    def _update_send_button_style(self):
+        if self.window.is_generating:
+            self.window.set_send_button_generating()
+        else:
+            self.window.set_send_button_idle()
+
+    def get_chat_styles(self):
+        """Return full chat display stylesheet based on current theme."""
+        if self.current_theme == "dark":
+            return """
+                QTextEdit {
+                    background-color: #1e1e1e;
+                    color: #e0e0e0;
+                    border: none;
+                    padding: 20px;
+                    font-size: 15px;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                }
+                p { margin: 8px 0; line-height: 1.6; }
+                b, strong { color: #ffffff; font-weight: 600; }
+                i, em { color: #b0b0b0; }
+                ul, ol { margin-left: 20px; margin-top: 5px; margin-bottom: 5px; }
+                li { margin-bottom: 4px; }
+                blockquote {
+                    border-left: 4px solid #0078d4;
+                    background-color: #252526;
+                    padding: 10px 15px;
+                    margin: 10px 0;
+                    border-radius: 0 5px 5px 0;
+                    color: #cccccc;
+                }
+                table {
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                    width: 100%;
+                    background-color: #252526;
+                    border-radius: 5px;
+                    overflow: hidden;
+                }
+                th, td {
+                    border: 1px solid #404040;
+                    padding: 8px 12px;
+                    text-align: left;
+                }
+                th { background-color: #2d2d2d; color: #ffffff; font-weight: bold; }
+                code:not(pre code) {
+                    background-color: #2d2d2d;
+                    color: #ce9178;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-family: Consolas, 'Courier New', monospace;
+                    font-size: 13px;
+                }   
+                b { font-size: 14px; }
+            """
+        else:
+            return """
+                QTextEdit {
+                    background-color: #ffffff;
+                    color: #333333;
+                    border: none;
+                    padding: 20px;
+                    font-size: 15px;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                }
+                p { margin: 8px 0; line-height: 1.6; }
+                b, strong { color: #000000; font-weight: 600; }
+                i, em { color: #666666; }
+                ul, ol { margin-left: 20px; margin-top: 5px; margin-bottom: 5px; }
+                li { margin-bottom: 4px; }
+                blockquote {
+                    border-left: 4px solid #0078d4;
+                    background-color: #f5f5f5;
+                    padding: 10px 15px;
+                    margin: 10px 0;
+                    border-radius: 0 5px 5px 0;
+                    color: #555555;
+                }
+                table {
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                    width: 100%;
+                    background-color: #ffffff;
+                    border-radius: 5px;
+                    overflow: hidden;
+                    border: 1px solid #e0e0e0;
+                }
+                th, td {
+                    border: 1px solid #e0e0e0;
+                    padding: 8px 12px;
+                    text-align: left;
+                }
+                th { background-color: #f5f5f5; color: #333333; font-weight: bold; }
+                code:not(pre code) {
+                    background-color: #f0f0f0;
+                    color: #d63384;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-family: Consolas, 'Courier New', monospace;
+                    font-size: 13px;
+                }   
+                b { font-size: 14px; }
+            """
+
+    def get_system_message_color(self):
+        return "#ffd700" if self.current_theme == "dark" else "#0078d4"
+
+    def get_terminate_color(self):
+        return "#ff9800" if self.current_theme == "dark" else "#e65100"
+
+    def get_thinking_color(self):
+        return "#888" if self.current_theme == "dark" else "#888888"
+
+    def get_code_block_style(self):
+        if self.current_theme == "dark":
+            return 'background-color: #1e1e1e; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;'
+        else:
+            return 'background-color: #f5f5f5; border-left: 3px solid #0078d4; padding: 10px; border-radius: 5px; overflow-x: auto;'
+
+    def get_code_text_style(self):
+        return "font-family: Consolas, monospace; color: #d4d4d4;" if self.current_theme == "dark" else "font-family: Consolas, monospace; color: #333333;"
+
+    def get_metrics_border_color(self):
+        return "#3c3c3c" if self.current_theme == "dark" else "#e0e0e0"
+
+    def get_copy_button_html(self):
+        blue = "#0078d4" if self.current_theme == "dark" else "#0056b3"
+        orange = "#ff9800" if self.current_theme == "dark" else "#e65100"
+        return (
+            f'<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">'
+            f'<a href="regenerate" style="display: inline-block; border: 1px solid {orange}; background-color: rgba(255, 152, 0, 0.1); color: {orange}; padding: 6px 15px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold;">🔄 Regenerate</a>'
+            f'<a href="copy" style="display: inline-block; border: 1px solid {blue}; background-color: rgba(0, 120, 212, 0.1); color: {blue}; padding: 6px 15px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold;">📋 Copy Raw</a>'
+            f'</div>'
+        )

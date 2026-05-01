@@ -10,10 +10,10 @@ class ModelFetchWorker(QThread):
     finished = Signal(list)
     error = Signal(str)
     
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, base_url: str = "https://integrate.api.nvidia.com/v1"):
         super().__init__()
         self.api_key = api_key
-        self.base_url = "https://integrate.api.nvidia.com/v1"
+        self.base_url = base_url
         self.working_count = 0
         self.logger = get_logger()
         # Use a reliable model for generating descriptions
@@ -118,6 +118,7 @@ class ModelFetchWorker(QThread):
                         "description": description,
                         "developer": developer.capitalize(),
                         "free": True,
+                        "context_length": getattr(model, 'max_model_len', None),
                     })
                     
                     self.working_count += 1

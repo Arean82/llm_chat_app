@@ -29,15 +29,57 @@ class ChatWorker(QThread):
             prompt_tokens = 0
             completion_tokens = 0
             
-            # NVIDIA NIM supports standard OpenAI stream_options
-            response = self.client.client.chat.completions.create(
-                model=self.client.current_model,
-                messages=self.messages,
-                temperature=0.7,
-                max_tokens=4096,
-                stream=self.stream,
-                stream_options={"include_usage": True}  # TRIGGERS TOKEN COUNTS
-            )
+            # Attempt to create completion with stream_options for metrics
+            try:
+                response = self.client.client.chat.completions.create(
+                    model=self.client.current_model,
+                    messages=self.messages,
+                    temperature=0.7,
+                    max_tokens=4096,
+                    stream=self.stream,
+                    stream_options={"include_usage": True}  # Attempt to get token counts
+                )
+            except Exception as e:
+                error_str = str(e).lower()
+                
+                # 1. Handle Missing stream_options (422 Error)
+                if "stream_options" in error_str or "422" in error_str:
+                    response = self.client.client.chat.completions.create(
+                        model=self.client.current_model,
+                        messages=self.messages,
+                        temperature=0.7,
+                        max_tokens=4096,
+                        stream=self.stream
+                    )
+                # 2. Handle System Role Not Supported (500 Error)
+                elif "system role" in error_str or "system_role" in error_str:
+                    # Merge system message into the first user message
+                    new_messages = []
+                    system_instructions = ""
+                    for msg in self.messages:
+                        if msg["role"] == "system":
+                            system_instructions += msg["content"] + "\n\n"
+                        elif msg["role"] == "user" and system_instructions:
+                            # Prepend to the first user message
+                            new_messages.append({"role": "user", "content": f"{system_instructions}{msg['content']}"})
+                            system_instructions = "" # Clear after merging
+                        else:
+                            new_messages.append(msg)
+                    
+                    # If there were ONLY system messages, add a dummy user message
+                    if system_instructions and not new_messages:
+                         new_messages.append({"role": "user", "content": system_instructions})
+
+                    response = self.client.client.chat.completions.create(
+                        model=self.client.current_model,
+                        messages=new_messages,
+                        temperature=0.7,
+                        max_tokens=4096,
+                        stream=self.stream
+                    )
+                else:
+                    # Re-raise if it's a different type of error
+                    raise e
             
             if self.stream:
                 full_response = ""

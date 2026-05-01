@@ -10,10 +10,10 @@ class PaidModelFetchWorker(QThread):
     finished = Signal()
     error = Signal(str)
     
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, base_url: str = "https://integrate.api.nvidia.com/v1"):
         super().__init__()
         self.api_key = api_key
-        self.base_url = "https://integrate.api.nvidia.com/v1"
+        self.base_url = base_url
         self.logger = get_logger()
         
     def run(self):
