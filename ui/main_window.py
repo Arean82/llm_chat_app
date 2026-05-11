@@ -481,6 +481,9 @@ class MainWindowClass(QMainWindow):
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
         settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
+        settings_menu.addSeparator()
+        settings_menu.addAction("🗄️ Storage Manager", self.show_storage_manager)
+        settings_menu.addAction("📂 Open Data Folder", self.open_storage_location)
         # settings_menu.addAction("🔑 API Key", self.handle_auth_button)
 
         # Log menu
@@ -1427,7 +1430,7 @@ class MainWindowClass(QMainWindow):
                 "The extension folder is now open.\n\n"
                 "Install:\n"
                 "1. VS Code → Extensions → ... → Install from VSIX\n"
-                "2. Select vscode-llm-chat-1.0.0.vsix"
+                "2. Select vscode-llm-chat-1.0.1.vsix"
             )
         else:
             QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
@@ -1445,7 +1448,7 @@ class MainWindowClass(QMainWindow):
                 "The extension folder is now open.\n\n"
                 "Install:\n"
                 "1. Settings → Plugins → ⚙️ → Install Plugin from Disk\n"
-                "2. Select jetbrains-llm-chat-1.0.0.zip"
+                "2. Select jetbrains-llm-chat-1.0.1.zip"
             )
         else:
             QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
@@ -1680,6 +1683,20 @@ class MainWindowClass(QMainWindow):
 
         dialog = ModelManagerDialog(theme=self.theme_manager.current_theme, parent=self)
         dialog.exec()
+
+    def show_storage_manager(self):
+        from ui.storage_manager_dialog import StorageManagerDialog
+        dialog = StorageManagerDialog(theme=self.theme_manager.current_theme, parent=self)
+        dialog.exec()
+
+    def open_storage_location(self):
+        from utils.storage_config import StorageManager
+        from PySide6.QtGui import QDesktopServices
+        from PySide6.QtCore import QUrl
+        
+        root = StorageManager.get_instance().get_storage_root()
+        if root.exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(root)))
 
 
 

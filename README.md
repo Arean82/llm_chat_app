@@ -38,6 +38,8 @@ A sleek, high-performance desktop chat application built with Python and PySide6
 - 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
 - 🌐 **Universal API Server:** Start a local OpenAI-compatible API server from Tools menu. Connect any IDE (VS Code, Eclipse, IntelliJ) to your selected LLM model.
 - 🖥️ **VS Code Extension Support:** Use with Continue extension or build custom extension for advanced features like sending entire files, project folders, and applying AI edits directly.
+- 📦 **Storage Management Center:** Move seamlessly between Portable, Standard, and Custom data paths at runtime with transactional relocation and immediate automatic cycle-boot.
+- 📂 **Zero-Click Data Reveal:** Instant one-click Windows Explorer shortcuts in settings to navigate directly to your active user profiles and databases.
 
 For detailed API documentation, see [API Documentation](API_SERVER.md)
 For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md)
@@ -140,6 +142,7 @@ llm_chat_app/
 │   ├── model_edit_dialog.ui        # ✏️ Model edit dialog
 │   ├── model_manager.ui            # 📦 Model manager
 │   ├── model_popup.ui              # 🤖 Model selector
+│   ├── storage_manager.ui          # 📦 Storage configuration
 │   └── system_prompt_manager.ui    # 📝 System prompt manager
 │
 ├── ui/                             # 🧩 Python UI logic
@@ -150,6 +153,7 @@ llm_chat_app/
 │   ├── model_edit_dialog.py        # ✏️ Model add/edit/delete
 │   ├── model_manager.py            # 📦 Model manager logic
 │   ├── model_popup.py              # 🤖 Model selector logic
+│   ├── storage_manager_dialog.py   # 📦 Storage relocation wizard
 │   └── system_prompt_manager.py    # 📝 System prompt logic
 │
 ├── logic/                          # ⚙️ Backend engine
