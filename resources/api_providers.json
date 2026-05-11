@@ -1,0 +1,20 @@
+{
+    "providers": [
+        {
+            "id": "nvidia",
+            "display_name": "NVIDIA NIM",
+            "default_url": "https://integrate.api.nvidia.com/v1",
+            "placeholder_key": "nvapi-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "instructions": "<b>Enter your NVIDIA NIM API Key</b><br><br>How to get a free API key:<br>1. Go to <a href='https://build.nvidia.com' style='color: #00aff0;'>build.nvidia.com</a><br>2. Sign up for a free developer account<br>3. Go to API Keys & Click 'Generate API Key'<br>4. Copy your key (starts with <code>nvapi-</code>)",
+            "requires_url": true
+        },
+        {
+            "id": "google",
+            "display_name": "Google Gemini",
+            "default_url": "https://generativelanguage.googleapis.com/v1beta",
+            "placeholder_key": "AIzaSyxxxxxxxxxxxxxxxxxxxxxx",
+            "instructions": "<b>Enter your Google Gemini API Key</b><br><br>How to get a free API key:<br>1. Go to <a href='https://aistudio.google.com' style='color: #00aff0;'>Google AI Studio</a><br>2. Click 'Get API Key' in left menu<br>3. Generate a key for a standard project<br>4. Copy your key (starts with <code>AIzaSy</code>)",
+            "requires_url": false
+        }
+    ]
+}
