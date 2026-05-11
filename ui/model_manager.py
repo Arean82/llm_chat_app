@@ -366,19 +366,12 @@ class ModelManagerDialog(QDialog):
         return get_models_path()
 
     def load_models(self):
-        models_file = self.get_models_file_path()
-        if models_file.exists():
-            with open(models_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self.models = data.get("models", [])
-        else:
-            self.models = []
+        from logic.model_io import load_all_models
+        self.models = load_all_models()
 
     def save_models(self):
-        models_file = self.get_models_file_path()
-        data = {"models": self.models}
-        with open(models_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
+        from logic.model_io import save_all_models
+        save_all_models(self.models)
 
     def update_count_label(self):
         self.count_label.setText(f"{len(self.models)} model(s)")
@@ -516,14 +509,9 @@ class ModelManagerDialog(QDialog):
     
     def _on_fetch_finished(self, working_models):
         """Save results and refresh"""
-        from utils.path_utils import get_models_path
-        import json
-        
-        # Save to file
-        models_file = get_models_path()
-        data = {"models": working_models}
-        with open(models_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
+        from logic.model_io import save_all_models
+        # Re-save ONLY fetched provider list back to their relevant segments securely
+        save_all_models(working_models)
         
         # Reload and refresh
         self.load_models()

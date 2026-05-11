@@ -594,8 +594,12 @@ class MainWindowClass(QMainWindow):
     def load_settings(self):
         settings = QSettings("LLMChatApp", "Settings")
         
-        # Securely fetch api_key from system keychain
-        api_key = keyring.get_password("LLMChatApp", "api_key") or ""
+        # Securely fetch api_key from system keychain (both providers)
+        nvidia_key = keyring.get_password("LLMChatApp", "api_key_nvidia")
+        if not nvidia_key:
+             nvidia_key = keyring.get_password("LLMChatApp", "api_key") # Legacy fallback
+             
+        google_key = keyring.get_password("LLMChatApp", "api_key_google")
         
         base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
         model_id = settings.value("current_model_id", "")
@@ -604,13 +608,19 @@ class MainWindowClass(QMainWindow):
         # Apply saved theme FIRST
         self.apply_theme(saved_theme)
 
-        has_key = bool(api_key)
-        has_model = bool(model_id)
-        
-        if has_key:
+        # Inject credentials into the polymorphic facade
+        if nvidia_key:
             self.llm_client.set_base_url(base_url)
-            self.llm_client.set_api_key(api_key) 
-            self.refresh_auth_button_style()
+            self.llm_client.set_api_key(nvidia_key) 
+            
+        if google_key:
+            self.llm_client.set_google_api_key(google_key)
+
+        self.refresh_auth_button_style()
+        
+        has_model = bool(model_id)
+        # A user has permission to chat if AT LEAST ONE active credential exists!
+        has_key = bool(nvidia_key) or bool(google_key)
         
         if has_model:
             self.update_model_ui(model_id)
@@ -643,20 +653,23 @@ class MainWindowClass(QMainWindow):
         dialog.raise_() 
         dialog.activateWindow()
         if dialog.exec():
-            api_key = dialog.get_api_key()
+            # Dialog internally sets keys into specific slots (api_key_nvidia, etc)
+            # We just need to trigger a fresh reload into memory!
+            nvidia_key = keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key")
+            google_key = keyring.get_password("LLMChatApp", "api_key_google")
+            
             base_url = dialog.get_base_url()
-
-            if api_key and base_url:
+            
+            if nvidia_key:
                 self.llm_client.set_base_url(base_url)
-                self.llm_client.set_api_key(api_key)
+                self.llm_client.set_api_key(nvidia_key)
+                
+            if google_key:
+                 self.llm_client.set_google_api_key(google_key)
+                 
+            if nvidia_key or google_key:
                 self.set_connected_status(True)
-                
-                settings = QSettings("LLMChatApp", "Settings")
-                
-                # Double check persistence to keyring (already handled by dialog, redundant but safe)
-                keyring.set_password("LLMChatApp", "api_key", api_key)
-                settings.setValue("base_url", base_url)
-                settings.remove("api_key") # cleanup
+                self.refresh_auth_button_style()
                 
                 if not QSettings("LLMChatApp", "Settings").value("current_model_id"):
                     QTimer.singleShot(100, self.show_model_popup)
@@ -1560,19 +1573,24 @@ class MainWindowClass(QMainWindow):
             if reply == QMessageBox.StandardButton.No:
                 return
 
-        # 2. Clear all states (Securely clearing keyring)
+        # 2. Clear all states (Securely wiping all segmented identity tokens)
         settings = QSettings("LLMChatApp", "Settings")
         try:
             keyring.delete_password("LLMChatApp", "api_key")
+            keyring.delete_password("LLMChatApp", "api_key_nvidia")
+            keyring.delete_password("LLMChatApp", "api_key_google")
         except Exception:
-            pass # Ignore error if already deleted
+            pass 
             
-        settings.remove("api_key") # Ensure old fallback is wiped
+        settings.remove("api_key") 
+        settings.remove("active_provider_id")
         settings.remove("current_model_id")
         settings.sync()
 
         self.llm_client.api_key = None
+        self.llm_client.google_api_key = None
         self.llm_client.client = None
+        self.llm_client.genai_configured = False
         self.llm_client.current_model = None
 
         self.clear_chat()

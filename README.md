@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.6%2B-green)  ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-A sleek, dark-themed desktop chat application built with Python and PySide6. It interfaces with the NVIDIA NIM API (via the OpenAI SDK) to provide streaming LLM responses, markdown rendering, and conversation management.
+A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-provider hub, it interfaces seamlessly with both the **NVIDIA NIM API** and native **Google Generative AI (Gemini)** to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
 
 [Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) • [-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
 
@@ -11,11 +11,12 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 ## ✨ Features
 
 - 🚀 **Real-Time Streaming:** Watch the AI generate responses token by token, with zero lag.
-- 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and token usage) displayed beautifully after every response.
-- 📎 **File Attachments:** Upload your code (`.py`, `.js`), text, or data files directly into the chat for instant AI analysis.
-- 🔄 **Multi-Model Support:** Easily switch between powerful models like Llama 3, DeepSeek, Qwen, and Gemma via a clean UI popup.
-- 📦 **Model Manager:** Add, edit, or remove models directly from the UI. Changes save instantly to `models.json` — no manual file editing needed.
-- 🏷️ **System Instruction Library:** Manage custom AI personas and rules. Create instruction sets (e.g., 'Python Expert', 'Friendly Tutor') and toggle them on/off via the Settings menu.
+- 🤖 **Multi-Provider Engine (V5):** Dynamic polymorphic routing allows real-time chatting with both **NVIDIA NIM** (via OpenAI SDK) and **Google Gemini** (via native Generative AI SDK) interchangeably.
+- 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
+- 📎 **File Attachments:** Upload code (`.py`, `.js`), text, or data files directly into the chat for instant analysis.
+- 📂 **Distributed Manifest System:** Vendor catalogs are perfectly isolated (e.g., `models_google.json` vs `models_nvidia.json`) enabling infinite horizontal scaling for new providers.
+- 📦 **Dynamic Model Manager:** Add, edit, or remove models directly from the UI. Group models by provider or developer using the tabbed interface.
+- 🔐 **Segmented Key Vault:** Safely manages isolated OS-level keychain credentials for each distinct provider without crossing identities.
 - 🔧 **Smart Generation Parameters:** Take granular control over LLM outputs. Tweak temperature and response length via a dedicated UI, or use 'Model Default' to let remote servers decide natively.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
