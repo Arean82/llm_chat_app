@@ -1,39 +1,48 @@
 # utils/path_utils.py
-# Utility functions for handling file paths and directories in a cross-platform way.
-# This module provides functions to get paths for resources, user data, models, and cache, ensuring compatibility with both development and PyInstaller environments.   
 
 import sys
 import os
 import shutil
 from pathlib import Path
+from utils.storage_config import StorageManager
 
 def get_resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller"""
+    """
+    Retrieves the absolute path for a given resource.
+    - If it's internal/read-only (.ui files), handles internal extraction.
+    - If it's editable/writable (models, styles, logs), directs it to the global Data Root.
+    """
+    manager = StorageManager.get_instance()
+    
     if getattr(sys, 'frozen', False):
-        # For .ui files - read from bundle (_MEIPASS)
+        # READ-ONLY SYSTEM FILES: Load directly from compiled bundle memory
         if relative_path.startswith("ui_designer/"):
             base_path = Path(sys._MEIPASS)
         else:
-            # For resources - use exe folder (writable)
-            base_path = Path(sys.executable).parent
+            # WRITABLE USER FILES: Dynamically resolved to AppData, Portable, or Custom
+            base_path = manager.get_storage_root()
     else:
-        # Development mode
-        base_path = Path(__file__).parent.parent
+        # Development Mode: Use project root
+        base_path = manager.get_exe_dir()
     
     full_path = base_path / relative_path
     
-    # Create parent directory for writable resource files
+    # Automatically create subdirectories if referencing writable resource tracks
     if relative_path.startswith("resources/"):
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-    
+         full_path.parent.mkdir(parents=True, exist_ok=True)
+         
     return full_path
 
 def get_models_path():
-    """Get path for models.json in resources folder"""
+    """Get path for models.json in global resources folder."""
     return get_resource_path("resources/models.json")
 
 def get_cache_path():
-    """Get path for cache folder in resources"""
+    """Get path for cache folder in global resources."""
     cache_dir = get_resource_path("resources/badge_cache")
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
+
+def get_app_settings():
+    """Global helper proxy to get the correctly scoped QSettings object (Registry or INI)."""
+    return StorageManager.get_instance().get_active_settings()

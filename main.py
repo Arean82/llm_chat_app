@@ -49,8 +49,10 @@ def copy_bundled_resources():
         return
     
     try:
+        from utils.storage_config import StorageManager
         bundle_dir = Path(sys._MEIPASS)
-        exe_dir = Path(sys.executable).parent
+        # Crucial Fix: Extract into the verified writable storage path, not the EXE folder
+        target_root = StorageManager.get_instance().get_storage_root()
         
         # 1. SYSTEM FILES & UI DESIGNER: Smart Sync (ensures updates without full wipe)
         system_files = [
@@ -59,37 +61,37 @@ def copy_bundled_resources():
         ]
         
         for rel_path in system_files:
-            smart_sync(bundle_dir / rel_path, exe_dir / rel_path)
+            smart_sync(bundle_dir / rel_path, target_root / rel_path)
 
         # Sync the entire UI designer folder individually
         bundle_ui = bundle_dir / "ui_designer"
-        exe_ui = exe_dir / "ui_designer"
+        target_ui = target_root / "ui_designer"
         if bundle_ui.exists():
             for src_file in bundle_ui.rglob("*"):
                 if src_file.is_file():
                     rel_path = src_file.relative_to(bundle_ui)
-                    smart_sync(src_file, exe_ui / rel_path)
+                    smart_sync(src_file, target_ui / rel_path)
 
         # 2. USER FILES: Only copy if MISSING (protects user work)
         # Dynamically sync any models_*.json files present in bundle
         bundle_res = bundle_dir / "resources"
-        exe_res = exe_dir / "resources"
+        target_res = target_root / "resources"
         
         if bundle_res.exists():
             # Find all model manifests
             for src_file in bundle_res.glob("models_*.json"):
-                dst_file = exe_res / src_file.name
+                dst_file = target_res / src_file.name
                 if not dst_file.exists():
-                    exe_res.mkdir(parents=True, exist_ok=True)
+                    target_res.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(src_file, dst_file)
             
             # Handle specific fallback files
             legacy_files = ['models.json', 'user_prompts.json']
             for fname in legacy_files:
                 src = bundle_res / fname
-                dst = exe_res / fname
+                dst = target_res / fname
                 if src.exists() and not dst.exists():
-                    exe_res.mkdir(parents=True, exist_ok=True)
+                    target_res.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(src, dst)
                 
     except Exception as e:
@@ -106,10 +108,32 @@ def main():
         except Exception:
             pass
 
-    copy_bundled_resources()
-    
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    
+    # --- STORAGE CONFIGURATION LAYER ---
+    from utils.storage_config import StorageManager
+    from ui.first_run_dialog import FirstRunDialog
+    from PySide6.QtCore import QSettings
+    
+    manager = StorageManager.get_instance()
+    
+    # Perform permission-based mode detection
+    if manager.detect_existing_mode() is None:
+        # Only prompts if Writable folder exists AND no setting was saved previously
+        setup_dlg = FirstRunDialog()
+        if setup_dlg.exec() != FirstRunDialog.Accepted:
+            sys.exit(0) # Safe termination if they close selection dialog
+            
+    # GLORIOUS GLOBAL SWITCHER:
+    # If we are portable, we override default QSettings storage globally to prevent Registry writes.
+    if manager.is_portable:
+        QSettings.setDefaultFormat(QSettings.IniFormat)
+        # Explicitly set the scope path to the verified writable target root.
+        QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(manager.get_storage_root()))
+    
+    # Now copy files safely without permission crash
+    copy_bundled_resources()
     
     # Load stylesheet - use get_resource_path
     stylesheet_path = get_resource_path("resources/styles.qss")

@@ -4,9 +4,11 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from utils.storage_config import StorageManager
+
 class ConversationManager:
     def __init__(self):
-        self.base_dir = Path.home() / "LLMChatApp"
+        self.base_dir = StorageManager.get_instance().get_storage_root()
         self.conversations_dir = self.base_dir / "conversations"
         self.conversations_dir.mkdir(parents=True, exist_ok=True)
         
