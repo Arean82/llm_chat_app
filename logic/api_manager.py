@@ -54,13 +54,16 @@ class ApiManager(QObject):
         self.window.api_server_action.setText("🌐 Universal API Server")
         self.window.add_system_message("🌐 API Server stopped")
 
-    def api_send_message(self, user_message: str, **kwargs):
+    def api_send_message(self, user_message: str, messages_list: list = None, **kwargs):
         """
         CALLBACK called by the background Flask thread.
         This method safely bridges the call to the main thread using a Signal.
         """
         response_queue = queue.Queue()
-        params = {"message": user_message}
+        params = {
+            "message": user_message,
+            "messages_list": messages_list
+        }
         params.update(kwargs)
         
         # Emit signal to trigger handle_api_request on the main thread
@@ -78,10 +81,18 @@ class ApiManager(QObject):
         Updates the UI and triggers the standard message sending logic.
         """
         user_message = params.get("message", "")
+        messages_list = params.get("messages_list", None)
         
-        # 1. Update the input field in the UI
+        # 1. Update the input field in the UI with JUST the latest message prompt
         self.window.input_field.setPlainText(user_message)
         
-        # 2. Trigger the standard send_message logic.
-        # We pass the response_queue so the AI response can be sent back to the API.
-        self.window.send_message(api_response_queue=response_queue)
+        # 2. Trigger message logic, passing parameters along
+        temperature = params.get("temperature", None)
+        max_tokens = params.get("max_tokens", None)
+        
+        self.window.send_message(
+            api_response_queue=response_queue, 
+            custom_messages=messages_list,
+            custom_temp=temperature,
+            custom_max_tokens=max_tokens
+        )

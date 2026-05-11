@@ -11,10 +11,12 @@ class ChatWorker(QThread):
     finished = Signal()
     metrics_received = Signal(dict)  # <-- NEW SIGNAL for metrics
     
-    def __init__(self, client: LLMClient, messages: list):
+    def __init__(self, client: LLMClient, messages: list, temperature=0.7, max_tokens=4096):
         super().__init__()
         self.client = client
         self.messages = messages
+        self.temperature = temperature
+        self.max_tokens = max_tokens
         self.stream = True
         
     def run(self):
@@ -29,56 +31,53 @@ class ChatWorker(QThread):
             prompt_tokens = 0
             completion_tokens = 0
             
+            # Dynamically build parameters to handle selective passthrough (No hardcoding!)
+            base_params = {
+                "model": self.client.current_model,
+                "stream": self.stream
+            }
+            if self.temperature is not None:
+                base_params["temperature"] = self.temperature
+            if self.max_tokens is not None:
+                base_params["max_tokens"] = self.max_tokens
+            
             # Attempt to create completion with stream_options for metrics
             try:
-                response = self.client.client.chat.completions.create(
-                    model=self.client.current_model,
-                    messages=self.messages,
-                    temperature=0.7,
-                    max_tokens=4096,
-                    stream=self.stream,
-                    stream_options={"include_usage": True}  # Attempt to get token counts
-                )
+                req_params = base_params.copy()
+                req_params["messages"] = self.messages
+                req_params["stream_options"] = {"include_usage": True}
+                
+                response = self.client.client.chat.completions.create(**req_params)
             except Exception as e:
                 error_str = str(e).lower()
                 
                 # 1. Handle Missing stream_options (422 Error)
                 if "stream_options" in error_str or "422" in error_str:
-                    response = self.client.client.chat.completions.create(
-                        model=self.client.current_model,
-                        messages=self.messages,
-                        temperature=0.7,
-                        max_tokens=4096,
-                        stream=self.stream
-                    )
+                    req_params = base_params.copy()
+                    req_params["messages"] = self.messages
+                    
+                    response = self.client.client.chat.completions.create(**req_params)
                 # 2. Handle System Role Not Supported (500 Error)
                 elif "system role" in error_str or "system_role" in error_str:
-                    # Merge system message into the first user message
                     new_messages = []
                     system_instructions = ""
                     for msg in self.messages:
                         if msg["role"] == "system":
                             system_instructions += msg["content"] + "\n\n"
                         elif msg["role"] == "user" and system_instructions:
-                            # Prepend to the first user message
                             new_messages.append({"role": "user", "content": f"{system_instructions}{msg['content']}"})
-                            system_instructions = "" # Clear after merging
+                            system_instructions = ""
                         else:
                             new_messages.append(msg)
                     
-                    # If there were ONLY system messages, add a dummy user message
                     if system_instructions and not new_messages:
                          new_messages.append({"role": "user", "content": system_instructions})
 
-                    response = self.client.client.chat.completions.create(
-                        model=self.client.current_model,
-                        messages=new_messages,
-                        temperature=0.7,
-                        max_tokens=4096,
-                        stream=self.stream
-                    )
+                    req_params = base_params.copy()
+                    req_params["messages"] = new_messages
+                    
+                    response = self.client.client.chat.completions.create(**req_params)
                 else:
-                    # Re-raise if it's a different type of error
                     raise e
             
             if self.stream:

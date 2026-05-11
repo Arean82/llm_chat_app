@@ -2,7 +2,7 @@
   "name": "vscode-llm-chat",
   "displayName": "LLM Chat App",
   "description": "Connect VS Code to LLM Chat App",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.116.0"
   },

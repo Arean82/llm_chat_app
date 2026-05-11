@@ -16,6 +16,7 @@ A sleek, dark-themed desktop chat application built with Python and PySide6. It 
 - 🔄 **Multi-Model Support:** Easily switch between powerful models like Llama 3, DeepSeek, Qwen, and Gemma via a clean UI popup.
 - 📦 **Model Manager:** Add, edit, or remove models directly from the UI. Changes save instantly to `models.json` — no manual file editing needed.
 - 🏷️ **System Instruction Library:** Manage custom AI personas and rules. Create instruction sets (e.g., 'Python Expert', 'Friendly Tutor') and toggle them on/off via the Settings menu.
+- 🔧 **Smart Generation Parameters:** Take granular control over LLM outputs. Tweak temperature and response length via a dedicated UI, or use 'Model Default' to let remote servers decide natively.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
 - 💾 **Robust History Management:** Uses a high-performance **SQLite** backend with **WAL (Write-Ahead Logging)** mode to ensure data integrity and prevent corruption, even during crashes or power loss.
@@ -118,8 +119,8 @@ llm_chat_app/
 ├── requirements.txt                # 📦 Python dependencies
 │
 ├── extension/                       # 📦 IDE Extensions
-│   ├── vscode-llm-chat-1.0.0.vsix   # VS Code extension
-│   └── jetbrains-llm-chat-1.0.0.zip # JetBrains plugin
+│   ├── vscode-llm-chat-1.0.1.vsix   # VS Code extension
+│   └── jetbrains-llm-chat-1.0.1.zip # JetBrains plugin
 │
 ├── resources/                      # 📦 Static assets & caches
 │   ├── app_icon.png                # 🖼️ Application icon
@@ -181,7 +182,8 @@ llm_chat_app/
 
 This application does not use local `.env` files or plaintext config files for sensitive data.
 
-- **API Keys & Settings:** Stored using `QSettings`.
+- **API Credentials:** Migrated away from plaintext. Securely injected into the OS vault subsystem using the Python `keyring` module (Windows Credential Manager / macOS Keychain).
+- **UI Settings:** Generic layout preferences stored using `QSettings`.
   - *Windows:* Saved in the Registry (`HKEY_CURRENT_USER\Software\LLMChatApp\Settings`).
   - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
   - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
@@ -204,7 +206,7 @@ This application does not use local `.env` files or plaintext config files for s
 
 ### VS Code Extension
 
-Install `vscode-llm-chat/vscode-llm-chat-1.0.0.vsix`:
+Install `extension/vscode-llm-chat-1.0.1.vsix`:
 
 1. VS Code Extensions (Ctrl+Shift+X)
 2. Click "..." → "Install from VSIX"
@@ -214,7 +216,7 @@ Install `vscode-llm-chat/vscode-llm-chat-1.0.0.vsix`:
 Configure any OpenAI-compatible extension with:
 
 - **URL:** `http://localhost:5000/v1`
-- **API Key:** any value
+- **API Key:** `llm-local-auth-82c4f3eb0d` (Mandatory local token)
 
 ---
 

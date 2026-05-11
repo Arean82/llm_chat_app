@@ -3,6 +3,7 @@
 
 import sys
 import os
+import keyring
 from pathlib import Path
 
 from utils.path_utils import get_resource_path
@@ -29,6 +30,19 @@ class SettingsDialogClass(QDialog):
         layout.addWidget(self.ui)
         self.setLayout(layout)
         
+        # Configure as a normal standalone window that gets a taskbar icon
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QIcon
+        from utils.helpers import set_app_icon
+        
+        # Re-establishing flags to ensure standalone taskbar presence
+        self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowCloseButtonHint)
+        set_app_icon(self) # Applies the correct icon to the window itself
+        
+        # Force the window out of minimization by default
+        self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+        self.showNormal()
+        
         # Get references to UI elements
         self.key_input = self.ui.findChild(QLineEdit, "key_input")
         self.save_btn = self.ui.findChild(QPushButton, "save_btn")
@@ -38,7 +52,7 @@ class SettingsDialogClass(QDialog):
         from PySide6.QtCore import QSettings
         settings = QSettings("LLMChatApp", "Settings")
         saved_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
-        saved_key = settings.value("api_key", "")
+        saved_key = keyring.get_password("LLMChatApp", "api_key") or ""
 
         self.url_label = QLabel("API Base URL:")
         self.url_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
@@ -96,8 +110,13 @@ class SettingsDialogClass(QDialog):
             
         from PySide6.QtCore import QSettings
         settings = QSettings("LLMChatApp", "Settings")
-        settings.setValue("api_key", api_key)
+        
+        # Store standard config in QSettings, but store sensitive secrets in keyring
+        keyring.set_password("LLMChatApp", "api_key", api_key)
         settings.setValue("base_url", base_url)
+        
+        # Clean up legacy insecure key if it existed
+        settings.remove("api_key")
 
         self.accept()
         

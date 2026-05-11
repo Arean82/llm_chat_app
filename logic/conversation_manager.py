@@ -161,19 +161,31 @@ class ConversationManager:
 
     def delete_conversation(self, conv_id: int):
         """Deletes a specific conversation by ID."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM conversations WHERE id = ?', (conv_id,))
-        conn.commit()
-        conn.close()
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM conversations WHERE id = ?', (conv_id,))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Delete error: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def clear_all(self):
         """Wipes the entire conversations table."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM conversations')
-        conn.commit()
-        conn.close()
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM conversations')
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Clear all error: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def export_to_json(self, conversation: list, file_path: str, model_id: str = ""):
         """Manually exports a conversation to a JSON file (standard format)."""

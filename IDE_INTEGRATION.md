@@ -25,7 +25,7 @@
     "provider": "openai",
     "model": "any",
     "apiBase": "http://localhost:5000/v1",
-    "apiKey": "dummy"
+    "apiKey": "llm-local-auth-82c4f3eb0d"
   }]
 }
 ```
@@ -34,7 +34,7 @@
 
 ### Option B: Official LLM Chat Extension (Full Features)
 
-1. Download `vscode-llm-chat-1.0.0.vsix` from the `extension/` folder in the project root.
+1. Download `vscode-llm-chat-1.0.1.vsix` from the `extension/` folder in the project root.
 2. VS Code → Extensions (Ctrl+Shift+X) → `...` → Install from VSIX
 3. Reload VS Code
 
@@ -68,7 +68,7 @@
 
 ### Installation
 
-1. Download `jetbrains-llm-chat-1.0.0.zip` from the `extension/` folder in the project root.
+1. Download `jetbrains-llm-chat-1.0.1.zip` from the `extension/` folder in the project root.
 2. **File → Settings → Plugins** (or **Ctrl+Alt+S**)
 3. Click ⚙️ → **Install Plugin from Disk**
 4. Select the `.zip` file
@@ -119,6 +119,7 @@ Open Visual Studio's Developer PowerShell:
 
 ```powershell
 curl -X POST http://localhost:5000/v1/chat/completions `
+  -H "Authorization: Bearer llm-local-auth-82c4f3eb0d" `
   -H "Content-Type: application/json" `
   -d '{\"messages\": [{\"role\": \"user\", \"content\": \"Explain this code\"}]}'
 ```

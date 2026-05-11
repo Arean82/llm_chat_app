@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, Response, stream_with_context
 from threading import Thread
 import time
 import json
+from collections import OrderedDict
 
 class APIServer:
     def __init__(self, llm_client, send_message_callback, stream_callback=None):
@@ -14,10 +15,27 @@ class APIServer:
         self.port = 5000
         self.server = None
         self.running = False
-        self.conversation_history = {}  # Store history per session
+        self.running = False
+        self.conversation_history = OrderedDict()  # Store history per session with LRU capability
         self._history_lock = threading.Lock()  # Lock for thread-safe history access
+        self.MAX_HISTORY_SESSIONS = 100  # Safeguard to prevent memory leaks
         self.setup_routes()
+        self.setup_security()
     
+    def setup_security(self):
+        from utils.constants import API_SERVER_AUTH_KEY
+        @self.app.before_request
+        def verify_auth():
+            # Exempt health endpoint if needed, or lock everything down
+            if request.path == '/health':
+                return None
+            
+            auth_header = request.headers.get('Authorization')
+            expected = f"Bearer {API_SERVER_AUTH_KEY}"
+            
+            if not auth_header or auth_header != expected:
+                return jsonify({"error": "Unauthorized. Invalid local API key."}), 401
+
     def setup_routes(self):
         @self.app.route('/v1/models', methods=['GET'])
         def list_models():
@@ -54,19 +72,27 @@ class APIServer:
             # Store conversation history (THREAD-SAFE)
             with self._history_lock:
                 if session_id not in self.conversation_history:
+                    # Check and enforce max history cap
+                    if len(self.conversation_history) >= self.MAX_HISTORY_SESSIONS:
+                        self.conversation_history.popitem(last=False) # Discard the oldest accessed session
                     self.conversation_history[session_id] = []
+                
+                # Update user message and refresh access order
                 self.conversation_history[session_id].append({"role": "user", "content": user_message})
+                self.conversation_history.move_to_end(session_id)
             
             if stream:
                 def generate():
                     full_response = ""
-                    for chunk in self.stream_response(user_message, system_message, temperature, max_tokens):
+                    for chunk in self.stream_response(user_message, system_message, temperature, max_tokens, messages_list=messages):
                         full_response += chunk
                         yield f"data: {json.dumps({'choices': [{'delta': {'content': chunk}}]})}\n\n"
                     
-                    # Store assistant response in history (THREAD-SAFE)
+                    # Final touch: move updated session to most recent position
                     with self._history_lock:
-                        self.conversation_history[session_id].append({"role": "assistant", "content": full_response})
+                        if session_id in self.conversation_history:
+                            self.conversation_history[session_id].append({"role": "assistant", "content": full_response})
+                            self.conversation_history.move_to_end(session_id)
                     yield "data: [DONE]\n\n"
                 
                 return Response(generate(), mimetype='text/event-stream')
@@ -74,6 +100,7 @@ class APIServer:
                 # Call the app's send function with parameters
                 response = self.send_message_callback(
                     user_message, 
+                    messages_list=messages,
                     system_message=system_message,
                     temperature=temperature,
                     max_tokens=max_tokens
@@ -81,7 +108,9 @@ class APIServer:
                 
                 # Store assistant response in history (THREAD-SAFE)
                 with self._history_lock:
-                    self.conversation_history[session_id].append({"role": "assistant", "content": response})
+                    if session_id in self.conversation_history:
+                        self.conversation_history[session_id].append({"role": "assistant", "content": response})
+                        self.conversation_history.move_to_end(session_id)
                 
                 return jsonify({
                     "id": "chatcmpl-" + str(int(time.time())),
@@ -114,14 +143,20 @@ class APIServer:
         def health():
             return jsonify({"status": "running", "model": self.llm_client.current_model})
     
-    def stream_response(self, user_message, system_message="", temperature=0.7, max_tokens=4096):
+    def stream_response(self, user_message, system_message="", temperature=0.7, max_tokens=4096, messages_list=None):
         """Generator for streaming responses"""
         if self.stream_callback:
-            for chunk in self.stream_callback(user_message, system_message, temperature, max_tokens):
+            for chunk in self.stream_callback(user_message, system_message, temperature, max_tokens, messages_list=messages_list):
                 yield chunk
         else:
             # Fallback to non-streaming
-            response = self.send_message_callback(user_message, system_message, temperature, max_tokens)
+            response = self.send_message_callback(
+                user_message, 
+                messages_list=messages_list, 
+                system_message=system_message, 
+                temperature=temperature, 
+                max_tokens=max_tokens
+            )
             yield response
     
     def start(self):

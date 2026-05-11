@@ -35,6 +35,7 @@ class LLMChatService {
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
                 .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer llm-local-auth-82c4f3eb0d")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(requestBody)))
                 .build()
             

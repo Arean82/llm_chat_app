@@ -184,47 +184,57 @@ class LLMClient:
 
     def enrich_models_with_descriptions(self, models: list, background_callback=None) -> list:
         """
-        Enrich a list of models with generated descriptions.
-        Runs sequentially to avoid rate limits (40 requests/minute).
-
-        Args:
-            models: List of model dicts with 'id' and optionally 'name'
-            background_callback: Optional function to report progress (current, total)
-
-        Returns:
-            The same list with 'description' fields populated
+        Enrich a list of models using optimized BATCH generation.
+        Dramatically faster than sequential methods.
         """
         if not self.client or not self.current_model:
             return models
 
-        total = len(models)
-        description_model = self.current_model  # Save current model
+        # 1. Identify ONLY models that need descriptions to minimize API load
+        candidates = []
+        for model in models:
+            existing = model.get('description', '')
+            # Only update if it's empty, short, or filler text
+            if not existing or len(existing) < 25 or "no description" in existing.lower():
+                candidates.append(model)
 
-        for i, model in enumerate(models):
-            # Skip if description already exists and is meaningful
-            existing_desc = model.get('description', '')
-            if existing_desc and len(existing_desc) > 20:
-                continue
+        if not candidates:
+            return models # Nothing to do!
+
+        total_candidates = len(candidates)
+        
+        # 2. Process in BATCHES to maximize performance without overloading context
+        BATCH_SIZE = 10
+        processed_count = 0
+
+        for i in range(0, total_candidates, BATCH_SIZE):
+            batch = candidates[i : i + BATCH_SIZE]
             
-            model_name = model.get('name', '')
-            description = self.generate_model_description(model['id'], model_name)
+            # Run high-speed batch API request
+            batch_results = self.generate_descriptions_batch(batch)
+            
+            # 3. Apply results back to original models
+            for model in batch:
+                model_id = model['id']
+                # Lookup by ID in results
+                if model_id in batch_results:
+                    model['description'] = batch_results[model_id].strip('"\' ')
+                    model['description_generated'] = True
+                else:
+                    # Fallback slightly meaningful descriptor
+                    if not model.get('description'):
+                         model['description'] = "Advanced LLM specializing in text generation and comprehension."
+                    model['description_generated'] = False
 
-            if description:
-                model['description'] = description
-                model['description_generated'] = True
-            else:
-                model['description'] = "No description available"
-                model['description_generated'] = False
-
-            # Report progress if callback provided
+            processed_count += len(batch)
             if background_callback:
-                background_callback(i + 1, total)
-
-            # Respect rate limit (40 per minute = 1.5 seconds between requests)
-            # Add a small delay to avoid hitting rate limits
-            if i < total - 1:
+                # Signal visual updates proportional to candidates processed
+                background_callback(processed_count, total_candidates)
+            
+            # Minor 0.5s rest between chunks just as extra stability safety
+            if i + BATCH_SIZE < total_candidates:
                 import time
-                time.sleep(1.5)
+                time.sleep(0.5)
 
         return models
     
@@ -262,21 +272,40 @@ class LLMClient:
     Now generate descriptions:"""
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.current_model,
-                messages=[
-                    {"role": "system", "content": "You are a technical writer. Output only valid JSON, no other text."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=2000,  # Enough for many descriptions
-                temperature=0.3,
-                response_format={"type": "json_object"}  # Force JSON output
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.current_model,
+                    messages=[
+                        {"role": "system", "content": "You are a technical writer. Output ONLY raw JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=2500,
+                    temperature=0.2,
+                    response_format={"type": "json_object"}
+                )
+            except Exception as e_inner:
+                if "response_format" in str(e_inner).lower() or "400" in str(e_inner):
+                    response = self.client.chat.completions.create(
+                        model=self.current_model,
+                        messages=[
+                            {"role": "system", "content": "You are a technical writer. Output only valid JSON."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        max_tokens=2500,
+                        temperature=0.2
+                    )
+                else:
+                    raise e_inner
 
             import json
-            result = json.loads(response.choices[0].message.content)
+            raw_txt = response.choices[0].message.content.strip()
+            import re
+            match = re.search(r'\{.*\}', raw_txt, re.DOTALL)
+            if match:
+                raw_txt = match.group(0)
+            
+            result = json.loads(raw_txt)
             return result
-
         except Exception as e:
-            print(f"Batch generation error: {e}")
+            print(f"Batch generation fully failed: {e}")
             return {}

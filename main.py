@@ -87,6 +87,16 @@ def copy_bundled_resources():
         print(f"Resource sync error: {e}")
 
 def main():
+    # Explicitly set the AppUserModelID on Windows so the taskbar icon appears instantly and clusters correctly
+    import platform
+    if platform.system() == "Windows":
+        import ctypes
+        try:
+            myappid = 'arean82.llmchatapp.v4' # arbitrary string
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception:
+            pass
+
     copy_bundled_resources()
     
     app = QApplication(sys.argv)
@@ -97,6 +107,10 @@ def main():
     if stylesheet_path.exists():
         with open(stylesheet_path, 'r', encoding='utf-8') as f:
             app.setStyleSheet(f.read())
+            
+    # Apply Global Application Icon (fixes taskbar icon before main window spawns)
+    from utils.helpers import set_app_icon
+    set_app_icon(app) 
     
     window = MainWindowClass()
     window.showMaximized()  

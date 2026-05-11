@@ -65,6 +65,7 @@ VS Code extension `.vsix` file is available in the `extension/` folder.
 
 ```bash
 curl -X POST http://localhost:5000/v1/chat/completions \
+  -H "Authorization: Bearer llm-local-auth-82c4f3eb0d" \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
@@ -81,7 +82,8 @@ curl -X POST http://localhost:5000/v1/chat/completions \
 ### Clear Conversation History
 
 ```bash
-curl -X DELETE http://localhost:5000/v1/chat/history/my-session
+curl -X DELETE http://localhost:5000/v1/chat/history/my-session \
+  -H "Authorization: Bearer llm-local-auth-82c4f3eb0d"
 ```
 
 ---
@@ -91,6 +93,7 @@ curl -X DELETE http://localhost:5000/v1/chat/history/my-session
 ### 🐚 cURL (Terminal)
 ```bash
 curl -X POST http://localhost:5000/v1/chat/completions \
+  -H "Authorization: Bearer llm-local-auth-82c4f3eb0d" \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "Explain Python in one sentence"}]}'
 ```
@@ -101,8 +104,9 @@ curl -X POST http://localhost:5000/v1/chat/completions \
 ```python
 import requests
 
+headers = {"Authorization": "Bearer llm-local-auth-82c4f3eb0d"}
 payload = {"messages": [{"role": "user", "content": "Hello"}]}
-response = requests.post("http://localhost:5000/v1/chat/completions", json=payload)
+response = requests.post("http://localhost:5000/v1/chat/completions", json=payload, headers=headers)
 
 print(response.json()["choices"][0]["message"]["content"])
 ```
@@ -113,7 +117,10 @@ print(response.json()["choices"][0]["message"]["content"])
 ```javascript
 const response = await fetch('http://localhost:5000/v1/chat/completions', {
   method: 'POST',
-  headers: {'Content-Type': 'application/json'},
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer llm-local-auth-82c4f3eb0d'
+  },
   body: JSON.stringify({
     messages: [{"role": "user", "content": "Hello"}]
   })
@@ -146,6 +153,7 @@ curl http://localhost:5000/health
 Send a test prompt to verify the LLM integration:
 ```bash
 curl -X POST http://localhost:5000/v1/chat/completions \
+     -H "Authorization: Bearer llm-local-auth-82c4f3eb0d" \
      -H "Content-Type: application/json" \
      -d '{"messages": [{"role": "user", "content": "Say hello"}]}'
 ```
@@ -167,7 +175,7 @@ Modify `~/.continue/config.json`:
     "provider": "openai",
     "model": "any",
     "apiBase": "http://localhost:5000/v1",
-    "apiKey": "local-dev"
+    "apiKey": "llm-local-auth-82c4f3eb0d"
   }]
 }
 ```
@@ -188,7 +196,7 @@ Modify `~/.continue/config.json`:
 * **🔒 Security:** The server binds strictly to `localhost`. It is not accessible from external networks.
 * **⚙️ Model Selection:** The API automatically uses whichever model is currently active in the main application UI.
 * **⏳ Performance:** Responses are synchronous. The default request timeout is **60 seconds**.
-* **🔑 Auth:** No API key is required, but you can pass any dummy value (e.g., `sk-123`) if your plugin requires one.
+* **🔑 Auth:** All requests **require** the mandatory local verification token: `llm-local-auth-82c4f3eb0d`. Pass this as the `apiKey` or standard `Authorization: Bearer` header.
 * **🌡️ Temperature Range:** 0.0 (focused/deterministic) to 1.0 (creative/diverse).
 * **📏 Token Limits:** Max tokens per response defaults to 4096, configurable per request.
 * **💾 Session Management:** Use `session_id` to maintain separate conversation contexts.

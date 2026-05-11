@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 const API_URL = 'http://localhost:5000/v1/chat/completions';
+const AUTH_HEADER = 'Bearer llm-local-auth-82c4f3eb0d';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('LLM Chat App extension activated');
@@ -206,7 +207,10 @@ async function getInlineSuggestion(prompt: string): Promise<string | undefined> 
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': AUTH_HEADER
+            },
             body: JSON.stringify({
                 messages: [{ role: 'user', content: prompt }],
                 max_tokens: 50,
@@ -234,7 +238,10 @@ async function sendToAPI(content: string, title: string, systemPrompt?: string):
         
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': AUTH_HEADER
+            },
             body: JSON.stringify({
                 messages: messages,
                 temperature: 0.5,

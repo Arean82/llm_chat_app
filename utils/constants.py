@@ -12,6 +12,9 @@ DEFAULT_TIMEOUT = 60
 
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
+# Universal API Server Security
+API_SERVER_AUTH_KEY = "llm-local-auth-82c4f3eb0d"
+
 # Connection settings
 CONNECTION_CHECK_INTERVAL_CONNECTED_MS = 10000
 CONNECTION_CHECK_INTERVAL_DISCONNECTED_MS = 3000

@@ -180,7 +180,9 @@ class MainWindowClass(QMainWindow):
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.on_tray_activated)
-        self.tray_icon.show()
+        
+        # DEFERRED SHOW: Do not call self.tray_icon.show() here.
+        # It will be displayed only after user login state is validated.
 
         # Apply Header Logo
         self.setup_header_logo() 
@@ -478,6 +480,7 @@ class MainWindowClass(QMainWindow):
         settings_menu = menubar.addMenu("Settings")
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
+        settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
         # settings_menu.addAction("🔑 API Key", self.handle_auth_button)
 
         # Log menu
@@ -590,7 +593,10 @@ class MainWindowClass(QMainWindow):
 
     def load_settings(self):
         settings = QSettings("LLMChatApp", "Settings")
-        api_key = settings.value("api_key", "")
+        
+        # Securely fetch api_key from system keychain
+        api_key = keyring.get_password("LLMChatApp", "api_key") or ""
+        
         base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
         model_id = settings.value("current_model_id", "")
         saved_theme = settings.value("theme", "dark")
@@ -618,6 +624,12 @@ class MainWindowClass(QMainWindow):
             
         self.set_chat_enabled(has_key and has_model)
         
+        # Show tray icon ONLY if we possess credentials
+        if has_key:
+            self.tray_icon.show()
+        else:
+            self.tray_icon.hide()
+        
     def handle_auth_button(self):
         if self.llm_client.has_api_key():
             self.logout()
@@ -626,7 +638,10 @@ class MainWindowClass(QMainWindow):
 
     def open_settings(self):
         from ui.login_dialog import SettingsDialogClass
-        dialog = SettingsDialogClass(self)
+        # Pass None as parent to absolutely force it to act as a top-level OS window with its own taskbar icon
+        dialog = SettingsDialogClass(None)
+        dialog.raise_() 
+        dialog.activateWindow()
         if dialog.exec():
             api_key = dialog.get_api_key()
             base_url = dialog.get_base_url()
@@ -637,17 +652,31 @@ class MainWindowClass(QMainWindow):
                 self.set_connected_status(True)
                 
                 settings = QSettings("LLMChatApp", "Settings")
-                settings.setValue("api_key", api_key)
+                
+                # Double check persistence to keyring (already handled by dialog, redundant but safe)
+                keyring.set_password("LLMChatApp", "api_key", api_key)
                 settings.setValue("base_url", base_url)
+                settings.remove("api_key") # cleanup
                 
                 if not QSettings("LLMChatApp", "Settings").value("current_model_id"):
                     QTimer.singleShot(100, self.show_model_popup)
                 else:
                     self.set_chat_enabled(True)
                     self.model_btn.setEnabled(True)
+                
+                # Successfully logged in -> can now show tray icon
+                self.tray_icon.show()
             return True
         else:
             return False
+
+    def show_gen_settings(self):
+        """Opens the Smart Generation Parameters dialog."""
+        from ui.gen_settings_dialog import GenSettingsDialog
+        # Pass None as parent to force standalone taskbar entry (as established earlier!)
+        dialog = GenSettingsDialog(None)
+        if dialog.exec():
+            self.add_system_message("✅ Generation parameters updated.")
 
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
@@ -783,7 +812,7 @@ class MainWindowClass(QMainWindow):
         self.attached_files = []
         self.input_field.setPlaceholderText("")
 
-    def send_message(self, api_response_queue=None):
+    def send_message(self, api_response_queue=None, custom_messages=None, custom_temp=None, custom_max_tokens=None):
         #user_message = self.input_field.text().strip()
         user_message = self.input_field.toPlainText().strip()
         if not user_message and not self.attached_files:
@@ -873,8 +902,22 @@ class MainWindowClass(QMainWindow):
         self.add_typing_indicator()
         self.current_response_text = "" 
         
-        #self.current_worker = ChatWorker(self.llm_client, self.chat_history)    
-        self.current_worker = ChatWorker(self.llm_client, self.get_messages_for_api())    
+        # ------------------------------------------
+        # Load current generation parameters
+        # ------------------------------------------
+        settings = QSettings("LLMChatApp", "Settings")
+        use_remote_defaults = settings.value("gen_use_defaults", "false") == "true"
+        
+        # Priority: 1. Explicit arguments, 2. Server Default flag, 3. Saved UI values
+        if use_remote_defaults and custom_temp is None and custom_max_tokens is None:
+            active_temp = None
+            active_tokens = None
+        else:
+            active_temp = custom_temp if custom_temp is not None else float(settings.value("gen_temperature", 0.7))
+            active_tokens = custom_max_tokens if custom_max_tokens is not None else int(settings.value("gen_max_tokens", 4096))
+        
+        api_payload = custom_messages if custom_messages is not None else self.get_messages_for_api()
+        self.current_worker = ChatWorker(self.llm_client, api_payload, temperature=active_temp, max_tokens=active_tokens)    
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
@@ -1096,8 +1139,18 @@ class MainWindowClass(QMainWindow):
             self.current_response_text = ""
             self.add_typing_indicator()
             
-            #self.current_worker = ChatWorker(self.llm_client, self.chat_history)
-            self.current_worker = ChatWorker(self.llm_client, self.get_messages_for_api())
+            # Load current generation parameters
+            settings = QSettings("LLMChatApp", "Settings")
+            use_remote_defaults = settings.value("gen_use_defaults", "false") == "true"
+            
+            if use_remote_defaults:
+                active_temp = None
+                active_tokens = None
+            else:
+                active_temp = float(settings.value("gen_temperature", 0.7))
+                active_tokens = int(settings.value("gen_max_tokens", 4096))
+            
+            self.current_worker = ChatWorker(self.llm_client, self.get_messages_for_api(), temperature=active_temp, max_tokens=active_tokens)
             self.current_worker.stream_chunk.connect(self.on_stream_chunk)
             self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
             self.current_worker.response_received.connect(self.on_response_complete)
@@ -1459,8 +1512,9 @@ class MainWindowClass(QMainWindow):
             
         self._initial_popups_shown = True
         
+        
         settings = QSettings("LLMChatApp", "Settings")
-        api_key = settings.value("api_key", "")
+        api_key = keyring.get_password("LLMChatApp", "api_key") or ""
         model_id = settings.value("current_model_id", "")
         
         if not api_key:
@@ -1506,9 +1560,14 @@ class MainWindowClass(QMainWindow):
             if reply == QMessageBox.StandardButton.No:
                 return
 
-        # 2. Clear all states (your existing logic)
+        # 2. Clear all states (Securely clearing keyring)
         settings = QSettings("LLMChatApp", "Settings")
-        settings.remove("api_key")
+        try:
+            keyring.delete_password("LLMChatApp", "api_key")
+        except Exception:
+            pass # Ignore error if already deleted
+            
+        settings.remove("api_key") # Ensure old fallback is wiped
         settings.remove("current_model_id")
         settings.sync()
 
@@ -1526,6 +1585,9 @@ class MainWindowClass(QMainWindow):
         self.model_desc_label.setVisible(False)
         self.model_btn.setEnabled(False)
         self.input_field.clear()
+        
+        # Hide Tray Icon during unauthenticated phase
+        self.tray_icon.hide()
 
         self.add_system_message("✅ Logged out successfully.")
 
