@@ -184,11 +184,14 @@ llm_chat_app/
 This application does not use local `.env` files or plaintext config files for sensitive data.
 
 - **API Credentials:** Migrated away from plaintext. Securely injected into the OS vault subsystem using the Python `keyring` module (Windows Credential Manager / macOS Keychain).
-- **UI Settings:** Generic layout preferences stored using `QSettings`.
-  - *Windows:* Saved in the Registry (`HKEY_CURRENT_USER\Software\LLMChatApp\Settings`).
-  - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
-  - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
-- **Chat Histories:** Saved to a high-performance SQLite database (`chat_history.db`) in `~/LLMChatApp/conversations/` for maximum reliability.
+- **UI Settings:** Generic layout preferences stored using `QSettings`. 
+  - **Portable Mode:** Saved to `settings.ini` in the application folder (zero system footprint).
+  - **Standard/Custom Mode:** Saved securely via native OS configurations.
+    - *Windows:* Saved in the Registry (`HKEY_CURRENT_USER\Software\LLMChatApp\Settings`).
+    - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
+    - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
+- **Data Root:** Chat history (`chat_history.db`), logs, caches, and configs dynamically map to one centralized Data Root based on user preference (User Profile, Portable Folder, or Custom network drive).
+
 
 ---
 
@@ -324,9 +327,10 @@ pyinstaller LLM_Chat_App_combined.spec
 - One-file: `dist/LLM Chat App.exe` (single executable file)
 - Combined: Both outputs are generated simultaneously
 
-- On first launch, the executable automatically creates `resources` and `ui_designer` folders alongside the EXE.
-- Uses **Smart Sync** to only update files if the version in the EXE is newer, protecting your local changes while ensuring the UI is always up to date.
-- No manual file copying required - everything is handled automatically.
+- On first launch, the executable checks directory permissions. If running from a restricted system folder (like `C:\Program Files`), it automatically creates data resources inside `AppData` to ensure zero-crash operation.
+- If run from a writable folder (USB drive/Desktop), it prompts the user to select between **Portable**, **Standard**, or **Custom** storage paths.
+- Uses **Smart Sync** to safely unpack current UI versions to the active Data Root without wiping user configs.
+
 
 **Test the executable** before proceeding to package it!
 
@@ -377,20 +381,20 @@ pyinstaller LLM_Chat_App_onedir.spec
 bash build_mac.sh
 ```
 
-### 📂 How User Data is Handled
+The compiled app leverages a dynamic configuration manager on the first boot to determine file locations:
 
-The compiled app **automatically creates** the following folders on first run alongside the EXE:
+1. **Standard Mode:** Installs configurations to the standard secure User Home location (e.g., `~\LLMChatApp`). Perfect for standard installations.
+2. **Truly Portable Mode:** Packs absolutely every single byte—including SQL databases, caches, and even the settings files—into the same folder as the `.exe`. Safe for thumb drives.
+3. **Custom Mode:** Routes all data folders to a network drive or synchronized folder of the user's choosing (e.g., Dropbox/OneDrive).
 
-- `resources/` - Contains `models.json`, `user_prompts.json`, `styles.qss`, `app_icon.png`
-- `ui_designer/` - Contains all `.ui` files for the interface
-- `resources/badge_cache/` - Cached badge images
-- `resources/update_log.txt` - Application logs
+Regardless of selection, the target root directory will structure itself like this:
 
-**User conversation data** is saved to:
+- `/conversations/` - SQLite database `chat_history.db`
+- `/resources/` - Extracted styling and JSON manifests
+- `/resources/badge_cache/` - Dynamic cached images
+- `/ui_designer/` - Extracted interface schemas
+- `update_log.txt` - Global application log file
 
-- **Windows:** `C:\Users\<User>\LLMChatApp\conversations\`
-- **macOS:** `~/LLMChatApp/conversations/`
-- **Linux:** `~/LLMChatApp/conversations/`
 
 ---
 

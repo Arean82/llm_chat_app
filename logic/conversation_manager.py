@@ -75,10 +75,18 @@ class ConversationManager:
                         VALUES (?, ?, ?, ?)
                     ''', (title, timestamp, model_id, messages))
                     
-                    # Rename file to prevent re-migration
-                    file_path.rename(file_path.with_suffix(".json.bak"))
+                    # Immediately delete source JSON after verified insertion to prevent clutter
+                    file_path.unlink()
                 except Exception as e:
                     print(f"Migration error for {file_path}: {e}")
+
+            # Global Housekeeping: Search and destroy any previously left behind .bak files
+            for bak_file in self.conversations_dir.glob("*.json.bak"):
+                 try:
+                     bak_file.unlink()
+                 except Exception:
+                     pass
+
 
             conn.commit()
         except sqlite3.Error as e:

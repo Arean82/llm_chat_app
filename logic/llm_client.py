@@ -8,7 +8,8 @@ from pathlib import Path
 from openai import OpenAI
 
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
     GOOGLE_SDK_AVAILABLE = True
 except ImportError:
     GOOGLE_SDK_AVAILABLE = False
@@ -23,6 +24,7 @@ class LLMClient:
         
         # Clients
         self.client = None  # OpenAI/Nvidia Client instance
+        self.google_client = None # Modern Google GenAI Client
         self.genai_configured = False
 
     def set_base_url(self, url: str):
@@ -40,7 +42,7 @@ class LLMClient:
         self.google_api_key = api_key
         if GOOGLE_SDK_AVAILABLE and api_key:
             try:
-                genai.configure(api_key=api_key)
+                self.google_client = genai.Client(api_key=api_key)
                 self.genai_configured = True
             except Exception as e:
                 print(f"CRITICAL: Failed to configure Google GenAI SDK: {e}")
@@ -98,29 +100,24 @@ class LLMClient:
         
         # 🟢 Case A: Google Gemini Generation
         if provider == "google":
-            if not self.genai_configured or not GOOGLE_SDK_AVAILABLE:
+            if not self.google_client or not GOOGLE_SDK_AVAILABLE:
                 raise ValueError("Google GenAI is not configured yet. Configure API Key.")
             
-            model = genai.GenerativeModel(
-                model_name=self.current_model,
-                system_instruction=system_msg
-            )
-            
-            config = genai.types.GenerationConfig(
-                max_output_tokens=max_tokens,
-                temperature=temperature,
-                response_mime_type="application/json" if force_json else "text/plain"
-            )
-            
             try:
-                response = model.generate_content(user_msg, generation_config=config)
+                response = self.google_client.models.generate_content(
+                    model=self.current_model,
+                    contents=user_msg,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_msg,
+                        max_output_tokens=max_tokens,
+                        temperature=temperature,
+                        response_mime_type="application/json" if force_json else "text/plain"
+                    )
+                )
                 return response.text
             except Exception as e:
-                # Some older models might reject system_instruction, fallback to pure combined prompt
-                combined = f"{system_msg}\n\nUSER: {user_msg}"
-                fallback_model = genai.GenerativeModel(self.current_model)
-                response = fallback_model.generate_content(combined, generation_config=config)
-                return response.text
+                # Graceful degrade if response block issues happen
+                raise e
 
         # 🔵 Case B: NVIDIA (OpenAI) Generation
         else:
@@ -191,16 +188,19 @@ class LLMClient:
     def fetch_google_catalog_models(self) -> dict:
         """Discovers dynamic live models on user's Google AI project profile."""
         result = {"free": [], "paid": [], "all": []}
-        if not GOOGLE_SDK_AVAILABLE or not self.genai_configured:
+        if not GOOGLE_SDK_AVAILABLE or not self.google_client:
             return result
         try:
-            # Native SDK capability
-            for model in genai.list_models():
-                # Skip embeddings or retrieval models, keep generation
-                if "generateContent" in model.supported_generation_methods:
-                    mid = model.name.replace("models/", "") # clean ID
-                    # Filter out highly specialized subvariants that users don't care about
-                    if "-00" in mid: continue 
+            # Modern SDK uses models.list()
+            for model in self.google_client.models.list():
+                mid = model.name
+                if mid.startswith("models/"):
+                     mid = mid.replace("models/", "")
+                     
+                # Verify it is a standard generation model
+                actions = model.supported_actions or []
+                if "generateContent" in actions or "generate_content" in str(actions).lower() or "gemini" in mid:
+                    if "-00" in mid: continue  # Skip hyper-subvariants
                     
                     info = {
                         "id": mid,

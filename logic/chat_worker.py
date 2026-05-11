@@ -4,9 +4,11 @@ from logic.llm_client import LLMClient
 import time
 
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
+    GENAI_AVAILABLE = True
 except ImportError:
-    genai = None
+    GENAI_AVAILABLE = False
 
 class ChatWorker(QThread):
     response_received = Signal(str)
@@ -30,7 +32,7 @@ class ChatWorker(QThread):
             
             # 🛠️ Verify provider presence
             if provider == "google":
-                if not self.client.google_api_key or not genai:
+                if not self.client.google_client or not GENAI_AVAILABLE:
                     self.error_occurred.emit("Google API key not configured.")
                     return
                 self._run_google_loop()
@@ -65,41 +67,54 @@ class ChatWorker(QThread):
             if role == "system":
                 system_instructions += content + "\n"
             else:
-                # Gemini strictly requires 'user' and 'model' keys. Convert 'assistant' to 'model'.
+                # Modern SDK strictly requires 'user' and 'model' keys. 
+                # Parts must be an array of objects containing {'text': '...'}
                 fixed_role = "model" if role == "assistant" else "user"
-                mapped_history.append({"role": fixed_role, "parts": [content]})
+                mapped_history.append({"role": fixed_role, "parts": [{"text": content}]})
 
         # 2. Isolate latest message as active prompt to feed the model
         if not mapped_history:
             raise ValueError("Cannot generate response without message history.")
             
-        active_prompt = mapped_history.pop()["parts"][0]
+        active_prompt = mapped_history.pop()["parts"][0]["text"]
         
-        # 3. Initialize Model
-        model = genai.GenerativeModel(
-            model_name=self.client.current_model,
-            system_instruction=system_instructions.strip() if system_instructions else None
+        # 3. Prepare Generation Config
+        config = types.GenerateContentConfig(
+            system_instruction=system_instructions.strip() if system_instructions else None,
+            temperature=self.temperature,
+            max_output_tokens=self.max_tokens
         )
         
-        # Dynamic Config mapping
-        gen_config = {}
-        if self.temperature is not None: gen_config["temperature"] = self.temperature
-        if self.max_tokens is not None: gen_config["max_output_tokens"] = self.max_tokens
-        
-        # 4. Start Chat Session & Send Request
-        chat = model.start_chat(history=mapped_history)
-        response = chat.send_message(
-            active_prompt,
-            stream=self.stream,
-            generation_config=genai.types.GenerationConfig(**gen_config) if gen_config else None
+        # 4. Initialize Chat Session with existing history
+        chat = self.client.google_client.chats.create(
+            model=self.client.current_model,
+            history=mapped_history,
+            config=config
         )
+        
+        # 5. Determine Request Pathway
+        if self.stream:
+            response = chat.send_message_stream(active_prompt)
+        else:
+            response = chat.send_message(active_prompt)
 
-        # 5. Stream Loop
+        # 6. Response Loop
         if self.stream:
             for chunk in response:
                 if self.isInterruptionRequested(): break
                 
-                txt = chunk.text
+                try:
+                    txt = chunk.text
+                except (ValueError, Exception) as e:
+                    err_str = str(e).lower()
+                    # Check for standard Google API blocking signatures
+                    if "blocked" in err_str or "safety" in err_str or "finish_reason" in err_str:
+                        warning_msg = "\n\n*(⚠️ [System Notice]: Response halted by provider safety filters)*"
+                        full_response += warning_msg
+                        self.stream_chunk.emit(warning_msg)
+                        break # Gracefully stop pulling from stream without crashing worker
+                    raise e # Re-raise if it's a real connection failure
+
                 if txt:
                     if first_chunk_time is None:
                         first_chunk_time = time.perf_counter()
@@ -112,8 +127,15 @@ class ChatWorker(QThread):
                 self.response_received.emit(full_response)
                 self._finalize_metrics(start_time, first_chunk_time, chunk_count)
         else:
-            # Synchronous block
-            self.response_received.emit(response.text)
+            # Synchronous block with safety shielding
+            try:
+                final_text = response.text
+                self.response_received.emit(final_text)
+            except (ValueError, Exception) as e:
+                if "blocked" in str(e).lower() or "safety" in str(e).lower():
+                    self.response_received.emit("*(⚠️ [System Notice]: Response halted by provider safety filters)*")
+                else:
+                    raise e
 
 
     def _run_openai_loop(self):
