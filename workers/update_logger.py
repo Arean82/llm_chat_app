@@ -1,5 +1,5 @@
 # workers/update_logger.py
-# Logger class for model fetching and updating process. This logger collects logs in memory and also writes them to a file in the user's home directory under "LLMChatApp/update_log.txt". It emits signals for new log entries so that the UI can update in real-time. The logger supports different log levels (INFO, WARNING, ERROR) and timestamps each entry. A singleton pattern is used to ensure that all parts of the application use the same logger instance.    
+# Logger class for model fetching and updating process. This logger collects logs in memory and also writes them to a file in the user's resources directory under "resources/update_log.txt". It emits signals for new log entries so that the UI can update in real-time. The logger supports different log levels (INFO, WARNING, ERROR) and timestamps each entry. A singleton pattern is used to ensure that all parts of the application use the same logger instance.    
 
 from PySide6.QtCore import QObject, Signal
 from datetime import datetime
@@ -12,7 +12,7 @@ class UpdateLogger(QObject):
     
     def __init__(self):
         super().__init__()
-        self.log_file = get_resource_path("update_log.txt")
+        self.log_file = get_resource_path("resources/update_log.txt")
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Create empty log file if it doesn't exist

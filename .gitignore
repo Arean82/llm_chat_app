@@ -38,6 +38,8 @@ appimagetool
 resources/badge_cache/
 resources/update_log.txt
 resources/chat_history.db
+conversations/
+cache/
 update_log.txt
 
 # OS Specific

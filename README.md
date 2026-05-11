@@ -1,6 +1,6 @@
 # LLM Chat App
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.6%2B-green)  ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2)  ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-provider hub, it interfaces seamlessly with both the **NVIDIA NIM API** and native **Google Generative AI (Gemini)** to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
 
@@ -60,7 +60,7 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12 or higher
 - An NVIDIA NIM API Key (Get one free at [build.nvidia.com](https://build.nvidia.com/))
 
 ### Installation
@@ -175,7 +175,7 @@ llm_chat_app/
 
 ## 🧱 Tech Stack
 
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)       ![Qt](https://img.shields.io/badge/PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=black)       ![OpenAI](https://img.shields.io/badge/OpenAI_SDK-412991?style=for-the-badge&logo=openai&logoColor=white)       ![NVIDIA](https://img.shields.io/badge/NVIDIA_NIM-76B900?style=for-the-badge&logo=nvidia&logoColor=white)       ![Markdown](https://img.shields.io/badge/markdown-%23000000.svg?style=for-the-badge&logo=markdown&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)       ![Qt](https://img.shields.io/badge/PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=black)       ![OpenAI](https://img.shields.io/badge/OpenAI_SDK-412991?style=for-the-badge&logo=openai&logoColor=white)       ![NVIDIA](https://img.shields.io/badge/NVIDIA_NIM-76B900?style=for-the-badge&logo=nvidia&logoColor=white)       ![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)       ![Markdown](https://img.shields.io/badge/markdown-%23000000.svg?style=for-the-badge&logo=markdown&logoColor=white)
 
 ---
 
@@ -393,7 +393,7 @@ Regardless of selection, the target root directory will structure itself like th
 - `/resources/` - Extracted styling and JSON manifests
 - `/resources/badge_cache/` - Dynamic cached images
 - `/ui_designer/` - Extracted interface schemas
-- `update_log.txt` - Global application log file
+- `/resources/update_log.txt` - Global application log file
 
 
 ---
