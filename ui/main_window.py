@@ -710,36 +710,31 @@ class MainWindowClass(QMainWindow):
                 self.add_system_message(f"Switched to model: {model_name}")
 
     def get_model_name_by_id(self, model_id):
-        models_file = get_resource_path("resources/models.json")
-
-        if models_file.exists():
-            try:
-                with open(models_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    for m in data.get("models", []):
-                        if m['id'] == model_id:
-                            return m['name']
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"Error loading model names: {e}")
+        from logic.model_io import load_all_models
+        try:
+            models = load_all_models()
+            for m in models:
+                if m['id'] == model_id:
+                    return m['name']
+        except Exception as e:
+            print(f"Error loading model names: {e}")
         return model_id 
 
     def update_model_ui(self, model_id):
         """Updates the model button text and the description label."""
-        models_file = get_resource_path("resources/models.json")
+        from logic.model_io import load_all_models
         name = model_id
         desc = ""
         
-        if models_file.exists():
-            try:
-                with open(models_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    for m in data.get("models", []):
-                        if m['id'] == model_id:
-                            name = m.get('name', model_id)
-                            desc = m.get('description', '')
-                            break
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"Error loading model data: {e}")
+        try:
+            models = load_all_models()
+            for m in models:
+                if m['id'] == model_id:
+                    name = m.get('name', model_id)
+                    desc = m.get('description', '')
+                    break
+        except Exception as e:
+            print(f"Error loading model data: {e}")
 
         # Update button
         self.model_btn.setText(f"🤖 {name} ▼")
@@ -1336,17 +1331,18 @@ class MainWindowClass(QMainWindow):
                 self.add_system_message(f"Conversation loaded from {file_path}")
                 
     def show_about(self):
+        from utils.constants import APP_VERSION
         border_color = "#e0e0e0" if self.theme_manager.current_theme == "light" else "#3c3c3c"
         about_text = f"""
         <div style="font-family: 'Segoe UI', Arial, sans-serif;">
             <h2 style="color: #0078d4; margin-bottom: 5px;">LLM Chat App</h2>
-            <p><b>Version:</b> 4.0.0<br>
+            <p><b>Version:</b> {APP_VERSION}<br>
             <b>Developer:</b> Arean Narrayan</p>
             
             <hr style="border: 1px solid {border_color}; margin: 10px 0;">
             
             <p>A sleek, modern desktop application designed to seamlessly connect you 
-            with cutting-edge Large Language Models via the NVIDIA NIM API.</p>
+            with cutting-edge Large Language Models via the NVIDIA NIM and Google Gemini APIs.</p>
             
             <p><b>Key Features:</b></p>
             <ul>
@@ -1360,7 +1356,7 @@ class MainWindowClass(QMainWindow):
             <hr style="border: 1px solid {border_color}; margin: 10px 0;">
             
             <p style="font-size: 11px; color: #666666;">
-            Powered by <b>NVIDIA NIM</b> (Free Tier: 40 requests/min)<br>
+            Powered by <b>NVIDIA NIM</b> & <b>Google Gemini</b><br>
             Built with <b>Python</b> & <b>PySide6</b></p>
         </div>
         """

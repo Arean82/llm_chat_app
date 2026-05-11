@@ -23,6 +23,12 @@ a = Analysis(
         'werkzeug',
         'werkzeug.serving',
         'openai',
+        'google',
+        'google.generativeai',
+        'google.generativeai.types',
+        'google.ai.generativelanguage',
+        'google.api_core',
+        'proto',
         'markdown',
         'certifi',
         'urllib3',
@@ -87,6 +93,7 @@ exe = EXE(
     upx=True,
     console=False,
     icon='resources/app_icon.ico',
+    version='file_version_info.txt',
 )
 
 coll = COLLECT(

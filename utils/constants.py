@@ -2,15 +2,18 @@
 # This file contains constant values used throughout the LLM Chat App.
 
 APP_NAME = "LLM Chat App"
-APP_VERSION = "4.0.0"
+APP_VERSION = "5.0.0"
 APP_AUTHOR = "Arean Narrayan"
 
-DEFAULT_MODEL = "meta/llama-3.3-70b-instruct"
+DEFAULT_MODEL_NVIDIA = "meta/llama-3.3-70b-instruct"
+DEFAULT_MODEL_GOOGLE = "gemini-1.5-flash"
+DEFAULT_MODEL = DEFAULT_MODEL_NVIDIA # General fallback
 DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TIMEOUT = 60
 
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+GOOGLE_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
 # Universal API Server Security
 API_SERVER_AUTH_KEY = "llm-local-auth-82c4f3eb0d"

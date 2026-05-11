@@ -71,17 +71,26 @@ def copy_bundled_resources():
                     smart_sync(src_file, exe_ui / rel_path)
 
         # 2. USER FILES: Only copy if MISSING (protects user work)
-        user_files = [
-            'resources/models.json',
-            'resources/user_prompts.json',
-        ]
+        # Dynamically sync any models_*.json files present in bundle
+        bundle_res = bundle_dir / "resources"
+        exe_res = exe_dir / "resources"
         
-        for rel_path in user_files:
-            src = bundle_dir / rel_path
-            dst = exe_dir / rel_path
-            if src.exists() and not dst.exists():
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dst)
+        if bundle_res.exists():
+            # Find all model manifests
+            for src_file in bundle_res.glob("models_*.json"):
+                dst_file = exe_res / src_file.name
+                if not dst_file.exists():
+                    exe_res.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src_file, dst_file)
+            
+            # Handle specific fallback files
+            legacy_files = ['models.json', 'user_prompts.json']
+            for fname in legacy_files:
+                src = bundle_res / fname
+                dst = exe_res / fname
+                if src.exists() and not dst.exists():
+                    exe_res.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src, dst)
                 
     except Exception as e:
         print(f"Resource sync error: {e}")
@@ -92,7 +101,7 @@ def main():
     if platform.system() == "Windows":
         import ctypes
         try:
-            myappid = 'arean82.llmchatapp.v4' # arbitrary string
+            myappid = 'arean82.llmchatapp.v5' # arbitrary string
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass

@@ -65,22 +65,12 @@ class ModelPopupClass(QDialog):
         table.horizontalHeader().setStretchLastSection(True) # Description fills rest
 
     def populate_models(self):
-        # Read models.json
-        models_file = Path(__file__).parent.parent / "resources" / "models.json"
-        if not models_file.exists():
-            return
-            
-        import json
+        from logic.model_io import load_all_models
         try:
-            with open(models_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Error reading models.json: {e}")
+            self.models_data = load_all_models()
+        except Exception as e:
+            print(f"Error fetching models for popup: {e}")
             self.models_data = []
-            return
-
-        self.models_data = data.get("models", [])
         self.ui.model_table.setRowCount(len(self.models_data))
         
         for row, model in enumerate(self.models_data):

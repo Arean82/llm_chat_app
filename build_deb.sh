@@ -2,7 +2,7 @@
 # build_deb.sh - Automates the creation of a Linux .deb package
 
 APP_NAME="llmchatapp"
-VERSION="4.0.0"
+VERSION="5.0.0"
 PACKAGE_DIR="build_deb_pkg"
 BUILD_OUTPUT="dist/LLM Chat App"
 
