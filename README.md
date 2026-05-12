@@ -48,6 +48,18 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 
 ## 🎨 User Interface Highlights
 
+### 📸 Visual Overview
+<p align="center">
+  <img src="resources/screenshots/Main_Window.png" width="45%" alt="Main Window" />
+  <img src="resources/screenshots/Initial_Data_Setup_Preview.png" width="45%" alt="Initial Setup" />
+</p>
+<p align="center">
+  <img src="resources/screenshots/Model_Manager.png" width="45%" alt="Model Manager" />
+  <img src="resources/screenshots/Log_Viewer.png" width="45%" alt="Log Viewer" />
+</p>
+
+📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
+
 - 🌙 / ☀️ **Theme Toggle**: Click the icon in the top bar to switch themes instantly.
 - 🏷️ **Model Info Label**: A subtle italic label next to the dropdown populates with the model description so you know its capabilities at a glance.
 - 📋 **Log Menu:** View real-time update logs with filtering by log level. Clear logs when needed.
