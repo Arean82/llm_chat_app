@@ -74,28 +74,35 @@ class GenSettingsDialog(QDialog):
         loader = QUiLoader()
         ui_file_path = get_resource_path("ui_designer/gen_settings.ui")
         
-        # Load the UI container
-        self.ui = loader.load(str(ui_file_path))
+        # Load the UI container passing self as parent to attach properly
+        self.ui = loader.load(str(ui_file_path), self)
         
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.ui)
-        layout.setContentsMargins(0,0,0,0)
+        if self.ui and self.ui.layout():
+            self.setLayout(self.ui.layout())
+            
+        self.setMinimumSize(480, 400)
+        self.resize(480, 400)
         
         # Bind references
-        self.preset_combo = self.ui.findChild(QComboBox, "preset_combo")
-        self.temp_input = self.ui.findChild(QDoubleSpinBox, "temp_input")
-        self.tokens_input = self.ui.findChild(QSpinBox, "tokens_input")
-        self.temp_desc = self.ui.findChild(QLabel, "temp_desc")
-        self.token_desc = self.ui.findChild(QLabel, "token_desc")
-        self.save_btn = self.ui.findChild(QPushButton, "save_btn")
-        self.cancel_btn = self.ui.findChild(QPushButton, "cancel_btn")
+        self.preset_combo = self.findChild(QComboBox, "preset_combo")
+        self.temp_input = self.findChild(QDoubleSpinBox, "temp_input")
+        self.tokens_input = self.findChild(QSpinBox, "tokens_input")
+        self.temp_desc = self.findChild(QLabel, "temp_desc")
+        self.token_desc = self.findChild(QLabel, "token_desc")
+        self.save_btn = self.findChild(QPushButton, "save_btn")
+        self.cancel_btn = self.findChild(QPushButton, "cancel_btn")
         
         # Signal bindings
-        self.temp_input.valueChanged.connect(self.update_temp_explanation)
-        self.tokens_input.valueChanged.connect(self.update_tokens_explanation)
-        self.preset_combo.currentIndexChanged.connect(self.on_preset_changed)
-        self.save_btn.clicked.connect(self.save_and_close)
-        self.cancel_btn.clicked.connect(self.reject)
+        if self.temp_input:
+            self.temp_input.valueChanged.connect(self.update_temp_explanation)
+        if self.tokens_input:
+            self.tokens_input.valueChanged.connect(self.update_tokens_explanation)
+        if self.preset_combo:
+            self.preset_combo.currentIndexChanged.connect(self.on_preset_changed)
+        if self.save_btn:
+            self.save_btn.clicked.connect(self.save_and_close)
+        if self.cancel_btn:
+            self.cancel_btn.clicked.connect(self.reject)
         
         self.load_current_settings()
         
@@ -107,15 +114,22 @@ class GenSettingsDialog(QDialog):
         curr_temp = float(settings.value("gen_temperature", 0.7))
         curr_tokens = int(settings.value("gen_max_tokens", 4096))
         
-        self.temp_input.setValue(curr_temp)
-        self.tokens_input.setValue(curr_tokens)
+        if self.temp_input:
+            self.temp_input.setValue(curr_temp)
+        if self.tokens_input:
+            self.tokens_input.setValue(curr_tokens)
         
         if use_defaults:
-            self.preset_combo.setCurrentIndex(4)
-            self.temp_input.setEnabled(False)
-            self.tokens_input.setEnabled(False)
-            self.temp_desc.setText("☁️ Using remote cloud baseline. No overrides active.")
-            self.token_desc.setText("☁️ Using remote cloud baseline. No overrides active.")
+            if self.preset_combo:
+                self.preset_combo.setCurrentIndex(4)
+            if self.temp_input:
+                self.temp_input.setEnabled(False)
+            if self.tokens_input:
+                self.tokens_input.setEnabled(False)
+            if self.temp_desc:
+                self.temp_desc.setText("☁️ Using remote cloud baseline. No overrides active.")
+            if self.token_desc:
+                self.token_desc.setText("☁️ Using remote cloud baseline. No overrides active.")
         else:
             # Initialize explanations
             self.update_temp_explanation(curr_temp)
@@ -193,9 +207,11 @@ class GenSettingsDialog(QDialog):
 
     def save_and_close(self):
         settings = get_app_settings()
-        is_default_mode = self.preset_combo.currentIndex() == 4
+        is_default_mode = self.preset_combo.currentIndex() == 4 if self.preset_combo else False
         
         settings.setValue("gen_use_defaults", "true" if is_default_mode else "false")
-        settings.setValue("gen_temperature", self.temp_input.value())
-        settings.setValue("gen_max_tokens", self.tokens_input.value())
+        if self.temp_input:
+            settings.setValue("gen_temperature", self.temp_input.value())
+        if self.tokens_input:
+            settings.setValue("gen_max_tokens", self.tokens_input.value())
         self.accept()

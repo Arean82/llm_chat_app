@@ -17,8 +17,8 @@ class ModelFetchWorker(QThread):
         self.base_url = base_url if base_url else OPENAI_BASE_URL
         self.working_count = 0
         self.logger = get_logger()
-        # Use a reliable model for generating descriptions
-        self.description_model = "meta/llama-4-scout-17b-16e-instruct"
+        # Removed hardcoded futuristic models causing fetch lockout.
+        # Every model will describe itself dynamically during loop iteration.
         
     def run(self):
         try:
@@ -30,20 +30,8 @@ class ModelFetchWorker(QThread):
                 timeout=15.0
             )
             
-            # First, verify the description model works
-            try:
-                test_desc = client.chat.completions.create(
-                    model=self.description_model,
-                    messages=[{"role": "user", "content": "Hi"}],
-                    max_tokens=5,
-                    timeout=5.0
-                )
-                self.logger.add_log(f"Description model '{self.description_model}' is ready", "INFO")
-            except Exception as e:
-                self.logger.add_log(f"Description model failed: {str(e)}. Will try alternatives.", "WARNING")
-                # Fallback to gemma if llama fails
-                self.description_model = "google/gemma-3-27b-it"
-                self.logger.add_log(f"Using fallback description model: {self.description_model}", "INFO")
+            # Automated reflective description builder (Audit ID 030 Patch)
+            self.logger.add_log("Initialization successful.", "INFO")
             
             response = client.models.list()
             all_models = response.data
@@ -81,7 +69,7 @@ class ModelFetchWorker(QThread):
                     developer = model_id.split('/')[0] if '/' in model_id else "NVIDIA"
                     
                     desc_response = client.chat.completions.create(
-                        model=self.description_model,
+                        model=model_id,
                         messages=[
                             {"role": "system", "content": "You are a technical writer. Output ONLY one short sentence (15-30 words). Be specific and factual."},
                             {"role": "user", "content": f"Write a one-sentence description of the AI model '{model_name}' from {developer}. What is it best at? Mention its key strength (coding, reasoning, multilingual, vision, math, etc.)."}
@@ -98,7 +86,7 @@ class ModelFetchWorker(QThread):
                     if description.startswith("Here is a one-sentence description") or description.startswith("Here's"):
                         # Try one more time with stricter prompt
                         desc_response = client.chat.completions.create(
-                            model=self.description_model,
+                            model=model_id,
                             messages=[
                                 {"role": "system", "content": "Output ONLY the description. No prefixes, no explanations."},
                                 {"role": "user", "content": f"Describe {model_name} in 15-30 words."}

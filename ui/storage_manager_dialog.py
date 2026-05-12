@@ -7,17 +7,20 @@ from pathlib import Path
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                                QPushButton, QFileDialog, QFrame, QMessageBox, 
                                QLineEdit, QApplication)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QDesktopServices, QUrl
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtUiTools import QUiLoader
 
 from utils.storage_config import StorageManager
 from utils.path_utils import get_resource_path, get_app_settings
+from utils.helpers import set_app_icon
 
 class StorageManagerDialog(QDialog):
     def __init__(self, theme="dark", parent=None):
         super().__init__(parent)
         self.theme = theme
+        
+        set_app_icon(self)
         
         # Setup Logic Data
         self.storage_mgr = StorageManager.get_instance()
@@ -28,20 +31,33 @@ class StorageManagerDialog(QDialog):
         ui_file_path = get_resource_path("ui_designer/storage_manager.ui")
         self.ui = loader.load(str(ui_file_path), self)
         
-        # Attach Layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(self.ui)
+        if self.ui and self.ui.layout():
+            self.setLayout(self.ui.layout())
+            
+        self.setMinimumSize(550, 400)
+        self.resize(550, 400)
         
         # Configure Initial UI State
         self.setWindowTitle("Storage Management Center")
-        self.ui.pathEdit.setText(str(self.current_root))
-        self.ui.metricsLabel.setText(self.calculate_storage_size())
         
+        self.pathEdit = self.findChild(object, "pathEdit")
+        self.metricsLabel = self.findChild(object, "metricsLabel")
+        self.revealBtn = self.findChild(object, "revealBtn")
+        self.relocateBtn = self.findChild(object, "relocateBtn")
+        self.doneBtn = self.findChild(object, "doneBtn")
+        
+        if self.pathEdit:
+            self.pathEdit.setText(str(self.current_root))
+        if self.metricsLabel:
+            self.metricsLabel.setText(self.calculate_storage_size())
+            
         # Bind Signals
-        self.ui.revealBtn.clicked.connect(self.on_reveal)
-        self.ui.relocateBtn.clicked.connect(self.on_relocate_workflow)
-        self.ui.doneBtn.clicked.connect(self.accept)
+        if self.revealBtn:
+            self.revealBtn.clicked.connect(self.on_reveal)
+        if self.relocateBtn:
+            self.relocateBtn.clicked.connect(self.on_relocate_workflow)
+        if self.doneBtn:
+            self.doneBtn.clicked.connect(self.accept)
         
         self.apply_theme()
 

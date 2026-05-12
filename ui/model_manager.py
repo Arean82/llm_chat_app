@@ -3,6 +3,7 @@
 # The dialog also includes buttons to fetch free and paid models directly from NVIDIA's API, which will merge with existing models while preserving user-added descriptions. The UI is designed to be clean and user-friendly, with support for both light and dark themes. 
 
 import json
+import keyring
 from PySide6.QtWidgets import (
     QApplication, QDialog, QInputDialog, QMessageBox, QHeaderView, QAbstractItemView, QProgressDialog
 )
@@ -458,8 +459,9 @@ class ModelManagerDialog(QDialog):
         from workers.model_fetch_worker import ModelFetchWorker
 
         settings = get_app_settings()
-        api_key = settings.value("api_key", "")
-        base_url = settings.value("base_url", OPENAI_BASE_URL)
+        active_p = settings.value("active_provider_id", "nvidia")
+        api_key = keyring.get_password("LLMChatApp", f"api_key_{active_p}") or keyring.get_password("LLMChatApp", "api_key")
+        base_url = settings.value(f"url_{active_p}") or settings.value("base_url", OPENAI_BASE_URL)
 
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your API key first.")
@@ -609,8 +611,9 @@ class ModelManagerDialog(QDialog):
         from workers.update_logger import get_logger
         
         settings = get_app_settings()
-        api_key = settings.value("api_key", "")
-        base_url = settings.value("base_url", OPENAI_BASE_URL)
+        active_p = settings.value("active_provider_id", "nvidia")
+        api_key = keyring.get_password("LLMChatApp", f"api_key_{active_p}") or keyring.get_password("LLMChatApp", "api_key")
+        base_url = settings.value(f"url_{active_p}") or settings.value("base_url", OPENAI_BASE_URL)
         
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")
@@ -690,7 +693,10 @@ class ModelManagerDialog(QDialog):
         from logic.llm_client import LLMClient
         
         settings = get_app_settings()
-        api_key = settings.value("api_key", "")
+        active_p = settings.value("active_provider_id", "nvidia")
+        api_key = keyring.get_password("LLMChatApp", f"api_key_{active_p}") or keyring.get_password("LLMChatApp", "api_key")
+        # Setup base_url if needed by model handlers internally
+        base_url = settings.value(f"url_{active_p}") or settings.value("base_url", OPENAI_BASE_URL)
         
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")

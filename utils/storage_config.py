@@ -1,4 +1,6 @@
 # utils/storage_config.py
+# Updated with logic for persistent storage and UI
+
 import sys
 import os
 from pathlib import Path
@@ -120,7 +122,8 @@ class StorageManager:
             self.detect_existing_mode()
 
         if self.is_portable:
-            ini_path = self.get_exe_dir() / "settings.ini"
+            ini_path = self.get_exe_dir() / "resources" / "settings.ini"
+            ini_path.parent.mkdir(parents=True, exist_ok=True)
             return QSettings(str(ini_path), QSettings.IniFormat)
         else:
             return QSettings("LLMChatApp", "Settings")

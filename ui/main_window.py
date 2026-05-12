@@ -4,7 +4,7 @@
 import sys
 import os
 import keyring
-from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QSystemTrayIcon, QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QSystemTrayIcon, QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QSplitter
 from PySide6.QtCore import QTimer, Qt, QSettings, QEvent
 from PySide6.QtGui import QIcon, QPixmap, QAction, QTextBlockUserData, QActionGroup
 from PySide6.QtUiTools import QUiLoader
@@ -103,6 +103,8 @@ class MainWindowClass(QMainWindow):
         file_menu = menubar.addMenu("File")
         file_menu.addAction("New Conversation", self.chat_view.start_new_chat, "Ctrl+N")
         file_menu.addAction("Save Conversation", self.chat_view.auto_save_current_chat, "Ctrl+S")
+        file_menu.addAction("Import Chat (.json)", self.chat_view.load_conversation)
+        file_menu.addAction("Export Chat (.json)", self.chat_view.save_conversation)
         file_menu.addSeparator()
         file_menu.addAction("Exit", self.quit_app, "Ctrl+Q")
         
@@ -122,8 +124,17 @@ class MainWindowClass(QMainWindow):
 
         settings_menu = menubar.addMenu("Settings")
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
-        settings_menu.addAction("✏️ Instructions", self.edit_system_instructions)
-        
+        settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
+        settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
+        settings_menu.addSeparator()
+        settings_menu.addAction("🗄️ Storage Manager", self.show_storage_manager)
+        settings_menu.addAction("📂 Open Data Folder", self.open_storage_location)
+
+        # Log menu
+        log_menu = menubar.addMenu("Log")
+        log_menu.addAction("📋 View Update Log", self.show_update_log)
+        log_menu.addAction("🗑️ Clear Log", self.clear_update_log)
+
         # Tools Menu
         tools_menu = menubar.addMenu("Tools")
         self.api_server_action = tools_menu.addAction("🌐 Universal API Server")
@@ -143,15 +154,40 @@ class MainWindowClass(QMainWindow):
 
     def load_settings(self):
         settings = get_app_settings()
-        nk = keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key")
-        gk = keyring.get_password("LLMChatApp", "api_key_google")
-        mid = settings.value("current_model_id", "")
         
+        # 1. Apply Global Theme state
         self.theme_manager.apply_theme(settings.value("theme", "light"))
         
-        if nk: self.llm_client.set_api_key(nk)
+        # 2. Restore Parallel Google Ecosystem Access
+        gk = keyring.get_password("LLMChatApp", "api_key_google")
         if gk: self.llm_client.set_google_api_key(gk)
         
+        # 3. Restore Active OpenAI-Compatible Ecosystem Access (Audit ID 028 Fix)
+        active_p = settings.value("active_provider_id", "nvidia")
+        
+        # Fetch targeted localized endpoint
+        b_url = settings.value(f"url_{active_p}") or settings.value("base_url")
+        # Filter google endpoints to avoid OpenAI client path contamination
+        if b_url and active_p != "google" and "google" not in b_url: 
+             self.llm_client.set_base_url(b_url)
+             
+        # Fetch targeted API credential from isolated slot
+        ak = None
+        if active_p != "google":
+             ak = keyring.get_password("LLMChatApp", f"api_key_{active_p}")
+             
+        # Generic Fallback Scan: Support legacy setups and cross-ecosystem transitions
+        if not ak:
+             # Probe primary and explicit historical vault keys
+             candidate = keyring.get_password("LLMChatApp", "api_key") or keyring.get_password("LLMChatApp", "api_key_nvidia")
+             # CRITICAL: Safeguard prevents feeding Google native tokens into OpenAI pipeline
+             if candidate and not candidate.startswith("AIzaSy"):
+                  ak = candidate
+                  
+        if ak: self.llm_client.set_api_key(ak)
+        
+        # 4. Restore Last Selected Model & UI States
+        mid = settings.value("current_model_id", "")
         if mid:
             self.llm_client.set_model(mid)
             self.chat_view.update_model_ui(mid)
@@ -159,7 +195,27 @@ class MainWindowClass(QMainWindow):
         else:
             self.chat_view.set_chat_enabled(False)
 
-        if nk or gk: self.tray_icon.show()
+        # 5. Defer restoring splitter handles to ensure layouts are fully computed first
+        QTimer.singleShot(100, self.restore_splitter_states)
+
+    def restore_splitter_states(self):
+        settings = get_app_settings()
+        if hasattr(self, 'chat_view') and self.chat_view:
+            s = self.chat_view.findChild(QSplitter, "main_splitter")
+            state = settings.value("ui/main_splitter_state")
+            if s and state:
+                try: s.restoreState(state)
+                except Exception: pass
+        if hasattr(self, 'arena_view') and self.arena_view:
+            s = self.arena_view.findChild(QSplitter, "arena_splitter")
+            state = settings.value("ui/arena_splitter_state")
+            if s and state:
+                try: s.restoreState(state)
+                except Exception: pass
+
+        # Fire persistent system tray icon if presence of active authentication is confirmed
+        if self.llm_client.has_api_key(): 
+             self.tray_icon.show()
 
     def handle_auth_button(self):
         if self.llm_client.has_api_key(): self.logout()
@@ -205,6 +261,49 @@ class MainWindowClass(QMainWindow):
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog
         ModelManagerDialog(theme=self.theme_manager.current_theme, parent=self).exec()
+
+    def show_storage_manager(self):
+        """Launch UI to pivot the underlying app data storage directories"""
+        from ui.storage_manager_dialog import StorageManagerDialog
+        dialog = StorageManagerDialog(theme=self.theme_manager.current_theme, parent=self)
+        dialog.exec()
+
+    def open_storage_location(self):
+        """Direct OS trigger to pop open active filesystem database root"""
+        from utils.storage_config import StorageManager
+        from PySide6.QtGui import QDesktopServices
+        from PySide6.QtCore import QUrl
+        root = StorageManager.get_instance().get_storage_root()
+        if root.exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(root)))
+
+    def show_gen_settings(self):
+        """Restored from baseline: Opens the Smart Generation Parameters dialog."""
+        from ui.gen_settings_dialog import GenSettingsDialog
+        dialog = GenSettingsDialog(None)
+        if dialog.exec():
+            self.chat_view.add_system_message("✅ Generation parameters updated.")
+
+    def show_update_log(self):
+        """Restored from baseline: Access real-time engine logging stream"""
+        from ui.log_viewer import LogViewerDialog
+        dialog = LogViewerDialog(self)
+        dialog.exec()
+
+    def clear_update_log(self):
+        """Restored from baseline: Hard reset of runtime update datasets"""
+        from PySide6.QtWidgets import QMessageBox
+        from workers.update_logger import get_logger
+        reply = QMessageBox.question(
+            self,
+            "Clear Log",
+            "Are you sure you want to clear all update logs?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            logger = get_logger()
+            logger.clear()
+            self.chat_view.add_system_message("🗑️ Update logs purged successfully.")
 
     def show_about(self):
         from utils.constants import APP_VERSION
@@ -290,6 +389,15 @@ class MainWindowClass(QMainWindow):
         if hasattr(self, 'arena_view'):
             self.arena_view.stop_duel()
 
+        # Persist Splitter sizes across sessions
+        settings = get_app_settings()
+        if hasattr(self, 'chat_view') and self.chat_view:
+            s = self.chat_view.findChild(QSplitter, "main_splitter")
+            if s: settings.setValue("ui/main_splitter_state", s.saveState())
+        if hasattr(self, 'arena_view') and self.arena_view:
+            s = self.arena_view.findChild(QSplitter, "arena_splitter")
+            if s: settings.setValue("ui/arena_splitter_state", s.saveState())
+
         self.tray_icon.hide()
         QApplication.quit()
 
@@ -308,6 +416,11 @@ class MainWindowClass(QMainWindow):
 
     def toggle_theme(self):
         self.theme_manager.toggle_theme()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Guarantee layout restoration runs after initial container geometries are fully computed
+        QTimer.singleShot(50, self.restore_splitter_states)
 
     def closeEvent(self, event):
         # Simply minimize to tray or quit safely

@@ -524,3 +524,61 @@ class ChatViewWidget(QWidget):
             self.conversation_manager.delete_conversation(c_id)
             self.refresh_history_list()
             self.start_new_chat()
+
+    def save_conversation(self):
+        """Export current active memory tree to formatted external JSON"""
+        if not self.chat_history:
+            QMessageBox.information(self, "Nothing to Save", "No active conversation thread to export.")
+            return
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Export Conversation", "", "JSON Files (*.json);;All Files (*)")
+        if file_path:
+            current_model = self.model_btn.text() if hasattr(self, 'model_btn') else ""
+            self.conversation_manager.export_to_json(self.chat_history, file_path, current_model)
+            self.add_system_message(f"📂 Active context exported to JSON.")
+
+    def load_conversation(self):
+        """Import serialized JSON context tree, hydrating internal history and reconstruction visuals"""
+        file_path, _ = QFileDialog.getOpenFileName(self, "Import Conversation", "", "JSON Files (*.json);;All Files (*)")
+        if not file_path:
+            return
+            
+        try:
+            data = self.conversation_manager.import_from_json(file_path)
+            messages = data.get("messages", [])
+            
+            if not messages:
+                QMessageBox.warning(self, "Data Error", "The selected payload does not contain valid context records.")
+                return
+                
+            # 1. Flush active state
+            self.clear_chat()
+            self.chat_display.clear() # Wiping visual start marker
+            
+            # 2. Hydrate internal history
+            self.chat_history = messages
+            
+            # 3. Generate Visual Stack reconstructed
+            for msg in self.chat_history:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                if not content: continue
+                
+                if role == "user":
+                    self.add_user_message(content)
+                elif role == "assistant":
+                    self.add_assistant_message(content)
+                elif role == "system":
+                    self.add_system_message(content)
+                    
+            # 4. Revitalize Meta tags
+            saved_model = data.get("model_id")
+            if saved_model:
+                self.llm_client.set_model(saved_model)
+                self.update_model_ui(saved_model)
+                
+            self.add_system_message("✅ Context imported and successfully reconstructed.")
+            self.scroll_to_bottom()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Import Failure", f"Fault encountered rebuilding context payload:\n{str(e)}")

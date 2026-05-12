@@ -101,7 +101,17 @@ class ChatWorker(QThread):
             max_output_tokens=self.max_tokens
         )
         
-        # 4. Initialize Chat Session with existing history
+        
+        # 4. 🛠️ BOUNDARY CONSOLIDATION FIX (Audit ID 027 Patch):
+        # Google Gemini mandates strict alternating role schema. If the sanitized history 
+        # ends on a 'user' node, passing the next message (also user) crashes the backend.
+        if mapped_history and mapped_history[-1]["role"] == "user":
+             # Pop trailing user item from history and prefix directly to current prompt
+             last_history_item = mapped_history.pop()
+             last_content = last_history_item["parts"][0]["text"]
+             active_prompt = f"{last_content}\n\n{active_prompt}"
+
+        # 5. Initialize Chat Session with existing history
         chat = self.client.google_client.chats.create(
             model=self.client.current_model,
             history=mapped_history,
