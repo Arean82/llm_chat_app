@@ -14,30 +14,61 @@ MODEL_CONTEXT_LIMITS = {
     "gemma-3": 256_000,
 }
 
+import glob
+from utils.path_utils import get_resource_path, get_models_directory_path
+
 # In-memory cache to prevent redundant disk I/O
 _models_cache = None
-_last_mtime = 0
+_last_scan_mtime = 0
 
 def _load_models_data():
-    """Loads models from JSON with a simple cache based on file modification time."""
-    global _models_cache, _last_mtime
-    models_file = get_models_path()
+    """Loads models scanning all models_*.json shards safely with a global cache timer."""
+    global _models_cache, _last_scan_mtime
     
-    if not models_file.exists():
+    # Resolve dedicated subdirectory
+    res_dir = get_models_directory_path()
+    
+    # Locate all shards inside subfolder
+    pattern = os.path.join(res_dir, "models_*.json")
+    found_files = glob.glob(pattern)
+    
+    # Also check root for fallback
+    base_file = get_resource_path("resources/models.json")
+    if base_file.exists():
+        found_files.append(str(base_file))
+        
+    if not found_files:
         return []
-
+        
     try:
-        current_mtime = os.path.getmtime(models_file)
-        # Only reload if cache is empty OR file has been modified since last load
-        if _models_cache is None or current_mtime > _last_mtime:
-            with open(models_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                _models_cache = data.get("models", [])
-                _last_mtime = current_mtime
+        # Calculate max modification time across ALL found files
+        current_max_mtime = max(os.path.getmtime(f) for f in found_files)
+        
+        # Only reload if never loaded, or ANY file changed
+        if _models_cache is None or current_max_mtime > _last_scan_mtime:
+            all_models = []
+            seen_ids = set()
+            
+            for fp in found_files:
+                try:
+                    with open(fp, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        sub_models = data.get("models", [])
+                        for m in sub_models:
+                            m_id = m.get("id")
+                            if m_id and m_id not in seen_ids:
+                                all_models.append(m)
+                                seen_ids.add(m_id)
+                except:
+                    pass # Skip corrupt shards gracefully
+                    
+            _models_cache = all_models
+            _last_scan_mtime = current_max_mtime
+            
         return _models_cache
     except Exception as e:
-        print(f"Error loading models cache: {e}")
-        return []
+        print(f"Critical error in distributed model data load: {e}")
+        return _models_cache or []
 
 def get_context_limit(model_id: str) -> int:
     """Get TOKEN limit for specific model, prioritizing cached dynamic data."""

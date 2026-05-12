@@ -304,3 +304,41 @@ class LLMClient:
         except Exception as e:
             print(f"Abstract Batch Generation Exception: {e}")
             return {}
+    def fetch_custom_openai_models(self, base_url: str, api_key: str, provider_id: str = "openai") -> list:
+        """
+        UNIVERSAL OPENAI DISCOVERY (Audit ID 024)
+        Dynamic scraper targeting third-party endpoints like LM Studio, Ollama, vLLM.
+        """
+        from openai import OpenAI
+        effective_key = api_key if api_key and api_key.strip() else "no-key-required"
+        tmp_client = OpenAI(base_url=base_url, api_key=effective_key, timeout=15.0)
+        
+        models_found = []
+        try:
+            response = tmp_client.models.list()
+            EXCLUDED = ["embed", "rerank", "bge", "encoder", "bert", "fastpitch"]
+            
+            for model in response.data:
+                mid = model.id
+                if any(term in mid.lower() for term in EXCLUDED):
+                    continue
+                    
+                c_len = 131072 # reasonable modern fallback
+                if hasattr(model, 'max_model_len'): c_len = model.max_model_len
+                
+                model_info = {
+                    "id": mid,
+                    "name": self._format_model_name(mid),
+                    "description": f"Dynamically acquired from custom host {base_url}",
+                    "developer": provider_id.capitalize().replace("_", " "),
+                    "free": True,
+                    "context_length": c_len,
+                    "is_chat_model": True,
+                    "provider": provider_id
+                }
+                models_found.append(model_info)
+                
+            return models_found
+        except Exception as e:
+            print(f"Dynamic OpenAI endpoint scan failed for {base_url}: {e}")
+            raise e

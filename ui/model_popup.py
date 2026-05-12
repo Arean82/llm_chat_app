@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QDialog, QCheckBox, QHBoxLayout, QTableWidgetItem,
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QColor
 
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtUiTools import QUiLoader
@@ -155,7 +155,7 @@ class ModelPopupClass(QDialog):
     def on_apply(self):
         if self.selected_model_id:
             # Save to QSettings
-            settings = QSettings("LLMChatApp", "Settings")
+            settings = get_app_settings()
             settings.setValue("current_model_id", self.selected_model_id)
             self.accept() # Close dialog with success
         else:

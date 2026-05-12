@@ -5,7 +5,7 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QFile, QSettings, Qt
 from PySide6.QtGui import QIcon
 
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import set_app_icon
 
 class GenSettingsDialog(QDialog):
@@ -21,7 +21,7 @@ class GenSettingsDialog(QDialog):
         self.showNormal() # Crucial safety check to ensure visual surfacing
         
         # --- APPLY VISUAL THEME STYLES ---
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         is_dark = settings.value("theme", "light") == "dark"
         if is_dark:
             self.setStyleSheet("""
@@ -100,7 +100,7 @@ class GenSettingsDialog(QDialog):
         self.load_current_settings()
         
     def load_current_settings(self):
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         
         use_defaults = settings.value("gen_use_defaults", "false") == "true"
         
@@ -192,7 +192,7 @@ class GenSettingsDialog(QDialog):
         self.update_tokens_explanation(self.tokens_input.value())
 
     def save_and_close(self):
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         is_default_mode = self.preset_combo.currentIndex() == 4
         
         settings.setValue("gen_use_defaults", "true" if is_default_mode else "false")

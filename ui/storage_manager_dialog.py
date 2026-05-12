@@ -12,7 +12,7 @@ from PySide6.QtGui import QDesktopServices, QUrl
 from PySide6.QtUiTools import QUiLoader
 
 from utils.storage_config import StorageManager
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 
 class StorageManagerDialog(QDialog):
     def __init__(self, theme="dark", parent=None):
@@ -242,7 +242,7 @@ class StorageManagerDialog(QDialog):
                     except Exception: pass
             
             from PySide6.QtCore import QSettings
-            settings = QSettings("LLMChatApp", "Settings")
+            settings = get_app_settings()
             if mode == "PORTABLE":
                 settings.remove("storage/data_root")
             

@@ -11,7 +11,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtUiTools import QUiLoader
 
 from ui.model_edit_dialog import ModelEditDialog
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import set_app_icon
 
 class ModelManagerDialog(QDialog):
@@ -456,7 +456,7 @@ class ModelManagerDialog(QDialog):
         from logic.llm_client import LLMClient
         from workers.model_fetch_worker import ModelFetchWorker
 
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         api_key = settings.value("api_key", "")
         base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
 
@@ -607,7 +607,7 @@ class ModelManagerDialog(QDialog):
         from logic.llm_client import LLMClient
         from workers.update_logger import get_logger
         
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         api_key = settings.value("api_key", "")
         base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
         
@@ -688,7 +688,7 @@ class ModelManagerDialog(QDialog):
         """
         from logic.llm_client import LLMClient
         
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         api_key = settings.value("api_key", "")
         
         if not api_key:
@@ -851,7 +851,7 @@ class ModelManagerDialog(QDialog):
             return
 
         # Get API key
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         api_key = settings.value("api_key", "")
 
         if not api_key:

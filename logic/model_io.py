@@ -4,28 +4,43 @@
 import os
 import json
 import glob
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_models_directory_path
+import shutil
 
 def get_models_directory():
-    """Resolves the parent folder containing resources."""
-    base_path = get_resource_path("resources/models.json") # Used to find dir
-    return os.path.dirname(base_path)
+    """Resolves the dedicated subfolder, performing lazy migration from legacy root if needed."""
+    target_dir = str(get_models_directory_path())
+    legacy_dir = os.path.dirname(get_resource_path("resources/models.json"))
+    
+    # Auto-Migration: If legacy items exist in root, migrate them to subfolder
+    if os.path.isdir(legacy_dir) and target_dir != legacy_dir:
+        pattern = os.path.join(legacy_dir, "models_*.json")
+        for old_file in glob.glob(pattern):
+            try:
+                new_file = os.path.join(target_dir, os.path.basename(old_file))
+                if not os.path.exists(new_file):
+                     shutil.move(old_file, new_file)
+                     print(f"MIGRATED model file: {os.path.basename(old_file)} -> subfolder")
+            except Exception as e:
+                print(f"Migration error on {old_file}: {e}")
+                
+    return target_dir
 
 def load_all_models() -> list:
     """
-    Scans resources folder for all models_*.json files and merges contents.
-    Automatically falls back to root models.json if exists for backwards compatibility.
+    Scans dedicated model_json folder for all models_*.json files and merges contents.
     """
     res_dir = get_models_directory()
     combined_models = []
     seen_ids = set()
     
-    # 1. Gather dynamic files matching pattern models_*.json
+    # 1. Gather dynamic files matching pattern models_*.json in SUBFOLDER
     pattern = os.path.join(res_dir, "models_*.json")
     found_files = glob.glob(pattern)
     
-    # 2. Also include legacy models.json if it exists
-    legacy_path = os.path.join(res_dir, "models.json")
+    # 2. Also include legacy models.json from parent if it STILL exists (final fallback)
+    legacy_parent = os.path.dirname(get_resource_path("resources/models.json"))
+    legacy_path = os.path.join(legacy_parent, "models.json")
     if os.path.exists(legacy_path):
         found_files.append(legacy_path)
         

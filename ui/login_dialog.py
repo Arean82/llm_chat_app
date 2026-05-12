@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QDialog, QMessageBox, QVBoxLayout, QLineEdit, QPus
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
 
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import set_app_icon
 from utils.storage_config import StorageManager
 from ui.custom_provider_dialog import CustomProviderDialogClass
@@ -37,7 +37,7 @@ class SettingsDialogClass(QDialog):
         self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
         
         # Load Dynamic Theme
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         self.theme = settings.value("theme", "light")
         
         # 2. Map internal elements from UI
@@ -148,7 +148,7 @@ class SettingsDialogClass(QDialog):
 
     def load_active_state(self):
         """Intelligently identifies historical group mappings to restore full cascade state."""
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         active_id = settings.value("active_provider_id", "nvidia")
         
         # 1. Locate actual provider details to discover its root group
@@ -207,7 +207,7 @@ class SettingsDialogClass(QDialog):
         self.key_input.setVisible(requires_key)
 
         # 3. Rehydrate URL field for THIS provider
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         saved_url = settings.value(f"url_{p_id}", provider.get("default_url"))
         self.url_input.setText(saved_url)
         
@@ -244,7 +244,7 @@ class SettingsDialogClass(QDialog):
             QMessageBox.warning(self, "Missing Credential", f"Please supply an API Token for {provider.get('display_name')}.")
             return
             
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         
         # 1. Persist active provider slug globally
         settings.setValue("active_provider_id", p_id)
@@ -298,6 +298,36 @@ class SettingsDialogClass(QDialog):
                 QMessageBox.critical(self, "Storage Error", f"Failed to save custom data: {e}")
                 return
             
+            # 1.5 UNIVERSAL DISCOVERY INJECTION (Audit ID 024)
+            # Proactively scan endpoint for supported model IDs seamlessly upon creation.
+            try:
+                from PySide6.QtWidgets import QApplication
+                from PySide6.QtCore import Qt
+                from logic.llm_client import LLMClient
+                from logic.model_io import save_all_models, load_all_models
+                
+                QApplication.setOverrideCursor(Qt.WaitCursor)
+                temp_client = LLMClient()
+                # Try with minimal security (works for 90% of local dev servers like LM Studio/Ollama)
+                custom_models = temp_client.fetch_custom_openai_models(
+                    base_url=new_payload.get("default_url"),
+                    api_key="", 
+                    provider_id=new_payload["id"]
+                )
+                
+                if custom_models:
+                    current_all = load_all_models()
+                    ex_ids = {m.get("id") for m in current_all}
+                    to_add = [m for m in custom_models if m.get("id") not in ex_ids]
+                    if to_add:
+                         current_all.extend(to_add)
+                         save_all_models(current_all)
+                         
+            except Exception as scan_ex:
+                 print(f"Background automatic model harvest bypassed (Endpoint might require explicit auth): {scan_ex}")
+            finally:
+                 QApplication.restoreOverrideCursor()
+
             # 2. Hot Reload state entirely to render instantly
             self.load_provider_definitions()
             # Force current group select trigger to re-run the filter

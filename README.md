@@ -4,7 +4,15 @@
 
 A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-ecosystem hub, it interfaces seamlessly with **Google Gemini**, **NVIDIA NIM**, **Groq**, **Ollama**, and **LM Studio**—alongside infinite support for your own custom local endpoints—to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
 
-[Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) • [-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
+[About](#-about-the-project) • [Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) • [Credits](#-about-the-team--credits) • [License](#-license)
+
+---
+
+## 📖 About the Project
+
+**LLM Chat App** is engineered to be the definitive, secure gateway for modern Artificial Intelligence exploration. Developed for high-velocity prototyping and native desktop comfort, this workstation utility centralizes fragmented AI provider landscapes into a single, performant orchestrator. 
+
+Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor-lock constraints by unifying **Cloud inference** and **Local compute** within one elite codebase. Leveraging hardware acceleration, OS-level credential custody, and recursive Adaptive Memory buffering, it delivers a fluid, virtually limitless conversational cognition engine.
 
 ---
 
@@ -16,7 +24,7 @@ A sleek, high-performance desktop chat application built with Python and PySide6
 - 🏠 **True Offline Capability:** Specialized zero-key mode automatically detects local tooling (like Ollama), bypassing verification blockers entirely.
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
 - 📎 **File Attachments:** Upload code (`.py`, `.js`), text, or data files directly into the chat for instant analysis.
-- 📂 **Distributed Manifest System:** Vendor catalogs are perfectly isolated (e.g., `models_google.json` vs `models_nvidia.json`) enabling infinite horizontal scaling for new providers.
+- 📂 **Isolated Model Vaults:** Vendor catalogs are segmented and containerized within dedicated subdirectory resources (e.g., `resources/model_json/models_nvidia.json`), facilitating infinite ecosystem horizontal scale.
 - 📦 **Dynamic Model Manager:** Add, edit, or remove models directly from the UI. Group models by provider or developer using the tabbed interface.
 - 🔐 **Segmented Key Vault:** Safely manages isolated OS-level keychain credentials for each distinct provider without crossing identities.
 - 🔧 **Smart Generation Parameters:** Take granular control over LLM outputs. Tweak temperature and response length via a dedicated UI, or use 'Model Default' to let remote servers decide natively.
@@ -30,8 +38,8 @@ A sleek, high-performance desktop chat application built with Python and PySide6
 - 📌 **Persistent Settings** – API keys, models, and theme preferences survive app restarts.
 - 🌐 **Live Connection Status** – Real-time network monitoring with visual indicators (🌐/🔴); automatically recovers from silent disconnects, safely cleans up broken chat history, and instantly unlocks the UI.
 - 🛡️ **Intelligent Error Handling:** Categorizes API errors (timeouts, network drops, rate limits) and shows friendly, actionable messages instead of raw error traces.
-- 🧠 **Smart Context Buffering:** Proactively monitors chat length against model-specific context windows, warning you before the AI runs out of space to reply.
-- 🔄 **Background Model Fetching:** Fetch and test all available NVIDIA models in the background. Model Manager closes automatically, progress visible in real-time via the Log menu.
+- 🧠 **Adaptive Memory Compression:** Features a high-performance context intercept layer. Detects usage bursts above 85% and seamlessly performs silent, secondary background synthesis to compact legacy history, unlocking infinite conversation depth.
+- 🔄 **Background Model Fetching:** Fetch and test all available ecosystem models in the background. Model Manager closes automatically, progress visible in real-time via the Log menu.
 - 📋 **Real-time Log Viewer:** Track model fetching progress, success/failures, and description generation with color-coded, filterable logs (INFO, WARNING, ERROR, SUCCESS, DEBUG).
 - ✨ **AI-Powered Description Generation:** Generate one-sentence descriptions for any model using your choice of working model (Llama 4, Gemma 3, etc.). Descriptions persist across app restarts.
 - 🏷️ **Developer Tabs:** Models are automatically grouped by developer (Google, Meta, NVIDIA, etc.) in the Model Manager for easier browsing.
@@ -81,7 +89,7 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 ### Prerequisites
 
 - Python 3.12 or higher
-- An NVIDIA NIM API Key (Get one free at [build.nvidia.com](https://build.nvidia.com/))
+- An API Key from your preferred provider (NVIDIA, Google, OpenAI etc.) (Get one at [build.nvidia.com](https://build.nvidia.com/))
 
 ### Installation
 
@@ -114,7 +122,7 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
    ```bash
    python main.py   
    ```
-2. 📸 **First Launch:** A secure login popup will prompt you for your NVIDIA API key (`nvapi-...`).
+2. 📸 **First Launch:** A secure login popup will prompt you for your preferred API key (`nvapi-...`).
 3. 🤖 **Select Model:** A popup will let you choose your desired AI model.
 4. 💬 **Start Chatting:** Type your message. Press `Enter` to send, or `Shift+Enter` for a new line.
 5. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
@@ -148,7 +156,7 @@ llm_chat_app/
 │   ├── app_icon.ico                # 🖼️ Windows icon
 │   ├── app_icon.icns               # 🖼️ macOS icon
 │   ├── app_icon_linux.png          # 🖼️ Linux icon
-│   ├── models.json                 # 🤖 Available model list
+│   ├── model_json/                 # 🤖 Segmented vendor model definitions
 │   ├── styles.qss                  # 🎨 Global stylesheet
 │   ├── user_prompts.json           # 📝 System instructions
 │   └── badge_cache/                # ⚡ Auto-generated offline image cache
@@ -176,7 +184,7 @@ llm_chat_app/
 │
 ├── logic/                          # ⚙️ Backend engine
 │   ├── api_server.py               # 🌐 Universal API server
-│   ├── llm_client.py               # 🔌 NVIDIA API wrapper
+│   ├── llm_client.py               # 🔌 Universal API orchestration wrapper
 │   ├── chat_worker.py              # 🧵 Threading for streaming
 │   └── conversation_manager.py     # 💾 Save/load conversations
 │
@@ -304,7 +312,7 @@ This software is provided as-is, free of charge, for educational and personal us
 
 - **AI Accuracy:** This application interfaces with third-party Large Language Models (LLMs). The developers of this application do not control, endorse, or guarantee the accuracy, completeness, or appropriateness of the AI-generated responses. AI models can produce incorrect, biased, or offensive content.
 - **User Responsibility:** You are solely responsible for any prompts you submit and any outputs you rely on. Always verify critical information generated by AI.
-- **API Usage:** This app relies on the NVIDIA NIM API. You are responsible for managing your own API keys, adhering to NVIDIA's Terms of Service, and monitoring your own API usage limits and quotas.
+- **API Usage:** This app interfaces with multiple third-party AI APIs (NVIDIA, Google, OpenAI, Ollama). You are responsible for managing your own API keys, adhering to NVIDIA's Terms of Service, and monitoring your own API usage limits and quotas.
 - **No Liability:** The maintainers of this repository shall not be held liable for any damages, data loss, or issues arising from the use of this software.
 
 ---
@@ -417,6 +425,15 @@ Regardless of selection, the target root directory will structure itself like th
 - `/ui_designer/` - Extracted interface schemas
 - `/resources/update_log.txt` - Global application log file
 
+
+---
+
+## 👨‍💻 About the Team & Credits
+
+This framework is architected and curated with the vision of building transparent, universal gates into advanced AI technologies.
+
+*   **Lead Architect:** **Arean Narrayan** ([@Arean82](https://github.com/Arean82))
+*   **Design Ethos:** Deliver highly secure, agnostic interfaces free of platform bias or maintenance decay.
 
 ---
 

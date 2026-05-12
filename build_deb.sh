@@ -39,7 +39,7 @@ Icon=$APP_NAME
 Type=Application
 Categories=Utility;
 Terminal=false
-Comment=Desktop client for NVIDIA NIM API
+Comment=Universal multi-ecosystem desktop client
 EOF
 
 # 6. Create CONTROL file (Package metadata)
@@ -51,7 +51,7 @@ Priority: optional
 Architecture: amd64
 Maintainer: Arean Narrayan
 Description: LLM Chat Application
- Desktop client for NVIDIA NIM API with universal API server support.
+ Universal multi-ecosystem desktop client with universal API server support.
 EOF
 
 # 7. Create PRERM script (Handles clean UNINSTALL/UPDATE)

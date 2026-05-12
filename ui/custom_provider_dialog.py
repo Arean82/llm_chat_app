@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QCheckBox, QMessageBox, QLabel
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import set_app_icon
 
 class CustomProviderDialogClass(QDialog):
@@ -22,7 +22,7 @@ class CustomProviderDialogClass(QDialog):
         self.setWindowTitle("Configure Custom Host")
         
         # Recover current style profile
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         self.theme = settings.value("theme", "light")
         
         # Element Mapping

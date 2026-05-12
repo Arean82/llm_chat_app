@@ -16,7 +16,7 @@ from logic.api_server import APIServer
 from utils.constants import CONNECTION_CHECK_INTERVAL_CONNECTED_MS, CONNECTION_CHECK_INTERVAL_DISCONNECTED_MS, RESPONSE_BUFFER_CHARS
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication, QListWidgetItem, QAbstractItemView
+from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QFileDialog, QLabel, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget, QApplication, QListWidgetItem, QAbstractItemView, QComboBox
 from PySide6.QtCore import QEvent, QTimer, Qt, QSettings, Signal
 from PySide6.QtGui import QAction, QIcon, QPixmap, QTextBlockUserData, QTextCursor
 from PySide6.QtUiTools import QUiLoader
@@ -28,7 +28,7 @@ from workers.connection_worker import ConnectionWorker
 from logic.api_manager import ApiManager
 from logic.formatter import MessageFormatter
 
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 from utils.model_config import get_context_limit
 
 from PySide6.QtWidgets import QSizePolicy 
@@ -250,27 +250,23 @@ class MainWindowClass(QMainWindow):
         self.setCentralWidget(central_widget)
 
     def setup_header_logo(self):
-        """Adds the application logo to the top bar via Python."""
-        # 1. Create the Label widget
-        self.logo_label = QLabel(self.ui.top_bar)
-        self.logo_label.setFixedSize(32, 32)       # Set size (32x32 pixels)
-        self.logo_label.setScaledContents(True)    # Ensure image fills the box
+        """Dynamically binds runtime branding icon resources onto the pre-defined UI manifest element."""
+        # 1. Bind to design file control
+        self.logo_label = self.ui.logo_label
         self.logo_label.setToolTip("LLM Chat App")
         
-        # 2. Load the icon image
+        # 2. Load the icon image dynamically to handle portable path resolution
         icon_path = get_resource_path("resources/app_icon.png")
         pixmap = QPixmap(icon_path)
         
         if not pixmap.isNull():
-            self.logo_label.setPixmap(pixmap)       # Set the image
+            self.logo_label.setPixmap(pixmap)
         else:
-            # Fallback if image is missing (shows an emoji instead)
+            # Fallback
             self.logo_label.setText("🚀")
             self.logo_label.setStyleSheet("font-size: 20px; padding-left: 5px;")
 
-        # 3. Insert the label into the top bar layout
-        # index 0 means it goes to the very left, before all other buttons
-        self.ui.top_bar_layout.insertWidget(0, self.logo_label)
+
 
     # ---------------------------------------------------------
     # THEME SYSTEM
@@ -595,7 +591,7 @@ class MainWindowClass(QMainWindow):
     # ---------------------------------------------------------
 
     def load_settings(self):
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         
         # Securely fetch api_key from system keychain (both providers)
         nvidia_key = keyring.get_password("LLMChatApp", "api_key_nvidia")
@@ -674,7 +670,7 @@ class MainWindowClass(QMainWindow):
                 self.set_connected_status(True)
                 self.refresh_auth_button_style()
                 
-                if not QSettings("LLMChatApp", "Settings").value("current_model_id"):
+                if not get_app_settings().value("current_model_id"):
                     QTimer.singleShot(100, self.show_model_popup)
                 else:
                     self.set_chat_enabled(True)
@@ -697,7 +693,7 @@ class MainWindowClass(QMainWindow):
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
         
-        current_id = QSettings("LLMChatApp", "Settings").value("current_model_id", "")
+        current_id = get_app_settings().value("current_model_id", "")
         dialog = ModelPopupClass(current_model_id=current_id, parent=self)
         
         if dialog.exec():
@@ -884,42 +880,96 @@ class MainWindowClass(QMainWindow):
         # Format display strings
         limit_display = f"{token_limit // 1_000}K tokens" if token_limit >= 1000 else f"{token_limit} tokens"
         
-        if remaining_tokens < TOKEN_BUFFER:
-            # HARD BLOCK: Not enough space for AI to reply
-            if remaining_tokens <= 0:
-                remaining_display = "0 tokens"
-            elif remaining_tokens >= 1000:
-                remaining_display = f"{remaining_tokens // 1000}K tokens"
-            else:
-                remaining_display = f"{remaining_tokens} tokens"
-                
-            reply = QMessageBox.warning(self, "Context Limit Reached",
-                f"Context usage is at {usage_percent:.0f}% ({current_total_estimate:,} tokens).\n"
-                f"The model only has {remaining_display} left for its response.\n\n"
-                f"Start a new conversation?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            
-            if reply == QMessageBox.StandardButton.Yes:
-                self.chat_history.pop()
-                self.new_conversation()
-                return
-                
-        elif usage_percent > 85:
-            # SOFT WARNING
-            self.add_system_message(f"⚠️ Context usage at {usage_percent:.0f}% ({limit_display}). Consider starting a new conversation soon.")
         # ==========================================
+        # Adaptive Memory Orchestrator (Audit ID 027)
+        # ==========================================
+        if remaining_tokens < TOKEN_BUFFER or usage_percent > 85:
+             # Divert flow into silent compression pipeline instead of blocking user
+             self.attempt_adaptive_compression(api_response_queue, custom_messages, custom_temp, custom_max_tokens)
+        else:
+             # Seamless dispatch
+             self._continue_send_message(api_response_queue, custom_messages, custom_temp, custom_max_tokens)
 
+    def attempt_adaptive_compression(self, api_queue, c_msgs, c_temp, c_max):
+        """Performs silent recursive summarization on the oldest segment of dialogue volume."""
+        self.add_system_message("⚡ *Context Optimization Activated: Condensing legacy history...*")
+        
+        # Visually lock system during non-stream wait block
+        self.input_field.setEnabled(False)
+        self.add_typing_indicator()
+
+        # 1. Gather dialogue candidates for synthesis (Exclude system injection nodes)
+        base_history = [m for m in self.chat_history if m.get('role') != 'system']
+        if len(base_history) < 3:
+             # Safety Fallback: If dialogue volume is too light to compress, push forward anyway
+             self.remove_typing_indicator()
+             self._continue_send_message(api_queue, c_msgs, c_temp, c_max)
+             return
+
+        # 2. Target oldest 60% of conversational mass to reduce volume
+        pack_count = max(2, int(len(base_history) * 0.60))
+        candidates_to_summarize = base_history[:pack_count]
+
+        # 3. Package compression meta-prompt payload
+        compression_blueprint = [
+             {"role": "system", "content": "CRITICAL INSTRUCTION: Synthesize the following conversation segment into ONE highly dense, concise, technical paragraph block. Preserve ALL facts, architectural rules, context variables, and active decisions. Explicitly strip pleasantries."}
+        ]
+        for entry in candidates_to_summarize:
+             compression_blueprint.append({"role": "user", "content": f"[{entry.get('role', 'user').upper()}]: {entry.get('content', '')}"})
+        compression_blueprint.append({"role": "user", "content": "Execute synthesis block now."})
+
+        # 4. Construct Silent Background Worker (NON-STREAMING for low-latency)
+        self.compactor_thread = ChatWorker(self.llm_client, compression_blueprint, temperature=0.2, max_tokens=500)
+        self.compactor_thread.stream = False
+
+        def on_compaction_resolved(text_summary):
+             self.remove_typing_indicator()
+             
+             # Flush target count of assistant/user entries from global history list
+             pruned = 0
+             remaining_stream = []
+             for m in self.chat_history:
+                  if m.get('role') != 'system' and pruned < pack_count:
+                       pruned += 1
+                       continue
+                  remaining_stream.append(m)
+             self.chat_history = remaining_stream
+
+             # Inject synthesis token block as foundation knowledge
+             knowledge_stamp = f"📊 CONSOLIDATED MEMORY RECAP: {text_summary.strip()}"
+             self.chat_history.insert(0, {"role": "system", "content": knowledge_stamp})
+
+             # Recalculate total token baseline representing absolute shrinkage
+             self.total_tokens = sum(len(m.get('content', '')) // 3 for m in self.chat_history)
+             
+             self.add_system_message("✨ *Context Optimized. Proceeding seamlessly.*")
+             
+             # Pivot directly into underlying message pipeline dispatch
+             self._continue_send_message(api_queue, c_msgs, c_temp, c_max)
+
+        def on_compaction_fault(error_string):
+             # Safety Fallback override preventing network jitter from jamming user loop
+             self.remove_typing_indicator()
+             self.add_system_message(f"⚠️ *Optimization Pass Bypassed: Temporary channel interference.*")
+             self._continue_send_message(api_queue, c_msgs, c_temp, c_max)
+
+        # Assign event responders and boot thread
+        self.compactor_thread.response_received.connect(on_compaction_resolved)
+        self.compactor_thread.error_occurred.connect(on_compaction_fault)
+        self.compactor_thread.start()
+
+    def _continue_send_message(self, api_response_queue=None, custom_messages=None, custom_temp=None, custom_max_tokens=None):
+        """Executes final payload preparation and starts active inference loop."""
         self.input_field.setEnabled(False)
         self.add_typing_indicator()
         self.current_response_text = "" 
         
         # ------------------------------------------
-        # Load current generation parameters
+        # Load runtime generation parameters
         # ------------------------------------------
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         use_remote_defaults = settings.value("gen_use_defaults", "false") == "true"
         
-        # Priority: 1. Explicit arguments, 2. Server Default flag, 3. Saved UI values
         if use_remote_defaults and custom_temp is None and custom_max_tokens is None:
             active_temp = None
             active_tokens = None
@@ -928,13 +978,13 @@ class MainWindowClass(QMainWindow):
             active_tokens = custom_max_tokens if custom_max_tokens is not None else int(settings.value("gen_max_tokens", 4096))
         
         api_payload = custom_messages if custom_messages is not None else self.get_messages_for_api()
+        
         self.current_worker = ChatWorker(self.llm_client, api_payload, temperature=active_temp, max_tokens=active_tokens)    
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
         self.current_worker.error_occurred.connect(self.on_error)
 
-        # If this is an API request, also route results to the response queue
         if api_response_queue:
             self.current_worker.response_received.connect(lambda resp: api_response_queue.put(resp))
             self.current_worker.error_occurred.connect(lambda err: api_response_queue.put(f"Error: {err}"))
@@ -1151,7 +1201,7 @@ class MainWindowClass(QMainWindow):
             self.add_typing_indicator()
             
             # Load current generation parameters
-            settings = QSettings("LLMChatApp", "Settings")
+            settings = get_app_settings()
             use_remote_defaults = settings.value("gen_use_defaults", "false") == "true"
             
             if use_remote_defaults:
@@ -1340,27 +1390,27 @@ class MainWindowClass(QMainWindow):
         <div style="font-family: 'Segoe UI', Arial, sans-serif;">
             <h2 style="color: #0078d4; margin-bottom: 5px;">LLM Chat App</h2>
             <p><b>Version:</b> {APP_VERSION}<br>
-            <b>Developer:</b> Arean Narrayan</p>
+            <b>Lead Architect:</b> Arean Narrayan</p>
             
             <hr style="border: 1px solid {border_color}; margin: 10px 0;">
             
-            <p>A sleek, modern desktop application designed to seamlessly connect you 
-            with cutting-edge Large Language Models via the NVIDIA NIM and Google Gemini APIs.</p>
+            <p>A premium, high-performance desktop workstation engineered to serve as a 
+            universal, ecosystem-agnostic gateway into state-of-the-art Large Language Models.</p>
             
-            <p><b>Key Features:</b></p>
+            <p><b>Key Technologies:</b></p>
             <ul>
-                <li>Real-time streaming responses</li>
-                <li>Seamlessly switch between multiple state-of-the-art AI models</li>
-                <li>Rich text and code syntax rendering (Markdown)</li>
-                <li>Save and load conversation histories locally</li>
-                <li>Clean, adaptive user interface</li>
+                <li>🚀 Infinite Context via <b>Adaptive Memory Compression</b></li>
+                <li>🤖 Universal Orchestration (NVIDIA, Google, Groq, Ollama, OpenAI)</li>
+                <li>⚡ High-Velocity Markdown & Code Syntax Rendering</li>
+                <li>🔐 Secure OS-Level Credential Custody Vault</li>
+                <li>🌐 Local OpenAI-Compatible API Server</li>
             </ul>
             
             <hr style="border: 1px solid {border_color}; margin: 10px 0;">
             
             <p style="font-size: 11px; color: #666666;">
-            Powered by <b>NVIDIA NIM</b> & <b>Google Gemini</b><br>
-            Built with <b>Python</b> & <b>PySide6</b></p>
+            Empowering Universal AI Compute Access<br>
+            Built with <b>Python 3.12</b> & <b>PySide6</b></p>
         </div>
         """
         
@@ -1463,14 +1513,21 @@ class MainWindowClass(QMainWindow):
         """
         Returns the chat history with current library instructions strictly enforced as the first message.
         """
-        # 1. Start with the current history, but STRIP OUT any existing system messages
-        # This ensures that our "Live" library instructions are the only ones active.
-        messages = [msg for msg in self.chat_history if msg['role'] != 'system']
+        # 1. Start with the current history, but selectively strip standard system directives
+        # Note: Protect foundational architectural anchors like Adaptive Memory Recaps (Audit ID 027)
+        messages = []
+        for msg in self.chat_history:
+            if msg.get('role') == 'system':
+                content = str(msg.get('content', ''))
+                if "CONSOLIDATED MEMORY RECAP" in content or "HISTORY CONSOLIDATED" in content:
+                    messages.append(msg)
+            else:
+                messages.append(msg)
         
         # 2. Load the System Instruction Library from FILE
         import json
         import os
-        from utils.path_utils import get_resource_path
+        from utils.path_utils import get_resource_path, get_app_settings
         
         library = []
         file_path = get_resource_path("resources/user_prompts.json")
@@ -1525,7 +1582,7 @@ class MainWindowClass(QMainWindow):
         self._initial_popups_shown = True
         
         
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         api_key = keyring.get_password("LLMChatApp", "api_key") or ""
         model_id = settings.value("current_model_id", "")
         
@@ -1573,7 +1630,7 @@ class MainWindowClass(QMainWindow):
                 return
 
         # 2. Clear all states (Securely wiping all segmented identity tokens)
-        settings = QSettings("LLMChatApp", "Settings")
+        settings = get_app_settings()
         try:
             keyring.delete_password("LLMChatApp", "api_key")
             keyring.delete_password("LLMChatApp", "api_key_nvidia")

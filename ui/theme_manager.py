@@ -1,7 +1,7 @@
 # ui/theme_manager.py
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QSystemTrayIcon, QMessageBox, QApplication
-from utils.path_utils import get_resource_path
+from utils.path_utils import get_resource_path, get_app_settings
 
 class ThemeManager:
     """
@@ -15,7 +15,7 @@ class ThemeManager:
     def apply_theme(self, theme: str):
         """Apply dark or light theme to the entire window and its components."""
         self.current_theme = theme
-        QSettings("LLMChatApp", "Settings").setValue("theme", theme)
+        get_app_settings().setValue("theme", theme)
 
         # Set theme attribute for QSS selectors
         self.window.setProperty("theme", theme)

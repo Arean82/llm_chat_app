@@ -37,6 +37,13 @@ def get_models_path():
     """Get path for models.json in global resources folder."""
     return get_resource_path("resources/models.json")
 
+def get_models_directory_path():
+    """Resolves the dedicated subfolder for ecosystem model fragmentation data."""
+    d = get_resource_path("resources/model_json")
+    if not d.exists():
+        d.mkdir(parents=True, exist_ok=True)
+    return d
+
 def get_cache_path():
     """Get path for cache folder in global resources."""
     cache_dir = get_resource_path("resources/badge_cache")

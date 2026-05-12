@@ -54,6 +54,10 @@ class ChatWorker(QThread):
         first_chunk_time = None
         chunk_count = 0
         full_response = ""
+        
+        # Tracking analytics for context safety filtering
+        p_tokens_native = 0
+        c_tokens_native = 0
 
         # 1. Prepare Content & Conversation History
         system_instructions = ""
@@ -83,6 +87,13 @@ class ChatWorker(QThread):
             
         active_prompt = mapped_history.pop()["parts"][0]["text"]
         
+        # Estimate pre-request prompt tokens in case dynamic tracking is missing downstream
+        prompt_chars = len(system_instructions) + len(active_prompt)
+        for m in mapped_history:
+            for part in m.get("parts", []):
+                prompt_chars += len(part.get("text", ""))
+        p_tokens_fallback = int(prompt_chars / 3.8) # standardized conservative estimation
+        
         # 3. Prepare Generation Config
         config = types.GenerateContentConfig(
             system_instruction=system_instructions.strip() if system_instructions else None,
@@ -108,6 +119,12 @@ class ChatWorker(QThread):
             for chunk in response:
                 if self.isInterruptionRequested(): break
                 
+                # Attempt to harvest native token usages from the chunk if populated by the backend
+                meta = getattr(chunk, 'usage_metadata', None)
+                if meta:
+                    p_tokens_native = getattr(meta, 'prompt_token_count', 0) or p_tokens_native
+                    c_tokens_native = getattr(meta, 'candidates_token_count', 0) or getattr(meta, 'total_token_count', 0) - p_tokens_native
+
                 try:
                     txt = chunk.text
                 except (ValueError, Exception) as e:
@@ -125,17 +142,28 @@ class ChatWorker(QThread):
                         first_chunk_time = time.perf_counter()
                     
                     full_response += txt
-                    chunk_count += len(txt.split()) # rough token count estimation
+                    chunk_count += len(txt.split()) # rough word count estimation
                     self.stream_chunk.emit(txt)
 
             if not self.isInterruptionRequested():
+                # Align final metrics feeding into safety triggers
+                final_p = p_tokens_native if p_tokens_native > 0 else p_tokens_fallback
+                final_c = c_tokens_native if c_tokens_native > 0 else int(len(full_response) / 3.8)
+                
                 self.response_received.emit(full_response)
-                self._finalize_metrics(start_time, first_chunk_time, chunk_count)
+                self._finalize_metrics(start_time, first_chunk_time, chunk_count, p_tokens=final_p, c_tokens=final_c)
         else:
             # Synchronous block with safety shielding
             try:
                 final_text = response.text
                 self.response_received.emit(final_text)
+                
+                # Trigger metric calculation for synchronous completions too to keep context manager synced
+                meta = getattr(response, 'usage_metadata', None)
+                sp = getattr(meta, 'prompt_token_count', p_tokens_fallback) if meta else p_tokens_fallback
+                sc = getattr(meta, 'candidates_token_count', int(len(final_text) / 3.8)) if meta else int(len(final_text) / 3.8)
+                self._finalize_metrics(start_time, time.perf_counter(), len(final_text.split()), p_tokens=sp, c_tokens=sc)
+                
             except (ValueError, Exception) as e:
                 if "blocked" in str(e).lower() or "safety" in str(e).lower():
                     self.response_received.emit("*(⚠️ [System Notice]: Response halted by provider safety filters)*")
@@ -212,7 +240,13 @@ class ChatWorker(QThread):
                 self.response_received.emit(full_response)
                 self._finalize_metrics(start_time, first_chunk_time, chunk_count, prompt_tokens, completion_tokens)
         else:
-            self.response_received.emit(response.choices[0].message.content)
+            final_text = response.choices[0].message.content
+            self.response_received.emit(final_text)
+            
+            # Metric Harvesting for batch request (Audit ID 027 Safety Sync)
+            usage = getattr(response, 'usage', None)
+            if usage:
+                 self._finalize_metrics(start_time, time.perf_counter(), len(final_text.split()), usage.prompt_tokens, usage.completion_tokens)
 
     def _finalize_metrics(self, start, first_chunk, count, p_tokens=0, c_tokens=0):
         if first_chunk:
