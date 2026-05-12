@@ -19,6 +19,7 @@ class ArenaViewWidget(QWidget):
         # Parallel Session State
         self.model_a_id = None
         self.model_b_id = None
+        self.worker_a = None
         self.worker_b = None
         self.is_generating = False
         

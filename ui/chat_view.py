@@ -9,6 +9,7 @@ from PySide6.QtGui import QTextCursor
 
 from logic.chat_worker import ChatWorker
 from logic.conversation_manager import ConversationManager
+from logic.rag_manager import RAGManager
 from utils.path_utils import get_resource_path, get_app_settings
 from utils.model_config import get_context_limit
 from utils.constants import RESPONSE_BUFFER_CHARS
@@ -22,6 +23,7 @@ class ChatViewWidget(QWidget):
         self.llm_client = llm_client
         self.theme_manager = theme_manager
         self.formatter = formatter
+        self.rag_engine = RAGManager() # Autonomous Local Memory Cache
         
         # Internal State
         self.conversation_manager = ConversationManager()
@@ -49,6 +51,7 @@ class ChatViewWidget(QWidget):
         # 1. Inject custom ChatDisplay just like before
         old_chat = self.ui.chat_display
         self.chat_display = ChatDisplay()
+        self.chat_display.link_activated.connect(self.handle_chat_link_action)
         display_layout = self.ui.chat_display_layout
         display_layout.replaceWidget(old_chat, self.chat_display)
         old_chat.setParent(None)
@@ -74,6 +77,9 @@ class ChatViewWidget(QWidget):
         self.upload_btn.clicked.connect(self.handle_upload)
         self.theme_toggle_btn.clicked.connect(self.window.toggle_theme)
         
+        # Secure Baseline: Lock inputs down by default on constructor entry
+        self.set_chat_enabled(False)
+        
         # Sidebar
         self.ui.new_chat_btn.clicked.connect(self.start_new_chat)
         self.ui.delete_all_btn.clicked.connect(self.clear_all_history)
@@ -84,6 +90,27 @@ class ChatViewWidget(QWidget):
         
         self.refresh_history_list()
         self.set_send_button_idle()
+        self.set_chat_enabled(False)
+        
+        # --- TOOL INJECTION PHASE ---
+        from PySide6.QtWidgets import QCheckBox
+        self.web_search_chk = QCheckBox("🌐 Enable Real-Time Web Search")
+        # Inject styled grounding toggle directly into visual structure above bottom control bar
+        self.web_search_chk.setStyleSheet("""
+            QCheckBox {
+                color: #0078d4;
+                font-weight: bold;
+                font-size: 11px;
+                margin-left: 15px;
+                margin-bottom: 2px;
+            }
+            QCheckBox::indicator:checked {
+                border: 1px solid #0078d4;
+                background: #0078d4;
+            }
+        """)
+        # Insert directly above the horizontal bottom toolbar (main_layout node 2)
+        self.ui.main_layout.insertWidget(2, self.web_search_chk)
 
     # =========================================================
     # REFACTORED CHAT LOGIC METHODS FROM MAIN_WINDOW
@@ -117,18 +144,104 @@ class ChatViewWidget(QWidget):
             self.model_desc_label.setVisible(False)
 
     def handle_upload(self):
+        """
+        ADVANCED FILE LOADER: Expands support to Multiselect, Office Docs, PDFs, 
+        and enforces active guard validation against visual triggers.
+        """
         if self.is_generating: return
-        file_path, _ = QFileDialog.getOpenFileName(self, "Attach File", "", 
-            "Code & Text Files (*.py *.js *.txt *.md *.json *.csv *.xml *.html *.css *.yaml *.yml);;All Files (*)")
-        if file_path:
+        
+        # 1. Ultra-Comprehensive Filter Matrix (Full Office & Data Coverage)
+        filter_map = (
+            "Total Media Matrix (*.pdf *.docx *.xlsx *.pptx *.odt *.txt *.py *.json *.xml *.ui *.csv *.md *.html *.jpeg *.jpg *.png);"
+            "Office Documents (*.pdf *.docx *.xlsx *.pptx *.odt);"
+            "Flat Datasheets (*.csv *.txt *.md);"
+            "Development & Configs (*.py *.json *.xml *.ui *.html *.yaml *.js);"
+            "Graphic Visions (*.jpeg *.jpg *.png)"
+        )
+        
+        # 2. Multi-Select Trigger unlocked
+        file_paths, _ = QFileDialog.getOpenFileNames(self, "Attach Assets", "", filter_map)
+        
+        if not file_paths:
+             return
+             
+        for file_path in file_paths:
+            file_ext = Path(file_path).suffix.lower()
+            file_name = Path(file_path).name
+            
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                file_name = Path(file_path).name
-                self.attached_files.append({'name': file_name, 'content': content})
-                self.add_system_message(f"📎 Attached: {file_name}")
+                # --- TIER 1: VISION GUARD PROTECTION ---
+                if file_ext in ['.png', '.jpg', '.jpeg']:
+                    if not self.llm_client.is_model_vision_capable():
+                        QMessageBox.warning(self, "Vision Security Conflict", 
+                            f"❌ ATTACHMENT REFUSED: '{file_name}'\n\n"
+                            f"The active model lacks a visual recognition stack.\n"
+                            "Switch to a valid Vision model to enable visual interaction.")
+                        continue
+                    else:
+                        # TRUE ACTIVATION: Read binary asset as base64 carrier
+                        import base64
+                        with open(file_path, 'rb') as img_f:
+                            bin_data = base64.b64encode(img_f.read()).decode('utf-8')
+                        # Detect refined mime format
+                        guessed_mime = f"image/{file_ext.replace('.','').replace('jpg','jpeg')}"
+                        self.attached_files.append({
+                            'name': file_name, 
+                            'content': bin_data, 
+                            'type': 'image', 
+                            'mime': guessed_mime
+                        })
+                        self.add_system_message(f"🖼️ Loaded Visual: {file_name}")
+                        continue 
+
+                # --- TIER 2: NATIVE DOCUMENT ENGINE SUITE ---
+                elif file_ext == '.pdf':
+                    import pypdf
+                    reader = pypdf.PdfReader(file_path)
+                    content = "\n".join([p.extract_text() for p in reader.pages if p.extract_text()])
+                    
+                elif file_ext == '.docx':
+                    import docx2txt
+                    content = docx2txt.process(file_path)
+
+                elif file_ext in ['.xlsx', '.xls']:
+                    import pandas as pd
+                    # Fast Excel-to-CSV conversion preserves data topology elegantly for prompt injection
+                    content = pd.read_excel(file_path).to_csv(index=False)
+                    
+                elif file_ext == '.pptx':
+                    from pptx import Presentation
+                    prs = Presentation(file_path)
+                    slides_txt = []
+                    for i, slide in enumerate(prs.slides):
+                        txt = [f"--- Slide {i+1} ---"]
+                        for shape in slide.shapes:
+                            if hasattr(shape, "text") and shape.text.strip():
+                                txt.append(shape.text.strip())
+                        slides_txt.append("\n".join(txt))
+                    content = "\n\n".join(slides_txt)
+                    
+                elif file_ext == '.odt':
+                    from odf import text, teletype
+                    from odf.opendocument import load
+                    odtdoc = load(file_path)
+                    allparas = odtdoc.getElementsByType(text.P)
+                    content = "\n".join([teletype.extractText(p) for p in allparas])
+                    
+                # --- TIER 3: UNIVERSAL RAW TEXT FALLBACK (JSON, XML, UI, etc.) ---
+                else:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        
+                # --- BUNDLE WRITE ---
+                if content and content.strip():
+                    self.attached_files.append({'name': file_name, 'content': content})
+                    self.add_system_message(f"📎 Synthesized {file_ext.upper()}: {file_name}")
+                else:
+                    self.add_system_message(f"⚠️ Null Content Rejected: {file_name}")
+                    
             except Exception as e:
-                self.add_system_message(f"❌ Failed to read file: {str(e)}")
+                self.add_system_message(f"❌ Parse Crash [{file_name}]: {str(e)}")
 
     def clear_attachments(self):
         self.attached_files = []
@@ -160,14 +273,53 @@ class ChatViewWidget(QWidget):
              self.input_field.clear()
         
         final_prompt = user_message
-        if self.attached_files:
-            attachment_blocks = [f"--- File: {f['name']} ---\n```\n{f['content']}\n```" for f in self.attached_files]
-            combined_text = "\n\n".join(attachment_blocks)
-            final_prompt = f"{combined_text}\n\nUser Request: {user_message}" if user_message else f"{combined_text}\n\nPlease review the attached file(s)."
-            self.clear_attachments()
+        
+        # Segregate attachments into functional domains: textual logic vs multimodal vision
+        txt_files = [f for f in self.attached_files if f.get('type') != 'image']
+        img_files = [f for f in self.attached_files if f.get('type') == 'image']
 
-        self.add_user_message(user_message if user_message else "📎 Sent attached file(s).")
-        self.chat_history.append({"role": "user", "content": final_prompt})
+        if txt_files:
+            agg_text = "\n\n".join([f"--- File: {f['name']} ---\n{f['content']}" for f in txt_files])
+            
+            # DYNAMIC RAG ROUTER: If aggregate text scales past payload safety boundary (15,000 chars),
+            # bypass direct prompt dump and redirect stream into fast local vector database automatically.
+            if len(agg_text) > 15000:
+                self.add_system_message("⚡ **Dataset scales beyond optimal window. Ingesting into local Vector Space...**")
+                try:
+                    self.rag_engine.ingest_document(agg_text)
+                    self.add_system_message("✅ **Local Vector Memory built.** Dynamic semantic retrieval is now active.")
+                    final_prompt = user_message if user_message else "Perform deep inference using the semantic vector index built from large local files."
+                except Exception as e:
+                     self.add_system_message(f"⚠️ **Vector Matrix Collided:** {str(e)}. Falling back to direct context load.")
+                     # Emergency Fallback: Just dump it directly despite size, better than losing user data
+                     attachment_blocks = [f"--- File: {f['name']} ---\n```\n{f['content']}\n```" for f in txt_files]
+                     combined_text = "\n\n".join(attachment_blocks)
+                     final_prompt = f"{combined_text}\n\nUser Request: {user_message}" if user_message else f"{combined_text}\n\nPlease review the attached file(s)."
+            else:
+                # Dataset is small enough for clean, direct context injection
+                attachment_blocks = [f"--- File: {f['name']} ---\n```\n{f['content']}\n```" for f in txt_files]
+                combined_text = "\n\n".join(attachment_blocks)
+                final_prompt = f"{combined_text}\n\nUser Request: {user_message}" if user_message else f"{combined_text}\n\nPlease review the attached file(s)."
+
+        display_msg = user_message if user_message else f"📎 Sent {len(self.attached_files)} asset(s)."
+        self.add_user_message(display_msg)
+
+        # Construct Final Payload Carrier (Support Mixed Multimodal Array)
+        if img_files:
+            # Advanced Carrier: Pack textual directive alongside binary asset frames
+            carrier = [{"type": "text", "text": final_prompt}]
+            for img in img_files:
+                carrier.append({
+                    "type": "image",
+                    "data": img['content'],
+                    "mime": img['mime']
+                })
+            self.chat_history.append({"role": "user", "content": carrier})
+        else:
+            # Legacy Carrier: Standard optimized string
+            self.chat_history.append({"role": "user", "content": final_prompt})
+            
+        self.clear_attachments()
         
         # Context Buffer / Compression Check
         TOKEN_BUFFER = 2000
@@ -196,7 +348,8 @@ class ChatViewWidget(QWidget):
         candidates = base_history[:pack_count]
         blueprint = [{"role": "system", "content": "Synthesize the following conversation into ONE highly dense technical paragraph."}]
         for entry in candidates:
-             blueprint.append({"role": "user", "content": f"[{entry.get('role', 'user').upper()}]: {entry.get('content', '')}"})
+             safe_c = self._extract_safe_text(entry.get('content', ''))
+             blueprint.append({"role": "user", "content": f"[{entry.get('role', 'user').upper()}]: {safe_c}"})
         blueprint.append({"role": "user", "content": "Execute synthesis."})
 
         self.compactor_thread = ChatWorker(self.llm_client, blueprint, temperature=0.2, max_tokens=500)
@@ -243,7 +396,20 @@ class ChatViewWidget(QWidget):
         
         api_payload = custom_msgs if custom_msgs is not None else self.get_messages_for_api()
         
-        self.current_worker = ChatWorker(self.llm_client, api_payload, temperature=a_temp, max_tokens=a_tokens)    
+        # Detect active live search routing
+        active_search = None
+        if hasattr(self, 'web_search_chk') and self.web_search_chk.isChecked():
+             # Extract clean text representation of final payload prompt for searching
+             active_search = self._extract_safe_text(self.chat_history[-1].get('content', '')) if self.chat_history else None
+
+        self.current_worker = ChatWorker(
+            self.llm_client, 
+            api_payload, 
+            temperature=a_temp, 
+            max_tokens=a_tokens,
+            web_search_query=active_search,
+            rag_engine=self.rag_engine
+        )    
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
@@ -416,19 +582,67 @@ class ChatViewWidget(QWidget):
     def set_send_button_idle(self):
         self.is_generating = False 
         self.send_btn.setText("Send")
-        self.send_btn.setStyleSheet("""QPushButton { background-color: #0078d4; border-radius: 8px; padding: 12px; color: white; font-weight: bold; }""")
-        self.send_btn.setEnabled(True)
-        self.input_field.setEnabled(True)
+        self.send_btn.setStyleSheet("""
+            QPushButton { background-color: #0078d4; border-radius: 8px; padding: 12px; color: white; font-weight: bold; }
+            QPushButton:hover { background-color: #106ebe; }
+            QPushButton:disabled { background-color: #e0e0e0; color: #aaaaaa; border: 1px solid #cccccc; }
+        """)
 
     def set_send_button_generating(self):
         self.is_generating = True
         self.send_btn.setText("Stop")
-        self.send_btn.setStyleSheet("""QPushButton { background-color: #d32f2f; border-radius: 8px; padding: 12px; color: white; font-weight: bold; }""")
-        self.send_btn.setEnabled(True)
+        self.send_btn.setStyleSheet("""
+            QPushButton { background-color: #d32f2f; border-radius: 8px; padding: 12px; color: white; font-weight: bold; }
+            QPushButton:hover { background-color: #b71c1c; }
+            QPushButton:disabled { background-color: #e0e0e0; color: #aaaaaa; border: 1px solid #cccccc; }
+        """)
 
     def scroll_to_bottom(self):
         scrollbar = self.chat_display.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def handle_chat_link_action(self, action, payload):
+        """Process asynchronous special actions requested from message interactions."""
+        import base64
+        try:
+            decoded = base64.b64decode(payload).decode('utf-8', errors='ignore')
+            
+            if action == "copy_code":
+                QApplication.clipboard().setText(decoded)
+                self.add_system_message("📋 **Snippet copied to clipboard.**")
+                
+            elif action == "run_code":
+                import sys, tempfile, os
+                from PySide6.QtCore import QProcess
+                self.add_system_message("⚙️ **Initializing Local Execution Sandbox...**")
+                
+                # Dump target buffer to temporary runtime artifact
+                tmp = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
+                tmp.write(decoded.encode('utf-8'))
+                tmp.close()
+                
+                # Instantiate background computational process
+                self._active_sandbox_proc = QProcess(self)
+                
+                def on_sandbox_exit():
+                    out_b = self._active_sandbox_proc.readAllStandardOutput().data()
+                    err_b = self._active_sandbox_proc.readAllStandardError().data()
+                    stdout = str(out_b, 'utf-8', 'replace').strip()
+                    stderr = str(err_b, 'utf-8', 'replace').strip()
+                    
+                    content = stdout
+                    if stderr: content += f"\n\n[RUNTIME ERRORS]:\n{stderr}"
+                    if not content: content = "[Execution finished successfully with zero printed output]"
+                    
+                    self.add_system_message(f"✅ **Execution Output:**\n```bash\n{content}\n```")
+                    try: os.unlink(tmp.name) # Clean artifact
+                    except: pass
+                
+                self._active_sandbox_proc.finished.connect(on_sandbox_exit)
+                self._active_sandbox_proc.start(sys.executable, [tmp.name])
+
+        except Exception as e:
+            self.add_system_message(f"⚠️ Action failed: {str(e)}")
 
     def clear_chat(self):
         self.chat_display.clear()
@@ -437,6 +651,7 @@ class ChatViewWidget(QWidget):
         self.total_tokens = 0
         self.current_response_text = ""
         self.current_conv_id = None
+        self.rag_engine.clear() # Purge memory bank for clean session
         self.add_system_message("New conversation started")
 
     def start_new_chat(self):
@@ -444,6 +659,15 @@ class ChatViewWidget(QWidget):
             self.auto_save_current_chat()
         self.clear_chat()
         self.ui.chat_history_list.clearSelection()
+
+    def _extract_safe_text(self, content):
+        """Isolates pure string text from potentially complex mixed binary lists."""
+        if isinstance(content, str): return content
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict) and item.get('type') == 'text':
+                    return item.get('text', '')
+        return ""
 
     def get_messages_for_api(self):
         messages = []
@@ -464,14 +688,19 @@ class ChatViewWidget(QWidget):
         active = [f"- {i.get('text', '')}" for i in library if i.get('checked', False) and i.get('text')]
         if active: messages.insert(0, {"role": "system", "content": "Instructions:\n" + "\n".join(active)})
         
-        return [{"role": m['role'], "content": m['content'].strip()} for m in messages if m.get('content', '').strip()]
+        def _prep_c(c):
+            if isinstance(c, str): return c.strip()
+            return c # Forward native complex list payloads untouched
+            
+        return [{"role": m['role'], "content": _prep_c(m.get('content'))} for m in messages if m.get('content')]
 
     def auto_save_current_chat(self):
         if not self.chat_history: return
         title = "New Conversation"
         for m in self.chat_history:
             if m['role'] == 'user':
-                title = m['content'][:30] + "..."
+                safe_title = self._extract_safe_text(m.get('content', ''))
+                title = safe_title[:30] + "..."
                 break
         is_new = (self.current_conv_id is None)
         self.current_conv_id = self.conversation_manager.save_conversation(
@@ -506,8 +735,11 @@ class ChatViewWidget(QWidget):
                     except: pass
                 else:
                      for msg in self.chat_history:
-                         if msg['role'] == 'user': self.add_user_message(msg['content'])
-                         else: self.add_assistant_message(msg['content'])
+                         safe_c = self._extract_safe_text(msg.get('content', ''))
+                         if msg['role'] == 'user':
+                             self.add_user_message(safe_c)
+                         else:
+                             self.add_assistant_message(safe_c)
                 self.scroll_to_bottom()
         except: pass
 
@@ -575,12 +807,16 @@ class ChatViewWidget(QWidget):
                 content = msg.get("content", "")
                 if not content: continue
                 
+                # Cleanly isolate text components before pushing to UI widgets
+                safe_content = self._extract_safe_text(content)
+                if not safe_content: continue
+                
                 if role == "user":
-                    self.add_user_message(content)
+                    self.add_user_message(safe_content)
                 elif role == "assistant":
-                    self.add_assistant_message(content)
+                    self.add_assistant_message(safe_content)
                 elif role == "system":
-                    self.add_system_message(content)
+                    self.add_system_message(safe_content)
                     
             # 4. Revitalize Meta tags
             saved_model = data.get("model_id")

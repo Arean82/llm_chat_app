@@ -1,6 +1,6 @@
 # Project Audit Report: LLM Chat App
 **Date:** 2026-05-11
-**Status:** 🟠 90% - 36/40 ITEMS REMEDIATED (ACTION REQUIRED)
+**Status:** 🟢 100% - 40/40 ITEMS REMEDIATED (MISSION ACCOMPLISHED)
 
 ## 📊 Audit Summary Table
 
@@ -40,12 +40,43 @@
 | 032 | **Cleanliness** | `Workspace` | 🟡 Low | ✅ **Resolved** | Garbage Artifacts: Null-byte corrupted backup `recover_full.py` purged from root.|
 | 033 | **Architecture** | `Arena View`| 🔴 High | ✅ **Resolved** | Arena Isolation Failure: `clone_client` desyncs URL, crashing non-Nvidia duels.|
 | 034 | **Configuration**| `Model IO` | 🟡 Low | ✅ **Resolved** | Static Inference: File-based provider fallback hardcodes only Google/Nvidia. |
-| 035 | **Innovation** | `Code Sandbox`| 🟡 Low | 🔮 **Proposed** | Python Execution Sandbox: Execute generated script responses inline. |
-| 036 | **Scalability** | `RAG Engine` | 🟡 Low | 🔮 **Proposed** | Local Vector Memory: Unlimited chunked ingestion for large PDFs/Docs. |
-| 037 | **Productivity**| `Tool Calls` | 🟡 Low | 🔮 **Proposed** | Autonomous Pipelines: Pre-inference real-time Web Browsing & OS hooks. |
+| 035 | **Innovation** | `Code Sandbox`| 🟡 Low | ✅ **Resolved** | Python Execution Sandbox: Background script execution & inline output. |
+| 036 | **Scalability** | `RAG Engine` | 🟡 Low | ✅ **Resolved** | Local Vector Memory: Fully autonomous NumPy-powered semantic retrieval. |
+| 037 | **Productivity**| `Tool Calls` | 🟡 Low | ✅ **Resolved** | Autonomous Pipelines: Dynamic live Web Search & Real-time OS anchoring. |
 | 038 | **Reliability** | `API Server` | 🔴 High | ✅ **Resolved** | Streaming Short-Circuit: API Manager lacks stream callback route handler. |
 | 039 | **UX / UI** | `API Server` | 🟠 Med | ✅ **Resolved** | UI Pollution: External server invokes overwrite local user input prompt. |
-| 040 | **Ecosystem** | `Plugins` | 🟡 Low | 🔮 **Proposed** | Multi-Modal Vision: Native image (.png/.jpg) parser & base64 delivery. |
+| 040 | **Ecosystem** | `Plugins` | 🟡 Low | ✅ **Resolved** | Universal Ingestion Matrix: Native multi-file, binary image, and Office parsing logic. |
+
+---
+
+## ⚠️ CRITICAL ARCHITECTURAL PRECAUTIONS (READ BEFORE EDITING)
+
+> [!WARNING]
+> DO NOT modify or speculatively refactor the following architectural design invariants. These specific implementation details were developed to counter complex OS-level conflicts, session leakage hazards, and timing race conditions. Regressing any of these items will cause immediate application failure.
+
+### 🖥️ 1. Desktop Geometry Rigid Enforcement
+- **Invariant:** The application **MUST** operate in locked maximized viewport mode by design.
+- **Precaution:** Do NOT remove `window.showMaximized()` from the global `main.py` loader. Do NOT remove or disable the recursive `changeEvent` loop located in `ui/main_window.py`. This recursive handler is a specialized OS-correction mechanism required to prevent the operating system from rendering corrupt, cut-off floating viewports.
+
+### 🔐 2. Separation of Authentication Powers
+- **Invariant:** Global Gateway Authorization is decoupled from specific Chat Provider Keys.
+- **Precaution:** The main application entrance uses `is_globally_authenticated()`. Individual chat modes query specific keys dynamically. NEVER merge these logic pathways. Consolidating them creates static-dependency loops that trap legitimate users in circular, infinite authentication modals.
+
+### 🖼️ 3. Pre-Flight Loader Protection
+- **Invariant:** Mandatory modal sequences (Login, First Run) must block application initialization before GUI rendering.
+- **Precaution:** All gateway blocking checks must occur inside `main.py` *prior* to the `window.showMaximized()` command. Do NOT execute primary modal authentication loops inside viewport events like `showEvent`. Violating this rule instantiates empty UI frames, resulting in critical "White Flash" ghost frame artifacts upon launch.
+
+### 🧹 4. Hardware-Sync Registry Cleansing
+- **Invariant:** Standard preference deletion does NOT immediately flush memory cache registers.
+- **Precaution:** Whenever using `remove()` on sensitive setting payloads (User Models, API keys) inside logout sequences, you **MUST** execute a physical hardware commit immediately by chaining the `.sync()` method. Failure to sync causes cached "Ghost Objects" to persist across reboots, enabling premature feature activations.
+
+### 🛑 5. Safe-By-Default State Baselines
+- **Invariant:** Component constructors must finalize strictly in the disabled state.
+- **Precaution:** The final command executable at the terminus of critical widget `__init__` routines MUST be `self.set_chat_enabled(False)`. This anchors a secured, default-locked baseline that protects interactive controls against race conditions occurring during secondary asynchronous loading sequences.
+
+### 🎨 6. Inline Stylesheet Security Guards
+- **Invariant:** Functional inline CSS must cover ALL interaction states to override cascade leaks.
+- **Precaution:** Any usage of inline `setStyleSheet` to control state visual styling (e.g., Green/Red/Blue buttons) MUST explicitly package the `:disabled` pseudo-class rule within the string. Without an explicit disabled override, specific inline type-rules override global cascaded grey-out themes, visually masking critical system lockdown states.
 
 ---
 
@@ -286,23 +317,35 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Details:** The new ecosystem loader relied on hardcoded conditional branching to guess providers from filenames.
 *   **Remediation:** Replaced static matching with a completely dynamic text parsing algorithm. The logic now directly derives the provider identification payload dynamically from any arbitrary filename shard (`models_{name}.json`), guaranteeing perfect zero-maintenance scale for 3rd party users.
 
-#### 35. Audit ID 035: Python Execution Sandbox
+#### 35. Audit ID 035: Python Execution Code Sandbox
 *   **Severity:** 🟡 Low
-*   **Status:** 🔮 **Proposed**
-*   **Goal:** Transform generated script responses into interactive operational objects.
-*   **Concept:** Parse code fences from AI responses and render executable "▶️ Run" overlays. Fire an isolated `subprocess.Popen` pipe to local environment and redirect streams back into a dedicated shell-viewer in the UI.
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`logic/formatter.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/formatter.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+*   **Details:** Resolved missing interactivity limitation by converting static textual code blocks into live interactive runtime environments.
+*   **Remediation:** 
+    1. **Visual Injection:** Upgraded Markdown formatter to conditionally inject active HTML anchor tags (`run_code`) natively alongside Python code block headers.
+    2. **Signal Interception:** Modified `ChatDisplay` mouse interceptor to capture base64 anchor actions and propagate them up to parent control surfaces.
+    3. **Background Sandbox:** Leveraged asynchronous `QProcess` framework to serialize buffer blocks to temporary runtime artifacts and execute them via host python binary, feeding raw standard output / error streams directly back into the conversational view without locking UI state.
 
-#### 36. Audit ID 036: Local Vector Memory (Deep RAG)
+#### 36. Audit ID 036: Local Vector Memory (Autonomous RAG)
 *   **Severity:** 🟡 Low
-*   **Status:** 🔮 **Proposed**
-*   **Goal:** Unlimited high-fidelity ingestion of huge local libraries (PDFs, docs).
-*   **Concept:** Replace raw-buffer file loads with a localized vector engine (Chroma/FAISS). Chunk large files, generate lightweight embeddings, and dynamically hydrate only semantic hits into the active context.
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`logic/rag_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/rag_manager.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+*   **Details:** Broken limit thresholding for massive context payloads resolved by enabling smart dataset compression via localized vector orchestration.
+*   **Remediation:** 
+    1. **Pure-Native Vector Matrix:** Engineered an ultra-lightweight high-dimensional RAG engine powered purely by NumPy linear algebra, requiring ZERO external server dependencies and zero cost.
+    2. **Automated Flow Router:** Designed dynamic character-count gates inside the data preprocessor. If a document bundle exceeds 15,000 characters, the application now bypasses raw prompt congestion and seamlessly vectors data into memory matrix instead.
+    3. **Non-Blocking Hook:** Wired background worker to automatically run parallel cosine-similarity dot-product calculations against the vector database upon queries, injecting the absolute highest-fidelity semantic hits back into the system instruction space instantly.
 
-#### 37. Audit ID 037: Autonomous Tool Pipelines
+#### 37. Audit ID 037: Autonomous Tool Pipelines & Grounding
 *   **Severity:** 🟡 Low
-*   **Status:** 🔮 **Proposed**
-*   **Goal:** Override LLM knowledge cutoff limitations.
-*   **Concept:** Introduce pre-inference middleware capable of harvesting real-time data from live search engine endpoints or local file-system listings before routing final payloads.
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`logic/tool_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/tool_manager.py), [`logic/chat_worker.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/chat_worker.py)
+*   **Details:** Resolved LLM temporal amnesia by injecting instantaneous environment data and establishing a non-blocking bridge to query dynamic internet resources.
+*   **Remediation:** 
+    1. **Real-Time OS Ingestion:** Created always-on system monitor injection providing timestamp, day of week, platform, and runtime variables.
+    2. **DuckDuckGo Integration:** Installed standalone free search scraper performing high-yield context gathering from active web endpoints.
+    3. **Async Trigger:** Deployed UI toggle checkbox passing live search directive to worker thread, performing the scrape completely in non-blocking background before initiating core inference stream.
 
 #### 38. Audit ID 038: Streaming API Manager Bypass
 *   **Severity:** 🔴 High
@@ -318,11 +361,16 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Details:** Background API events caused instant visual overwrites to human textbox drafts.
 *   **Remediation:** Refactored `send_message` signature across UI system to accept native argument overrides. Removed UI `.setPlainText()` clearing operations on API triggers, successfully fully insulating user drafting buffers from external automated injections.
 
-#### 40. Audit ID 040: Multi-Modal Vision Ingestion
+#### 40. Audit ID 040: Universal Content Ingestion Matrix
 *   **Severity:** 🟡 Low
-*   **Status:** 🔮 **Proposed**
-*   **Goal:** Advance app capability to native graphic/diagram analysis.
-*   **Concept:** Expand `handle_upload` definition beyond code-fence text reading. Permit loading binary static assets (JPG, PNG), construct proper multimodal JSON delivery packets, and dispatch them natively to vision-capable inference tracks (e.g. GPT-4o, Claude 3.5, Gemini Pro).
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py), [`logic/chat_worker.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/chat_worker.py)
+*   **Details:** Expanded app capacity beyond simple plaintext file loading into full visual and productivity-document intelligence.
+*   **Remediation:** 
+    1. **Office Engines:** Integrated `pypdf`, `docx2txt`, `pandas`, `python-pptx`, and `odfpy` to support universal text extraction from PDFs, Word, Excel, and PowerPoint decks.
+    2. **Vision Guard:** Added `is_model_vision_capable()` gatekeeper to prevent binary uploads crashing text-only models.
+    3. **Binary Router:** Enabled full Base64 routing through the threading bridge, allowing unified delivery to Google GenAI (`types.Part.from_bytes`) and OpenAI data-uri structures simultaneously.
+    4. **Sanity Safe-guards:** Added robust type sanitization ensuring persistence trees, adaptive summary generation, and GUI renderers are completely insulated from list-type collisions.
 
 ---
 

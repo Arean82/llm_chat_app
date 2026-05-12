@@ -146,6 +146,15 @@ def main():
     set_app_icon(app) 
     
     window = MainWindowClass()
+    
+    # --- PRE-FLIGHT SECURITY CHECK ---
+    # Run blocking authorization checks BEFORE rendering the viewport to guarantee zero visual artifacts/white-flashes upon cancellation.
+    if not window.llm_client.is_globally_authenticated():
+        authorized = window.open_settings()
+        if not authorized:
+            sys.exit(0) # Seal exit immediately without ever revealing the main canvas.
+
+    # Restore V4/V5 Lock: Launch strictly in full-screen viewport mode.
     window.showMaximized()  
     
     sys.exit(app.exec())

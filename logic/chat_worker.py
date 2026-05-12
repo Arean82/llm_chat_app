@@ -18,16 +18,51 @@ class ChatWorker(QThread):
     finished = Signal()
     metrics_received = Signal(dict)
     
-    def __init__(self, client: LLMClient, messages: list, temperature=0.7, max_tokens=4096):
+    def __init__(self, client: LLMClient, messages: list, temperature=0.7, max_tokens=4096, web_search_query: str = None, rag_engine = None):
         super().__init__()
         self.client = client
         self.messages = messages
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.web_search_query = web_search_query
+        self.rag_engine = rag_engine
         self.stream = True
         
     def run(self):
         try:
+            # --- TOOL INJECTION & GROUNDING WAREHOUSE ---
+            from logic.tool_manager import ToolManager
+            
+            # 1. Live Environment Injection (Always active for spatial temporal grounding)
+            os_info = ToolManager.get_live_os_context()
+            self.messages.insert(0, {"role": "system", "content": os_info})
+            
+            # 2. Execute Dynamic Web Search if enabled
+            if self.web_search_query:
+                self.thinking_chunk.emit("🌐 Performing live Web Search query...\n")
+                web_dump = ToolManager.execute_web_search(self.web_search_query)
+                self.messages.insert(1, {"role": "system", "content": web_dump})
+                self.thinking_chunk.emit("✅ Search injected. Grounding inference...\n")
+
+            # 3. Execute Autonomous Vector RAG Retrieval if Local Matrix Populated
+            if self.rag_engine and getattr(self.rag_engine, 'tfidf_matrix', None) is not None:
+                search_str = self.web_search_query
+                if not search_str:
+                    # Deep extraction fallback of query context from final dispatch payload
+                    raw = self.messages[-1].get('content', '')
+                    search_str = raw if isinstance(raw, str) else ""
+                
+                if search_str and len(search_str) > 1:
+                    self.thinking_chunk.emit("🧠 Querying Local Vector Space...\n")
+                    try:
+                        rag_hits = self.rag_engine.search(search_str)
+                        if rag_hits:
+                            # Inject grounded memory directly into system space
+                            self.messages.insert(1, {"role": "system", "content": rag_hits})
+                            self.thinking_chunk.emit("✅ Grounded using local memory segment.\n")
+                    except Exception as e:
+                        self.thinking_chunk.emit(f"⚠️ Local Memory Lookup Faulted (Non-fatal): {str(e)}\n")
+
             provider = self.client.get_current_provider()
             
             # 🛠️ Verify provider presence
@@ -63,35 +98,55 @@ class ChatWorker(QThread):
         system_instructions = ""
         mapped_history = []
         
+        import base64
         # Extract system instructions separately (Gemini enforces system at constructor level)
         for msg in self.messages:
             role = msg.get("role", "user").lower()
             content = msg.get("content", "")
             
             if role == "system":
-                system_instructions += content + "\n"
+                # Standardize system safety
+                system_instructions += (content if isinstance(content, str) else "") + "\n"
             else:
-                # Modern SDK strictly requires 'user' and 'model' keys.
                 fixed_role = "model" if role == "assistant" else "user"
                 
-                # STRICT ALTERNATION FIX (Audit ID 019):
-                # If consecutive messages have the same role, concatenate their text instead of appending new block
-                if mapped_history and mapped_history[-1]["role"] == fixed_role:
-                    mapped_history[-1]["parts"][0]["text"] += "\n\n" + content
+                # STEP A: Aggregate content parts intelligently
+                current_parts = []
+                if isinstance(content, list):
+                     for obj in content:
+                         if obj.get('type') == 'text':
+                              current_parts.append(obj.get('text', ''))
+                         elif obj.get('type') == 'image' and GENAI_AVAILABLE:
+                              # Native binary encoding for SDK consumption
+                              bin_blob = base64.b64decode(obj.get('data', ''))
+                              current_parts.append(types.Part.from_bytes(data=bin_blob, mime_type=obj.get('mime')))
                 else:
-                    mapped_history.append({"role": fixed_role, "parts": [{"text": content}]})
+                     current_parts = [content]
+                
+                # STEP B: Continuous Roll-up (Avoid consecutive single-role collisions)
+                if mapped_history and mapped_history[-1]["role"] == fixed_role:
+                    mapped_history[-1]["parts"].extend(current_parts)
+                else:
+                    mapped_history.append({"role": fixed_role, "parts": current_parts})
 
-        # 2. Isolate latest message as active prompt to feed the model
+        # 2. Isolate latest message as active prompt carrier
         if not mapped_history:
             raise ValueError("Cannot generate response without message history.")
             
-        active_prompt = mapped_history.pop()["parts"][0]["text"]
+        # ACTIVE CARRIER UPGRADE: Pass the raw structured parts object directly to SDK
+        active_node = mapped_history.pop()
+        active_prompt = active_node["parts"]
         
-        # Estimate pre-request prompt tokens in case dynamic tracking is missing downstream
-        prompt_chars = len(system_instructions) + len(active_prompt)
+        # Safe character counter that ignores binary blobs for estimation
+        def _c_len(x):
+            if isinstance(x, str): return len(x)
+            if hasattr(x, 'text') and x.text: return len(x.text)
+            return 0
+            
+        prompt_chars = len(system_instructions)
+        for p in active_prompt: prompt_chars += _c_len(p)
         for m in mapped_history:
-            for part in m.get("parts", []):
-                prompt_chars += len(part.get("text", ""))
+            for p in m.get("parts", []): prompt_chars += _c_len(p)
         p_tokens_fallback = int(prompt_chars / 3.8) # standardized conservative estimation
         
         # 3. Prepare Generation Config
@@ -106,10 +161,9 @@ class ChatWorker(QThread):
         # Google Gemini mandates strict alternating role schema. If the sanitized history 
         # ends on a 'user' node, passing the next message (also user) crashes the backend.
         if mapped_history and mapped_history[-1]["role"] == "user":
-             # Pop trailing user item from history and prefix directly to current prompt
+             # Pop trailing user block and prepend its parts to the beginning of active prompt array
              last_history_item = mapped_history.pop()
-             last_content = last_history_item["parts"][0]["text"]
-             active_prompt = f"{last_content}\n\n{active_prompt}"
+             active_prompt = last_history_item["parts"] + active_prompt
 
         # 5. Initialize Chat Session with existing history
         chat = self.client.google_client.chats.create(
@@ -196,27 +250,47 @@ class ChatWorker(QThread):
         if self.temperature is not None: base_params["temperature"] = self.temperature
         if self.max_tokens is not None: base_params["max_tokens"] = self.max_tokens
         
+        # DYNAMIC MULTIMODAL SCHEDULER: Reformat input structures for OpenAI spec
+        finalized_msgs = []
+        for msg in self.messages:
+            c = msg.get("content", "")
+            if isinstance(c, list):
+                open_ai_c = []
+                for part in c:
+                    if part.get('type') == 'text':
+                        open_ai_c.append({"type": "text", "text": part.get('text', '')})
+                    elif part.get('type') == 'image':
+                        # Construct verified image_url blob
+                        url = f"data:{part.get('mime')};base64,{part.get('data')}"
+                        open_ai_c.append({"type": "image_url", "image_url": {"url": url}})
+                finalized_msgs.append({"role": msg["role"], "content": open_ai_c})
+            else:
+                finalized_msgs.append(msg)
+
         try:
             req_params = base_params.copy()
-            req_params["messages"] = self.messages
+            req_params["messages"] = finalized_msgs
             req_params["stream_options"] = {"include_usage": True}
             response = self.client.client.chat.completions.create(**req_params)
         except Exception as e:
             error_str = str(e).lower()
             if "stream_options" in error_str or "422" in error_str:
                 req_params = base_params.copy()
-                req_params["messages"] = self.messages
+                req_params["messages"] = finalized_msgs
                 response = self.client.client.chat.completions.create(**req_params)
             elif "system role" in error_str or "system_role" in error_str:
                 # Fallback handling for models that don't support system roles
                 new_msgs = []
                 sys_buf = ""
-                for m in self.messages:
-                    if m["role"] == "system": sys_buf += m["content"] + "\n\n"
-                    elif m["role"] == "user" and sys_buf:
+                for m in finalized_msgs:
+                    # Handle string-only concatenation logic safely
+                    if m["role"] == "system" and isinstance(m.get('content'), str): 
+                        sys_buf += m["content"] + "\n\n"
+                    elif m["role"] == "user" and sys_buf and isinstance(m.get('content'), str):
                         new_msgs.append({"role": "user", "content": f"{sys_buf}{m['content']}"})
                         sys_buf = ""
-                    else: new_msgs.append(m)
+                    else: 
+                        new_msgs.append(m)
                 req_params = base_params.copy()
                 req_params["messages"] = new_msgs
                 response = self.client.client.chat.completions.create(**req_params)

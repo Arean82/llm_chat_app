@@ -83,7 +83,7 @@ class ThemeManager:
 
     def refresh_auth_button_style(self):
         """Broadcasts auth button style update to all dynamic UI layers."""
-        has_key = self.window.llm_client.has_api_key()
+        has_key = self.window.llm_client.is_globally_authenticated()
         txt = "🚪 Logout" if has_key else "🔓 Login"
         bg = "#d32f2f" if has_key else "#0078d4"
         hv = "#b71c1c" if has_key else "#106ebe"

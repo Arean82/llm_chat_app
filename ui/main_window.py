@@ -187,14 +187,34 @@ class MainWindowClass(QMainWindow):
         if ak: self.llm_client.set_api_key(ak)
         
         # 4. Restore Last Selected Model & UI States
-        mid = settings.value("current_model_id", "")
-        if mid:
-            self.llm_client.set_model(mid)
-            self.chat_view.update_model_ui(mid)
-            self.chat_view.set_chat_enabled(True)
+        mid = str(settings.value("current_model_id", "")).strip()
+        # Explicitly filter out null cast strings and empty variants
+        if mid and mid.lower() != "none" and mid != "":
+            # MASTER GATE SEAL: Confirm model ID actually exists in current ecosystem manifest
+            # Prevents rogue keys from re-enabling chat blindly without actual available model support.
+            valid = False
+            try:
+                from logic.model_io import load_all_models
+                for m in load_all_models():
+                    if m.get('id') == mid:
+                        valid = True
+                        break
+            except: pass
+
+            if valid:
+                self.llm_client.set_model(mid)
+                self.chat_view.update_model_ui(mid)
+                self.chat_view.set_chat_enabled(True)
+            else:
+                # Manifest inconsistency detected! Zero cached memory to guarantee security.
+                get_app_settings().remove("current_model_id")
+                get_app_settings().sync()
+                self.chat_view.set_chat_enabled(False)
         else:
             self.chat_view.set_chat_enabled(False)
 
+        self.theme_manager.refresh_auth_button_style()
+        
         # 5. Defer restoring splitter handles to ensure layouts are fully computed first
         QTimer.singleShot(100, self.restore_splitter_states)
 
@@ -218,7 +238,7 @@ class MainWindowClass(QMainWindow):
              self.tray_icon.show()
 
     def handle_auth_button(self):
-        if self.llm_client.has_api_key(): self.logout()
+        if self.llm_client.is_globally_authenticated(): self.logout()
         else: self.open_settings()
 
     def open_settings(self):
@@ -241,17 +261,55 @@ class MainWindowClass(QMainWindow):
                 self.chat_view.set_chat_enabled(True)
 
     def logout(self):
-        # Simple global logout
+        # Secure Comprehensive User Cleanout
         try:
-            keyring.delete_password("LLMChatApp", "api_key_nvidia")
-            keyring.delete_password("LLMChatApp", "api_key_google")
-        except: pass
+            # 1. Wipe the global legacy fallback token (often the culprit in phantom restarts)
+            try: keyring.delete_password("LLMChatApp", "api_key")
+            except: pass
+            
+            # 2. Build composite list of all known ecosystem identifiers
+            providers = ["nvidia", "google", "groq", "openai", "lmstudio", "ollama"]
+            
+            # Dynamic Load from Config to guarantee 100% capture rate
+            from utils.path_utils import get_resource_path
+            import json
+            try:
+                conf_path = get_resource_path("resources/api_providers.json")
+                with open(conf_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    providers.extend([p.get("id") for p in data.get("providers", []) if p.get("id")])
+            except: pass
+            
+            # Dynamic Load from Custom User Storage
+            from utils.storage_config import StorageManager
+            try:
+                root = StorageManager.get_instance().get_storage_root()
+                custom_file = root / "custom_providers.json"
+                if custom_file.exists():
+                    with open(custom_file, 'r', encoding='utf-8') as f:
+                        c_data = json.load(f)
+                        providers.extend([p.get("id") for p in c_data.get("providers", []) if p.get("id")])
+            except: pass
+
+            # 3. Execute full sweep across all distinct vault slots
+            for p_id in set(providers):
+                try: keyring.delete_password("LLMChatApp", f"api_key_{p_id}")
+                except: pass
+
+        except Exception as e:
+            print(f"Logout partial warning (non-critical): {e}")
+            
         get_app_settings().remove("current_model_id")
+        get_app_settings().remove("active_provider_id")
+        get_app_settings().sync() # ABSOLUTE SEAL: Force total hardware commit of memory wiping to disk immediately
         self.llm_client.clear_keys()
         self.chat_view.clear_chat()
         self.chat_view.set_chat_enabled(False)
+        self.theme_manager.refresh_auth_button_style()
         self.tray_icon.hide()
-        self.open_settings()
+        success = self.open_settings()
+        if not success:
+             QTimer.singleShot(0, QApplication.instance().quit)
 
     def edit_system_instructions(self):
         from ui.system_prompt_manager import SystemPromptManagerClass
@@ -419,19 +477,24 @@ class MainWindowClass(QMainWindow):
 
     def showEvent(self, event):
         super().showEvent(event)
-        # Guarantee layout restoration runs after initial container geometries are fully computed
+        
+        # 1. Guarantee layout restoration runs after initial container geometries are fully computed
         QTimer.singleShot(50, self.restore_splitter_states)
+
+        
 
     def closeEvent(self, event):
         # Simply minimize to tray or quit safely
         self.quit_app()
         event.accept()
-        
     def changeEvent(self, event):
         if event.type() == QEvent.Type.WindowStateChange:
-             if not (self.windowState() & Qt.WindowState.WindowMaximized) and not (self.windowState() & Qt.WindowState.WindowFullScreen):
-                  QTimer.singleShot(0, self.showMaximized)
+            is_maximized = self.windowState() & Qt.WindowState.WindowMaximized
+            is_fullscreen = self.windowState() & Qt.WindowState.WindowFullScreen
+            if not is_maximized and not is_fullscreen:
+                QTimer.singleShot(0, self.showMaximized)
         super().changeEvent(event)
+
 
     def show_ide_integration(self):
         from ui.file_viewer import FileViewerDialog

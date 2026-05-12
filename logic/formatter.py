@@ -44,10 +44,17 @@ class MessageFormatter:
 
             wrapper_style = f"background-color: {code_bg}; border: 1px solid {header_border}; border-radius: 5px; overflow: hidden; margin: 10px 0; font-family: Consolas, monospace;"
 
+            run_link = ""
+            if lang.lower() in ['python', 'py', 'python3']:
+                run_link = f'<a href="run_code:{encoded_code}" style="color: #4caf50; text-decoration: none; font-weight: 900; margin-right: 15px; cursor: pointer;">▶️ Run Python</a>'
+
             header_div = f"""
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-bottom: 1px solid {header_border}; font-size: 12px; font-weight: bold; background-color: {header_bg}; color: {header_text};">
                 <span>{lang_display}</span>
-                <a href="copy_code:{encoded_code}" style="color: {link_color}; text-decoration: none; cursor: pointer;">Copy Code</a>
+                <div style="display: flex; gap: 10px;">
+                    {run_link}
+                    <a href="copy_code:{encoded_code}" style="color: {link_color}; text-decoration: none; cursor: pointer;">📋 Copy</a>
+                </div>
             </div>
             """
 

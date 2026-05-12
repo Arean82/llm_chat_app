@@ -91,12 +91,46 @@ class LLMClient:
                 
         return "nvidia"
 
+    def is_model_vision_capable(self) -> bool:
+        """
+        Smart Validation Guard: Evaluates if current model supports binary image payloads.
+        Prioritizes JSON schema explicit metadata, falling back to algorithmic root matching.
+        """
+        if not self.current_model:
+            return False
+            
+        # Level 1: Explicit Metadata Scan
+        models_list = self.get_available_models()
+        for m in models_list:
+            if m.get("id") == self.current_model:
+                # Check for true truthy matches in user or provider config
+                if m.get("vision") is True or str(m.get("vision")).lower() == "true":
+                     return True
+                if m.get("multimodal") is True or str(m.get("multimodal")).lower() == "true":
+                     return True
+                     
+        # Level 2: Dynamic String-Matching Heuristics for Global Families
+        mid_lower = self.current_model.lower()
+        vision_roots = [
+            "vision", "-v", "multimodal", "vla", # Common identifiers (e.g. llama-3.2-11b-vision)
+            "gpt-4o", "gpt-4-turbo",             # OpenAI Flagships
+            "claude-3",                          # Anthropic Family
+            "gemini-1.5", "gemini-2.0",          # Google High-End
+            "pixtral"                            # Mistral/Specialty Vision
+        ]
+        
+        return any(root in mid_lower for root in vision_roots)
+
     def has_api_key(self) -> bool:
         """Verify if the client has ANY valid active api keys set currently."""
         provider = self.get_current_provider()
         if provider == "google":
             return bool(self.google_api_key)
         return bool(self.api_key)
+
+    def is_globally_authenticated(self) -> bool:
+        """Determines if the application is logically 'Logged In' regardless of active slot."""
+        return bool(self.api_key) or bool(self.google_api_key)
 
     # --- MULTI-PROVIDER ROUTER: GENERATION HELPERS ---
     
