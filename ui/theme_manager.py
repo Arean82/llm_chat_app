@@ -28,25 +28,42 @@ class ThemeManager:
             with open(qss_file, 'r', encoding='utf-8') as f:
                 self.window.setStyleSheet(f.read())
 
-        # Update UI components
+        # Update UI components across active dynamic container
         self._update_toggle_button()
         self._apply_menu_bar_theme()
         self.refresh_auth_button_style()
-        self._update_send_button_style()
         
-        # Update chat display
-        self.window.chat_display.setStyleSheet(self.get_chat_styles())
+        # Broadcast specific display updates to dynamic modules
+        active_view = self._get_active_view()
+        if active_view and hasattr(active_view, "chat_display"):
+            active_view.chat_display.setStyleSheet(self.get_chat_styles())
+        
+        # Arena Dual Displays fallback
+        if active_view and hasattr(active_view, "chat_a"):
+            active_view.chat_a.setStyleSheet(self.get_chat_styles())
+        if active_view and hasattr(active_view, "chat_b"):
+            active_view.chat_b.setStyleSheet(self.get_chat_styles())
 
     def toggle_theme(self):
         """Switch between dark and light theme."""
         new_theme = "light" if self.current_theme == "dark" else "dark"
         self.apply_theme(new_theme)
 
+    def _get_active_view(self):
+        try:
+            return self.window.ui.main_stack.currentWidget()
+        except:
+            return None
+
     def _update_toggle_button(self):
-        if self.current_theme == "dark":
-            self.window.theme_toggle_btn.setText("🌙")
-        else:
-            self.window.theme_toggle_btn.setText("☀️")
+        text = "🌙" if self.current_theme == "dark" else "☀️"
+        # Broad cast update to all currently loaded views
+        try:
+            for i in range(self.window.ui.main_stack.count()):
+                w = self.window.ui.main_stack.widget(i)
+                if hasattr(w, "theme_toggle_btn"):
+                    w.theme_toggle_btn.setText(text)
+        except: pass
 
     def _apply_menu_bar_theme(self):
         if self.current_theme == "dark":
@@ -65,25 +82,25 @@ class ThemeManager:
             """)
 
     def refresh_auth_button_style(self):
-        """Re-apply auth button style based on current theme and login state."""
-        if self.window.llm_client.has_api_key():
-            self.window.auth_btn.setText("🚪 Logout")
-            self.window.auth_btn.setStyleSheet("""
-                QPushButton { background-color: #d32f2f; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
-                QPushButton:hover { background-color: #b71c1c; }
-            """)
-        else:
-            self.window.auth_btn.setText("🔓 Login")
-            self.window.auth_btn.setStyleSheet("""
-                QPushButton { background-color: #0078d4; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }
-                QPushButton:hover { background-color: #106ebe; }
-            """)
+        """Broadcasts auth button style update to all dynamic UI layers."""
+        has_key = self.window.llm_client.has_api_key()
+        txt = "🚪 Logout" if has_key else "🔓 Login"
+        bg = "#d32f2f" if has_key else "#0078d4"
+        hv = "#b71c1c" if has_key else "#106ebe"
+        
+        style = f"QPushButton {{ background-color: {bg}; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }} QPushButton:hover {{ background-color: {hv}; }}"
+        
+        try:
+            for i in range(self.window.ui.main_stack.count()):
+                w = self.window.ui.main_stack.widget(i)
+                if hasattr(w, "auth_btn"):
+                    w.auth_btn.setText(txt)
+                    w.auth_btn.setStyleSheet(style)
+        except: pass
 
     def _update_send_button_style(self):
-        if self.window.is_generating:
-            self.window.set_send_button_generating()
-        else:
-            self.window.set_send_button_idle()
+        # Send button styles are managed explicitly by the Views in modular design.
+        pass
 
     def get_chat_styles(self):
         """Return full chat display stylesheet based on current theme."""

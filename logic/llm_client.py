@@ -6,6 +6,7 @@ import re
 import time
 from pathlib import Path
 from openai import OpenAI
+from utils.constants import OPENAI_BASE_URL
 
 try:
     from google import genai
@@ -17,10 +18,10 @@ except ImportError:
 
 class LLMClient:
     def __init__(self):
-        self.api_key = None # Nvidia API Key
+        self.api_key = None # OpenAI/Universal API Key
         self.google_api_key = None # Google API Key
         self.current_model = None
-        self.base_url = "https://integrate.api.nvidia.com/v1"
+        self.base_url = OPENAI_BASE_URL
         
         # Clients
         self.client = None  # OpenAI/Nvidia Client instance
@@ -46,6 +47,14 @@ class LLMClient:
                 self.genai_configured = True
             except Exception as e:
                 print(f"CRITICAL: Failed to configure Google GenAI SDK: {e}")
+
+    def clear_keys(self):
+        self.api_key = None
+        self.google_api_key = None
+        self.client = None
+        self.google_client = None
+        self.genai_configured = False
+        self.current_model = None
 
     def _reinit_openai_client(self):
         self.client = OpenAI(

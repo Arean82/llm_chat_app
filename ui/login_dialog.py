@@ -87,10 +87,10 @@ class SettingsDialogClass(QDialog):
                 self.all_providers = data.get("providers", [])
         except Exception as e:
             print(f"WARNING: Failed to load providers map: {e}")
-            self.groups = [{"id": "openai", "name": "Default Ecosystem"}]
+            self.groups = [{"id": "openai", "name": "Core Providers"}]
             self.all_providers = [{
-                "id": "nvidia", "group": "openai", "display_name": "NVIDIA NIM", 
-                "default_url": "https://integrate.api.nvidia.com/v1", "placeholder_key": "nvapi-"
+                "id": "openai", "group": "openai", "display_name": "Official OpenAI", 
+                "default_url": "https://api.openai.com/v1", "placeholder_key": "sk-"
             }]
 
         # DYNAMIC MIGRATION: Load user-added local endpoints securely from storage pool

@@ -18,8 +18,8 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 
 ## ✨ Features
 
-- 🚀 **Real-Time Streaming:** Watch the AI generate responses token by token, with zero lag.
-- 🤖 **Scalable Architecture (V6):** Advanced multi-tiered ecosystem system natively supporting **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
+- ⚔️ **AI Model Arena:** Brand-new competitive benchmark engine. Run dual LLMs concurrently side-by-side with real-time visual comparison, blind-mode evaluation, and victory elections.
+- 🤖 **Scalable Architecture (V6):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
 - ➕ **Unlimited Custom Endpoints:** Dynamically inject custom, private, or locally-hosted model hosts into your roster without writing a single line of code.
 - 🏠 **True Offline Capability:** Specialized zero-key mode automatically detects local tooling (like Ollama), bypassing verification blockers entirely.
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
@@ -59,6 +59,9 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 ## 🎨 User Interface Highlights
 
 ### 📸 Visual Overview
+<p align="center">
+  <img src="resources/screenshots/Arena_Mode.png" width="92%" alt="The AI Model Arena" />
+</p>
 <p align="center">
   <img src="resources/screenshots/Main_Window.png" width="45%" alt="Main Window" />
   <img src="resources/screenshots/Initial_Data_Setup_Preview.png" width="45%" alt="Initial Setup" />
@@ -434,6 +437,31 @@ This framework is architected and curated with the vision of building transparen
 
 *   **Lead Architect:** **Arean Narrayan** ([@Arean82](https://github.com/Arean82))
 *   **Design Ethos:** Deliver highly secure, agnostic interfaces free of platform bias or maintenance decay.
+
+---
+
+## 📅 Change Log
+
+### v6.0.0 – Universal Orchestration & Context Evolution
+- 🚀 **Adaptive Memory Compression**: Seamless background context synthesis unlocking infinite conversation depths.
+- ⚔️ **AI Model Arena**: Inaugural dual-concurrent comparison engine for competitive LLM benchmarking.
+- 🌍 **Universal Ecosystem Grid**: Formalized native integrations for Google, Groq, Ollama, and LM Studio.
+- 🔐 **Segmented Vault**: Advanced OS-level credential isolation protecting independent provider keys.
+- 📦 **Transactional Storage**: Introduced hot-swappable runtime path management for user data relocation.
+- ✨ **System UI Overhaul**: Migrated monolith view to High-Velocity Modular Stack for optimized memory cycles.
+
+### v5.0.0 – Modern Infrastructure Foundations
+- 💾 **SQLite Persistence Core**: Heavy-duty transactional chat logging with WAL-mode safety locks.
+- 🤖 **Dynamic Catalog Expansion**: Replaced static indices with segmented runtime ecosystem JSON catalogs.
+- 🌐 **Flask API Architecture**: Introduction of the background-threading local gateway for IDE bridges.
+- 🔧 **Smart Model Tuning**: Precision UI handlers added for manual Temperature and Token-Limit overrides.
+- 📡 **Extension Ecosystem V1**: Official stable launch of packaged VSCode and JetBrains connectivity clients.
+
+### v4.0.0 – Framework Maturation
+- 📜 **Library Interface**: Deployed the persistent instruction repository and system-prompt configurator.
+- 📋 **Active Log Inspector**: Real-time event loop monitoring specifically for ecosystem fetches.
+- ⚙️ **Model Manager V1**: Basic graphical table added for provider addition/removal management.
+- 🚀 **Streaming Refinement**: Optimized real-time token stream deserialization to eliminate jitter lag.
 
 ---
 

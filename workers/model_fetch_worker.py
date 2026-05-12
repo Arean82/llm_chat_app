@@ -10,10 +10,11 @@ class ModelFetchWorker(QThread):
     finished = Signal(list)
     error = Signal(str)
     
-    def __init__(self, api_key: str, base_url: str = "https://integrate.api.nvidia.com/v1"):
+    def __init__(self, api_key: str, base_url: str = None):
         super().__init__()
+        from utils.constants import OPENAI_BASE_URL
         self.api_key = api_key
-        self.base_url = base_url
+        self.base_url = base_url if base_url else OPENAI_BASE_URL
         self.working_count = 0
         self.logger = get_logger()
         # Use a reliable model for generating descriptions
@@ -21,7 +22,7 @@ class ModelFetchWorker(QThread):
         
     def run(self):
         try:
-            self.logger.add_log("Connecting to NVIDIA API...", "INFO")
+            self.logger.add_log("Connecting to Universal API...", "INFO")
             
             client = OpenAI(
                 base_url=self.base_url,

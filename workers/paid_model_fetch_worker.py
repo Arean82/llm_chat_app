@@ -1,4 +1,5 @@
 # workers/paid_model_fetch_worker.py
+
 from PySide6.QtCore import QThread, Signal
 from openai import OpenAI
 from workers.update_logger import get_logger
@@ -10,10 +11,11 @@ class PaidModelFetchWorker(QThread):
     finished = Signal()
     error = Signal(str)
     
-    def __init__(self, api_key: str, base_url: str = "https://integrate.api.nvidia.com/v1"):
+    def __init__(self, api_key: str, base_url: str = None):
         super().__init__()
+        from utils.constants import OPENAI_BASE_URL
         self.api_key = api_key
-        self.base_url = base_url
+        self.base_url = base_url if base_url else OPENAI_BASE_URL
         self.logger = get_logger()
         
     def run(self):

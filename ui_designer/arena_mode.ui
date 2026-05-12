@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ArenaModeView</class>
+ <widget class="QWidget" name="ArenaModeView">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1255</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout" stretch="0,1,0">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="margin" stdset="0">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QWidget" name="top_bar" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
+     <layout class="QHBoxLayout" name="top_bar_layout">
+      <item>
+       <widget class="QLabel" name="arena_title">
+        <property name="styleSheet">
+         <string notr="true">font: bold 14pt &quot;Segoe UI&quot;; color: #0078d4; margin-left: 15px;</string>
+        </property>
+        <property name="text">
+         <string>⚔️ AI MODEL ARENA</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="blind_mode_check">
+        <property name="styleSheet">
+         <string notr="true">font: bold 10pt &quot;Segoe UI&quot;; color: #888; margin-left: 15px;</string>
+        </property>
+        <property name="text">
+         <string>🙈 Blind Mode (Hide Names)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="connection_status_btn">
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 14pt &quot;Segoe UI&quot;; border: none; background: transparent;</string>
+        </property>
+        <property name="text">
+         <string>🌐</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="theme_toggle_btn">
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>🌙</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="auth_btn">
+        <property name="text">
+         <string>🔓 Login</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QSplitter" name="arena_splitter">
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="handleWidth">
+      <number>4</number>
+     </property>
+     <widget class="QWidget" name="panel_a" native="true">
+      <layout class="QVBoxLayout" name="layout_a">
+       <property name="margin" stdset="0">
+        <number>5</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="model_btn_a">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>45</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>🔥 SELECT MODEL A</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="stats_a">
+         <property name="text">
+          <string>Waiting to Duel...</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="display_container_a" native="true">
+         <layout class="QVBoxLayout" name="chat_display_layout_a">
+          <property name="margin" stdset="0">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QTextEdit" name="chat_display_a">
+            <property name="styleSheet">
+             <string notr="true">QTextEdit{border: 1px solid rgba(128,128,128,0.2); border-radius: 8px;}</string>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="vote_a_btn">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>35</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: #2ecc71; color: white; font-weight: bold; border-radius: 4px;</string>
+         </property>
+         <property name="text">
+          <string>🏆 ELECT WINNER A</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="panel_b" native="true">
+      <layout class="QVBoxLayout" name="layout_b">
+       <property name="margin" stdset="0">
+        <number>5</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="model_btn_b">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>45</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>❄️ SELECT MODEL B</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="stats_b">
+         <property name="text">
+          <string>Waiting to Duel...</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="display_container_b" native="true">
+         <layout class="QVBoxLayout" name="chat_display_layout_b">
+          <property name="margin" stdset="0">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QTextEdit" name="chat_display_b">
+            <property name="styleSheet">
+             <string notr="true">QTextEdit{border: 1px solid rgba(128,128,128,0.2); border-radius: 8px;}</string>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="vote_b_btn">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>35</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: #2ecc71; color: white; font-weight: bold; border-radius: 4px;</string>
+         </property>
+         <property name="text">
+          <string>🏆 ELECT WINNER B</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="bottom_bar_layout">
+     <property name="margin" stdset="0">
+      <number>15</number>
+     </property>
+     <item>
+      <widget class="QTextEdit" name="input_field">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>80</height>
+        </size>
+       </property>
+       <property name="placeholderText">
+        <string>Enter ONE prompt to broadcast to BOTH models concurrently...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="send_btn">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>80</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">font: bold 14px; background-color: #d32f2f; color: white; border-radius: 8px;</string>
+       </property>
+       <property name="text">
+        <string>⚔️ DUEL</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

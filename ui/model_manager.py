@@ -13,6 +13,7 @@ from PySide6.QtUiTools import QUiLoader
 from ui.model_edit_dialog import ModelEditDialog
 from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import set_app_icon
+from utils.constants import OPENAI_BASE_URL
 
 class ModelManagerDialog(QDialog):
     """Main dialog for viewing and managing models."""
@@ -458,7 +459,7 @@ class ModelManagerDialog(QDialog):
 
         settings = get_app_settings()
         api_key = settings.value("api_key", "")
-        base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
+        base_url = settings.value("base_url", OPENAI_BASE_URL)
 
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your API key first.")
@@ -609,7 +610,7 @@ class ModelManagerDialog(QDialog):
         
         settings = get_app_settings()
         api_key = settings.value("api_key", "")
-        base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
+        base_url = settings.value("base_url", OPENAI_BASE_URL)
         
         if not api_key:
             QMessageBox.warning(self, "API Key Required", "Please set your NVIDIA API key first.")

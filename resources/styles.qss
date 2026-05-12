@@ -131,6 +131,43 @@ QMainWindow[theme="dark"] QScrollBar::sub-line:vertical {
     height: 0px;
 }
 
+/* Arena Mode Dark Specifics */
+QMainWindow[theme="dark"] #arena_title {
+    color: #00bfff;
+}
+QMainWindow[theme="dark"] #model_btn_a {
+    background-color: rgba(0, 120, 212, 0.2);
+    border: 2px dashed #00bfff;
+    color: #ffffff;
+    font-weight: bold;
+}
+QMainWindow[theme="dark"] #model_btn_a:hover {
+    background-color: rgba(0, 120, 212, 0.4);
+}
+QMainWindow[theme="dark"] #model_btn_b {
+    background-color: rgba(156, 39, 176, 0.2);
+    border: 2px dashed #d500f9;
+    color: #ffffff;
+    font-weight: bold;
+}
+QMainWindow[theme="dark"] #model_btn_b:hover {
+    background-color: rgba(156, 39, 176, 0.4);
+}
+QMainWindow[theme="dark"] #stats_a, QMainWindow[theme="dark"] #stats_b {
+    color: #bbbbbb;
+    background-color: #202020;
+    border-radius: 4px;
+    padding: 2px;
+}
+QMainWindow[theme="dark"] #chat_display_a, QMainWindow[theme="dark"] #chat_display_b {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+}
+QMainWindow[theme="dark"] QSplitter::handle {
+    background-color: #333;
+    width: 4px;
+}
+
 /* ============================================
    LIGHT THEME
    ============================================ */
@@ -264,4 +301,23 @@ QMainWindow[theme="light"] QScrollBar::handle:vertical:hover {
 QMainWindow[theme="light"] QScrollBar::add-line:vertical,
 QMainWindow[theme="light"] QScrollBar::sub-line:vertical {
     height: 0px;
+}
+
+/* Arena Mode Light Specifics */
+QMainWindow[theme="light"] #arena_title {
+    color: #005a9e;
+}
+QMainWindow[theme="light"] #model_btn_a {
+    background-color: rgba(0, 120, 212, 0.05);
+    border: 2px dashed #0078d4;
+    color: #005a9e;
+}
+QMainWindow[theme="light"] #model_btn_b {
+    background-color: rgba(156, 39, 176, 0.05);
+    border: 2px dashed #9c27b0;
+    color: #7b1fa2;
+}
+QMainWindow[theme="light"] QSplitter::handle {
+    background-color: #e0e0e0;
+    width: 4px;
 }

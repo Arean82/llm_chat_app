@@ -1,4 +1,5 @@
 # workers/description_generator.py
+
 from PySide6.QtCore import QThread, Signal
 from openai import OpenAI
 from workers.update_logger import get_logger
@@ -15,7 +16,8 @@ class DescriptionGeneratorWorker(QThread):
         self.api_key = api_key
         self.generator_model = generator_model
         self.models_to_update = models_to_update
-        self.base_url = "https://integrate.api.nvidia.com/v1"
+        from utils.constants import OPENAI_BASE_URL
+        self.base_url = OPENAI_BASE_URL
         self.logger = get_logger()
         
     def run(self):

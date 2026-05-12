@@ -39,10 +39,10 @@ class ApiManager(QObject):
         if success:
             self.window.api_server_action.setChecked(True)
             self.window.api_server_action.setText("Universal API Server (Running)")
-            self.window.add_system_message("🌐 API Server started on port 5000")
+            self.window.chat_view.add_system_message("🌐 API Server started on port 5000")
         else:
             self.window.api_server_action.setChecked(False)
-            self.window.add_system_message(f"❌ Failed to start API Server: {message}")
+            self.window.chat_view.add_system_message(f"❌ Failed to start API Server: {message}")
 
     def stop_api_server(self):
         """Stop the background Flask server."""
@@ -52,7 +52,7 @@ class ApiManager(QObject):
             
         self.window.api_server_action.setChecked(False)
         self.window.api_server_action.setText("🌐 Universal API Server")
-        self.window.add_system_message("🌐 API Server stopped")
+        self.window.chat_view.add_system_message("🌐 API Server stopped")
 
     def api_send_message(self, user_message: str, messages_list: list = None, **kwargs):
         """
@@ -84,13 +84,13 @@ class ApiManager(QObject):
         messages_list = params.get("messages_list", None)
         
         # 1. Update the input field in the UI with JUST the latest message prompt
-        self.window.input_field.setPlainText(user_message)
+        self.window.chat_view.ui.input_field.setPlainText(user_message)
         
         # 2. Trigger message logic, passing parameters along
         temperature = params.get("temperature", None)
         max_tokens = params.get("max_tokens", None)
         
-        self.window.send_message(
+        self.window.chat_view.send_message(
             api_response_queue=response_queue, 
             custom_messages=messages_list,
             custom_temp=temperature,
