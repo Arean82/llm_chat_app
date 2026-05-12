@@ -28,7 +28,7 @@ Type: filesandordirs; Name: "{app}\ui_designer"
 
 [Files]
 ; Grab EVERYTHING inside the dist folder (exe, _internal folder, etc.)
-Source: "dist\LLM Chat App\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\LLM_Chat_dir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 ; Create Desktop Shortcut

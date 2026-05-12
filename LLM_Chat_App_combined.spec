@@ -81,12 +81,26 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
-exe = EXE(
+exe_onefile = EXE(
     pyz,
     a.scripts,
     a.binaries,
     a.zipfiles,
     a.datas,
+    name='LLM_Chat_one_file/LLM Chat App',
+    debug=False,
+    strip=False,
+    upx=True,
+    console=False,
+    icon='resources/app_icon.ico',
+    version='file_version_info.txt',
+)
+
+exe_onedir = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
     name='LLM Chat App',
     debug=False,
     strip=False,
@@ -97,13 +111,13 @@ exe = EXE(
 )
 
 coll = COLLECT(
-    exe,
+    exe_onedir,
     a.binaries,
     a.zipfiles,
     a.datas,
     strip=False,
     upx=True,
-    name='LLM Chat App'
+    name='LLM_Chat_dir'
 )
 
 # macOS specific bundle configuration

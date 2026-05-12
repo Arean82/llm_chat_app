@@ -85,7 +85,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    name='LLM Chat App',
+    name='LLM_Chat_one_file/LLM Chat App',
     debug=False,
     strip=False,
     upx=True,

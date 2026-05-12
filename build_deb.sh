@@ -4,7 +4,7 @@
 APP_NAME="llmchatapp"
 VERSION="5.0.0"
 PACKAGE_DIR="build_deb_pkg"
-BUILD_OUTPUT="dist/LLM Chat App"
+BUILD_OUTPUT="dist/LLM_Chat_dir"
 
 echo "Building .deb package for $APP_NAME v$VERSION..."
 

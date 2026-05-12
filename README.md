@@ -327,8 +327,8 @@ pyinstaller LLM_Chat_App_combined.spec
 
 **Build outputs:**
 
-- One-dir: `dist/LLM Chat App/` (folder containing the executable and all dependencies)
-- One-file: `dist/LLM Chat App.exe` (single executable file)
+- One-dir: `dist/LLM_Chat_dir/` (folder containing the executable and all dependencies)
+- One-file: `dist/LLM_Chat_one_file/LLM Chat App.exe` (single executable file)
 - Combined: Both outputs are generated simultaneously
 
 - On first launch, the executable checks directory permissions. If running from a restricted system folder (like `C:\Program Files`), it automatically creates data resources inside `AppData` to ensure zero-crash operation.
@@ -348,7 +348,7 @@ pyinstaller LLM_Chat_App_combined.spec
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
 5. *Output:* `installer_output/LLM_Chat_App_Setup_v5.0.0.exe`
 
-The installer copies the entire `dist/LLM Chat App/` folder to `Program Files` and creates desktop/start menu shortcuts.
+The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
 #### 🐧 Linux (DEB & AppImage)
 
