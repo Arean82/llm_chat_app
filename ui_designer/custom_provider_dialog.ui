@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CustomProviderDialog</class>
+ <widget class="QDialog" name="CustomProviderDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>250</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Add Custom Local Endpoint</string>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout">
+   <item>
+    <widget class="QLabel" name="lbl_header">
+     <property name="styleSheet">
+      <string notr="true">font-size: 14px; font-weight: bold; color: #00E676;</string>
+     </property>
+     <property name="text">
+      <string>➕ Add Custom OpenAI Endpoint</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lbl_name">
+     <property name="text">
+      <string>Display Name / Label:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="name_input">
+     <property name="placeholderText">
+      <string>e.g. My Local Server</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #2d2d2d; color: white; padding: 6px; border: 1px solid #3c3c3c; border-radius: 4px;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lbl_url">
+     <property name="text">
+      <string>API Base URL:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="url_input">
+     <property name="placeholderText">
+      <string>http://localhost:1234/v1</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #2d2d2d; color: white; padding: 6px; border: 1px solid #3c3c3c; border-radius: 4px;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="requires_key_chk">
+     <property name="text">
+      <string>Endpoint Requires Authentication Token</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">margin-top: 5px;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="btn_layout">
+     <item>
+      <widget class="QPushButton" name="save_btn">
+       <property name="text">
+        <string>Add Provider</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: #0078d4; color: white; padding: 8px; font-weight: bold; border-radius: 4px;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancel_btn">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: #3c3c3c; color: white; padding: 8px; border-radius: 4px;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

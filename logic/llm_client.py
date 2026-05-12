@@ -119,10 +119,10 @@ class LLMClient:
                 # Graceful degrade if response block issues happen
                 raise e
 
-        # 🔵 Case B: NVIDIA (OpenAI) Generation
+        # 🔵 Case B: General OpenAI Ecosystem Generation
         else:
             if not self.client:
-                raise ValueError("NVIDIA client not configured yet. Set API Key.")
+                raise ValueError("OpenAI-compatible client not configured yet. Set Active Provider in Settings.")
                 
             req_params = {
                 "model": self.current_model,

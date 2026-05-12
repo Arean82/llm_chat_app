@@ -38,7 +38,7 @@ class ChatWorker(QThread):
                 self._run_google_loop()
             else:
                 if not self.client.client:
-                    self.error_occurred.emit("NVIDIA API key not configured.")
+                    self.error_occurred.emit("Active API provider client not configured.")
                     return
                 self._run_openai_loop()
                 

@@ -2,7 +2,7 @@
 # This file contains constant values used throughout the LLM Chat App.
 
 APP_NAME = "LLM Chat App"
-APP_VERSION = "5.0.0"
+APP_VERSION = "6.0.0"
 APP_AUTHOR = "Arean Narrayan"
 
 DEFAULT_MODEL_NVIDIA = "meta/llama-3.3-70b-instruct"

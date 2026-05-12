@@ -22,7 +22,7 @@ class GenSettingsDialog(QDialog):
         
         # --- APPLY VISUAL THEME STYLES ---
         settings = QSettings("LLMChatApp", "Settings")
-        is_dark = settings.value("theme", "dark") == "dark"
+        is_dark = settings.value("theme", "light") == "dark"
         if is_dark:
             self.setStyleSheet("""
                 QDialog { background-color: #252526; color: #ffffff; }

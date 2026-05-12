@@ -1,8 +1,8 @@
 # LLM Chat App
 
-![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2)  ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-provider hub, it interfaces seamlessly with both the **NVIDIA NIM API** and native **Google Generative AI (Gemini)** to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
+A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-ecosystem hub, it interfaces seamlessly with **Google Gemini**, **NVIDIA NIM**, **Groq**, **Ollama**, and **LM Studio**—alongside infinite support for your own custom local endpoints—to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
 
 [Features](#-features) • [User Interface Highlights](#-user-interface-highlights) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Project Structure](#-project-structure) • [Tech Stack](#-tech-stack) • [-Configuration-&amp;-Data-Storage](#-configuration-&-data-storage) • [Universal API Server](#-universal-api-server) • [Log System](#-log-system) • [Keyboard Shortcuts](#-keyboard-shortcuts) •[-Contributing](#-contributing) •[-Disclaimer](#-disclaimer) •[-Building-from-Source-(Developer-Guide)](#-building-from-source-developer-guide) •[License](#-license)
 
@@ -11,7 +11,9 @@ A sleek, high-performance desktop chat application built with Python and PySide6
 ## ✨ Features
 
 - 🚀 **Real-Time Streaming:** Watch the AI generate responses token by token, with zero lag.
-- 🤖 **Multi-Provider Engine (V5):** Dynamic polymorphic routing allows real-time chatting with both **NVIDIA NIM** (via OpenAI SDK) and **Google Gemini** (via native Generative AI SDK) interchangeably.
+- 🤖 **Scalable Architecture (V6):** Advanced multi-tiered ecosystem system natively supporting **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
+- ➕ **Unlimited Custom Endpoints:** Dynamically inject custom, private, or locally-hosted model hosts into your roster without writing a single line of code.
+- 🏠 **True Offline Capability:** Specialized zero-key mode automatically detects local tooling (like Ollama), bypassing verification blockers entirely.
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
 - 📎 **File Attachments:** Upload code (`.py`, `.js`), text, or data files directly into the chat for instant analysis.
 - 📂 **Distributed Manifest System:** Vendor catalogs are perfectly isolated (e.g., `models_google.json` vs `models_nvidia.json`) enabling infinite horizontal scaling for new providers.
@@ -56,6 +58,10 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 <p align="center">
   <img src="resources/screenshots/Model_Manager.png" width="45%" alt="Model Manager" />
   <img src="resources/screenshots/Log_Viewer.png" width="45%" alt="Log Viewer" />
+</p>
+<p align="center">
+  <img src="resources/screenshots/Login_Dialog.png" width="45%" alt="Multi-Provider Configuration" />
+  <img src="resources/screenshots/Custom_Provider_Dialog.png" width="45%" alt="Add Custom Host" />
 </p>
 
 📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
@@ -358,7 +364,7 @@ pyinstaller LLM_Chat_App_combined.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v5.0.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v6.0.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -373,7 +379,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_5.0.0.deb
+sudo dpkg -i llmchatapp_6.0.0.deb
 ```
 
 **2. Create a Portable AppImage:**

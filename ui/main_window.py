@@ -606,7 +606,7 @@ class MainWindowClass(QMainWindow):
         
         base_url = settings.value("base_url", "https://integrate.api.nvidia.com/v1")
         model_id = settings.value("current_model_id", "")
-        saved_theme = settings.value("theme", "dark")
+        saved_theme = settings.value("theme", "light")
         
         # Apply saved theme FIRST
         self.apply_theme(saved_theme)

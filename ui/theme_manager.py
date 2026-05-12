@@ -10,7 +10,7 @@ class ThemeManager:
     """
     def __init__(self, main_window):
         self.window = main_window
-        self.current_theme = "dark"
+        self.current_theme = "light"
 
     def apply_theme(self, theme: str):
         """Apply dark or light theme to the entire window and its components."""

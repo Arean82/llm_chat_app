@@ -1,20 +1,80 @@
 {
-    "providers": [
-        {
-            "id": "nvidia",
-            "display_name": "NVIDIA NIM",
-            "default_url": "https://integrate.api.nvidia.com/v1",
-            "placeholder_key": "nvapi-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "instructions": "<b>Enter your NVIDIA NIM API Key</b><br><br>How to get a free API key:<br>1. Go to <a href='https://build.nvidia.com' style='color: #00aff0;'>build.nvidia.com</a><br>2. Sign up for a free developer account<br>3. Go to API Keys & Click 'Generate API Key'<br>4. Copy your key (starts with <code>nvapi-</code>)",
-            "requires_url": true
-        },
+    "groups": [
         {
             "id": "google",
+            "name": "Google Native Ecosystem"
+        },
+        {
+            "id": "openai",
+            "name": "OpenAI Compatible Ecosystem"
+        }
+    ],
+    "providers": [
+        {
+            "id": "google",
+            "group": "google",
             "display_name": "Google Gemini",
+            "pricing": "🎁 Free & Paid Tiers Available",
             "default_url": "https://generativelanguage.googleapis.com/v1beta",
             "placeholder_key": "AIzaSyxxxxxxxxxxxxxxxxxxxxxx",
             "instructions": "<b>Enter your Google Gemini API Key</b><br><br>How to get a free API key:<br>1. Go to <a href='https://aistudio.google.com' style='color: #00aff0;'>Google AI Studio</a><br>2. Click 'Get API Key' in left menu<br>3. Generate a key for a standard project<br>4. Copy your key (starts with <code>AIzaSy</code>)",
-            "requires_url": false
+            "requires_url": false,
+            "requires_key": true
+        },
+        {
+            "id": "nvidia",
+            "group": "openai",
+            "display_name": "NVIDIA NIM",
+            "pricing": "🎁 1,000 Free Credits Included",
+            "default_url": "https://integrate.api.nvidia.com/v1",
+            "placeholder_key": "nvapi-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "instructions": "<b>Enter your NVIDIA NIM API Key</b><br><br>How to get a free API key:<br>1. Go to <a href='https://build.nvidia.com' style='color: #00aff0;'>build.nvidia.com</a><br>2. Sign up for a free developer account<br>3. Go to API Keys & Click 'Generate API Key'<br>4. Copy your key (starts with <code>nvapi-</code>)",
+            "requires_url": true,
+            "requires_key": true
+        },
+        {
+            "id": "groq",
+            "group": "openai",
+            "display_name": "GroqCloud (LPU Acceleration)",
+            "pricing": "⚡ Extreme Speed / High Free Tier Limits",
+            "default_url": "https://api.groq.com/openai/v1",
+            "placeholder_key": "gsk_xxxxxxxxxxxxxxxxxxxxxxxxx",
+            "instructions": "<b>Enter your GroqCloud API Key</b><br><br>How to get keys:<br>1. Go to <a href='https://console.groq.com' style='color: #00aff0;'>console.groq.com</a><br>2. Register/Log in<br>3. Select 'API Keys' from the sidebar<br>4. Generate token (starts with <code>gsk_</code>)",
+            "requires_url": true,
+            "requires_key": true
+        },
+        {
+            "id": "lmstudio",
+            "group": "openai",
+            "display_name": "LM Studio (Local)",
+            "pricing": "🏠 100% Free / Highly Custom",
+            "default_url": "http://localhost:1234/v1",
+            "placeholder_key": "Internal model servicing",
+            "instructions": "<b>Connect to LM Studio Instance</b><br><br>Requirements:<br>1. Start LM Studio.<br>2. Navigate to the <b>Local Inference Server</b> tab.<br>3. Click 'Start Server'. Ensure port matches.",
+            "requires_url": true,
+            "requires_key": false
+        },
+        {
+            "id": "ollama",
+            "group": "openai",
+            "display_name": "Ollama (Local Desktop)",
+            "pricing": "🏠 100% Free / Offline Privacy",
+            "default_url": "http://localhost:11434/v1",
+            "placeholder_key": "Not required for local hosting",
+            "instructions": "<b>Connect to Local Desktop AI</b><br><br>Requirements:<br>1. Download/Run <a href='https://ollama.com' style='color: #00aff0;'>Ollama</a> locally.<br>2. Ensure the local engine is running in the system tray.<br>3. Click connect (No API key needed!)",
+            "requires_url": true,
+            "requires_key": false
+        },
+        {
+            "id": "openai",
+            "group": "openai",
+            "display_name": "Official OpenAI API",
+            "pricing": "💳 Pay-as-you-go Commercial",
+            "default_url": "https://api.openai.com/v1",
+            "placeholder_key": "sk-proj-xxxxxxxxxxxxxxxxxxxxx",
+            "instructions": "<b>Enter your OpenAI Platform Key</b><br><br>How to get keys:<br>1. Go to <a href='https://platform.openai.com' style='color: #00aff0;'>platform.openai.com</a><br>2. Go to Settings -> API Keys<br>3. Generate new secret key (starts with <code>sk-</code>)",
+            "requires_url": true,
+            "requires_key": true
         }
     ]
 }
