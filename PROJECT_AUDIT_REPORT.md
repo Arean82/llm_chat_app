@@ -1,6 +1,6 @@
 # Project Audit Report: LLM Chat App
 **Date:** 2026-05-11
-**Status:** ✅ COMPLETE - 15 ITEMS REMEDIATED
+**Status:** ✅ COMPLETE - 20 ITEMS REMEDIATED
 
 ## 📊 Audit Summary Table
 
@@ -21,6 +21,11 @@
 | 013 | **Housekeeping** | `Filesystem`| 🟡 Low | ✅ **Resolved** | Automated pruning of expired `.bak` JSON migration files. |
 | 014 | **Stability** | `Chat Worker`| 🟠 Med | ✅ **Resolved** | Intercept Gemini safety filter exceptions to prevent crash. |
 | 015 | **Architecture** | `LLM Client`| 🔴 High | ✅ **Resolved** | Migrate to modern `google-genai` SDK due to end-of-life. |
+| 016 | **Deployment** | `Spec Logic` | 🟠 Med | ✅ **Resolved** | Rectified `onedir` dupe payload bloating & pathing collision. |
+| 017 | **Packaging** | `Build Scripts`| 🟠 Med | ✅ **Resolved** | Synchronized DEB, AppImage, and ISS paths with new schema. |
+| 018 | **Documentation**| `Readme` | 🟡 Low | ✅ **Resolved** | Deployed real visual assets engine and dynamic documentation. |
+| 019 | **Stability** | `Chat Worker` | 🟠 Med | ✅ **Resolved** | Introduce strict role-alternation sanitize filters for Gemini.|
+| 020 | **Performance** | `Database` | 🟡 Low | ✅ **Resolved** | Index high-traffic `timestamp` col to preserve loading speed. |
 
 
 
@@ -135,6 +140,42 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Status:** ✅ **Resolved**
 *   **Details:** The legacy `google-generativeai` library is listed as End-of-Life and emitted dynamic warning flags during initialization loops.
 *   **Implementation:** Fully decommissioned legacy module imports. Rewired active `llm_client.py` to adopt modern `genai.Client()` patterns, including strictly updated history formats and specialized native multi-step `send_message_stream` call signatures.
+
+---
+
+#### 16. Audit ID 016: Output Packaging Schema Refactor
+*   **Severity:** 🟠 Medium
+*   **Status:** ✅ **Resolved**
+*   **Details:** Fixed legacy `.spec` flaw where `a.binaries` were packed inside both the EXE header and output folder simultaneously, increasing package footprint 2x.
+*   **Implementation:** Split targets into absolute discrete channels: `LLM_Chat_dir/` for folder installs and `LLM_Chat_one_file/` for portable binaries, using explicit `exclude_binaries=True` blocks in the onedir constructors.
+
+#### 17. Audit ID 017: Build Dependency Alignment
+*   **Severity:** 🟠 Medium
+*   **Status:** ✅ **Resolved**
+*   **Details:** Cascading output restructure risked breakage across multi-OS installer runners.
+*   **Implementation:** Overhauled input source pointers in `build_appimage.sh`, `build_deb.sh`, and `installer_script.iss` to automatically harvest payloads from newly standardized paths.
+
+#### 18. Audit ID 018: Automated Asset Pipelines
+*   **Severity:** 🟡 Low
+*   **Status:** ✅ **Resolved**
+*   **Details:** Visual documentation relied upon stale or missing graphical assets.
+*   **Implementation:** Scripted dynamic off-screen PySide renderer using `QUiLoader` applying native theme styles to auto-capture high-definition, authentic interface previews and embedding in project overview.
+
+---
+
+### 📈 Newly Identified Enhancements (Audit Round 2)
+
+#### 19. Audit ID 019: Gemini History Alternation Sanctification
+*   **Severity:** 🟠 Medium
+*   **Status:** ✅ **Resolved**
+*   **Details:** Engineered active consolidation filter protecting conversational traffic against raw sequential duplicate-role insertions that crash backend payloads.
+*   **Implementation:** Reconfigured iterative mapper in `logic/chat_worker.py` to inspect active queue tails and cleanly aggregate text payloads whenever matching adjacent role signatures are detected.
+
+#### 20. Audit ID 020: Database Scalability Indexing
+*   **Severity:** 🟡 Low
+*   **Status:** ✅ **Resolved**
+*   **Details:** Integrated preemptive relational acceleration guarding GUI render threads against row-volume deterioration during sidebar list generation.
+*   **Implementation:** Dispatched native SQL constraint `CREATE INDEX IF NOT EXISTS idx_timestamp` targeting high-usage sort vector inside standard database initialization payload in `logic/conversation_manager.py`.
 
 ---
 

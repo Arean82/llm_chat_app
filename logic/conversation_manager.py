@@ -34,6 +34,8 @@ class ConversationManager:
                     messages_html TEXT
                 )
             ''')
+            # Audit ID 020: Index high-traffic timestamp column to preserve sidebar speed over scale
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON conversations(timestamp);')
             # Migration: Ensure messages_html column exists for older databases
             try:
                 cursor.execute('ALTER TABLE conversations ADD COLUMN messages_html TEXT')

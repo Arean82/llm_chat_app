@@ -67,10 +67,15 @@ class ChatWorker(QThread):
             if role == "system":
                 system_instructions += content + "\n"
             else:
-                # Modern SDK strictly requires 'user' and 'model' keys. 
-                # Parts must be an array of objects containing {'text': '...'}
+                # Modern SDK strictly requires 'user' and 'model' keys.
                 fixed_role = "model" if role == "assistant" else "user"
-                mapped_history.append({"role": fixed_role, "parts": [{"text": content}]})
+                
+                # STRICT ALTERNATION FIX (Audit ID 019):
+                # If consecutive messages have the same role, concatenate their text instead of appending new block
+                if mapped_history and mapped_history[-1]["role"] == fixed_role:
+                    mapped_history[-1]["parts"][0]["text"] += "\n\n" + content
+                else:
+                    mapped_history.append({"role": fixed_role, "parts": [{"text": content}]})
 
         # 2. Isolate latest message as active prompt to feed the model
         if not mapped_history:
