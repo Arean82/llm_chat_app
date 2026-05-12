@@ -1,6 +1,6 @@
 # ui/arena_view.py
 import time
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QFileDialog
 from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
 
@@ -19,9 +19,13 @@ class ArenaViewWidget(QWidget):
         # Parallel Session State
         self.model_a_id = None
         self.model_b_id = None
-        self.worker_a = None
         self.worker_b = None
         self.is_generating = False
+        
+        # Response Memory Cache for Exporter
+        self.current_prompt = ""
+        self.response_a = ""
+        self.response_b = ""
 
         # Load & Assemble
         loader = QUiLoader()
@@ -113,6 +117,11 @@ class ArenaViewWidget(QWidget):
         self.chat_a.append(f"<b>Prompt:</b> {prompt}<hr>")
         self.chat_b.append(f"<b>Prompt:</b> {prompt}<hr>")
         
+        # Cache session for reporting engine
+        self.current_prompt = prompt
+        self.response_a = ""
+        self.response_b = ""
+        
         # Parallel Workers Spawn
         payload = [{"role": "user", "content": prompt}]
         
@@ -121,6 +130,7 @@ class ArenaViewWidget(QWidget):
         self.worker_a = ChatWorker(client_a, payload)
         self.ui.stats_a.setText("⚡ Starting Stream A...")
         self.worker_a.stream_chunk.connect(lambda txt: self.on_chunk(self.chat_a, txt))
+        self.worker_a.response_received.connect(self._store_response_a)
         self.worker_a.metrics_received.connect(lambda m: self.ui.stats_a.setText(f"🏎️ {m['tps']} tok/s | {m['ttft']}s"))
         self.worker_a.finished.connect(self.check_all_finished)
         self.worker_a.start()
@@ -130,18 +140,42 @@ class ArenaViewWidget(QWidget):
         self.worker_b = ChatWorker(client_b, payload)
         self.ui.stats_b.setText("⚡ Starting Stream B...")
         self.worker_b.stream_chunk.connect(lambda txt: self.on_chunk(self.chat_b, txt))
+        self.worker_b.response_received.connect(self._store_response_b)
         self.worker_b.metrics_received.connect(lambda m: self.ui.stats_b.setText(f"🏎️ {m['tps']} tok/s | {m['ttft']}s"))
         self.worker_b.finished.connect(self.check_all_finished)
         self.worker_b.start()
 
     def clone_client(self, mid):
-        """Helper to manufacture independent client instances to prevent threading state collide."""
+        """Helper to manufacture independent client instances tailored to the specific targeted model provider."""
         from logic.llm_client import LLMClient
+        from utils.path_utils import get_app_settings
+        import keyring
+        
         c = LLMClient()
-        # Sync current loaded active credentials from central vault
-        if self.llm_client.api_key: c.set_api_key(self.llm_client.api_key)
-        if self.llm_client.google_api_key: c.set_google_api_key(self.llm_client.google_api_key)
         c.set_model(mid)
+        provider = c.get_current_provider()
+        
+        # 1. Always copy the Google API key (Google SDK ignores base_url logic)
+        if self.llm_client.google_api_key: 
+            c.set_google_api_key(self.llm_client.google_api_key)
+            
+        # 2. Target the exact provider silo from existing user credentials
+        if provider != "google":
+             settings = get_app_settings()
+             
+             # Target explicit localized base URL for this ecosystem
+             target_url = settings.value(f"url_{provider}") or settings.value("base_url")
+             if target_url: c.set_base_url(target_url)
+             
+             # Fetch localized key from OS Vault
+             target_key = keyring.get_password("LLMChatApp", f"api_key_{provider}")
+             
+             # Logical Fallback Cascade: Try direct/nvidia roots for legacy support
+             if not target_key:
+                 target_key = keyring.get_password("LLMChatApp", "api_key") or keyring.get_password("LLMChatApp", "api_key_nvidia")
+                 
+             if target_key: c.set_api_key(target_key)
+             
         return c
 
     def on_chunk(self, chat, text):
@@ -176,7 +210,15 @@ class ArenaViewWidget(QWidget):
         celebration.setWindowTitle("🏆 The Verdict is In!")
         celebration.setText(f"<h2>🏆 WINNER: {winning_model}</h2>")
         celebration.setInformativeText(f"You have officially crowned {winning_model} over {loser_model} in this duel!")
+        
+        # PROPOSED: Automated Reporting Feature Injection
+        save_btn = celebration.addButton("💾 Save Report (.md)", QMessageBox.ActionRole)
+        celebration.addButton("Close", QMessageBox.AcceptRole)
+        
         celebration.exec()
+        
+        if celebration.clickedButton() == save_btn:
+             self.export_duel_report(winning_model, loser_model)
         
         # Reset interface glow
         if winner_slot == "A":
@@ -193,3 +235,49 @@ class ArenaViewWidget(QWidget):
         self.check_all_finished()
         self.ui.stats_a.setText("Stopped.")
         self.ui.stats_b.setText("Stopped.")
+
+    # ---------------------------------------------------------
+    # PRIVATE REPORTERS & CACHE HELPERS
+    # ---------------------------------------------------------
+    def _store_response_a(self, text): self.response_a = text
+    def _store_response_b(self, text): self.response_b = text
+
+    def export_duel_report(self, winner, loser):
+        """Manufactures and prompts to save an archival Markdown verdict record."""
+        from datetime import datetime
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Duel Report", f"duel_report_{stamp}.md", 
+            "Markdown Files (*.md);;All Files (*)"
+        )
+        if not file_path: return
+        
+        w_text = self.response_a if winner == self.model_a_id else self.response_b
+        l_text = self.response_b if winner == self.model_a_id else self.response_a
+        
+        report_body = f"""# ⚔️ AI Duel Verdict Report
+**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+## 🎯 Input Prompt
+> {self.current_prompt}
+
+---
+
+## 🏆 WINNER: {winner}
+{w_text}
+
+---
+
+## 🥈 RUNNER-UP: {loser}
+{l_text}
+
+---
+*This automated benchmark report was manufactured locally via the LLM Chat App Arena.*
+"""
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(report_body)
+            QMessageBox.information(self, "Report Saved", "The markdown verdict report has been securely archived.")
+        except Exception as e:
+            QMessageBox.critical(self, "Export Failure", f"Failed to write report file:\n{str(e)}")
+

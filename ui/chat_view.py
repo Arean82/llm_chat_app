@@ -134,8 +134,10 @@ class ChatViewWidget(QWidget):
         self.attached_files = []
         self.input_field.setPlaceholderText("")
 
-    def send_message(self, api_response_queue=None, custom_messages=None, custom_temp=None, custom_max_tokens=None):
-        user_message = self.input_field.toPlainText().strip()
+    def send_message(self, api_response_queue=None, custom_messages=None, custom_temp=None, custom_max_tokens=None, override_prompt=None, api_stream_queue=None):
+        # ADAPTIVE PROMPT SOURCE: Favor direct injection logic to avoid UI contamination (Audit ID 039 Fix)
+        user_message = override_prompt if override_prompt is not None else self.input_field.toPlainText().strip()
+        
         if not user_message and not self.attached_files:
             return
 
@@ -152,7 +154,10 @@ class ChatViewWidget(QWidget):
             return
 
         self.response_start_time = time.perf_counter()  
-        self.input_field.clear()
+        
+        # Only purge the main textbox if the user manually triggered from GUI
+        if override_prompt is None:
+             self.input_field.clear()
         
         final_prompt = user_message
         if self.attached_files:
@@ -172,11 +177,11 @@ class ChatViewWidget(QWidget):
         usage_percent = (current_total_estimate / token_limit) * 100
         
         if (token_limit - current_total_estimate) < TOKEN_BUFFER or usage_percent > 85:
-             self.attempt_adaptive_compression(api_response_queue, custom_messages, custom_temp, custom_max_tokens)
+             self.attempt_adaptive_compression(api_response_queue, custom_messages, custom_temp, custom_max_tokens, api_stream_queue)
         else:
-             self._continue_send_message(api_response_queue, custom_messages, custom_temp, custom_max_tokens)
+             self._continue_send_message(api_response_queue, custom_messages, custom_temp, custom_max_tokens, api_stream_queue)
 
-    def attempt_adaptive_compression(self, api_queue, c_msgs, c_temp, c_max):
+    def attempt_adaptive_compression(self, api_queue, c_msgs, c_temp, c_max, api_stream_queue=None):
         self.add_system_message("⚡ *Context Optimization Activated...*")
         self.input_field.setEnabled(False)
         self.add_typing_indicator()
@@ -184,7 +189,7 @@ class ChatViewWidget(QWidget):
         base_history = [m for m in self.chat_history if m.get('role') != 'system']
         if len(base_history) < 3:
              self.remove_typing_indicator()
-             self._continue_send_message(api_queue, c_msgs, c_temp, c_max)
+             self._continue_send_message(api_queue, c_msgs, c_temp, c_max, api_stream_queue)
              return
 
         pack_count = max(2, int(len(base_history) * 0.60))
@@ -210,18 +215,18 @@ class ChatViewWidget(QWidget):
              self.chat_history.insert(0, {"role": "system", "content": f"📊 CONSOLIDATED MEMORY RECAP: {text_summary.strip()}"})
              self.total_tokens = sum(len(m.get('content', '')) // 3 for m in self.chat_history)
              self.add_system_message("✨ *Context Optimized.*")
-             self._continue_send_message(api_queue, c_msgs, c_temp, c_max)
+             self._continue_send_message(api_queue, c_msgs, c_temp, c_max, api_stream_queue)
 
         def on_compaction_fault(error_string):
              self.remove_typing_indicator()
              self.add_system_message(f"⚠️ *Optimization Bypassed.*")
-             self._continue_send_message(api_queue, c_msgs, c_temp, c_max)
+             self._continue_send_message(api_queue, c_msgs, c_temp, c_max, api_stream_queue)
 
         self.compactor_thread.response_received.connect(on_compaction_resolved)
         self.compactor_thread.error_occurred.connect(on_compaction_fault)
         self.compactor_thread.start()
 
-    def _continue_send_message(self, api_queue=None, custom_msgs=None, c_temp=None, c_max=None):
+    def _continue_send_message(self, api_queue=None, custom_msgs=None, c_temp=None, c_max=None, api_stream_queue=None):
         self.input_field.setEnabled(False)
         self.add_typing_indicator()
         self.current_response_text = "" 
@@ -247,6 +252,12 @@ class ChatViewWidget(QWidget):
         if api_queue:
             self.current_worker.response_received.connect(lambda resp: api_queue.put(resp))
             self.current_worker.error_occurred.connect(lambda err: api_queue.put(f"Error: {err}"))
+            
+        # Hook up continuous streaming bridge back to background Flask callers
+        if api_stream_queue:
+            self.current_worker.stream_chunk.connect(lambda chunk: api_stream_queue.put(chunk))
+            self.current_worker.error_occurred.connect(lambda err: api_stream_queue.put(f"API_STREAM_ERROR:{err}"))
+            self.current_worker.finished.connect(lambda: api_stream_queue.put(None)) # Stop sentinel
 
         self.current_worker.finished.connect(self.on_worker_finished)
         self.current_worker.metrics_received.connect(self.on_metrics_received)

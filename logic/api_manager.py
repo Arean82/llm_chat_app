@@ -31,8 +31,8 @@ class ApiManager(QObject):
         if self.api_server and self.api_server.running:
             return
 
-        # Initialize APIServer with self.api_send_message as the bridge callback
-        self.api_server = APIServer(self.window.llm_client, self.api_send_message)
+        # Initialize APIServer with BOTH static and streaming bridge callbacks (Fixes Audit 038)
+        self.api_server = APIServer(self.window.llm_client, self.api_send_message, self.api_stream_callback)
         
         success, message = self.api_server.start()
         
@@ -75,24 +75,57 @@ class ApiManager(QObject):
         except queue.Empty:
             return "Error: Request timed out in GUI thread"
 
+    def api_stream_callback(self, user_message: str, system_message: str = "", temperature: float = 0.7, max_tokens: int = 4096, messages_list: list = None):
+        """
+        NEW: Generator callback triggered by Flask for true streaming responses.
+        Routes chunks continuously from a dedicated thread-safe streaming queue.
+        """
+        stream_queue = queue.Queue()
+        params = {
+            "message": user_message,
+            "messages_list": messages_list,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "system_message": system_message,
+            "stream_queue": stream_queue # Trigger flag for handler
+        }
+        
+        # Signal to main thread, no return blocking response_queue needed here.
+        self.api_request_signal.emit(params, None)
+        
+        # Loop until finished sentinel None is received
+        while True:
+            try:
+                chunk = stream_queue.get(timeout=60)
+                if chunk is None: 
+                    break
+                if isinstance(chunk, str) and chunk.startswith("API_STREAM_ERROR:"):
+                    yield f"\n[Error: {chunk.replace('API_STREAM_ERROR:', '')}]"
+                    break
+                yield chunk
+            except queue.Empty:
+                yield "\n[Stream Timeout Exception]"
+                break
+
     def handle_api_request(self, params: dict, response_queue: queue.Queue):
         """
         HANDLER executed on the Main GUI Thread.
-        Updates the UI and triggers the standard message sending logic.
+        Processes data payloads safely detached from active human GUI interaction state.
         """
         user_message = params.get("message", "")
         messages_list = params.get("messages_list", None)
-        
-        # 1. Update the input field in the UI with JUST the latest message prompt
-        self.window.chat_view.ui.input_field.setPlainText(user_message)
-        
-        # 2. Trigger message logic, passing parameters along
         temperature = params.get("temperature", None)
         max_tokens = params.get("max_tokens", None)
+        stream_queue = params.get("stream_queue", None) # Resolves callback target
+        
+        # FIX Audit ID 039: NO LONGER setPlainText() in input field.
+        # This completely isolates the background automated calls from the current active user session.
         
         self.window.chat_view.send_message(
             api_response_queue=response_queue, 
             custom_messages=messages_list,
             custom_temp=temperature,
-            custom_max_tokens=max_tokens
+            custom_max_tokens=max_tokens,
+            override_prompt=user_message,  # Native isolated injection
+            api_stream_queue=stream_queue  # Native streaming bridge
         )

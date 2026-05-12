@@ -50,11 +50,10 @@ def load_all_models() -> list:
                 data = json.load(f)
                 model_list = data.get("models", [])
                 
-                # Detect provider based on filename fallback if missing (e.g., models_google.json -> google)
+                # ADAPTIVE INFERENCE (Audit ID 034 Fix): Extract dynamic provider name directly from shard basename
                 basename = os.path.basename(file_path).lower()
-                inferred_provider = "nvidia"
-                if "google" in basename: inferred_provider = "google"
-                elif "nvidia" in basename: inferred_provider = "nvidia"
+                inferred_provider = basename.replace("models_", "").replace(".json", "")
+                if not inferred_provider: inferred_provider = "nvidia" # global safety default
 
                 for m in model_list:
                     if m.get("id") not in seen_ids:
