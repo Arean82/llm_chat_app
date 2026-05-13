@@ -1,6 +1,6 @@
 # Project Audit Report: LLM Chat App
 **Date:** 2026-05-11
-**Status:** 🟢 100% - 40/40 ITEMS REMEDIATED (MISSION ACCOMPLISHED)
+**Status:** 🟢 100% - 45/45 ITEMS REMEDIATED (MISSION ACCOMPLISHED)
 
 ## 📊 Audit Summary Table
 
@@ -46,6 +46,11 @@
 | 038 | **Reliability** | `API Server` | 🔴 High | ✅ **Resolved** | Streaming Short-Circuit: API Manager lacks stream callback route handler. |
 | 039 | **UX / UI** | `API Server` | 🟠 Med | ✅ **Resolved** | UI Pollution: External server invokes overwrite local user input prompt. |
 | 040 | **Ecosystem** | `Plugins` | 🟡 Low | ✅ **Resolved** | Universal Ingestion Matrix: Native multi-file, binary image, and Office parsing logic. |
+| 041 | **RAG Engine** | `vector_db.py`| 🔴 High | ✅ **Resolved** | Modern SDK Deprecation: Migrated deprecated `.search()` to optimized `.query_points()`. |
+| 042 | **Stability** | `Local Sweep` | 🟠 Med | ✅ **Resolved** | Sweep Isolation: Non-blocking sweepers implement strict timeout limits protecting startup. |
+| 043 | **Usability** | `Drop Matrix` | 🟡 Low | ✅ **Resolved** | Matrix Boundaries: Folder crawlers strictly exclude massive dependency nodes (.git, node_modules).|
+| 044 | **Security** | `Sandbox Loop`| 🟡 Low | ✅ **Resolved** | Vision Sandbox Integration: Recursive visual triggers pipe GUI code directly to isolated QProcess.|
+| 045 | **UX / UI** | `ThemeManager` | 🟡 Low | ✅ **Resolved** | Low Visibility: High-contrast dynamic palette injected protecting placeholder text readability. |
 
 ---
 
@@ -77,6 +82,14 @@
 ### 🎨 6. Inline Stylesheet Security Guards
 - **Invariant:** Functional inline CSS must cover ALL interaction states to override cascade leaks.
 - **Precaution:** Any usage of inline `setStyleSheet` to control state visual styling (e.g., Green/Red/Blue buttons) MUST explicitly package the `:disabled` pseudo-class rule within the string. Without an explicit disabled override, specific inline type-rules override global cascaded grey-out themes, visually masking critical system lockdown states.
+
+### 💾 7. Local Qdrant Vector Write Serialization
+- **Invariant:** Local file-based Qdrant storage operates using a singular write transaction lock.
+- **Precaution:** DO NOT spawn multiple concurrent mutating threads targeting the Qdrant SQLite backend simultaneously. Concurrent writes trigger immediate filesystem busy exceptions. Ensure all vector indexer tasks execute strictly sequentially.
+
+### ⏱️ 8. Decoupled Endpoint Scanner Bounds
+- **Invariant:** Daemon probes (Ollama/LM Studio) must run isolated from the GUI event system.
+- **Precaution:** Never execute synchronous web queries to arbitrary loopback ports during startup or inside button signals. Always leverage specialized non-blocking background `QThread` engines bound with aggressive low-latency HTTP gates (timeout <= 1.5s) to prevent runtime locks.
 
 ---
 
@@ -372,6 +385,41 @@ Below is the full technical breakdown of every stabilization applied to the envi
     3. **Binary Router:** Enabled full Base64 routing through the threading bridge, allowing unified delivery to Google GenAI (`types.Part.from_bytes`) and OpenAI data-uri structures simultaneously.
     4. **Sanity Safe-guards:** Added robust type sanitization ensuring persistence trees, adaptive summary generation, and GUI renderers are completely insulated from list-type collisions.
 
+#### 41. Audit ID 041: Qdrant Unified Query Compliance
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`logic/vector_db.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/vector_db.py)
+*   **Details:** Library upgrades (qdrant-client v1.18.0) deprecated standard `QdrantClient.search()` direct endpoints in favor of unified unified endpoints.
+*   **Remediation:** Refactored retrieval engine to target high-level `query_points()` structure, securely extracting node contents from `response.points` collections.
+
+#### 42. Audit ID 042: Asynchronous Local Model Discovery
+*   **Severity:** 🟠 Medium
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`workers/local_model_detector.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/local_model_detector.py)
+*   **Details:** Manual model mapping was high-friction. Adding local servers caused startup delay without careful timeout gates.
+*   **Remediation:** Built a dedicated, low-footprint startup `QThread` using 1.5s timeout gates to discover, parse, and register Ollama and LM Studio services seamlessly into user configs.
+
+#### 43. Audit ID 043: Directory Matrix Boundary Gate
+*   **Severity:** 🟡 Low
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+*   **Details:** Standard directory recursion threatened memory exhaustion if encountering massive package repositories.
+*   **Remediation:** Encapsulated directory drops behind a global ignore-list (`.git`, `node_modules`, `.venv`), preserving lightning execution speeds for raw folder onboardings.
+
+#### 44. Audit ID 044: Vision-to-Sandbox Subprocess Pipeline
+*   **Severity:** 🟡 Low
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+*   **Details:** Executing dynamic code generation on parent event queues blocks GUI execution and risks system hangs.
+*   **Remediation:** Orchestrated native base64 parsing bridges piping markdown completions directly to host `QProcess` runtimes, unlocking recursive automated mock-up sandboxing.
+
+#### 45. Audit ID 045: Dynamic High-Contrast Placeholder Palette
+*   **Severity:** 🟡 Low
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/theme_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/theme_manager.py)
+*   **Details:** Input box placeholder "Ask me anything..." was virtually invisible (dark-grey on dark-grey in dark mode; ultra-light-grey on white in light mode) due to missing explicit palette overrides.
+*   **Remediation:** Engineered recursive viewport sweeping method (`_apply_placeholder_styles`) injecting specific high-contrast `QPalette.PlaceholderText` overrides (#a0a0a0 for dark; #666666 for light) across all stacked viewport widgets.
+
 ---
 
-*Final Audit Update Completed on 2026-05-12 (Expanded Logic Proposition Addition).*
+*Final Audit Update Completed on 2026-05-13 (Phase 2 Strategic & UI Optimization Addition).*

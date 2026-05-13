@@ -347,6 +347,69 @@ class LLMClient:
         except Exception as e:
             print(f"Abstract Batch Generation Exception: {e}")
             return {}
+
+    def generate_embeddings(self, text: str) -> list:
+        """
+        Computes semantic vector embeddings utilizing the active API client credentials.
+        Adapts dynamically based on chosen vendor (Google GenAI or OpenAI framework).
+        """
+        if not text or not text.strip():
+            return []
+            
+        provider = self.get_current_provider()
+        payload_slice = text[:8000] # Input bounds safety clip
+
+        # 🟢 Google GenAI Embedding Pipeline
+        if provider == "google":
+            if not self.google_client or not GOOGLE_SDK_AVAILABLE:
+                return []
+            try:
+                # Using unified v0.1.1+ Google GenAI embeddings interface
+                result = self.google_client.models.embed_content(
+                    model="text-embedding-004",
+                    contents=payload_slice
+                )
+                if result and result.embeddings:
+                    return result.embeddings[0].values
+                return []
+            except Exception as e:
+                print(f"[Embedding] Google failure: {e}")
+                return []
+
+        # 🔵 OpenAI / Nvidia Universal Embedding Pipeline
+        else:
+            if not self.client:
+                return []
+            try:
+                # Heuristic evaluation to choose ideal model tag
+                base_url_lower = self.base_url.lower()
+                if "nvidia.com" in base_url_lower:
+                    embed_model = "nvidia/llama-3.2-nv-embedqa-1b-v2"
+                elif "api.openai.com" in base_url_lower:
+                    embed_model = "text-embedding-3-small"
+                else:
+                    # Generic fallback for custom local runners (Ollama/LM Studio)
+                    embed_model = "text-embedding-3-small"
+
+                resp = self.client.embeddings.create(
+                    model=embed_model,
+                    input=payload_slice,
+                    timeout=15.0
+                )
+                return resp.data[0].embedding
+            except Exception as e:
+                # Local provider fallback (e.g. trying Ollama common naming schema)
+                try:
+                     resp = self.client.embeddings.create(
+                         model="nomic-embed-text",
+                         input=payload_slice,
+                         timeout=5.0
+                     )
+                     return resp.data[0].embedding
+                except:
+                     print(f"[Embedding] Generic provider failure: {e}")
+                     return []
+
     def fetch_custom_openai_models(self, base_url: str, api_key: str, provider_id: str = "openai") -> list:
         """
         UNIVERSAL OPENAI DISCOVERY (Audit ID 024)

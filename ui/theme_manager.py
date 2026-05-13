@@ -32,6 +32,7 @@ class ThemeManager:
         self._update_toggle_button()
         self._apply_menu_bar_theme()
         self.refresh_auth_button_style()
+        self._apply_placeholder_styles()
         
         # Broadcast specific display updates to dynamic modules
         active_view = self._get_active_view()
@@ -64,6 +65,35 @@ class ThemeManager:
                 if hasattr(w, "theme_toggle_btn"):
                     w.theme_toggle_btn.setText(text)
         except: pass
+
+    def _apply_placeholder_styles(self):
+        """Dynamically overrides palette role for placeholder text to guarantee high-contrast readability."""
+        from PySide6.QtGui import QPalette, QColor
+        
+        # High-contrast grey values specifically tuned for accessibility
+        # In dark mode: Bright soft-grey (#a0a0a0) ensuring visibility against #2d2d2d
+        # In light mode: Deep charcoal-grey (#666666) ensuring visibility against #f5f5f5
+        color = QColor("#a0a0a0") if self.current_theme == "dark" else QColor("#666666")
+        
+        try:
+            for i in range(self.window.ui.main_stack.count()):
+                view = self.window.ui.main_stack.widget(i)
+                target_input = None
+                
+                # Search for direct or nested input field handles
+                if hasattr(view, "input_field"):
+                    target_input = view.input_field
+                elif hasattr(view, "ui") and hasattr(view.ui, "input_field"):
+                    target_input = view.ui.input_field
+                    
+                if target_input:
+                    palette = target_input.palette()
+                    palette.setColor(QPalette.PlaceholderText, color)
+                    target_input.setPalette(palette)
+                    target_input.update() # Force visual redraw
+        except Exception as e:
+             print(f"[ThemeManager] Failed to set placeholder colors: {e}")
+
 
     def _apply_menu_bar_theme(self):
         if self.current_theme == "dark":

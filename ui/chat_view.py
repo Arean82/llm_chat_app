@@ -3,7 +3,7 @@ import time
 import json
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QFileDialog, QApplication, QListWidgetItem, QAbstractItemView, QSizePolicy
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QTextCursor
 
@@ -37,6 +37,7 @@ class ChatViewWidget(QWidget):
         self.total_tokens = 0
         self.current_conv_id = None
         self.chat_html_history = [] 
+        self._auto_run_sandbox_on_next_response = False
 
         # Load layout
         loader = QUiLoader()
@@ -112,6 +113,11 @@ class ChatViewWidget(QWidget):
         # Insert directly above the horizontal bottom toolbar (main_layout node 2)
         self.ui.main_layout.insertWidget(2, self.web_search_chk)
 
+        # Enable dynamic Drag & Drop ingestion matrix
+        self.setAcceptDrops(True)
+        self.chat_display.setAcceptDrops(False)
+        self.input_field.setAcceptDrops(False)
+
     # =========================================================
     # REFACTORED CHAT LOGIC METHODS FROM MAIN_WINDOW
     # =========================================================
@@ -165,83 +171,164 @@ class ChatViewWidget(QWidget):
         if not file_paths:
              return
              
-        for file_path in file_paths:
-            file_ext = Path(file_path).suffix.lower()
-            file_name = Path(file_path).name
-            
+        self.process_paths(file_paths)
+
+    def process_paths(self, paths):
+        """Direct ingest pipeline supporting both individual files and bulk codebase ingestion."""
+        for file_path in paths:
+            p = Path(file_path)
+            if p.is_dir():
+                self.add_system_message(f"📁 **Crawling directory for codebase context:** `{p.name}`...")
+                agg_content, count = self.ingest_folder(p)
+                if count > 0:
+                    # Context Gate: Estimate tokens (char count / 3). 20k tokens ≈ 60,000 chars
+                    gate_warning = ""
+                    if len(agg_content) > 60000:
+                         gate_warning = "\n⚡ *Scale crosses Context Gate (>20k tokens). Local semantic routing ready.*"
+                    self.attached_files.append({
+                        'name': f"{p.name}/ (Codebase)",
+                        'content': agg_content
+                    })
+                    self.add_system_message(f"✅ **Synthesized {count} source files** from directory: `{p.name}`{gate_warning}")
+                else:
+                    self.add_system_message(f"⚠️ No supported source code files found in directory: `{p.name}`")
+            elif p.is_file():
+                self.process_single_file(str(p))
+
+    def process_single_file(self, file_path):
+        """Standalone extractor isolating file system IO from interaction handlers."""
+        file_ext = Path(file_path).suffix.lower()
+        file_name = Path(file_path).name
+        
+        try:
+            # --- TIER 1: VISION GUARD PROTECTION ---
+            if file_ext in ['.png', '.jpg', '.jpeg']:
+                if not self.llm_client.is_model_vision_capable():
+                    QMessageBox.warning(self, "Vision Security Conflict", 
+                        f"❌ ATTACHMENT REFUSED: '{file_name}'\n\n"
+                        f"The active model lacks a visual recognition stack.\n"
+                        "Switch to a valid Vision model to enable visual interaction.")
+                    return
+                else:
+                    # TRUE ACTIVATION: Read binary asset as base64 carrier
+                    import base64
+                    with open(file_path, 'rb') as img_f:
+                        bin_data = base64.b64encode(img_f.read()).decode('utf-8')
+                    # Detect refined mime format
+                    guessed_mime = f"image/{file_ext.replace('.','').replace('jpg','jpeg')}"
+                    self.attached_files.append({
+                        'name': file_name, 
+                        'content': bin_data, 
+                        'type': 'image', 
+                        'mime': guessed_mime
+                    })
+                    # Visual Synergistic Hook: Offer direct-to-sandbox prototype conversion
+                    magic_anchor = "<a href='vision_sandbox:run' style='color:#00aaff; text-decoration:none; font-weight:bold;'>🪄 [Compile into Python Prototype]</a>"
+                    self.add_system_message(f"🖼️ Loaded Visual: {file_name} &nbsp;&nbsp; {magic_anchor}", allow_html=True)
+                    return 
+
+            # --- TIER 2: NATIVE DOCUMENT ENGINE SUITE ---
+            elif file_ext == '.pdf':
+                import pypdf
+                reader = pypdf.PdfReader(file_path)
+                content = "\n".join([p.extract_text() for p in reader.pages if p.extract_text()])
+                
+            elif file_ext == '.docx':
+                import docx2txt
+                content = docx2txt.process(file_path)
+
+            elif file_ext in ['.xlsx', '.xls']:
+                import pandas as pd
+                # Fast Excel-to-CSV conversion preserves data topology elegantly for prompt injection
+                content = pd.read_excel(file_path).to_csv(index=False)
+                
+            elif file_ext == '.pptx':
+                from pptx import Presentation
+                prs = Presentation(file_path)
+                slides_txt = []
+                for i, slide in enumerate(prs.slides):
+                    txt = [f"--- Slide {i+1} ---"]
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text") and shape.text.strip():
+                            txt.append(shape.text.strip())
+                    slides_txt.append("\n".join(txt))
+                content = "\n\n".join(slides_txt)
+                
+            elif file_ext == '.odt':
+                from odf import text, teletype
+                from odf.opendocument import load
+                odtdoc = load(file_path)
+                allparas = odtdoc.getElementsByType(text.P)
+                content = "\n".join([teletype.extractText(p) for p in allparas])
+                
+            # --- TIER 3: UNIVERSAL RAW TEXT FALLBACK (JSON, XML, UI, etc.) ---
+            else:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    
+            # --- BUNDLE WRITE ---
+            if content and content.strip():
+                self.attached_files.append({'name': file_name, 'content': content})
+                self.add_system_message(f"📎 Synthesized {file_ext.upper()}: {file_name}")
+            else:
+                self.add_system_message(f"⚠️ Null Content Rejected: {file_name}")
+                
+        except Exception as e:
+            self.add_system_message(f"❌ Parse Crash [{file_name}]: {str(e)}")
+
+    def ingest_folder(self, folder_path):
+        """Recursively crawl directory and concatenate supported files in target markdown block formats."""
+        folder = Path(folder_path)
+        ignored_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.venv', 'build', 'dist', '.ruby-lsp', '.idea', '.vscode'}
+        supported_exts = {'.py', '.js', '.ts', '.html', '.css', '.json', '.xml', '.yaml', '.yml', '.md', '.txt', '.c', '.cpp', '.h', '.hpp', '.java', '.go', '.rs', '.rb', '.php', '.sql', '.sh', '.bat', '.ps1', '.ui'}
+        
+        agg_content = []
+        file_count = 0
+        
+        def crawl(current_dir, current_depth, max_depth=5):
+            nonlocal file_count
+            if current_depth > max_depth:
+                return
             try:
-                # --- TIER 1: VISION GUARD PROTECTION ---
-                if file_ext in ['.png', '.jpg', '.jpeg']:
-                    if not self.llm_client.is_model_vision_capable():
-                        QMessageBox.warning(self, "Vision Security Conflict", 
-                            f"❌ ATTACHMENT REFUSED: '{file_name}'\n\n"
-                            f"The active model lacks a visual recognition stack.\n"
-                            "Switch to a valid Vision model to enable visual interaction.")
-                        continue
-                    else:
-                        # TRUE ACTIVATION: Read binary asset as base64 carrier
-                        import base64
-                        with open(file_path, 'rb') as img_f:
-                            bin_data = base64.b64encode(img_f.read()).decode('utf-8')
-                        # Detect refined mime format
-                        guessed_mime = f"image/{file_ext.replace('.','').replace('jpg','jpeg')}"
-                        self.attached_files.append({
-                            'name': file_name, 
-                            'content': bin_data, 
-                            'type': 'image', 
-                            'mime': guessed_mime
-                        })
-                        self.add_system_message(f"🖼️ Loaded Visual: {file_name}")
-                        continue 
+                for item in current_dir.iterdir():
+                    if item.is_dir():
+                        if item.name not in ignored_dirs:
+                            crawl(item, current_depth + 1, max_depth)
+                    elif item.is_file():
+                        if item.suffix.lower() in supported_exts:
+                            try:
+                                with open(item, 'r', encoding='utf-8', errors='ignore') as f:
+                                    text = f.read()
+                                    if text.strip():
+                                        rel_path = item.relative_to(folder)
+                                        file_block = (
+                                            f"# FILE: {rel_path}\n"
+                                            "--- CODE STARTS ---\n"
+                                            f"{text}\n"
+                                            "--- CODE ENDS ---"
+                                        )
+                                        agg_content.append(file_block)
+                                        file_count += 1
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+                
+        crawl(folder, 1)
+        return "\n\n".join(agg_content), file_count
 
-                # --- TIER 2: NATIVE DOCUMENT ENGINE SUITE ---
-                elif file_ext == '.pdf':
-                    import pypdf
-                    reader = pypdf.PdfReader(file_path)
-                    content = "\n".join([p.extract_text() for p in reader.pages if p.extract_text()])
-                    
-                elif file_ext == '.docx':
-                    import docx2txt
-                    content = docx2txt.process(file_path)
+    def dragEnterEvent(self, event):
+        """Authorize dynamic drag-and-drop gestures carrying local URIs."""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
 
-                elif file_ext in ['.xlsx', '.xls']:
-                    import pandas as pd
-                    # Fast Excel-to-CSV conversion preserves data topology elegantly for prompt injection
-                    content = pd.read_excel(file_path).to_csv(index=False)
-                    
-                elif file_ext == '.pptx':
-                    from pptx import Presentation
-                    prs = Presentation(file_path)
-                    slides_txt = []
-                    for i, slide in enumerate(prs.slides):
-                        txt = [f"--- Slide {i+1} ---"]
-                        for shape in slide.shapes:
-                            if hasattr(shape, "text") and shape.text.strip():
-                                txt.append(shape.text.strip())
-                        slides_txt.append("\n".join(txt))
-                    content = "\n\n".join(slides_txt)
-                    
-                elif file_ext == '.odt':
-                    from odf import text, teletype
-                    from odf.opendocument import load
-                    odtdoc = load(file_path)
-                    allparas = odtdoc.getElementsByType(text.P)
-                    content = "\n".join([teletype.extractText(p) for p in allparas])
-                    
-                # --- TIER 3: UNIVERSAL RAW TEXT FALLBACK (JSON, XML, UI, etc.) ---
-                else:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        
-                # --- BUNDLE WRITE ---
-                if content and content.strip():
-                    self.attached_files.append({'name': file_name, 'content': content})
-                    self.add_system_message(f"📎 Synthesized {file_ext.upper()}: {file_name}")
-                else:
-                    self.add_system_message(f"⚠️ Null Content Rejected: {file_name}")
-                    
-            except Exception as e:
-                self.add_system_message(f"❌ Parse Crash [{file_name}]: {str(e)}")
+    def dropEvent(self, event):
+        """Deconstruct dropped payload and pipe through active ingestion router."""
+        paths = [Path(url.toLocalFile()) for url in event.mimeData().urls()]
+        valid_paths = [str(p) for p in paths if p.exists()]
+        if valid_paths:
+             self.process_paths(valid_paths)
+             event.acceptProposedAction()
 
     def clear_attachments(self):
         self.attached_files = []
@@ -443,10 +530,11 @@ class ChatViewWidget(QWidget):
         self.chat_html_history.append(html)
         self.scroll_to_bottom()
 
-    def add_system_message(self, message: str):
+    def add_system_message(self, message: str, allow_html: bool = False):
         if not hasattr(self, 'chat_display'): return
         color = self.theme_manager.get_system_message_color()
-        html = f"<i style='color: {color};'>ℹ️ {self.formatter.escape_html(message)}</i>"
+        content_text = message if allow_html else self.formatter.escape_html(message)
+        html = f"<i style='color: {color};'>ℹ️ {content_text}</i>"
         self.chat_display.append(html)
         self.chat_html_history.append(html)
         self.scroll_to_bottom()
@@ -523,6 +611,27 @@ class ChatViewWidget(QWidget):
 
         self.auto_save_current_chat()
         self.chat_display.insertHtml(self.theme_manager.get_copy_button_html())
+
+        # 🔄 Vision-to-Sandbox Recursive Execution Loop
+        if getattr(self, '_auto_run_sandbox_on_next_response', False):
+            self._auto_run_sandbox_on_next_response = False # Reset lock
+            try:
+                import re, base64
+                # Regex extraction targeting Python snippets
+                snippet_match = re.search(r"```python\s*\n(.*?)```", full_response, re.DOTALL)
+                if not snippet_match:
+                    snippet_match = re.search(r"```\s*\n(.*?)```", full_response, re.DOTALL)
+                
+                if snippet_match:
+                    extracted_code = snippet_match.group(1).strip()
+                    if extracted_code:
+                        self.add_system_message("⚡ **Synergy Triggered: Forwarding generated GUI code directly to Sandbox engine...**")
+                        b64_payload = base64.b64encode(extracted_code.encode('utf-8')).decode('utf-8')
+                        # Deliver with small visual delay to let typing lock fully release
+                        QTimer.singleShot(800, lambda: self.handle_chat_link_action("run_code", b64_payload))
+            except Exception as ex:
+                 print(f"[Synergy Sandbox Loop] Extraction failed: {ex}")
+
         self.current_response_text = ""
         if self.response_start_time:
             elapsed = time.perf_counter() - self.response_start_time
@@ -601,6 +710,28 @@ class ChatViewWidget(QWidget):
         scrollbar = self.chat_display.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def trigger_vision_to_sandbox_flow(self):
+        """Synergistic Contextual Action converting loaded visual assets into auto-executing Python prototypes."""
+        visual_assets = [f for f in self.attached_files if f.get('type') == 'image']
+        if not visual_assets:
+            QMessageBox.information(self, "Asset Missing", "No visual assets currently loaded.\n\nPlease drop or attach an image first!")
+            return
+
+        # Set internal recursive loop latch
+        self._auto_run_sandbox_on_next_response = True
+
+        directive = (
+            "Analyze this visual mock-up/artifact and compile it into a complete, functional, standalone Python desktop application. "
+            "Use PySide6 (or Tkinter as fallback) for a modern GUI. Implement active callbacks for mock UI items so they print actions or alter states. "
+            "Use HSL tailored curated color palettes and beautiful aesthetics. "
+            "Return ONLY a single executable markdown code block containing the complete source code. Zero explanation."
+        )
+        
+        # Dispatch delivery
+        self.add_system_message("✨ **Synergistic Protocol Engaged: Compiling Visual into Desktop Prototype...**")
+        # Inject directly to stream using sending routing override
+        self.send_message(override_prompt=directive)
+
     def handle_chat_link_action(self, action, payload):
         """Process asynchronous special actions requested from message interactions."""
         import base64
@@ -610,6 +741,9 @@ class ChatViewWidget(QWidget):
             if action == "copy_code":
                 QApplication.clipboard().setText(decoded)
                 self.add_system_message("📋 **Snippet copied to clipboard.**")
+                
+            elif action == "vision_sandbox":
+                self.trigger_vision_to_sandbox_flow()
                 
             elif action == "run_code":
                 import sys, tempfile, os
@@ -707,6 +841,40 @@ class ChatViewWidget(QWidget):
             self.chat_history, title=title, conv_id=self.current_conv_id,
             model_id=self.model_btn.text(), messages_html=json.dumps(self.chat_html_history)
         )
+        
+        # 🧠 Persistent Dense RAG: Queue the latest exchange for background embedding and vector sync
+        if len(self.chat_history) >= 2 and self.current_conv_id:
+            user_content = None
+            assistant_content = None
+            # Retrace from reverse to grab latest consecutive user-assistant block
+            for i in range(len(self.chat_history) - 1, -1, -1):
+                item = self.chat_history[i]
+                if item.get('role') == 'assistant' and not assistant_content:
+                    assistant_content = self._extract_safe_text(item.get('content', ''))
+                elif item.get('role') == 'user' and assistant_content and not user_content:
+                    user_content = self._extract_safe_text(item.get('content', ''))
+                    break # Block matched
+
+            if user_content and assistant_content:
+                try:
+                    from workers.vector_indexer_worker import VectorIndexerWorker
+                    
+                    # 🛡️ INVARIANT 7: Enforce strict single-transaction write serialization for local Qdrant DB
+                    if hasattr(self, 'vector_sync_thread') and self.vector_sync_thread and self.vector_sync_thread.isRunning():
+                        print("[Dense RAG Ingest] Safeguard triggered: Parallel write suppressed to protect Qdrant lock serialization.")
+                    else:
+                        # Instantiated thread reference to bypass Python garbage collection
+                        self.vector_sync_thread = VectorIndexerWorker(
+                            llm_client=self.llm_client,
+                            user_text=user_content,
+                            assistant_text=assistant_content,
+                            conversation_id=self.current_conv_id,
+                            model_id=self.model_btn.text()
+                        )
+                        self.vector_sync_thread.start()
+                except Exception as vec_e:
+                    print(f"[Dense RAG Ingest] Thread setup collision: {vec_e}")
+
         if is_new: self.refresh_history_list()
 
     def refresh_history_list(self):

@@ -14,6 +14,7 @@ from logic.api_manager import ApiManager
 from logic.formatter import MessageFormatter
 from ui.theme_manager import ThemeManager
 from workers.connection_worker import ConnectionWorker
+from workers.local_model_detector import LocalModelDetector
 from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import set_app_icon
 
@@ -47,6 +48,11 @@ class MainWindowClass(QMainWindow):
         self.connection_worker = ConnectionWorker()
         self.connection_worker.status_changed.connect(self.on_connection_status_changed)
         self.connection_worker.start()
+
+        # Fire non-blocking Local Model Auto-Detection Sweep (Ollama/LM Studio)
+        self.local_detector = LocalModelDetector()
+        self.local_detector.detection_completed.connect(self.on_local_models_detected)
+        self.local_detector.start()
 
         # Instantiate Views dynamically!
         self.chat_view = ChatViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
@@ -95,6 +101,15 @@ class MainWindowClass(QMainWindow):
     def force_disconnected_state(self):
         self.is_connected = False
         self.update_connection_icon()
+
+    def on_local_models_detected(self, provider, count):
+        """Accept telemetry from auto-sweep daemon and announce toast notification."""
+        msg = f"⚡ Local {provider} Engine Detected - {count} new models synced."
+        # 1. Statusbar non-blocking toast
+        self.statusBar().showMessage(msg, 6000)
+        # 2. Inject persistent announcement directly into the active chat log stream
+        if hasattr(self, 'chat_view') and self.chat_view:
+             self.chat_view.add_system_message(msg)
 
     def setup_menu_bar(self):
         menubar = self.menuBar()
@@ -442,6 +457,10 @@ class MainWindowClass(QMainWindow):
         if hasattr(self, 'connection_worker'):
             self.connection_worker.terminate()
             self.connection_worker.wait()
+        
+        if hasattr(self, 'local_detector') and self.local_detector.isRunning():
+            self.local_detector.terminate()
+            self.local_detector.wait()
         
         # Stop any active dual workers in arena just in case
         if hasattr(self, 'arena_view'):

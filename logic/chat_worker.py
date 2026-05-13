@@ -63,6 +63,45 @@ class ChatWorker(QThread):
                     except Exception as e:
                         self.thinking_chunk.emit(f"⚠️ Local Memory Lookup Faulted (Non-fatal): {str(e)}\n")
 
+            # 4. Execute Global Persistent RAG Semantic Search (Historical Recall Engine)
+            try:
+                search_str = self.web_search_query
+                if not search_str:
+                    raw = self.messages[-1].get('content', '')
+                    search_str = raw if isinstance(raw, str) else ""
+
+                if search_str and isinstance(search_str, str) and len(search_str.strip()) > 3:
+                    from logic.vector_db import VectorDatabase
+                    db = VectorDatabase.get_instance()
+                    
+                    if db.client:
+                        provider = self.client.get_current_provider()
+                        collection_name = f"global_history_{provider}"
+                        
+                        # Avoid triggering API overhead if collection is totally empty / doesn't exist
+                        if db.client.collection_exists(collection_name):
+                            self.thinking_chunk.emit("🧠 Harvesting relevant knowledge from long-term memory...\n")
+                            query_vector = self.client.generate_embeddings(search_str)
+                            
+                            if query_vector:
+                                # Harvest matching past historical exchanges
+                                past_hits = db.search_similar(collection_name, query_vector, limit=3, score_threshold=0.6)
+                                if past_hits:
+                                    blocks = ["--- LONG-TERM CONVERSATION HISTORY (RECALL) ---"]
+                                    for idx, hit in enumerate(past_hits, 1):
+                                        p = hit.get("payload", {})
+                                        date = p.get("timestamp", "Unknown Date")[:10]
+                                        body = p.get("full_text", "")
+                                        blocks.append(f"--- Past Record #{idx} (Archived: {date}) ---\n{body.strip()}")
+                                    
+                                    memory_context = "\n\n".join(blocks) + "\n\n--- END HISTORY ---"
+                                    
+                                    # Inline grounding insertion
+                                    self.messages.insert(1, {"role": "system", "content": memory_context})
+                                    self.thinking_chunk.emit("✅ Grounded using historical semantic recall.\n")
+            except Exception as e:
+                print(f"[Global RAG Engine] Lookup Failure: {e}")
+
             provider = self.client.get_current_provider()
             
             # 🛠️ Verify provider presence
