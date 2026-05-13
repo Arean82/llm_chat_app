@@ -115,20 +115,42 @@ class ArenaViewWidget(QWidget):
         self.ui.vote_a_btn.hide()
         self.ui.vote_b_btn.hide()
         
-        self.chat_a.append(f"<b>Prompt:</b> {prompt}<hr>")
-        self.chat_b.append(f"<b>Prompt:</b> {prompt}<hr>")
+        # Reset interface glow by restoring theme-compliant base stylesheets
+        base_styles = self.theme_manager.get_chat_styles()
+        self.chat_a.setStyleSheet(base_styles)
+        self.chat_b.setStyleSheet(base_styles)
+        
+        self.chat_a.append(f"<b>Prompt:</b> {self.formatter.escape_html(prompt)}<hr>")
+        self.chat_b.append(f"<b>Prompt:</b> {self.formatter.escape_html(prompt)}<hr>")
         
         # Cache session for reporting engine
         self.current_prompt = prompt
         self.response_a = ""
         self.response_b = ""
         
-        # Parallel Workers Spawn
-        payload = [{"role": "user", "content": prompt}]
+        # Load dynamic generation override settings consistent with standard chat behavior
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        use_defaults = settings.value("gen_use_defaults", "false") == "true"
+        
+        if use_defaults:
+            a_temp = None
+            a_tokens = None
+        else:
+            a_temp = float(settings.value("gen_temperature", 0.7))
+            a_tokens = int(settings.value("gen_max_tokens", 4096))
+            
+        # Construct standard payload leveraging unified system instructions if active
+        from utils.helpers import get_active_system_instructions
+        payload = []
+        sys_instr = get_active_system_instructions()
+        if sys_instr:
+            payload.append({"role": "system", "content": sys_instr})
+        payload.append({"role": "user", "content": prompt})
         
         # 1. Launch Worker A
         client_a = self.clone_client(self.model_a_id)
-        self.worker_a = ChatWorker(client_a, payload)
+        self.worker_a = ChatWorker(client_a, payload, temperature=a_temp, max_tokens=a_tokens)
         self.ui.stats_a.setText("⚡ Starting Stream A...")
         self.worker_a.stream_chunk.connect(lambda txt: self.on_chunk(self.chat_a, txt))
         self.worker_a.response_received.connect(self._store_response_a)
@@ -138,7 +160,7 @@ class ArenaViewWidget(QWidget):
 
         # 2. Launch Worker B
         client_b = self.clone_client(self.model_b_id)
-        self.worker_b = ChatWorker(client_b, payload)
+        self.worker_b = ChatWorker(client_b, payload, temperature=a_temp, max_tokens=a_tokens)
         self.ui.stats_b.setText("⚡ Starting Stream B...")
         self.worker_b.stream_chunk.connect(lambda txt: self.on_chunk(self.chat_b, txt))
         self.worker_b.response_received.connect(self._store_response_b)
@@ -199,6 +221,20 @@ class ArenaViewWidget(QWidget):
             self.ui.vote_a_btn.show()
             self.ui.vote_b_btn.show()
 
+            # --- RENDER RICH MARKDOWN HTML FOR BOTH RESPONSES ---
+            # Overwrite raw stream buffer with beautifully styled, complete Markdown components
+            if self.response_a:
+                html_a = self.formatter.format_ai_response(self.response_a)
+                self.chat_a.clear()
+                self.chat_a.append(f"<b>Prompt:</b> {self.formatter.escape_html(self.current_prompt)}<hr>")
+                self.chat_a.insertHtml(html_a)
+            
+            if self.response_b:
+                html_b = self.formatter.format_ai_response(self.response_b)
+                self.chat_b.clear()
+                self.chat_b.append(f"<b>Prompt:</b> {self.formatter.escape_html(self.current_prompt)}<hr>")
+                self.chat_b.insertHtml(html_b)
+
     def elect_winner(self, winner_slot):
         # Reveal names instantly upon vote casting!
         self.ui.blind_mode_check.setChecked(False)
@@ -221,13 +257,14 @@ class ArenaViewWidget(QWidget):
         if celebration.clickedButton() == save_btn:
              self.export_duel_report(winning_model, loser_model)
         
-        # Reset interface glow
+        # Reset interface glow ensuring theme compliance (do not clear existing chat stylesheets)
+        base_styles = self.theme_manager.get_chat_styles()
         if winner_slot == "A":
-             self.chat_a.setStyleSheet("border: 3px solid #2ecc71; border-radius: 8px;")
-             self.chat_b.setStyleSheet("border: 1px solid #ccc; border-radius: 8px; opacity: 0.5;")
+             self.chat_a.setStyleSheet(base_styles + "\nQTextEdit { border: 3px solid #2ecc71; border-radius: 8px; }")
+             self.chat_b.setStyleSheet(base_styles + "\nQTextEdit { border: 1px solid #ccc; border-radius: 8px; opacity: 0.5; }")
         else:
-             self.chat_b.setStyleSheet("border: 3px solid #2ecc71; border-radius: 8px;")
-             self.chat_a.setStyleSheet("border: 1px solid #ccc; border-radius: 8px; opacity: 0.5;")
+             self.chat_b.setStyleSheet(base_styles + "\nQTextEdit { border: 3px solid #2ecc71; border-radius: 8px; }")
+             self.chat_a.setStyleSheet(base_styles + "\nQTextEdit { border: 1px solid #ccc; border-radius: 8px; opacity: 0.5; }")
 
     def stop_duel(self):
         if self.worker_a and self.worker_a.isRunning(): self.worker_a.terminate()

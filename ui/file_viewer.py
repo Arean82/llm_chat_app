@@ -260,13 +260,27 @@ class FileViewerDialog(QDialog):
             """)
             self.text_browser.setPlainText(content)
 
+    def done(self, result):
+        """Safely cleans up background resources and prevents signaling into destroyed widgets"""
+        if hasattr(self, 'cache_worker') and self.cache_worker.isRunning():
+            try:
+                # Detach callback pointer ensuring thread cannot invoke methods on a freed C++ viewport
+                self.cache_worker.finished.disconnect(self.on_badges_cached)
+            except Exception:
+                pass
+        super().done(result)
+
     def on_badges_cached(self, updated_html: str):
         """Slot called by the background thread when downloads are complete"""
-        scroll_pos = self.text_browser.verticalScrollBar().value()
-        updated_html = self._rewrite_local_paths(updated_html)
-        self.text_browser.document().setBaseUrl(self.base_url)
-        self.text_browser.setHtml(updated_html)
-        self.text_browser.verticalScrollBar().setValue(scroll_pos)
+        # Safety lock: Guard against late async calls if done hook failed to detach
+        try:
+            scroll_pos = self.text_browser.verticalScrollBar().value()
+            updated_html = self._rewrite_local_paths(updated_html)
+            self.text_browser.document().setBaseUrl(self.base_url)
+            self.text_browser.setHtml(updated_html)
+            self.text_browser.verticalScrollBar().setValue(scroll_pos)
+        except (RuntimeError, AttributeError):
+            pass
 
     def _rewrite_local_paths(self, html: str) -> str:
         """Physically injects absolute file:/// URIs for local resources to bypass QTextBrowser resolution bugs."""

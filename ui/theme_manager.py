@@ -34,16 +34,18 @@ class ThemeManager:
         self.refresh_auth_button_style()
         self._apply_placeholder_styles()
         
-        # Broadcast specific display updates to dynamic modules
-        active_view = self._get_active_view()
-        if active_view and hasattr(active_view, "chat_display"):
-            active_view.chat_display.setStyleSheet(self.get_chat_styles())
-        
-        # Arena Dual Displays fallback
-        if active_view and hasattr(active_view, "chat_a"):
-            active_view.chat_a.setStyleSheet(self.get_chat_styles())
-        if active_view and hasattr(active_view, "chat_b"):
-            active_view.chat_b.setStyleSheet(self.get_chat_styles())
+        # Broadcast specific display updates to all dynamic modules in stack
+        try:
+            for i in range(self.window.ui.main_stack.count()):
+                view = self.window.ui.main_stack.widget(i)
+                if hasattr(view, "chat_display"):
+                    view.chat_display.setStyleSheet(self.get_chat_styles())
+                if hasattr(view, "chat_a"):
+                    view.chat_a.setStyleSheet(self.get_chat_styles())
+                if hasattr(view, "chat_b"):
+                    view.chat_b.setStyleSheet(self.get_chat_styles())
+        except Exception as e:
+            print(f"[ThemeManager] Failed to propagate text stylesheets: {e}")
 
     def toggle_theme(self):
         """Switch between dark and light theme."""

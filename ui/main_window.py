@@ -161,6 +161,7 @@ class MainWindowClass(QMainWindow):
         help_menu.addAction("📜 License", self.show_license)
         help_menu.addAction("📡 API Documentation", self.api_doc)
         help_menu.addAction("🔌 IDE Integration Guide", self.show_ide_integration)
+        help_menu.addAction("🛡️ Security Policy", self.show_security_policy)
         help_menu.addSeparator()
         help_menu.addAction("📦 Download VS Code Extension", self.download_vscode_extension)
         help_menu.addAction("🧩 Download JetBrains Plugin", self.download_jetbrains_plugin)
@@ -396,6 +397,8 @@ class MainWindowClass(QMainWindow):
             <p><b>Key Technologies:</b></p>
             <ul>
                 <li>🚀 Infinite Context via <b>Adaptive Memory Compression</b></li>
+                <li>🧬 Hybrid RAG Persistence (<b>NumPy</b> & <b>Qdrant</b> Vector Database)</li>
+                <li>🛠️ Isolated <b>Interactive Execution Sandbox</b></li>
                 <li>🤖 Universal Orchestration (NVIDIA, Google, Groq, Ollama, OpenAI)</li>
                 <li>⚡ High-Velocity Markdown & Code Syntax Rendering</li>
                 <li>🔐 Secure OS-Level Credential Custody Vault</li>
@@ -520,6 +523,17 @@ class MainWindowClass(QMainWindow):
         dialog = FileViewerDialog(
             title="IDE Integration Guide",
             file_names=["IDE_INTEGRATION.md"],
+            is_markdown=True,
+            size=(750, 600),
+            parent=self
+        )
+        dialog.exec()
+
+    def show_security_policy(self):
+        from ui.file_viewer import FileViewerDialog
+        dialog = FileViewerDialog(
+            title="Security & Privacy Policy",
+            file_names=["SECURITY.md", "SECURITY.txt", "SECURITY"],
             is_markdown=True,
             size=(750, 600),
             parent=self

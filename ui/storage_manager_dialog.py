@@ -149,7 +149,7 @@ class StorageManagerDialog(QDialog):
     def calculate_storage_size(self) -> str:
         """Calculate disk footprint of relevant sub-folders for premium feel."""
         total_size = 0
-        targets = ['conversations', 'resources', 'cache']
+        targets = ['conversations', 'resources', 'cache', 'vector_db']
         try:
             for folder in targets:
                 folder_path = self.current_root / folder
@@ -238,9 +238,20 @@ class StorageManagerDialog(QDialog):
                       mgr.conn.close()
                       mgr.conn = None
             
+            # Safely disconnect Global Vector Database to release OS write locks on persistent SQLite/WAL files
+            try:
+                from logic.vector_db import VectorDatabase
+                vdb = VectorDatabase.get_instance()
+                if vdb and hasattr(vdb, 'client') and vdb.client:
+                    try: vdb.client.close()
+                    except Exception: pass
+                    vdb.client = None
+            except Exception: pass
+            
             target_path.mkdir(parents=True, exist_ok=True)
             
-            payloads = ['conversations', 'resources', 'cache']
+            # Include 'vector_db' ensuring user RAG indexes and semantic recall are cloned securely
+            payloads = ['conversations', 'resources', 'cache', 'vector_db']
             for p in payloads:
                 src = self.current_root / p
                 dst = target_path / p

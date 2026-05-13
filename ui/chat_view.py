@@ -755,12 +755,13 @@ class ChatViewWidget(QWidget):
                 tmp.write(decoded.encode('utf-8'))
                 tmp.close()
                 
-                # Instantiate background computational process
-                self._active_sandbox_proc = QProcess(self)
+                # Instantiate localized computational process bypassing instance variable collisions
+                proc = QProcess(self)
                 
                 def on_sandbox_exit():
-                    out_b = self._active_sandbox_proc.readAllStandardOutput().data()
-                    err_b = self._active_sandbox_proc.readAllStandardError().data()
+                    # Explicitly query targeted process instance local to this invocation's closure
+                    out_b = proc.readAllStandardOutput().data()
+                    err_b = proc.readAllStandardError().data()
                     stdout = str(out_b, 'utf-8', 'replace').strip()
                     stderr = str(err_b, 'utf-8', 'replace').strip()
                     
@@ -771,9 +772,12 @@ class ChatViewWidget(QWidget):
                     self.add_system_message(f"✅ **Execution Output:**\n```bash\n{content}\n```")
                     try: os.unlink(tmp.name) # Clean artifact
                     except: pass
+                    
+                    # Release object memory instantly on termination back to the event queue
+                    proc.deleteLater()
                 
-                self._active_sandbox_proc.finished.connect(on_sandbox_exit)
-                self._active_sandbox_proc.start(sys.executable, [tmp.name])
+                proc.finished.connect(on_sandbox_exit)
+                proc.start(sys.executable, [tmp.name])
 
         except Exception as e:
             self.add_system_message(f"⚠️ Action failed: {str(e)}")
@@ -811,16 +815,10 @@ class ChatViewWidget(QWidget):
                     messages.append(msg)
             else: messages.append(msg)
         
-        library = []
-        file_path = get_resource_path("resources/user_prompts.json")
-        if Path(file_path).exists():
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    library = json.load(f)
-            except: pass
-
-        active = [f"- {i.get('text', '')}" for i in library if i.get('checked', False) and i.get('text')]
-        if active: messages.insert(0, {"role": "system", "content": "Instructions:\n" + "\n".join(active)})
+        from utils.helpers import get_active_system_instructions
+        instructions = get_active_system_instructions()
+        if instructions:
+            messages.insert(0, {"role": "system", "content": instructions})
         
         def _prep_c(c):
             if isinstance(c, str): return c.strip()

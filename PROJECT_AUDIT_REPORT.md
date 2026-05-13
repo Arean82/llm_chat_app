@@ -52,6 +52,7 @@
 | 044 | **Security** | `Sandbox Loop`| 🟡 Low | ✅ **Resolved** | Vision Sandbox Integration: Recursive visual triggers pipe GUI code directly to isolated QProcess.|
 | 045 | **UX / UI** | `ThemeManager` | 🟡 Low | ✅ **Resolved** | Low Visibility: High-contrast dynamic palette injected protecting placeholder text readability. |
 
+
 ---
 
 ## ⚠️ CRITICAL ARCHITECTURAL PRECAUTIONS (READ BEFORE EDITING)
@@ -176,11 +177,13 @@ Below is the full technical breakdown of every stabilization applied to the envi
 #### 12. Audit ID 012: Storage Pathing & Global Redirection
 *   **Severity:** 🔴 High
 *   **Status:** ✅ **Resolved**
-*   **Details:** Resolved system runtime crashes caused by hardcoded executable-relative writes (violating restricted `C:\Program Files` OS permissions).
+*   **Details:** Resolved system runtime crashes caused by hardcoded executable-relative writes.
 *   **Fix Map:**
     1. Engineered a central `StorageManager` implementing auto-detection of read-only directories.
     2. Decoupled `get_resource_path` and `conversation_manager.py` from hardcoded local paths.
-    3. Deployed **Global INI Redirection** override in main launcher ensuring zero-registry footprint for dynamic portable modes.
+    3. Deployed **Global INI Redirection** override in main launcher.
+*   **🔄 REOPENED & PATCHED (Phase 2.5):** Activating data migration via the Storage Manager ignored the new `vector_db` payload, risking RAG database abandonment. Additionally, background file handles locked active SQLite/WAL files.
+*   **Phase 2.5 Remediation:** Engineered explicit `VectorDatabase` shutdown callbacks to release OS locks prior to handoff, and appended the `vector_db` folder directly into the cloning array and visual disk metrics.
 
 #### 13. Audit ID 013: Garbage Cleanup of Legacy Artifacts
 *   **Severity:** 🟡 Low
@@ -216,7 +219,9 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Severity:** 🟡 Low
 *   **Status:** ✅ **Resolved**
 *   **Details:** Visual documentation relied upon stale or missing graphical assets.
-*   **Implementation:** Scripted dynamic off-screen PySide renderer using `QUiLoader` applying native theme styles to auto-capture high-definition, authentic interface previews and embedding in project overview.
+*   **Implementation:** Scripted dynamic off-screen PySide renderer to auto-capture high-definition interface previews.
+*   **🔄 REOPENED & PATCHED (Phase 2.5):** Closing the documentation dialog while badges loaded asynchronously allowed `BadgeCacheWorker` to trigger UI update slots on freed C++ handles, triggering application crashes.
+*   **Phase 2.5 Remediation:** Overrode `done()` dialog transition lifecycle to explicitly detach signal connections, coupled with localized Python `try-except` safeguards in update callbacks.
 
 #### 19. Audit ID 019: Gemini History Alternation Sanctification
 *   **Severity:** 🟠 Medium
@@ -264,6 +269,8 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Details:** Integration of dual parallel `ChatWorker` instances coupled to a segmented Split-Pane UI.
 *   **Impact:** Allows users to send one query and see 2 different models stream answers side-by-side.
 *   **Implementation:** Deployed in `ui/arena_view.py` using cloned independent `LLMClient` instances, dynamic mode-switching callbacks, and standard blind mode election routing mechanics.
+*   **🔄 REOPENED & PATCHED (Phase 2.5):** Casting duel votes destructively wiped basic theme styles, commencing duels retained prior visual overlays, and dual-pane streams rendered purely as raw text instead of formatted markdown. Additionally, user generation overrides (temperature/tokens) AND active system instructions (personas) were ignored.
+*   **Phase 2.5 Remediation:** Overhauled completion routines to process stream buffers via `formatter.format_ai_response()`, appended voting highlights natively atop `theme_manager.get_chat_styles()`, injected interface resets upon subsequent duels, and engineered unified instructions extraction to 'de facto apply' active user system prompts across Arena and Chat workers consistently.
 
 #### 26. Audit ID 026: Dynamic Persona Preset Catalog
 *   **Severity:** 🟡 Low
@@ -336,9 +343,11 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Location:** [`logic/formatter.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/formatter.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
 *   **Details:** Resolved missing interactivity limitation by converting static textual code blocks into live interactive runtime environments.
 *   **Remediation:** 
-    1. **Visual Injection:** Upgraded Markdown formatter to conditionally inject active HTML anchor tags (`run_code`) natively alongside Python code block headers.
-    2. **Signal Interception:** Modified `ChatDisplay` mouse interceptor to capture base64 anchor actions and propagate them up to parent control surfaces.
-    3. **Background Sandbox:** Leveraged asynchronous `QProcess` framework to serialize buffer blocks to temporary runtime artifacts and execute them via host python binary, feeding raw standard output / error streams directly back into the conversational view without locking UI state.
+    1. **Visual Injection:** Upgraded Markdown formatter to inject active HTML anchor tags.
+    2. **Signal Interception:** Modified interceptors to capture actions.
+    3. **Background Sandbox:** Leveraged `QProcess` to execute temporary runtime artifacts.
+*   **🔄 REOPENED & PATCHED (Phase 2.5):** Storing sandbox workers inside shared instance attributes generated critical race conditions and thread safety violations if users fired concurrent executions.
+*   **Phase 2.5 Remediation:** Transplanted the execution pipeline into localized, closure-captured variables, anchored with automatic memory reclamation via explicit `.deleteLater()` hooks.
 
 #### 36. Audit ID 036: Local Vector Memory (Autonomous RAG)
 *   **Severity:** 🟡 Low
@@ -417,9 +426,11 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Severity:** 🟡 Low
 *   **Status:** ✅ **Resolved**
 *   **Location:** [`ui/theme_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/theme_manager.py)
-*   **Details:** Input box placeholder "Ask me anything..." was virtually invisible (dark-grey on dark-grey in dark mode; ultra-light-grey on white in light mode) due to missing explicit palette overrides.
-*   **Remediation:** Engineered recursive viewport sweeping method (`_apply_placeholder_styles`) injecting specific high-contrast `QPalette.PlaceholderText` overrides (#a0a0a0 for dark; #666666 for light) across all stacked viewport widgets.
+*   **Details:** Input box placeholder "Ask me anything..." was virtually invisible due to missing explicit palette overrides.
+*   **Remediation:** Engineered recursive sweeping method injecting high-contrast overrides across viewport widgets.
+*   **🔄 REOPENED & PATCHED (Phase 2.5):** Global theme updates strictly targeted the active viewport, leaving background stack containers (e.g., the Arena mode) styled improperly until toggled manually.
+*   **Phase 2.5 Remediation:** Refactored core theme deployment routine to propagate style cascades iteratively across the entire main stack, guaranteeing uniform application styling.
 
 ---
 
-*Final Audit Update Completed on 2026-05-13 (Phase 2 Strategic & UI Optimization Addition).*
+*Final Audit Update Completed on 2026-05-13 (Phase 2.5 Structural Integration & Modular Reopen Audit).*

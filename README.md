@@ -117,7 +117,7 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 3. **Install dependencies:**
 
    ```bash
-   pip install PySide6 openai markdown   
+   pip install -r requirements.txt   
    ```
 
 ---
@@ -154,6 +154,7 @@ llm_chat_app/
 ├── STRATEGIC_EVOLUTION_REPORT.md   # 📈 Phase 2 evolution blueprint
 ├── PROJECT_AUDIT_REPORT.md         # 🛡️ Master vulnerability remediation ledger
 ├── requirements.txt                # 📦 Python dependencies
+├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
 ├── extension/                       # 📦 IDE Extensions
 │   ├── vscode-llm-chat-1.0.1.vsix   # VS Code extension
@@ -359,10 +360,8 @@ If you want to build the distributable installers yourself, follow the OS-specif
 
 ### Prerequisites
 
-1. Install the app dependencies: `pip install PySide6 openai markdown`
-2. Install PyInstaller: `pip install pyinstaller`
-3. Install Pillow for icon generation: `pip install Pillow`
-4. Generate the required OS icon files from your source `resources/app_icon.png`:
+1. Install all core and build dependencies: `pip install -r requirements.txt`
+2. Generate the required OS icon files from your source `resources/app_icon.png`:
 
    ```bash
    python -c "from PIL import Image; img = Image.open('resources/app_icon.png'); img.save('resources/app_icon.ico', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)]); img.resize((256, 256)).save('resources/app_icon_linux.png'); print('Icons generated!')"
@@ -406,7 +405,7 @@ pyinstaller LLM_Chat_App_combined.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v6.0.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v6.1.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -421,7 +420,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_6.0.0.deb
+sudo dpkg -i llmchatapp_6.1.0.deb
 ```
 
 **2. Create a Portable AppImage:**
@@ -454,6 +453,7 @@ The compiled app leverages a dynamic configuration manager on the first boot to 
 Regardless of selection, the target root directory will structure itself like this:
 
 - `/conversations/` - SQLite database `chat_history.db`
+- `/vector_db/` - Local persistent semantic vector databases (Qdrant)
 - `/resources/` - Extracted styling and JSON manifests
 - `/resources/badge_cache/` - Dynamic cached images
 - `/ui_designer/` - Extracted interface schemas

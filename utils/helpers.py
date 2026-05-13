@@ -1,6 +1,8 @@
 # utils/helpers.py
 # This file contains helper functions used throughout the LLM Chat App.
 
+import json
+from pathlib import Path
 from datetime import datetime
 from PySide6.QtGui import QIcon
 from .path_utils import get_resource_path
@@ -26,3 +28,22 @@ def set_app_icon(window):
     if icon_path.exists():
         window.setWindowIcon(QIcon(str(icon_path)))
     # If icon doesn't exist, skip silently (no error)
+
+def get_active_system_instructions() -> str:
+    """
+    Retrieves user-selected system prompts dynamically from the user_prompts.json catalog.
+    Ensures consistent 'de facto' personas are synchronized across all UI pipelines.
+    """
+    library = []
+    file_path = get_resource_path("resources/user_prompts.json")
+    if file_path.exists():
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                library = json.load(f)
+        except Exception:
+            pass
+            
+    active = [f"- {i.get('text', '')}" for i in library if i.get('checked', False) and i.get('text')]
+    if active:
+        return "Instructions:\n" + "\n".join(active)
+    return ""
