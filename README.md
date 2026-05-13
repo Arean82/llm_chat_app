@@ -227,6 +227,53 @@ llm_chat_app/
 
 ---
 
+## 🏛️ System Architecture
+
+The application leverages a fully-isolated multi-threaded chassis designed to keep the user interface responsive, regardless of inference or indexing payloads:
+
+```mermaid
+graph TD
+    subgraph UI ["💻 Desktop UI Layer (PySide6)"]
+        MW[MainWindow Host] --> CS[ChatView Widget]
+        MW --> AV[ArenaView Widget]
+        MW --> MM[Theme & Auth Managers]
+    end
+
+    subgraph EXT ["🔌 IDE Integrations"]
+        VS[VSCode Ext.] --> AS[Flask API Server]
+        JB[JetBrains Ext.] --> AS
+        AS <--> AM[ApiManager Signal-Bridge]
+    end
+
+    subgraph LOG["⚙️ Core Engine & Logic"]
+        CS & AV & AM --> LC[Universal LLM Client]
+        LC --> CW[Streaming ChatWorker]
+    end
+
+    subgraph RAG["🧬 Memory & Hybrid RAG"]
+        CS --> RM[NumPy Offline RAG]
+        CS -.-> VIW[VectorIndexerWorker]
+        VIW --> QDR[(Qdrant Vector DB)]
+    end
+
+    subgraph DMN["🧵 Background Daemons"]
+        MW --> LMD[Local Model Sweeper]
+        MW --> LNW[Internet Watchdog]
+    end
+
+    subgraph DAT["🗄️ Persistence & Security"]
+        CW & CS --> SQ[(SQLite WAL DB)]
+        LC --> KC[[OS Keyring Vault]]
+    end
+
+    %% Connect logic to targets
+    LMD -.-> |Detect| LOC[Local: Ollama / LM Studio]
+    CW --> |Inference| CLD[Cloud: NVIDIA / Gemini / OpenAI]
+    CW --> |Inference| LOC
+```
+
+---
+
 ## 🧱 Tech Stack
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)       ![Qt](https://img.shields.io/badge/PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=black)       ![OpenAI](https://img.shields.io/badge/OpenAI_SDK-412991?style=for-the-badge&logo=openai&logoColor=white)       ![NVIDIA](https://img.shields.io/badge/NVIDIA_NIM-76B900?style=for-the-badge&logo=nvidia&logoColor=white)       ![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)       ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)       ![Markdown](https://img.shields.io/badge/markdown-%23000000.svg?style=for-the-badge&logo=markdown&logoColor=white)
