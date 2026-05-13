@@ -151,6 +151,8 @@ llm_chat_app/
 ├── LICENSE                         # ⚖️ MIT License
 ├── API_SERVER.md                   # 📡 API documentation
 ├── IDE_INTEGRATION.md              # 🔌 IDE setup guide
+├── STRATEGIC_EVOLUTION_REPORT.md   # 📈 Phase 2 evolution blueprint
+├── PROJECT_AUDIT_REPORT.md         # 🛡️ Master vulnerability remediation ledger
 ├── requirements.txt                # 📦 Python dependencies
 │
 ├── extension/                       # 📦 IDE Extensions
@@ -167,44 +169,60 @@ llm_chat_app/
 │   ├── user_prompts.json           # 📝 System instructions
 │   └── badge_cache/                # ⚡ Auto-generated offline image cache
 │
-├── ui_designer/                    # 🎨 Qt Designer UI files
-│   ├── login_dialog.ui             # 🔐 Login dialog
-│   ├── log_viewer.ui               # 📋 Log viewer
-│   ├── main_window.ui              # 🖥️ Main window
-│   ├── model_edit_dialog.ui        # ✏️ Model edit dialog
-│   ├── model_manager.ui            # 📦 Model manager
-│   ├── model_popup.ui              # 🤖 Model selector
-│   ├── storage_manager.ui          # 📦 Storage configuration
-│   └── system_prompt_manager.ui    # 📝 System prompt manager
+├── ui_designer/                    # 🎨 Qt Designer UI layouts
+│   ├── main_window.ui              # 🖥️ Main window shell layout
+│   ├── chat_mode.ui                # 💬 Full Chat application canvas
+│   ├── arena_mode.ui               # ⚔️ Model Arena duel canvas
+│   ├── gen_settings.ui             # ⚙️ Parametric configuration box
+│   ├── login_dialog.ui             # 🔐 Authentication vault popup
+│   ├── model_manager.ui            # 📦 Catalog addition matrix
+│   ├── custom_provider_dialog.ui   # ➕ Custom API endpoint creator
+│   ├── log_viewer.ui               # 📋 Event telemetry monitor
+│   ├── model_popup.ui              # 🤖 Floating picker widget
+│   └── storage_manager.ui          # 📦 Relocation pathway wizard
 │
-├── ui/                             # 🧩 Python UI logic
-│   ├── file_viewer.py              # 📄 Readme/License viewer
-│   ├── login_dialog.py             # 🔐 API Key authentication
-│   ├── log_viewer.py               # 📋 Log viewer logic
-│   ├── main_window.py              # 🖥️ Main app controller
-│   ├── model_edit_dialog.py        # ✏️ Model add/edit/delete
-│   ├── model_manager.py            # 📦 Model manager logic
-│   ├── model_popup.py              # 🤖 Model selector logic
-│   ├── storage_manager_dialog.py   # 📦 Storage relocation wizard
-│   └── system_prompt_manager.py    # 📝 System prompt logic
+├── ui/                             # 🧩 Python View Controller logic
+│   ├── main_window.py              # 🖥️ Host Shell Window & Stack Orchestration
+│   ├── chat_view.py                # 💬 Dynamic drag-drop & sandbox pipeline logic
+│   ├── arena_view.py               # ⚔️ Dual comparison duel viewport logic
+│   ├── theme_manager.py            # 🎨 Global styling & dynamic palette switcher
+│   ├── login_dialog.py             # 🔐 Secure OS-level auth vault logic
+│   ├── first_run_dialog.py         # 🚀 Out-of-box configuration loader
+│   ├── model_manager.py            # 📦 Core registry management UI
+│   ├── gen_settings_dialog.py      # ⚙️ Dynamic temperature tuning dialog
+│   ├── custom_provider_dialog.py   # ➕ Custom node insertion bridge
+│   ├── file_viewer.py              # 📄 Readme & License viewer frames
+│   ├── log_viewer.py               # 📋 Graphical console & filter logic
+│   ├── shared_widgets.py           # 📦 Common text and state structures
+│   ├── storage_manager_dialog.py   # 📦 Path wizard transactional controls
+│   └── system_prompt_manager.py    # 📝 Prompt library management logic
 │
-├── logic/                          # ⚙️ Backend engine
-│   ├── api_server.py               # 🌐 Universal API server
-│   ├── llm_client.py               # 🔌 Universal API orchestration wrapper
-│   ├── chat_worker.py              # 🧵 Threading for streaming
-│   └── conversation_manager.py     # 💾 Save/load conversations
+├── logic/                          # ⚙️ Core Application Engine
+│   ├── llm_client.py               # 🔌 Universal Multi-Ecosystem Orchestrator
+│   ├── api_manager.py              # 📡 Flask lifecycle manager & thread-bridges
+│   ├── api_server.py               # 🌐 Local OpenAI-compatible Gateway (Port 5000)
+│   ├── chat_worker.py              # 🧵 Stream processor & context evaluator
+│   ├── rag_manager.py              # 🧬 Offline NumPy TF-IDF instant ingestion matrix
+│   ├── vector_db.py                # 💾 Persistent Qdrant dense semantic retrieval 
+│   ├── conversation_manager.py     # 🗄️ High-perf Transactional SQLite WAL engine
+│   ├── model_io.py                 # 🤖 Multi-shard provider catalog Load/Save
+│   ├── tool_manager.py             # 🔍 Dynamic background OS/Web query tools
+│   └── formatter.py                # 🎨 Pre-rendering Markdown/Codeblock engine
 │
-├── workers/                        # 🧵 Background workers
-│   ├── description_generator.py    # ✨ AI description generation
-│   ├── model_fetch_worker.py       # 🔄 Fetch & test models
-│   ├── paid_model_fetch_worker.py  # 💰 Paid model support
-│   └── update_logger.py            # 📋 Real-time logging
+├── workers/                        # 🧵 Non-blocking Background Daemons
+│   ├── connection_worker.py        # 🌐 Socket-level internet ping listener
+│   ├── local_model_detector.py     # ⚡ Startup localhost sweep port-scanner
+│   ├── vector_indexer_worker.py    # 💾 Asynchronous semantic upsert compiler
+│   ├── model_fetch_worker.py       # 🔄 Ecosystem background parser & testers
+│   ├── paid_model_fetch_worker.py  # 💰 Subscription-tier loader
+│   └── update_logger.py            # 📋 Signal-driven live event emitter
 │
-└── utils/                          # 🛠️ Helpers
-    ├── constants.py                # 📌 App constants
-    ├── helpers.py                  # 🔧 Helper functions
-    ├── model_config.py             # 🧠 Model context limits
-    └── path_utils.py               # 📁 PyInstaller & dev path resolver
+└── utils/                          # 🛠️ Low-Level System Helpers
+    ├── storage_config.py           # 🗃️ Storage Location & portable runtime resolver
+    ├── path_utils.py               # 📁 Dev & compiled relative locator
+    ├── constants.py                # 📌 App keys and configuration constants
+    ├── model_config.py             # 🧠 Model context sizes & constraints
+    └── helpers.py                  # 🔧 Text & formatting utilities
 ```
 
 ---
