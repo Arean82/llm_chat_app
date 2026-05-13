@@ -62,21 +62,21 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 ## 🎨 User Interface Highlights
 
 ### 📸 Visual Overview
-<p align="center">
-  <img src="resources/screenshots/Arena_Mode.png" width="92%" alt="The AI Model Arena" />
-</p>
-<p align="center">
-  <img src="resources/screenshots/Main_Window.png" width="45%" alt="Main Window" />
-  <img src="resources/screenshots/Initial_Data_Setup_Preview.png" width="45%" alt="Initial Setup" />
-</p>
-<p align="center">
-  <img src="resources/screenshots/Model_Manager.png" width="45%" alt="Model Manager" />
-  <img src="resources/screenshots/Log_Viewer.png" width="45%" alt="Log Viewer" />
-</p>
-<p align="center">
-  <img src="resources/screenshots/Login_Dialog.png" width="45%" alt="Multi-Provider Configuration" />
-  <img src="resources/screenshots/Custom_Provider_Dialog.png" width="45%" alt="Add Custom Host" />
-</p>
+| The AI Model Arena Benchmarking Suite |
+| :---: |
+| ![The AI Model Arena](resources/screenshots/Arena_Mode.png) |
+
+| Main Application Chassis | Seamless Workstation Initialization |
+| :---: | :---: |
+| ![Main Window](resources/screenshots/Main_Window.png) | ![Initial Setup](resources/screenshots/Initial_Data_Setup_Preview.png) |
+
+| Modular Catalog Model Manager | Dynamic Log Telemetry Dashboard |
+| :---: | :---: |
+| ![Model Manager](resources/screenshots/Model_Manager.png) | ![Log Viewer](resources/screenshots/Log_Viewer.png) |
+
+| Segmented Keyring Authentication Vault | Custom Private Endpoint Integration |
+| :---: | :---: |
+| ![Multi-Provider Configuration](resources/screenshots/Login_Dialog.png) | ![Add Custom Host](resources/screenshots/Custom_Provider_Dialog.png) |
 
 📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
 
@@ -231,46 +231,9 @@ llm_chat_app/
 
 The application leverages a fully-isolated multi-threaded chassis designed to keep the user interface responsive, regardless of inference or indexing payloads:
 
-```mermaid
-graph TD
-    subgraph UI ["💻 Desktop UI Layer (PySide6)"]
-        MW[MainWindow Host] --> CS[ChatView Widget]
-        MW --> AV[ArenaView Widget]
-        MW --> MM[Theme & Auth Managers]
-    end
-
-    subgraph EXT ["🔌 IDE Integrations"]
-        VS[VSCode Ext.] --> AS[Flask API Server]
-        JB[JetBrains Ext.] --> AS
-        AS <--> AM[ApiManager Signal-Bridge]
-    end
-
-    subgraph LOG["⚙️ Core Engine & Logic"]
-        CS & AV & AM --> LC[Universal LLM Client]
-        LC --> CW[Streaming ChatWorker]
-    end
-
-    subgraph RAG["🧬 Memory & Hybrid RAG"]
-        CS --> RM[NumPy Offline RAG]
-        CS -.-> VIW[VectorIndexerWorker]
-        VIW --> QDR[(Qdrant Vector DB)]
-    end
-
-    subgraph DMN["🧵 Background Daemons"]
-        MW --> LMD[Local Model Sweeper]
-        MW --> LNW[Internet Watchdog]
-    end
-
-    subgraph DAT["🗄️ Persistence & Security"]
-        CW & CS --> SQ[(SQLite WAL DB)]
-        LC --> KC[[OS Keyring Vault]]
-    end
-
-    %% Connect logic to targets
-    LMD -.-> |Detect| LOC[Local: Ollama / LM Studio]
-    CW --> |Inference| CLD[Cloud: NVIDIA / Gemini / OpenAI]
-    CW --> |Inference| LOC
-```
+| Modular High-Performance System Architecture |
+| :---: |
+| ![System Architecture Diagram](resources/screenshots/Architecture_Diagram.png) |
 
 ---
 

@@ -126,6 +126,7 @@ class FileViewerDialog(QDialog):
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
+        self.base_url = None
         
         # Use our custom MarkdownBrowser
         self.text_browser = MarkdownBrowser(self)
@@ -154,6 +155,7 @@ class FileViewerDialog(QDialog):
 
     def load_file(self, possible_names: list, is_markdown: bool):
         base_dir = Path(__file__).parent.parent
+        self.base_url = QUrl.fromLocalFile(str(base_dir.absolute()) + "/")
         content = f"<i>File not found. Searched for: {', '.join(possible_names)}</i>"
         
         for name in possible_names:
@@ -166,6 +168,14 @@ class FileViewerDialog(QDialog):
                     content = f"<i>Error reading file: {name}</i>"
                     
         if is_markdown:
+            # Format Mermaid Block for offline fallback display
+            content = re.sub(
+                r'```mermaid\s*(.*?)\s*```',
+                r'<div style="background-color: #f0f7ff; color: #005a9c; border-left: 4px solid #0078d4; padding: 10px; margin: 15px 0; border-radius: 4px; font-family: \'Segoe UI\', Arial; font-size: 12px;">💡 <b>Interactive Flowchart:</b> High-resolution, interactive flowcharts are rendered natively on the GitHub repository web-page. Below is the structural node configuration:</div>\n```text\n\g<1>\n```',
+                content,
+                flags=re.DOTALL
+            )
+
             self.text_browser.setStyleSheet("""
                 QTextBrowser {
                     background-color: #FFFFFF;
@@ -190,6 +200,9 @@ class FileViewerDialog(QDialog):
                 pre { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; background-color: #f6f8fa; padding: 10px; border-radius: 4px; }
                 code { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; }
                 
+                /* Lock image scaling bounds inside viewport to prevent overlapping glitches */
+                img { max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 6px; }
+
                 /* Make links look clickable */
                 a { color: #0078d4; text-decoration: none; cursor: pointer; }
                 a:hover { text-decoration: underline; }
@@ -224,6 +237,8 @@ class FileViewerDialog(QDialog):
             """
             
             html = style_fix + html
+            html = self._rewrite_local_paths(html)
+            self.text_browser.document().setBaseUrl(self.base_url)
             self.text_browser.setHtml(html)
             
             # Start background thread to download badges
@@ -248,6 +263,17 @@ class FileViewerDialog(QDialog):
     def on_badges_cached(self, updated_html: str):
         """Slot called by the background thread when downloads are complete"""
         scroll_pos = self.text_browser.verticalScrollBar().value()
+        updated_html = self._rewrite_local_paths(updated_html)
+        self.text_browser.document().setBaseUrl(self.base_url)
         self.text_browser.setHtml(updated_html)
         self.text_browser.verticalScrollBar().setValue(scroll_pos)
+
+    def _rewrite_local_paths(self, html: str) -> str:
+        """Physically injects absolute file:/// URIs for local resources to bypass QTextBrowser resolution bugs."""
+        base_dir = Path(__file__).parent.parent
+        base_path_str = str(base_dir.absolute()).replace("\\", "/")
+        # Replaces relative src attributes with qualified disk URIs
+        html = html.replace('src="resources/', f'src="file:///{base_path_str}/resources/')
+        html = html.replace('src="./resources/', f'src="file:///{base_path_str}/resources/')
+        return html
 
