@@ -73,21 +73,23 @@ class LLMClient:
     def get_current_provider(self) -> str:
         """
         Detects the active backend provider dynamically based on the selected model ID.
-        Returns 'google' or 'nvidia'.
+        Returns 'google', 'nvidia', or custom provider IDs.
         """
         if not self.current_model:
             return "nvidia" # Safe baseline
             
-        mid_lower = self.current_model.lower()
-        # Instant shortcut heuristic check
-        if "gemini" in mid_lower or mid_lower.startswith("models/gemini"):
-            return "google"
-
-        # Thorough mapping scan from local disk cache
+        # 1. Thorough mapping scan from local disk cache (Source of Truth)
         models_list = self.get_available_models()
         for m in models_list:
             if m.get("id") == self.current_model:
                 return m.get("provider", "nvidia") # defaults to nvidia if unlabeled
+        
+        # 2. Heuristic fallback for unknown/dynamic models
+        mid_lower = self.current_model.lower()
+        if "gemini" in mid_lower or mid_lower.startswith("models/gemini"):
+            # Only return google if it's NOT an NVIDIA-prefixed model ID
+            if "google/" not in mid_lower:
+                return "google"
                 
         return "nvidia"
 

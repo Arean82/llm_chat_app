@@ -138,6 +138,7 @@ class MainWindowClass(QMainWindow):
         self.view_mode_group.addAction(self.act_arena_mode)
 
         settings_menu = menubar.addMenu("Settings")
+        settings_menu.addAction("🔐 Credential Manager", self.open_settings)
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
         settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
@@ -258,23 +259,38 @@ class MainWindowClass(QMainWindow):
         else: self.open_settings()
 
     def open_settings(self):
-        from ui.login_dialog import SettingsDialogClass
-        d = SettingsDialogClass(None)
-        if d.exec():
-            self.load_settings()
-            return True
-        return False
+        from ui.credential_manager import show_settings_hub
+        show_settings_hub(parent=self)
+        self.load_settings()
+        return True
 
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
+        from logic.model_io import load_all_models
         mid = get_app_settings().value("current_model_id", "")
         d = ModelPopupClass(current_model_id=mid, parent=self)
         if d.exec():
             sid = d.get_selected_model_id()
             if sid:
+                # 1. Identify Provider of the newly selected model
+                models = load_all_models()
+                new_provider = "nvidia"
+                for m in models:
+                    if m.get('id') == sid:
+                        new_provider = m.get('provider', 'nvidia')
+                        break
+                
+                # 2. Persist the provider shift to settings to ensure correct key hydration on next reload
+                settings = get_app_settings()
+                settings.setValue("active_provider_id", new_provider)
+                
+                # 3. Update Client and UI
                 self.llm_client.set_model(sid)
                 self.chat_view.update_model_ui(sid)
                 self.chat_view.set_chat_enabled(True)
+                
+                # 4. Trigger a settings reload to hydrate the newly active provider's key
+                self.load_settings()
 
     def logout(self):
         # Secure Comprehensive User Cleanout
@@ -334,6 +350,14 @@ class MainWindowClass(QMainWindow):
 
     def show_model_manager(self):
         from ui.model_manager import ModelManagerDialog
+        if ModelManagerDialog._fetch_in_progress:
+            QMessageBox.warning(
+                self,
+                "Fetch in Progress",
+                "Model fetch is already running in the background.\n\n"
+                "Please wait for it to complete before opening Model Manager."
+            )
+            return
         ModelManagerDialog(theme=self.theme_manager.current_theme, parent=self).exec()
 
     def show_storage_manager(self):

@@ -23,6 +23,9 @@ class ArenaViewWidget(QWidget):
         self.worker_b = None
         self.is_generating = False
         
+        # Default Model A to current active chat selection
+        self.model_a_id = self.llm_client.current_model
+        
         # Response Memory Cache for Exporter
         self.current_prompt = ""
         self.response_a = ""
@@ -59,15 +62,54 @@ class ArenaViewWidget(QWidget):
         self.ui.vote_a_btn.hide()
         self.ui.vote_b_btn.hide()
 
-        self.ui.auth_btn.clicked.connect(self.window.handle_auth_button)
+        # Initial Model A Display
+        if self.model_a_id:
+            self.ui.model_btn_a.setText(f"🔥 {self.model_a_id}")
+            self.ui.model_btn_a.setStyleSheet("font: bold 12px; background: #0078d4; color: white; border-radius: 8px;")
+
+        # UI Element Connections
         self.ui.theme_toggle_btn.clicked.connect(self.window.toggle_theme)
+        self.ui.warning_btn.clicked.connect(self.show_ecosystem_warning)
+        self.check_ecosystems()
         
         self.ui.input_field.installEventFilter(self.window)
 
+    def check_ecosystems(self):
+        """Checks if multiple ecosystems are configured; shows warning if not."""
+        import keyring
+        connected_count = 0
+        # Check primary ecosystems
+        if keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"):
+            connected_count += 1
+        if keyring.get_password("LLMChatApp", "api_key_google"):
+            connected_count += 1
+            
+        # If still 0 or 1, check the new Hub's custom providers
+        if connected_count < 2:
+             from utils.path_utils import get_app_settings
+             import json
+             custom = json.loads(get_app_settings().value("custom_providers", "[]"))
+             for p in custom:
+                 eco_key = p['ecosystem'].lower().replace(' ', '_')
+                 if keyring.get_password("LLMChatApp", f"api_key_{p['sdk']}_{eco_key}"):
+                     connected_count += 1
+        
+        if connected_count < 2:
+            self.ui.warning_btn.show()
+            self.ui.warning_btn.setText("⚠️ Benchmark limited - Click for details")
+        else:
+            self.ui.warning_btn.hide()
+
+    def show_ecosystem_warning(self):
+        msg = ("Only 1 ecosystem is available.\n\n"
+               "For a true cross-provider duel (e.g. NVIDIA vs Google), you need at least 2.\n\n"
+               "To add an ecosystem, go to Settings > Credential Manager.")
+        QMessageBox.information(self, "Arena Warning", msg)
+
     def select_model(self, slot):
         from ui.model_popup import ModelPopupClass
-        # We utilize our standard popup but route selection to custom slot!
-        d = ModelPopupClass(parent=self.window)
+        # We utilize our standard popup but force 'Show All' mode for Arena duels!
+        d = ModelPopupClass(parent=self.window, force_show_all=True)
         if d.exec():
             mid = d.get_selected_model_id()
             if mid:
@@ -102,6 +144,16 @@ class ArenaViewWidget(QWidget):
         if not self.model_a_id or not self.model_b_id:
             QMessageBox.warning(self, "Models Missing", "Please select BOTH models before initiating a duel!")
             return
+
+        # --- SECURITY GATE: Verify Credentials for both competitors ---
+        temp_a = self.clone_client(self.model_a_id)
+        temp_b = self.clone_client(self.model_b_id)
+        if not temp_a.has_api_key() or not temp_b.has_api_key():
+             QMessageBox.warning(self, "Authentication Required", 
+                 "One or both of the selected models require API keys that are not configured.\n\n"
+                 "Please set up your credentials in the Settings dialog.")
+             self.window.open_settings()
+             return
             
         self.is_generating = True
         self.ui.send_btn.setText("⏹️ STOP DUEL")
@@ -173,6 +225,7 @@ class ArenaViewWidget(QWidget):
         from logic.llm_client import LLMClient
         from utils.path_utils import get_app_settings
         import keyring
+        import json
         
         c = LLMClient()
         c.set_model(mid)
@@ -186,17 +239,37 @@ class ArenaViewWidget(QWidget):
         if provider != "google":
              settings = get_app_settings()
              
-             # Target explicit localized base URL for this ecosystem
-             target_url = settings.value(f"url_{provider}") or settings.value("base_url")
-             if target_url: c.set_base_url(target_url)
+             # Normalization for matching
+             def normalize(p):
+                 return str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
              
-             # Fetch localized key from OS Vault
-             target_key = keyring.get_password("LLMChatApp", f"api_key_{provider}")
+             p_norm = normalize(provider)
              
-             # Logical Fallback Cascade: Try direct/nvidia roots for legacy support
+             # Attempt to find the SDK and URL for this provider in custom_providers
+             custom = json.loads(settings.value("custom_providers", "[]"))
+             target_url = None
+             target_key = None
+             
+             # Priority A: Check the new Hub structure
+             for cp in custom:
+                 if normalize(cp['ecosystem']) == p_norm:
+                     target_url = cp['url']
+                     eco_key = cp['ecosystem'].lower().replace(' ', '_')
+                     target_key = keyring.get_password("LLMChatApp", f"api_key_{cp['sdk']}_{eco_key}")
+                     break
+             
+             # Priority B: Fallback to standard silos if not in custom Hub
+             if not target_url:
+                 target_url = settings.value(f"url_{provider}") or settings.value("base_url")
+             
+             if not target_key:
+                 target_key = keyring.get_password("LLMChatApp", f"api_key_{provider}")
+                 
+             # Priority C: Global Fallbacks
              if not target_key:
                  target_key = keyring.get_password("LLMChatApp", "api_key") or keyring.get_password("LLMChatApp", "api_key_nvidia")
-                 
+             
+             if target_url: c.set_base_url(target_url)
              if target_key: c.set_api_key(target_key)
              
         return c

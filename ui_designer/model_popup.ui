@@ -6,15 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>450</height>
+    <width>900</width>
+    <height>650</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Select a Model</string>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <property name="styleSheet">
    <string notr="true">QDialog {
@@ -68,6 +65,9 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }</string>
   </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="dialog_layout">
    <property name="spacing">
     <number>15</number>
@@ -84,8 +84,6 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
    <property name="bottomMargin">
     <number>20</number>
    </property>
-
-   <!-- TITLE -->
    <item>
     <widget class="QLabel" name="title_label">
      <property name="text">
@@ -93,34 +91,42 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
      </property>
     </widget>
    </item>
-
-   <!-- TABLE -->
    <item>
     <widget class="QTableWidget" name="model_table">
      <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::SingleSelection</enum>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <property name="showGrid">
-      <bool>false</bool>
+      <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
      </property>
      <property name="alternatingRowColors">
       <bool>true</bool>
      </property>
-     <property name="horizontalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
      </property>
      <property name="verticalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
+      <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
+     </property>
+     <property name="horizontalScrollMode">
+      <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
+     </property>
+     <property name="showGrid">
+      <bool>false</bool>
      </property>
      <column>
       <property name="text">
        <string>Active</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Ecosystem</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Developer</string>
       </property>
      </column>
      <column>
@@ -135,14 +141,22 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
      </column>
     </widget>
    </item>
-
-   <!-- BOTTOM BUTTONS -->
+   <item>
+    <widget class="QCheckBox" name="show_all_cb">
+     <property name="styleSheet">
+      <string notr="true">color: #0078d4; font-weight: bold;</string>
+     </property>
+     <property name="text">
+      <string>Show models from all providers</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QHBoxLayout" name="button_layout">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

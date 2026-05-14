@@ -345,12 +345,12 @@ class ChatViewWidget(QWidget):
             QMessageBox.warning(self, "No Internet Connection", "Cannot send message.")
             return
 
-        if not self.llm_client.has_api_key():
-            self.window.open_settings()
-            return
-            
         if not self.llm_client.current_model:
             self.window.show_model_popup()
+            return
+
+        if not self.llm_client.has_api_key():
+            self.window.open_settings()
             return
 
         self.response_start_time = time.perf_counter()  

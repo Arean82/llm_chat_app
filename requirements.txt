@@ -28,6 +28,24 @@ Pygments>=2.17.0
 flask>=3.0.0
 werkzeug>=3.0.0
 
+# AI SDKs & Model Drivers
+openai
+google-genai
+anthropic
+cohere
+mistralai
+groq
+together
+ollama
+replicate
+huggingface_hub
+transformers
+boto3
+google-cloud-aiplatform
+azure-ai-inference
+vllm
+litellm
+
 # Development & Packaging
 pyinstaller>=6.3.0
 Pillow>=10.0.0

@@ -52,7 +52,11 @@ def load_all_models() -> list:
                 
                 # ADAPTIVE INFERENCE (Audit ID 034 Fix): Extract dynamic provider name directly from shard basename
                 basename = os.path.basename(file_path).lower()
-                inferred_provider = basename.replace("models_", "").replace(".json", "")
+                if basename == "models.json":
+                    inferred_provider = "nvidia"
+                else:
+                    inferred_provider = basename.replace("models_", "").replace(".json", "")
+                    
                 if not inferred_provider: inferred_provider = "nvidia" # global safety default
 
                 for m in model_list:

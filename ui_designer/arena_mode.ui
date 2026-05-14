@@ -89,9 +89,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="auth_btn">
+       <widget class="QPushButton" name="warning_btn">
+        <property name="styleSheet">
+         <string notr="true">color: #e67e22; font-weight: bold; border: none; background: transparent;</string>
+        </property>
         <property name="text">
-         <string>🔓 Login</string>
+         <string>⚠️ Click for details</string>
         </property>
        </widget>
       </item>

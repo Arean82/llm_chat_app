@@ -26,18 +26,22 @@ class ModelManagerDialog(QDialog):
 
         set_app_icon(self) 
         
+        # Check if fetch is already running BEFORE initializing UI
         if ModelManagerDialog._fetch_in_progress:
             QMessageBox.warning(
-                self,
+                parent,
                 "Fetch in Progress",
-                "Model fetch is already running in another window.\n\n"
-                "Please wait for it to complete before opening Model Manager again."
+                "Model fetch is already running in the background.\n\n"
+                "Please wait for it to complete or check the 'Log' menu for updates."
             )
-            self.reject()  # Close this instance
+            # Use a timer to reject after the constructor finishes to avoid side effects
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(0, self.reject)
             return
 
         self.theme = theme
         self.models = []
+        self._started_fetch = False # Instance level flag
 
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/model_manager.ui")
@@ -368,12 +372,29 @@ class ModelManagerDialog(QDialog):
         return get_models_path()
 
     def load_models(self):
+        """Strict isolation: Only load models belonging to the active provider."""
         from logic.model_io import load_all_models
-        self.models = load_all_models()
+        active_p = get_app_settings().value("active_provider_id", "nvidia")
+        
+        # Load all but immediately filter to the active ecosystem only
+        all_m = load_all_models()
+        self.models = [m for m in all_m if m.get('provider', 'nvidia') == active_p]
+        
+        # Update Header to reflect active ecosystem
+        if hasattr(self, 'header_label') and self.header_label:
+            self.header_label.setText(f"Manage {active_p.upper()} Ecosystem Models")
 
     def save_models(self):
-        from logic.model_io import save_all_models
-        save_all_models(self.models)
+        """Saves current state. Only touches the active provider's segments."""
+        from logic.model_io import load_all_models, save_all_models
+        active_p = get_app_settings().value("active_provider_id", "nvidia")
+        
+        # To avoid wiping other ecosystems, we load everything else first
+        all_other_models = [m for m in load_all_models() if m.get('provider', 'nvidia') != active_p]
+        
+        # Merge our modified active list with the untouched others
+        full_sync_list = all_other_models + self.models
+        save_all_models(full_sync_list)
 
     def update_count_label(self):
         self.count_label.setText(f"{len(self.models)} model(s)")
@@ -483,8 +504,9 @@ class ModelManagerDialog(QDialog):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Set lock
+        # Set locks
         ModelManagerDialog._fetch_in_progress = True
+        self._started_fetch = True
 
         # Get logger instance
         from workers.update_logger import get_logger
@@ -584,13 +606,14 @@ class ModelManagerDialog(QDialog):
         """Reset locks and buttons"""
         ModelManagerDialog._fetch_in_progress = False
         ModelManagerDialog._fetch_instance = None
+        self._started_fetch = False
         
         self._set_buttons_enabled(True)
         self.fetch_free_btn.setText("🆓 Fetch Free Models")
     
     def closeEvent(self, event):
-        """Handle window close during fetch"""
-        if ModelManagerDialog._fetch_in_progress:
+        """Handle window close during fetch - only trap if THIS instance started it"""
+        if self._started_fetch and ModelManagerDialog._fetch_in_progress:
             reply = QMessageBox.question(
                 self,
                 "Fetch in Progress",

@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AddProviderDialog</class>
+ <widget class="QDialog" name="AddProviderDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Add New AI Provider</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Select SDK (Driver)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="sdk_combo">
+     <item>
+      <property name="text">
+       <string>openai</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>google-genai</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>anthropic</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>deepseek</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>perplexity</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>cohere</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>mistralai</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>groq</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>together</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>ollama</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>replicate</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>huggingface_hub</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>transformers</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>boto3</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>vertexai</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>azure-ai-inference</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>vllm</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>litellm</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Ecosystem Name</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="ecosystem_combo">
+     <item>
+      <property name="text">
+       <string>NVIDIA NIM</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Google Gemini</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>GroqCloud</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>OpenRouter</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>DeepSeek</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Anthropic</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Custom...</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="custom_eco_container" native="true">
+     <layout class="QVBoxLayout" name="customLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_custom">
+        <property name="text">
+         <string>Custom Ecosystem Name</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="custom_ecosystem_edit"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Base URL (Endpoint)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="url_edit"/>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>API Key</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="key_edit">
+     <property name="echoMode">
+      <enum>QLineEdit::Password</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancel_btn">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save_btn">
+       <property name="text">
+        <string>Save Provider</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: #0078d4; color: white; font-weight: bold;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

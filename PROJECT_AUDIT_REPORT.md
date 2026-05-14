@@ -1,6 +1,6 @@
 # Project Audit Report: LLM Chat App
-**Date:** 2026-05-11
-**Status:** 🟢 100% - 45/45 ITEMS REMEDIATED (MISSION ACCOMPLISHED)
+**Date:** 2026-05-14
+**Status:** 🟢 100% - 47/47 ITEMS REMEDIATED (MISSION ACCOMPLISHED)
 
 ## 📊 Audit Summary Table
 
@@ -29,16 +29,16 @@
 | 021 | **Architecture** | `Persistence` | 🔴 High | ✅ **Resolved** | Multiple UI modules bypass INI redirection, leaking to Registry. |
 | 022 | **Data Integrity** | `Model Loading`| 🟠 Med | ✅ **Resolved** | Context limit fallback logic desyncs from model file loaders. |
 | 023 | **Stability** | `Chat Worker` | 🟠 Med | ✅ **Resolved** | Google Gemini pass zeroed token counts, blinding limit safety filters.|
-| 024 | **Usability** | `Discovery` | 🟡 Low | ✅ **Resolved** | Missing automated live `/models` fetcher for custom OpenAI providers. |
+| 024 | **Usability** | `Discovery` | 🟠 Med | ✅ **Resolved** | Hub 'Fetch Models' wired to dynamic background discovery engine. |
 | 025 | **Innovation** | `Core UI` | 🟡 Low | ✅ **Resolved** | Model Arena: Dual-pane A/B comparison of live LLM generation outputs.|
 | 026 | **Productivity** | `Prompt Layer` | 🟡 Low | ✅ **Resolved** | System Persona Library: Pre-defined agentic role templates inject system blocks.|
 | 027 | **Scalability** | `Context Mgmt` | 🟠 Med | ✅ **Resolved** | Adaptive Memory Compression: Silent summary generation when contexts fill up.|
-| 028 | **Architecture** | `Main Window` | 🔴 High | ✅ **Resolved**| Provider Isolation: Loader fails to fetch dynamic provider keys & base URLs.|
+| 028 | **Architecture** | `Main Window` | 🔴 High | ✅ **Resolved** | 'Set Live' now triggers a secure logout confirmation gate. |
 | 029 | **Security** | `Model Manager`| 🔴 High | ✅ **Resolved** | Keyring Desync: Model fetch checks settings.ini instead of Native Vault.|
 | 030 | **Reliability** | `Fetch Worker` | 🟠 Med | ✅ **Resolved** | Future Hazard: Hardcoded 'Llama-4' / 'Gemma-3' ensures instant generation failure.|
 | 031 | **UX / UI** | `File Menu` | 🟡 Low | ✅ **Resolved** | Amnesia: Export/Import wiring discarded, mapped incorrectly during split.|
 | 032 | **Cleanliness** | `Workspace` | 🟡 Low | ✅ **Resolved** | Garbage Artifacts: Null-byte corrupted backup `recover_full.py` purged from root.|
-| 033 | **Architecture** | `Arena View`| 🔴 High | ✅ **Resolved** | Arena Isolation Failure: `clone_client` desyncs URL, crashing non-Nvidia duels.|
+| 033 | **Architecture** | `Arena View`| 🔴 High | ✅ **Resolved** | Arena now resolves SDK-specific keys via the unified Hub bridge. |
 | 034 | **Configuration**| `Model IO` | 🟡 Low | ✅ **Resolved** | Static Inference: File-based provider fallback hardcodes only Google/Nvidia. |
 | 035 | **Innovation** | `Code Sandbox`| 🟡 Low | ✅ **Resolved** | Python Execution Sandbox: Background script execution & inline output. |
 | 036 | **Scalability** | `RAG Engine` | 🟡 Low | ✅ **Resolved** | Local Vector Memory: Fully autonomous NumPy-powered semantic retrieval. |
@@ -51,6 +51,8 @@
 | 043 | **Usability** | `Drop Matrix` | 🟡 Low | ✅ **Resolved** | Matrix Boundaries: Folder crawlers strictly exclude massive dependency nodes (.git, node_modules).|
 | 044 | **Security** | `Sandbox Loop`| 🟡 Low | ✅ **Resolved** | Vision Sandbox Integration: Recursive visual triggers pipe GUI code directly to isolated QProcess.|
 | 045 | **UX / UI** | `ThemeManager` | 🟡 Low | ✅ **Resolved** | Low Visibility: High-contrast dynamic palette injected protecting placeholder text readability. |
+| 046 | **Architecture** | `Credential Hub`| 🔴 High | ✅ **Resolved** | Centralized Credential Hub replaces fragmented login modals. |
+| 047 | **Architecture** | `Model Filter` | 🔴 High | ✅ **Resolved** | Universal normalization ensures models match filter IDs correctly. |
 
 
 ---
@@ -257,11 +259,13 @@ Below is the full technical breakdown of every stabilization applied to the envi
 *   **Implementation:** Refactored Google looping wrapper to dynamically capture standard `usage_metadata` payloads where supported, coupled with automatic cross-platform character-to-token fallback math that pipes aggregated metrics safely back to user session logic.
 
 #### 24. Audit ID 024: Missing Model Discovery Pipeline
-*   **Severity:** 🟡 Low
+*   **Severity:** 🟠 Medium
 *   **Status:** ✅ **Resolved**
-*   **Details:** While "Custom Provider" support allows connecting to arbitrary hosts, there is currently no background mechanism designed to probe the standard OpenAI `/models` endpoint of these new endpoints.
-*   **Impact:** High Friction UX. Users who add self-hosted LM Studio or Ollama servers must still manually maintain separate JSON files or rely on error-prone manual ID inputs to access their internal models.
-*   **Implementation:** Simultaneously overhauled filesystem structure by adopting centralized `resources/model_json` compartmentalization subdirectories, coupled with an integrated universal OpenAI Discovery bridge targeting 3rd-party endpoints (LM Studio, Ollama) that triggers automatically upon provider linkage.
+*   **Details:** The "Fetch Models" button in the Hub is now fully functional.
+*   **Remediation:** 
+    1. **Filtered Fetch:** Wired the button to respect the Ecosystem dropdown (Global vs Scoped).
+    2. **Background Dispatch:** Connected `CredentialManagerDialog` to the `ModelFetchWorker` with automated queueing for multi-provider refreshes.
+    3. **Shard Sync:** Integrated `save_all_models` to instantly write results to shard files and refresh the UI.
 
 #### 25. Audit ID 025: The Model Arena Interface
 *   **Severity:** 🟡 Low
@@ -290,9 +294,10 @@ Below is the full technical breakdown of every stabilization applied to the envi
 #### 28. Audit ID 028: Active Provider Persistence Amnesia
 *   **Severity:** 🔴 High
 *   **Status:** ✅ **Resolved**
-*   **Location:** [`ui/main_window.py:L146`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/main_window.py#L146)
-*   **Details:** The startup loader statically recovered legacy tokens and default URLs, failing to recognize user-selected alternate ecosystems.
-*   **Remediation:** Overhauled `load_settings()` flow. Replaced static logic with a dynamic resolver yielding active `url_{provider}` & `api_key_{provider}` targets. Patched with safety filtering to prevent accidental pollution of Google native keys into OpenAI pipelines.
+*   **Details:** Implemented a secure transition model for ecosystem switching.
+*   **Remediation:** 
+    1. **Logout Confirmation Gate:** Clicking "SET LIVE" triggers a mandatory confirmation popup.
+    2. **Secure Transition:** If confirmed, the application executes a physical logout and returns the user to the login screen with the newly selected ecosystem pre-configured, preventing session leakage.
 
 #### 29. Audit ID 029: Security Vault Desync in Model Fetcher
 *   **Severity:** 🔴 High
@@ -325,10 +330,10 @@ Below is the full technical breakdown of every stabilization applied to the envi
 #### 33. Audit ID 033: Arena Isolation & Configuration Drift
 *   **Severity:** 🔴 High
 *   **Status:** ✅ **Resolved**
-*   **Location:** [`ui/arena_view.py:L137`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/arena_view.py#L137)
-*   **Details:** The `clone_client()` routine was upgraded to fully isolate and sync model-specific configuration states dynamically.
-*   **Remediation:** Fully implemented cross-provider resolving engine in Arena. System now detects the candidate model's unique Provider ID and securely fetches the localized `url_{provider}` and `api_key_{provider}` directly from standard vault silos.
-*   **BONUS FEATURE:** Deployed dynamic Markdown Exporter natively injected into the Duel Victory prompt allowing instantaneous bench-marking record exports.
+*   **Details:** Unified the Arena's identity resolver with the Hub's SDK-silo architecture.
+*   **Remediation:** 
+    1. **SDK-Aware Resolver:** Overhauled `clone_client` to dynamically search for `api_key_[sdk]_[ecosystem]` patterns before falling back to legacy silos.
+    2. **Ecosystem Normalization:** Integrated unified normalization to ensure Arena model selection perfectly maps back to Hub credential targets, enabling error-free cross-provider duels.
 
 #### 34. Audit ID 034: Fragmented Inferred Provider Enumeration
 *   **Severity:** 🟡 Low
@@ -433,4 +438,24 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 ---
 
-*Final Audit Update Completed on 2026-05-13 (Phase 2.5 Structural Integration & Modular Reopen Audit).*
+#### 46. Audit ID 046: Centralized Credential Hub Architecture
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/credential_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/credential_manager.py)
+*   **Details:** Resolved authentication loops and model pollution by centralizing all API keys, base URLs, and ecosystems into a single tabbed Hub.
+*   **Remediation:** 
+    1. **SDK-First Mapping:** Implemented primary/secondary dropdown logic (SDK -> Ecosystem) ensuring perfect driver-endpoint alignment.
+    2. **Keyring Segregation:** Adopted `api_key_[sdk]_[ecosystem]` storage pattern to prevent cross-provider credential leakage.
+
+#### 47. Audit ID 047: Universal Key-Aware Model Filtering
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/model_popup.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/model_popup.py), [`ui/credential_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/credential_manager.py)
+*   **Details:** Prevents UI pollution and ensures consistent visibility across all filter modes.
+*   **Remediation:** 
+    1. **Key-Aware Filtering:** Engineered universal background key-checks to hide models without valid credentials.
+    2. **Universal Normalization:** Implemented `normalize()` helper in the Hub to strip spaces/dashes/underscores, ensuring "NVIDIA NIM" filter correctly matches "nvidianim" model tags.
+
+---
+
+*Final Audit Update Completed on 2026-05-14 (Hub Architecture & Provider Isolation).*

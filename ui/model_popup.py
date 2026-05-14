@@ -16,10 +16,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtUiTools import QUiLoader
 
 class ModelPopupClass(QDialog):
-    def __init__(self, current_model_id=None, parent=None):
+    def __init__(self, current_model_id=None, parent=None, force_show_all=False):
         super().__init__(parent)
         
         self.current_model_id = current_model_id
+        self.force_show_all = force_show_all
         self.models_data = [] # Will store the raw dicts from models.json
         self.selected_model_id = None
         
@@ -33,12 +34,16 @@ class ModelPopupClass(QDialog):
         if self.ui and self.ui.layout():
             self.setLayout(self.ui.layout())
 
-        # Set proper title and size
-        self.setWindowTitle("Select Model")
-        self.setMinimumSize(550, 450)
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
-
+        self.setMinimumSize(900, 650)
         self.setup_table()
+        
+        # Link the UI-defined checkbox to the refresh logic
+        self.ui.show_all_cb.stateChanged.connect(self.populate_models)
+        
+        if self.force_show_all:
+            self.ui.show_all_cb.setChecked(True)
+            self.ui.show_all_cb.setEnabled(False)
+        
         self.populate_models()
         
         # Wire buttons
@@ -48,61 +53,97 @@ class ModelPopupClass(QDialog):
 
     def setup_table(self):
         table = self.ui.model_table
-
-        # Clear .ui file defaults first so the 3 columns apply correctly
-        table.clear()
-
-        table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Active", "Model Name", "Description"])
+        
+        # Note: Columns and Labels are now handled by the .ui file
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.verticalHeader().setVisible(False)
         
-        # Set column widths
-        table.setColumnWidth(0, 60)  # Checkbox column
-        table.setColumnWidth(1, 180) # Name column
+        # Set column widths for the 5-column layout
+        table.setColumnWidth(0, 60)  # Active
+        table.setColumnWidth(1, 120) # Ecosystem
+        table.setColumnWidth(2, 120) # Developer
+        table.setColumnWidth(3, 250) # Model Name
         table.horizontalHeader().setStretchLastSection(True) # Description fills rest
 
     def populate_models(self):
         from logic.model_io import load_all_models
+        import keyring
         try:
-            self.models_data = load_all_models()
+            all_models = load_all_models()
+            active_p = get_app_settings().value("active_provider_id", "nvidia")
+            show_all = self.ui.show_all_cb.isChecked()
+            
+            # Universal Key Check: Only show models if an API key exists for that provider
+            connected_models = []
+            for m in all_models:
+                prov = m.get('provider', 'nvidia').lower()
+                has_key = False
+                
+                if prov == "nvidia":
+                    has_key = bool(keyring.get_password("LLMChatApp", "api_key_nvidia") or 
+                                   keyring.get_password("LLMChatApp", "api_key"))
+                elif prov == "google":
+                    has_key = bool(keyring.get_password("LLMChatApp", "api_key_google"))
+                else:
+                    # Generic check for custom providers (Credential Manager format)
+                    has_key = bool(keyring.get_password("LLMChatApp", f"api_key_openai_{prov}"))
+                
+                if has_key:
+                    connected_models.append(m)
+            
+            # Final filtering based on Ecosystem and 'Show All' toggle
+            self.models_data = [
+                m for m in connected_models 
+                if show_all or m.get('provider', 'nvidia') == active_p
+            ]
         except Exception as e:
             print(f"Error fetching models for popup: {e}")
             self.models_data = []
-        self.ui.model_table.setRowCount(len(self.models_data))
+            
+        table = self.ui.model_table
+        table.setRowCount(len(self.models_data))
         
         for row, model in enumerate(self.models_data):
-            # Col 0: CENTERED CHECKBOX ---
+            # Col 0: CENTERED CHECKBOX
             container = QWidget()
             cb_layout = QHBoxLayout(container)
-            cb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter) # Centers it perfectly
-            cb_layout.setContentsMargins(0, 0, 0, 0) # Removes extra spacing
-
+            cb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            cb_layout.setContentsMargins(0, 0, 0, 0)
             checkbox = QCheckBox()
             checkbox.setProperty("row", row)
             checkbox.stateChanged.connect(self.on_checkbox_toggled)
             cb_layout.addWidget(checkbox)
-
-            self.ui.model_table.setCellWidget(row, 0, container)
+            table.setCellWidget(row, 0, container)
 
             # Dummy item for background color
             dummy_item = QTableWidgetItem()
             dummy_item.setFlags(dummy_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.ui.model_table.setItem(row, 0, dummy_item)
+            table.setItem(row, 0, dummy_item)
+            
+            # Col 1: Ecosystem (Provider)
+            prov = model.get('provider', 'nvidia').upper()
+            prov_item = QTableWidgetItem(prov)
+            prov_item.setFlags(prov_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            table.setItem(row, 1, prov_item)
+            
+            # Col 2: Developer
+            dev = model.get('developer', 'Unknown')
+            dev_item = QTableWidgetItem(dev)
+            dev_item.setFlags(dev_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            table.setItem(row, 2, dev_item)
                         
-            # Col 1: Model Name
-            name_item = QTableWidgetItem(model['name'])
+            # Col 3: Model Name
+            name_item = QTableWidgetItem(model.get('name', 'Unnamed'))
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.ui.model_table.setItem(row, 1, name_item)
+            table.setItem(row, 3, name_item)
             
-            # Col 2: Description
-            desc_item = QTableWidgetItem(model['description'])
+            # Col 4: Description
+            desc_item = QTableWidgetItem(model.get('description', ''))
             desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.ui.model_table.setItem(row, 2, desc_item)
+            table.setItem(row, 4, desc_item)
             
-            # MUST be at the very end so the items actually exist in the table
             if model['id'] == self.current_model_id:
                 self.set_row_active(row, True)
             else:
@@ -145,8 +186,8 @@ class ModelPopupClass(QDialog):
             bg_color = QColor("#FFFFFF")  # White
             text_color = QColor("#333333") # Dark gray text
         
-        # Apply to all 3 columns
-        for col in range(3):
+        # Apply to all 5 columns
+        for col in range(5):
             item = self.ui.model_table.item(row, col)
             if item:
                 item.setBackground(bg_color)
