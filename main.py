@@ -58,6 +58,9 @@ def copy_bundled_resources():
         system_files = [
             'resources/styles.qss',
             'resources/app_icon.png',
+            'resources/app_icon.ico',
+            'resources/app_icon.icns',
+            'resources/app_icon_linux.png',
         ]
         
         for rel_path in system_files:
@@ -103,7 +106,7 @@ def main():
     if platform.system() == "Windows":
         import ctypes
         try:
-            myappid = 'arean82.llmchatapp.v5' # arbitrary string
+            myappid = 'arean82.llmchatapp.v6' # arbitrary string
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass

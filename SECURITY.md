@@ -7,11 +7,12 @@
 ## 🔐 1. OS-Level Credential Custody (No Plaintext)
 
 * **Zero Plaintext Storage:** The application does not store your third-party API keys (NVIDIA, Google, OpenAI, Groq, etc.) in plain text, log files, or local JSON manifests.
-* **Native Subsystem Encryption:** All authentication tokens are injected directly into your operating system's cryptographic vault using the standard Python `keyring` bridge:
+* **Native Subsystem Encryption & Isolation:** All authentication tokens are partitioned and injected into your operating system's cryptographic vault using the standard Python `keyring` bridge:
+  * **Credential Isolation:** Keys are stored using a unique `api_key_[sdk]_[ecosystem]` signature, ensuring that credentials for different providers (e.g., Groq vs OpenAI) are strictly isolated and never collide or leak across provider pipelines.
   * **Windows:** Windows Credential Manager (Safe Storage API)
   * **macOS:** Apple Keychain (SecKeychain Services)
   * **Linux:** Freedesktop Secret Service (via dbus/gnome-keyring)
-* **Comprehensive Wiping:** Activating the "Logout" action triggers an immediate, hardware-flushed purge of every security slot inside the native vault, ensuring zero trace remnants.
+* **Comprehensive Wiping:** Activating the "Logout" action triggers an immediate, hardware-flushed purge of the active ecosystem's security slots, ensuring zero trace remnants.
 
 ---
 

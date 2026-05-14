@@ -15,7 +15,7 @@ rm -f "${APP_NAME}_${VERSION}.deb"
 # 2. Create directory structure
 mkdir -p "$PACKAGE_DIR/usr/local/bin"
 mkdir -p "$PACKAGE_DIR/usr/share/applications"
-mkdir -p "$PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps"
+mkdir -p "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps"
 mkdir -p "$PACKAGE_DIR/DEBIAN"
 
 # 3. Copy application files (built with pyinstaller LLM_Chat_App_onedir.spec)
@@ -27,7 +27,7 @@ cp -r "$BUILD_OUTPUT/"* "$PACKAGE_DIR/usr/local/bin/"
 
 # 4. Copy Icon
 if [ -f "resources/app_icon_linux.png" ]; then
-    cp resources/app_icon_linux.png "$PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps/$APP_NAME.png"
+    cp resources/app_icon_linux.png "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps/$APP_NAME.png"
 fi
 
 # 5. Create Desktop Entry

@@ -27,9 +27,11 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🏠 **True Offline Capability:** Specialized zero-key mode automatically detects local tooling (like Ollama), bypassing verification blockers entirely.
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
 - 📎 **File Attachments:** Upload code (`.py`, `.js`), text, or data files directly into the chat for instant analysis.
-- 📂 **Isolated Model Vaults:** Vendor catalogs are segmented and containerized within dedicated subdirectory resources (e.g., `resources/model_json/models_nvidia.json`), facilitating infinite ecosystem horizontal scale.
-- 📦 **Dynamic Model Manager:** Add, edit, or remove models directly from the UI. Group models by provider or developer using the tabbed interface.
-- 🔐 **Segmented Key Vault:** Safely manages isolated OS-level keychain credentials for each distinct provider without crossing identities.
+- 🔐 **Centralized Credential Hub:** Unified single-pane-of-glass management for all API keys, base URLs, and ecosystems. Features SDK-to-Ecosystem mapping and isolated OS-level vault storage (Audit ID 046).
+- 🛡️ **Secure Transition Gate:** Switching "Live" ecosystems now triggers a mandatory logout confirmation gate, preventing session leakage and ensuring clean state transitions (Audit ID 028).
+- 🔄 **Background Model Fetching:** Smarter "Fetch Models" logic with ecosystem-aware background workers and real-time status telemetry (Audit ID 024).
+- 🛡️ **Universal Key-Aware Filtering:** The UI automatically hides models from providers lacking active credentials, ensuring a zero-pollution catalog (Audit ID 047).
+- ✨ **Premium Visual Identity:** Upgraded to a custom-generated 4K glassmorphism design with optimized assets for Windows (.ico), macOS (.icns), and Linux (.png) (Audit ID 018).
 - 🔧 **Smart Generation Parameters:** Take granular control over LLM outputs. Tweak temperature and response length via a dedicated UI, or use 'Model Default' to let remote servers decide natively.
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
@@ -161,10 +163,10 @@ llm_chat_app/
 │   └── jetbrains-llm-chat-1.0.1.zip # JetBrains plugin
 │
 ├── resources/                      # 📦 Static assets & caches
-│   ├── app_icon.png                # 🖼️ Application icon
-│   ├── app_icon.ico                # 🖼️ Windows icon
-│   ├── app_icon.icns               # 🖼️ macOS icon
-│   ├── app_icon_linux.png          # 🖼️ Linux icon
+│   ├── app_icon.png                # 🖼️ Master UI icon (1024x1024)
+│   ├── app_icon.ico                # 🖼️ Windows native icon (Multi-res)
+│   ├── app_icon.icns               # 🖼️ macOS native icon (Retina)
+│   ├── app_icon_linux.png          # 🖼️ Linux native icon (512x512)
 │   ├── model_json/                 # 🤖 Segmented vendor model definitions
 │   ├── styles.qss                  # 🎨 Global stylesheet
 │   ├── user_prompts.json           # 📝 System instructions
@@ -473,7 +475,11 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
-### v6.1.0 – High-Performance Hybrid Memory & Autonomous Sandboxing
+### v6.1.0 – High-Performance Hybrid Memory & Centralized Authentication
+- 🔐 **Centralized Credential Hub**: Unified management of all API keys, URLs, and ecosystems into a single tabbed interface.
+- 🛡️ **Secure "Set Live" Transition**: Implemented mandatory logout confirmation gate for ecosystem switches to protect session integrity.
+- 🔄 **Smart Discovery Pipeline**: Overhauled "Fetch Models" logic with ecosystem-aware background workers and security-gate filtering.
+- ✨ **Premium 4K Visual Identity**: Replaced all legacy placeholders with a high-fidelity glassmorphism icon suite for Windows, macOS, and Linux.
 - 🧬 **Hybrid RAG Persistence**: Fused rapid NumPy crawling with Qdrant local vector stores for deep, enterprise-grade persistent semantic recollection.
 - 🛠️ **Interactive Execution Sandbox**: Integrated isolated, async process forks (`QProcess`) to dynamically compile and run Python/PySide prototypes inline.
 - 🪄 **Vision-to-Sandbox Hook**: Automatic base64 visual parsing pipeline enables immediate functional sandboxing directly from image mockup prompt requests.
