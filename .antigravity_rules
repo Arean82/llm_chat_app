@@ -1,0 +1,8 @@
+# ANTIGRAVITY STRICT MODE RULES
+# This file governs the behavior of the AI assistant for this project.
+
+1. STOP ALL SPECULATION: Only implement direct, explicit user requests.
+2. NO TECHNOLOGY MIGRATIONS: Never move from JSON to SQLite or change core architectures without explicit, prior approval.
+3. BASICS FIRST: Always use the simplest possible implementation that satisfies the requirement.
+4. NO UNSOLICITED OPTIMIZATIONS: Do not add caching, background syncs, or signals unless specifically requested to solve a proven performance bottleneck.
+5. LISTEN TO THE USER: If the user identifies a technical cause (e.g., "SQLite is the issue"), prioritize their observation over AI assumptions.
