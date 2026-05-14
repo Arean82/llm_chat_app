@@ -109,7 +109,7 @@ class CredentialManagerDialog(QDialog):
                 btn.setStyleSheet("background-color: #4caf50; color: white; font-weight: bold; border-radius: 4px;")
             else:
                 btn.setStyleSheet("background-color: #444; color: #aaa; border-radius: 4px;")
-                btn.clicked.connect(lambda checked=False, p_id=p['ecosystem']: self.set_live_provider(p_id))
+                btn.clicked.connect(lambda checked=False, p_id=p['ecosystem']: self.set_live(p_id))
             
             status_layout.addWidget(btn)
             table.setCellWidget(row, 0, status_widget)

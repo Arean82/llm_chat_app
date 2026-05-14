@@ -125,10 +125,22 @@ class LLMClient:
 
     def has_api_key(self) -> bool:
         """Verify if the client has ANY valid active api keys set currently."""
+        if self.is_local_provider():
+            return True # Local providers (Ollama/LM Studio) don't require keys
         provider = self.get_current_provider()
         if provider == "google":
             return bool(self.google_api_key)
         return bool(self.api_key)
+
+    def is_local_provider(self) -> bool:
+        """Determines if the current provider is a local/offline service (No key required)."""
+        p_id = self.get_current_provider()
+        from logic.model_io import load_provider_metadata
+        metadata = load_provider_metadata()
+        for p in metadata.get("providers", []):
+            if p.get("id") == p_id:
+                return not p.get("requires_key", True)
+        return False
 
     def is_globally_authenticated(self) -> bool:
         """Determines if the application is logically 'Logged In' regardless of active slot."""

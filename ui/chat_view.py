@@ -338,19 +338,30 @@ class ChatViewWidget(QWidget):
         # ADAPTIVE PROMPT SOURCE: Favor direct injection logic to avoid UI contamination (Audit ID 039 Fix)
         user_message = override_prompt if override_prompt is not None else self.input_field.toPlainText().strip()
         
+        def _api_fail(msg):
+            if api_response_queue: api_response_queue.put(f"Error: {msg}")
+            if api_stream_queue:
+                api_stream_queue.put(f"API_STREAM_ERROR: {msg}")
+                api_stream_queue.put(None)
+
         if not user_message and not self.attached_files:
+            _api_fail("Message is empty")
             return
 
-        if not self.window.is_connected:
+        # Bypass internet check for local providers (Audit ID 037/042 Fix)
+        if not self.window.is_connected and not self.llm_client.is_local_provider():
             QMessageBox.warning(self, "No Internet Connection", "Cannot send message.")
+            _api_fail("No internet connection")
             return
 
         if not self.llm_client.current_model:
             self.window.show_model_popup()
+            _api_fail("No model selected")
             return
 
         if not self.llm_client.has_api_key():
             self.window.open_settings()
+            _api_fail("Authentication required")
             return
 
         self.response_start_time = time.perf_counter()  
@@ -642,7 +653,16 @@ class ChatViewWidget(QWidget):
         border_color = self.theme_manager.get_metrics_border_color()
         metrics_html = f"<div style='display: flex; gap: 15px; justify-content: flex-end; color: #888888; font-size: 11px; margin-top: 8px; border-top: 1px solid {border_color};'><span>⚡ TTFT: {metrics['ttft']}s</span><span>🚀 Speed: {metrics['tps']} tok/s</span><span>📝 Tokens: {metrics['prompt_tokens']} in / {metrics['completion_tokens']} out</span></div>"
         self.chat_display.append(metrics_html)
+        
+        # FIX Audit ID 027: Ensure total_tokens represents the ENTIRE conversation history context
+        # We sum current prompt context (history + user) and the new AI response.
         self.total_tokens = metrics['prompt_tokens'] + metrics['completion_tokens']
+        
+        # Safety fallback: If provider returns 0 or single-turn tokens, recalculate from history
+        history_estimate = sum(len(m.get('content', '')) // 3 for m in self.chat_history)
+        if self.total_tokens < history_estimate:
+             self.total_tokens = history_estimate
+             
         self.scroll_to_bottom()
 
     def on_error(self, error_message: str):
