@@ -405,11 +405,17 @@ class LLMClient:
                     # Generic fallback for custom local runners (Ollama/LM Studio)
                     embed_model = "text-embedding-3-small"
 
-                resp = self.client.embeddings.create(
-                    model=embed_model,
-                    input=payload_slice,
-                    timeout=15.0
-                )
+                kwargs = {
+                    "model": embed_model,
+                    "input": payload_slice,
+                    "timeout": 15.0
+                }
+                
+                # Fix for NVIDIA asymmetric models requiring input_type (Audit Fix)
+                if "nvidia.com" in base_url_lower:
+                    kwargs["extra_body"] = {"input_type": "query"}
+                
+                resp = self.client.embeddings.create(**kwargs)
                 return resp.data[0].embedding
             except Exception as e:
                 # Local provider fallback (e.g. trying Ollama common naming schema)

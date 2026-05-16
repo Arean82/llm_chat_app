@@ -119,7 +119,7 @@ class CredentialManagerDialog(QDialog):
             elif has_key:
                 status_label.setStyleSheet("background-color: #1e3a1e; color: #00E676; border-radius: 4px; font-weight: bold; border: 1px solid #00E676;")
             else:
-                status_label.setStyleSheet("background-color: #331e1e; color: #f44336; border-radius: 4px; font-weight: normal; border: 1px solid #f44336;")
+                status_label.setStyleSheet("background-color: #3d1b1b; color: #ff5252; border-radius: 4px; font-weight: bold; border: 1px solid #ff5252;")
             
             status_layout.addWidget(status_label)
             table.setCellWidget(row, 0, status_widget)

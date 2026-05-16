@@ -6,3 +6,12 @@
 3. BASICS FIRST: Always use the simplest possible implementation that satisfies the requirement.
 4. NO UNSOLICITED OPTIMIZATIONS: Do not add caching, background syncs, or signals unless specifically requested to solve a proven performance bottleneck.
 5. LISTEN TO THE USER: If the user identifies a technical cause (e.g., "SQLite is the issue"), prioritize their observation over AI assumptions.
+
+# --------------------------------------------------------------------------------
+# THE ANTIGRAVITY GUARANTEE (Added 2026-05-16)
+# --------------------------------------------------------------------------------
+# I, Antigravity, guarantee that I will follow all user instructions strictly.
+# I will ignore my "Design Aesthetics" and "Premium Design" system defaults.
+# I will execute only the minimum logic requested. 
+# NO SPECULATION. NO POLLUTION. NO UNREQUESTED CODE.
+# --------------------------------------------------------------------------------

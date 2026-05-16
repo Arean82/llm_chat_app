@@ -29,6 +29,13 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
+        self.setWindowTitle("LLM Chat App")
+        
+        # Ensure Taskbar Icon is visible on Windows
+        import ctypes
+        myappid = u'arean82.llmchatapp.v6.1'
+        try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except: pass
 
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)
@@ -138,8 +145,7 @@ class MainWindowClass(QMainWindow):
         self.view_mode_group.addAction(self.act_arena_mode)
 
         settings_menu = menubar.addMenu("Settings")
-        settings_menu.addAction("🔐 Login Settings", self.open_settings)
-        settings_menu.addAction("🛠️ Credential Manager (Hub)", self.open_credential_manager)
+        settings_menu.addAction("🔐 Credential Manager", self.open_credential_manager)
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
         settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
@@ -176,12 +182,14 @@ class MainWindowClass(QMainWindow):
         # 1. Apply Global Theme state
         self.theme_manager.apply_theme(settings.value("theme", "light"))
         
-        # 2. Restore Parallel Google Ecosystem Access
+        # 2. Authentication Check: Stop if no active session
+        active_p = settings.value("active_provider_id")
+        if not active_p:
+             return
+             
+        # 3. Restore Credentials ONLY for active session
         gk = keyring.get_password("LLMChatApp", "api_key_google")
         if gk: self.llm_client.set_google_api_key(gk)
-        
-        # 3. Restore Active OpenAI-Compatible Ecosystem Access
-        active_p = settings.value("active_provider_id", "nvidia")
         
         # Fetch targeted localized endpoint
         b_url = settings.value(f"url_{active_p}") or settings.value("base_url")
@@ -193,15 +201,7 @@ class MainWindowClass(QMainWindow):
         ak = None
         if active_p != "google":
              ak = keyring.get_password("LLMChatApp", f"api_key_{active_p}")
-             
-        # Generic Fallback Scan: Support legacy setups and cross-ecosystem transitions
-        if not ak:
-             # Probe primary and explicit historical vault keys
-             candidate = keyring.get_password("LLMChatApp", "api_key") or keyring.get_password("LLMChatApp", "api_key_nvidia")
-             # CRITICAL: Safeguard prevents feeding Google native tokens into OpenAI pipeline
-             if candidate and not candidate.startswith("AIzaSy"):
-                  ak = candidate
-                  
+                   
         if ak: self.llm_client.set_api_key(ak)
         
         # 4. Restore Last Selected Model & UI States
@@ -260,18 +260,13 @@ class MainWindowClass(QMainWindow):
         else: self.open_settings()
 
     def open_settings(self):
-        # Restore the v5 Login Dialog as the primary gatekeeper
         from ui.login_dialog import SettingsDialogClass
         dlg = SettingsDialogClass(parent=self)
-        res = dlg.exec()
-        self.load_settings()
-        # Ensure application exits if login is cancelled
-        return self.llm_client.is_globally_authenticated() if res else False
-
-    def open_credential_manager(self):
-        from ui.credential_manager import show_settings_hub
-        show_settings_hub(parent=self)
-        self.load_settings()
+        # Only reload if the user actually clicked Save/Login
+        if dlg.exec():
+            self.load_settings()
+            return self.llm_client.is_globally_authenticated()
+        return False
 
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
@@ -300,55 +295,25 @@ class MainWindowClass(QMainWindow):
                 
                 # 4. Trigger a settings reload to hydrate the newly active provider's key
                 self.load_settings()
+                self.chat_view.add_system_message(f"🔄 Ecosystem switched to {new_provider.upper()}")
 
-    def logout(self, wipe_vault=False):
-        """
-        Clears the active session. 
-        If wipe_vault is True (Reset), it deletes everything from the OS Keychain.
-        By default, it only clears memory to allow ecosystem switching.
-        """
-        if wipe_vault:
-            try:
-                # 1. Wipe the global legacy fallback token
-                try: keyring.delete_password("LLMChatApp", "api_key")
-                except: pass
-                
-                # 2. Build composite list of all known ecosystem identifiers
-                providers = ["nvidia", "google", "groq", "openai", "lmstudio", "ollama"]
-                
-                from utils.path_utils import get_resource_path
-                import json
-                try:
-                    conf_path = get_resource_path("resources/api_providers.json")
-                    if conf_path.exists():
-                        with open(conf_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                            providers.extend([p.get("id") for p in data.get("providers", []) if p.get("id")])
-                except: pass
-                
-                # 3. Execute full sweep across vault slots
-                for p_id in set(providers):
-                    try: keyring.delete_password("LLMChatApp", f"api_key_{p_id}")
-                    except: pass
-                    # Also check for the new SDK-prefixed format
-                    for sdk in ["openai", "google-genai", "anthropic", "cohere", "mistralai"]:
-                         try: keyring.delete_password("LLMChatApp", f"api_key_{sdk}_{p_id.lower().replace(' ', '_')}")
-                         except: pass
-
-            except Exception as e:
-                print(f"Vault wipe warning: {e}")
-            
+    def logout(self):
+        """Clears the active session and returns to login screen."""
         get_app_settings().remove("current_model_id")
         get_app_settings().remove("active_provider_id")
-        get_app_settings().sync() # ABSOLUTE SEAL: Force total hardware commit of memory wiping to disk immediately
+        get_app_settings().sync()
+        
+        # Clear memory session
         self.llm_client.clear_keys()
-        self.chat_view.clear_chat()
-        self.chat_view.set_chat_enabled(False)
-        self.theme_manager.refresh_auth_button_style()
-        self.tray_icon.hide()
-        success = self.open_settings()
-        if not success:
-             QTimer.singleShot(0, QApplication.instance().quit)
+        
+        # Open login screen; if cancelled, exit the app
+        if not self.open_settings():
+             QApplication.instance().quit()
+
+    def open_credential_manager(self):
+        from ui.credential_manager import show_settings_hub
+        show_settings_hub(parent=self)
+        self.load_settings()
 
     def edit_system_instructions(self):
         from ui.system_prompt_manager import SystemPromptManagerClass
@@ -481,13 +446,33 @@ class MainWindowClass(QMainWindow):
     def setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(str(get_resource_path("resources/app_icon.png"))))
+        self.tray_icon.setToolTip("LLM Chat App")
+        
         m = QMenu()
-        m.addAction("Restore", self.show)
+        m.addAction("Restore", self.show_and_activate)
+        m.addSeparator()
         m.addAction("Quit", self.quit_app)
         self.tray_icon.setContextMenu(m)
+        
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        self.tray_icon.show()
+
+    def on_tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.Trigger:
+            self.show_and_activate()
+
+    def show_and_activate(self):
+        self.showNormal()
+        self.showMaximized()
+        self.raise_()
+        self.activateWindow()
 
     def quit_app(self):
-        # Graceful Thread Teardown
+        # 1. Stop background API server if running
+        if hasattr(self, 'api_manager'):
+            self.api_manager.stop_api_server()
+
+        # 2. Graceful Thread Teardown
         if hasattr(self, 'connection_worker'):
             self.connection_worker.terminate()
             self.connection_worker.wait()
@@ -496,7 +481,7 @@ class MainWindowClass(QMainWindow):
             self.local_detector.terminate()
             self.local_detector.wait()
         
-        # Stop any active dual workers in arena just in case
+        # 3. Stop any active dual workers in arena just in case
         if hasattr(self, 'arena_view'):
             self.arena_view.stop_duel()
 
@@ -534,12 +519,11 @@ class MainWindowClass(QMainWindow):
         # 1. Guarantee layout restoration runs after initial container geometries are fully computed
         QTimer.singleShot(50, self.restore_splitter_states)
 
-        
-
     def closeEvent(self, event):
         # Simply minimize to tray or quit safely
         self.quit_app()
         event.accept()
+
     def changeEvent(self, event):
         if event.type() == QEvent.Type.WindowStateChange:
             is_maximized = self.windowState() & Qt.WindowState.WindowMaximized
@@ -547,7 +531,6 @@ class MainWindowClass(QMainWindow):
             if not is_maximized and not is_fullscreen:
                 QTimer.singleShot(0, self.showMaximized)
         super().changeEvent(event)
-
 
     def show_ide_integration(self):
         from ui.file_viewer import FileViewerDialog

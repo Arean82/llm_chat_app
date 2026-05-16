@@ -52,7 +52,10 @@ class ApiManager(QObject):
             
         self.window.api_server_action.setChecked(False)
         self.window.api_server_action.setText("🌐 Universal API Server")
-        self.window.chat_view.add_system_message("🌐 API Server stopped")
+        if hasattr(self.window, 'chat_view') and self.window.chat_view:
+            try:
+                self.window.chat_view.add_system_message("🌐 API Server stopped")
+            except: pass
 
     def api_send_message(self, user_message: str, messages_list: list = None, **kwargs):
         """
