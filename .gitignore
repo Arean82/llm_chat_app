@@ -41,6 +41,7 @@ resources/chat_history.db
 conversations/
 cache/
 update_log.txt
+resources/settings.ini
 
 # OS Specific
 .DS_Store
@@ -64,3 +65,5 @@ jetbrains-llm-chat/target/
 # Bundled Extensions (the ones being distributed)
 extension/*.vsix
 extension/*.zip
+
+
