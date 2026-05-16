@@ -6,7 +6,8 @@ import os
 import keyring
 from PySide6.QtWidgets import (
     QDialog, QTableWidgetItem, QCheckBox, QHBoxLayout, 
-    QWidget, QPushButton, QMessageBox, QHeaderView, QAbstractItemView
+    QWidget, QPushButton, QMessageBox, QHeaderView, QAbstractItemView,
+    QLabel
 )
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
@@ -98,20 +99,29 @@ class CredentialManagerDialog(QDialog):
             is_live = (p['ecosystem'].lower().replace(" ", "") == active_p or 
                        (active_p == "nvidia" and p['ecosystem'] == "NVIDIA NIM"))
             
+            # Col 0: Status (Display Only as requested)
+            eco_key = p['ecosystem'].lower().replace(' ', '_')
+            key_id = f"api_key_{p['sdk']}_{eco_key}"
+            has_key = bool(keyring.get_password("LLMChatApp", key_id))
+            
             status_widget = QWidget()
             status_layout = QHBoxLayout(status_widget)
             status_layout.setAlignment(Qt.AlignCenter)
             status_layout.setContentsMargins(0,0,0,0)
             
-            btn = QPushButton("LIVE" if is_live else "SET LIVE")
-            btn.setFixedSize(70, 25)
-            if is_live:
-                btn.setStyleSheet("background-color: #4caf50; color: white; font-weight: bold; border-radius: 4px;")
-            else:
-                btn.setStyleSheet("background-color: #444; color: #aaa; border-radius: 4px;")
-                btn.clicked.connect(lambda checked=False, p_id=p['ecosystem']: self.set_live(p_id))
+            status_text = "ACTIVE" if is_live else ("AVAILABLE" if has_key else "UNAVAILABLE")
+            status_label = QLabel(status_text)
+            status_label.setFixedSize(85, 25)
+            status_label.setAlignment(Qt.AlignCenter)
             
-            status_layout.addWidget(btn)
+            if is_live:
+                status_label.setStyleSheet("background-color: #4caf50; color: white; font-weight: bold; border-radius: 4px;")
+            elif has_key:
+                status_label.setStyleSheet("background-color: #1e3a1e; color: #00E676; border-radius: 4px; font-weight: bold; border: 1px solid #00E676;")
+            else:
+                status_label.setStyleSheet("background-color: #331e1e; color: #f44336; border-radius: 4px; font-weight: normal; border: 1px solid #f44336;")
+            
+            status_layout.addWidget(status_label)
             table.setCellWidget(row, 0, status_widget)
             
             # Col 1: SDK
@@ -163,29 +173,6 @@ class CredentialManagerDialog(QDialog):
 
     def test_all_connections(self):
         QMessageBox.information(self, "Health Check", "Starting background connection tests for all SDKs...")
-
-    def set_live(self, provider_id):
-        from PySide6.QtWidgets import QMessageBox
-        
-        reply = QMessageBox.question(
-            self,
-            "Confirm Ecosystem Switch",
-            f"Switching the Live ecosystem to '{provider_id.upper()}' requires a session logout. \n\nDo you want to continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            settings = get_app_settings()
-            settings.setValue("active_provider_id", provider_id)
-            settings.sync()
-            
-            # Close the Hub and trigger a logout on the parent (MainWindow)
-            self.accept()
-            if self.parent() and hasattr(self.parent(), "logout"):
-                self.parent().logout()
-        else:
-            # Revert UI state if needed, or just stay on the Hub
-            self.load_credentials()
 
     def edit_credential(self, row, p_data):
         """Simple inline or dialog edit for keys/urls."""

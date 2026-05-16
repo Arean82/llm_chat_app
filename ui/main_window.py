@@ -138,7 +138,8 @@ class MainWindowClass(QMainWindow):
         self.view_mode_group.addAction(self.act_arena_mode)
 
         settings_menu = menubar.addMenu("Settings")
-        settings_menu.addAction("🔐 Credential Manager", self.open_settings)
+        settings_menu.addAction("🔐 Login Settings", self.open_settings)
+        settings_menu.addAction("🛠️ Credential Manager (Hub)", self.open_credential_manager)
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
         settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
@@ -179,7 +180,7 @@ class MainWindowClass(QMainWindow):
         gk = keyring.get_password("LLMChatApp", "api_key_google")
         if gk: self.llm_client.set_google_api_key(gk)
         
-        # 3. Restore Active OpenAI-Compatible Ecosystem Access (Audit ID 028 Fix)
+        # 3. Restore Active OpenAI-Compatible Ecosystem Access
         active_p = settings.value("active_provider_id", "nvidia")
         
         # Fetch targeted localized endpoint
@@ -259,10 +260,18 @@ class MainWindowClass(QMainWindow):
         else: self.open_settings()
 
     def open_settings(self):
+        # Restore the v5 Login Dialog as the primary gatekeeper
+        from ui.login_dialog import SettingsDialogClass
+        dlg = SettingsDialogClass(parent=self)
+        res = dlg.exec()
+        self.load_settings()
+        # Ensure application exits if login is cancelled
+        return self.llm_client.is_globally_authenticated() if res else False
+
+    def open_credential_manager(self):
         from ui.credential_manager import show_settings_hub
         show_settings_hub(parent=self)
         self.load_settings()
-        return True
 
     def show_model_popup(self):
         from ui.model_popup import ModelPopupClass
@@ -292,44 +301,42 @@ class MainWindowClass(QMainWindow):
                 # 4. Trigger a settings reload to hydrate the newly active provider's key
                 self.load_settings()
 
-    def logout(self):
-        # Secure Comprehensive User Cleanout
-        try:
-            # 1. Wipe the global legacy fallback token (often the culprit in phantom restarts)
-            try: keyring.delete_password("LLMChatApp", "api_key")
-            except: pass
-            
-            # 2. Build composite list of all known ecosystem identifiers
-            providers = ["nvidia", "google", "groq", "openai", "lmstudio", "ollama"]
-            
-            # Dynamic Load from Config to guarantee 100% capture rate
-            from utils.path_utils import get_resource_path
-            import json
+    def logout(self, wipe_vault=False):
+        """
+        Clears the active session. 
+        If wipe_vault is True (Reset), it deletes everything from the OS Keychain.
+        By default, it only clears memory to allow ecosystem switching.
+        """
+        if wipe_vault:
             try:
-                conf_path = get_resource_path("resources/api_providers.json")
-                with open(conf_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    providers.extend([p.get("id") for p in data.get("providers", []) if p.get("id")])
-            except: pass
-            
-            # Dynamic Load from Custom User Storage
-            from utils.storage_config import StorageManager
-            try:
-                root = StorageManager.get_instance().get_storage_root()
-                custom_file = root / "custom_providers.json"
-                if custom_file.exists():
-                    with open(custom_file, 'r', encoding='utf-8') as f:
-                        c_data = json.load(f)
-                        providers.extend([p.get("id") for p in c_data.get("providers", []) if p.get("id")])
-            except: pass
-
-            # 3. Execute full sweep across all distinct vault slots
-            for p_id in set(providers):
-                try: keyring.delete_password("LLMChatApp", f"api_key_{p_id}")
+                # 1. Wipe the global legacy fallback token
+                try: keyring.delete_password("LLMChatApp", "api_key")
                 except: pass
+                
+                # 2. Build composite list of all known ecosystem identifiers
+                providers = ["nvidia", "google", "groq", "openai", "lmstudio", "ollama"]
+                
+                from utils.path_utils import get_resource_path
+                import json
+                try:
+                    conf_path = get_resource_path("resources/api_providers.json")
+                    if conf_path.exists():
+                        with open(conf_path, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            providers.extend([p.get("id") for p in data.get("providers", []) if p.get("id")])
+                except: pass
+                
+                # 3. Execute full sweep across vault slots
+                for p_id in set(providers):
+                    try: keyring.delete_password("LLMChatApp", f"api_key_{p_id}")
+                    except: pass
+                    # Also check for the new SDK-prefixed format
+                    for sdk in ["openai", "google-genai", "anthropic", "cohere", "mistralai"]:
+                         try: keyring.delete_password("LLMChatApp", f"api_key_{sdk}_{p_id.lower().replace(' ', '_')}")
+                         except: pass
 
-        except Exception as e:
-            print(f"Logout partial warning (non-critical): {e}")
+            except Exception as e:
+                print(f"Vault wipe warning: {e}")
             
         get_app_settings().remove("current_model_id")
         get_app_settings().remove("active_provider_id")

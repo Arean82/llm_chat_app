@@ -26,6 +26,18 @@ def get_models_directory():
                 
     return target_dir
 
+def load_provider_metadata() -> dict:
+    """Loads the centralized static provider registry from the resources folder."""
+    conf_path = get_resource_path("resources/api_providers.json")
+    try:
+        if os.path.exists(conf_path):
+            with open(conf_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return {"providers": []}
+    except Exception as e:
+        print(f"Error loading provider metadata: {e}")
+        return {"providers": []}
+
 def load_all_models() -> list:
     """
     Scans dedicated model_json folder for all models_*.json files and merges contents.
