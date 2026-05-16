@@ -65,7 +65,7 @@ class ArenaViewWidget(QWidget):
         # Initial Model A Display
         if self.model_a_id:
             self.ui.model_btn_a.setText(f"🔥 {self.model_a_id}")
-            self.ui.model_btn_a.setStyleSheet("font: bold 12px; background: #0078d4; color: white; border-radius: 8px;")
+            self.ui.model_btn_a.setStyleSheet("font: bold 12px; background: #0078d4; color: white; border-radius: 6px; padding: 6px;")
 
         # UI Element Connections
         self.ui.theme_toggle_btn.clicked.connect(self.window.toggle_theme)
@@ -118,12 +118,12 @@ class ArenaViewWidget(QWidget):
                     self.model_a_id = mid
                     display_text = "🎭 MODEL A" if is_blind else f"🔥 {mid}"
                     self.ui.model_btn_a.setText(display_text)
-                    self.ui.model_btn_a.setStyleSheet("font: bold 12px; background: #0078d4; color: white; border-radius: 8px;")
+                    self.ui.model_btn_a.setStyleSheet("font: bold 12px; background: #0078d4; color: white; border-radius: 6px; padding: 6px;")
                 else:
                     self.model_b_id = mid
                     display_text = "🎭 MODEL B" if is_blind else f"❄️ {mid}"
                     self.ui.model_btn_b.setText(display_text)
-                    self.ui.model_btn_b.setStyleSheet("font: bold 12px; background: #9c27b0; color: white; border-radius: 8px;")
+                    self.ui.model_btn_b.setStyleSheet("font: bold 12px; background: #9c27b0; color: white; border-radius: 6px; padding: 6px;")
 
     def toggle_blind_mode(self):
         is_blind = self.ui.blind_mode_check.isChecked()
@@ -157,7 +157,7 @@ class ArenaViewWidget(QWidget):
             
         self.is_generating = True
         self.ui.send_btn.setText("⏹️ STOP DUEL")
-        self.ui.send_btn.setStyleSheet("font: bold 14px; background-color: #333; color: white;")
+        self.ui.send_btn.setStyleSheet("font: bold 14px; background-color: #333; color: white; border-radius: 6px;")
         
         self.ui.input_field.clear()
         
@@ -289,7 +289,7 @@ class ArenaViewWidget(QWidget):
         if a_done and b_done:
             self.is_generating = False
             self.ui.send_btn.setText("⚔️ DUEL")
-            self.ui.send_btn.setStyleSheet("font: bold 14px; background-color: #d32f2f; color: white; border-radius: 8px;")
+            self.ui.send_btn.setStyleSheet("font: bold 14px; background-color: #d32f2f; color: white; border-radius: 6px;")
             # Reveal voting nodes upon completion
             self.ui.vote_a_btn.show()
             self.ui.vote_b_btn.show()

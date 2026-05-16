@@ -118,7 +118,12 @@ class ChatWorker(QThread):
                 
         except Exception as e:
             if not self.isInterruptionRequested():
-                self.error_occurred.emit(f"Connection Fault: {str(e)}")
+                # --- PHASE 1: UNIFIED DIAGNOSTIC LOGGING ---
+                from workers.update_logger import get_logger
+                logger = get_logger()
+                error_msg = f"API Failure ({self.client.get_current_provider().upper()}): {str(e)}"
+                logger.add_log(error_msg, "ERROR")
+                self.error_occurred.emit(f"Error: {str(e)}")
         finally:
             self.finished.emit()
 

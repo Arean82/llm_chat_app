@@ -253,6 +253,24 @@ class ThemeManager:
     def get_metrics_border_color(self):
         return "#3c3c3c" if self.current_theme == "dark" else "#e0e0e0"
 
+    def get_status_badge_style(self, status: str):
+        """Unified 'WOW' badge styling for status labels."""
+        is_dark = self.current_theme == "dark"
+        s = status.upper().strip()
+        
+        # Color Palettes
+        if s in ["ACTIVE", "FREE", "OK"]:
+            bg = "#1e3a1e" if is_dark else "#e8f5e9"
+            fg = "#00E676" if is_dark else "#2e7d32"
+        elif s in ["AVAILABLE", "PAID", "UPGRADE"]:
+            bg = "#1a237e" if is_dark else "#e8eaf6"
+            fg = "#448aff" if is_dark else "#1a237e"
+        else: # UNAVAILABLE / ERROR
+            bg = "#3d1b1b" if is_dark else "#ffebee"
+            fg = "#ff5252" if is_dark else "#c62828"
+            
+        return f"background-color: {bg}; color: {fg}; border: 1px solid {fg}; border-radius: 4px; font-weight: bold; padding: 2px 8px;"
+
     def get_copy_button_html(self):
         blue = "#0078d4" if self.current_theme == "dark" else "#0056b3"
         orange = "#ff9800" if self.current_theme == "dark" else "#e65100"
