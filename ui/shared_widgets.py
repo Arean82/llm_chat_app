@@ -1,7 +1,7 @@
 # ui/shared_widgets.py
 from PySide6.QtWidgets import QTextEdit, QApplication
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QTextBlockUserData
+from PySide6.QtGui import QTextBlockUserData, QIcon
 
 class MessageData(QTextBlockUserData):
     def __init__(self, text):
@@ -44,3 +44,10 @@ class ChatDisplay(QTextEdit):
                     if pb.isValid(): data = pb.userData()
                 if data and hasattr(data, 'text'):
                     QApplication.clipboard().setText(data.text)
+
+def set_app_icon(window):
+    """Applies the app icon to any window passed to it."""
+    from utils.path_utils import get_resource_path
+    icon_path = get_resource_path("resources/app_icon.png")
+    if icon_path.exists():
+        window.setWindowIcon(QIcon(str(icon_path)))

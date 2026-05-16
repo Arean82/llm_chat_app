@@ -45,20 +45,27 @@ class VectorDatabase:
         """Creates the named collection if absent, specifying the expected dimension."""
         if not self.client:
             return False
+        
+        # VERSIONED COLLECTION NAME: Ensure we don't mix dimensions
+        versioned_name = f"{collection_name}_{vector_size}"
+        
         try:
-            if not self.client.collection_exists(collection_name):
-                self.client.create_collection(
-                    collection_name=collection_name,
-                    vectors_config=models.VectorParams(
-                        size=vector_size,
-                        distance=models.Distance.COSINE
-                    )
-                )
-                print(f"[VectorDB] Created Collection: '{collection_name}' with dimension {vector_size}")
-            return True
+            if not self.client.collection_exists(versioned_name):
+                self._create_collection_internal(versioned_name, vector_size)
+            return True, versioned_name
         except Exception as e:
-            print(f"[VectorDB] Error establishing collection {collection_name}: {e}")
-            return False
+            print(f"[VectorDB] Error establishing collection {versioned_name}: {e}")
+            return False, versioned_name
+
+    def _create_collection_internal(self, collection_name, vector_size):
+        self.client.create_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(
+                size=vector_size,
+                distance=models.Distance.COSINE
+            )
+        )
+        print(f"[VectorDB] Created Collection: '{collection_name}'")
 
     def upsert_segment(self, collection_name: str, vector: list, payload: dict):
         """Saves a text chunk and its embedding vector into persistent storage."""
@@ -66,14 +73,15 @@ class VectorDatabase:
             return False
         try:
             vector_size = len(vector)
-            if not self.ensure_collection(collection_name, vector_size):
+            success, target_name = self.ensure_collection(collection_name, vector_size)
+            if not success:
                 return False
 
             # Generate deterministic or random point ID
             point_id = str(uuid.uuid4())
             
             self.client.upsert(
-                collection_name=collection_name,
+                collection_name=target_name,
                 points=[
                     models.PointStruct(
                         id=point_id,
@@ -91,14 +99,18 @@ class VectorDatabase:
         """Locates top-K semantically closest snippets from vector database."""
         if not self.client or not query_vector:
             return []
+        
+        vector_size = len(query_vector)
+        versioned_name = f"{collection_name}_{vector_size}"
+        
         try:
             # Standard sanity safeguard: skip search if collection not instantiated yet
-            if not self.client.collection_exists(collection_name):
+            if not self.client.collection_exists(versioned_name):
                 return []
 
             # Using the modern high-level Unified Query Points Interface 
             response = self.client.query_points(
-                collection_name=collection_name,
+                collection_name=versioned_name,
                 query=query_vector,
                 limit=limit,
                 score_threshold=score_threshold,

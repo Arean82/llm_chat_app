@@ -13,7 +13,7 @@ from PySide6.QtUiTools import QUiLoader
 
 from ui.model_edit_dialog import ModelEditDialog
 from utils.path_utils import get_resource_path, get_app_settings
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 from utils.constants import OPENAI_BASE_URL
 
 class ModelManagerDialog(QDialog):
@@ -515,7 +515,7 @@ class ModelManagerDialog(QDialog):
         logger.add_log("Starting model fetch from NVIDIA API", "INFO")
 
         # Create and start worker
-        self.fetch_worker = ModelFetchWorker(api_key, base_url=base_url)
+        self.fetch_worker = ModelFetchWorker(api_key, base_url, parent=self)
         self.fetch_worker.progress.connect(self._on_fetch_progress)
         self.fetch_worker.finished.connect(self._on_fetch_finished)
         self.fetch_worker.error.connect(self._on_fetch_error)
@@ -664,7 +664,8 @@ class ModelManagerDialog(QDialog):
         
         # Create and start worker for paid models
         from workers.paid_model_fetch_worker import PaidModelFetchWorker
-        self.paid_fetch_worker = PaidModelFetchWorker(api_key, base_url=base_url)
+        # Re-using the system client for auth consistency
+        self.paid_fetch_worker = PaidModelFetchWorker(self.llm_client, parent=self)
         self.paid_fetch_worker.progress.connect(self._on_paid_fetch_progress)
         self.paid_fetch_worker.finished.connect(self._on_paid_fetch_finished)
         self.paid_fetch_worker.error.connect(self._on_paid_fetch_error)
@@ -895,7 +896,7 @@ class ModelManagerDialog(QDialog):
 
         # Start worker
         from workers.description_generator import DescriptionGeneratorWorker
-        self.generator_worker = DescriptionGeneratorWorker(api_key, selected_model['id'], models_to_update)
+        self.generator_worker = DescriptionGeneratorWorker(api_key, selected_model['id'], models_to_update, parent=self)
         self.generator_worker.progress.connect(self._on_generation_progress)
         self.generator_worker.finished.connect(self._on_generation_finished)
         self.generator_worker.error.connect(self._on_generation_error)

@@ -11,8 +11,8 @@ class DescriptionGeneratorWorker(QThread):
     finished = Signal()
     error = Signal(str)
     
-    def __init__(self, api_key: str, generator_model: str, models_to_update: list):
-        super().__init__()
+    def __init__(self, api_key: str, generator_model: str, models_to_update: list, parent=None):
+        super().__init__(parent)
         self.api_key = api_key
         self.generator_model = generator_model
         self.models_to_update = models_to_update

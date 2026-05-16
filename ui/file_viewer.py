@@ -15,8 +15,8 @@ class BadgeCacheWorker(QThread):
     """Background thread to download badge images so the UI doesn't freeze"""
     finished = Signal(str) 
 
-    def __init__(self, html_content: str):
-        super().__init__()
+    def __init__(self, html_content: str, parent=None):
+        super().__init__(parent)
         self.html_content = html_content
 
     def run(self):
@@ -242,7 +242,7 @@ class FileViewerDialog(QDialog):
             self.text_browser.setHtml(html)
             
             # Start background thread to download badges
-            self.cache_worker = BadgeCacheWorker(html)
+            self.cache_worker = BadgeCacheWorker(html, parent=self)
             self.cache_worker.finished.connect(self.on_badges_cached)
             self.cache_worker.start()
             

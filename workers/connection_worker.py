@@ -9,8 +9,8 @@ class ConnectionWorker(QThread):
     """
     status_changed = Signal(bool)
 
-    def __init__(self, host="8.8.8.8", port=53, timeout=2):
-        super().__init__()
+    def __init__(self, host="8.8.8.8", port=53, timeout=2, parent=None):
+        super().__init__(parent)
         self.host = host
         self.port = port
         self.timeout = timeout

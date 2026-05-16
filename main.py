@@ -15,7 +15,21 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QFile, QIODevice
 
-from ui.main_window import MainWindowClass
+# from ui.main_window import MainWindowClass (Moved to main() for headless safety)
+# ChatWorker import removed (handled by HeadlessEngine)
+
+def detect_environment():
+    """
+    Logic: Detect if a Graphical User Interface is available.
+    - Windows: Always assumes GUI unless running as a service or with --headless.
+    - Linux: Checks for the 'DISPLAY' environment variable.
+    - CLI Flag: Overrides with --headless if provided.
+    """
+    if "--headless" in sys.argv:
+        return "HEADLESS"
+    if sys.platform == "linux" and not os.environ.get('DISPLAY'):
+        return "HEADLESS"
+    return "GUI"
 
 
 def smart_sync(src: Path, dst: Path):
@@ -101,32 +115,52 @@ def copy_bundled_resources():
         print(f"Resource sync error: {e}")
 
 def main():
-    # Explicitly set the AppUserModelID on Windows so the taskbar icon appears instantly and clusters correctly
-    import platform
-    if platform.system() == "Windows":
-        import ctypes
-        try:
-            myappid = 'arean82.llmchatapp.v6' # arbitrary string
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        except Exception:
-            pass
-
+    # Detect Mode (GUI or Headless)
+    env_mode = detect_environment()
+    
+    import sys
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QSettings
+    
+    # Global System-Level Configuration
+    from utils.storage_config import StorageManager
+    manager = StorageManager.get_instance()
+    
+    # Create the App instance first so we can apply styles/icons to it
     app = QApplication(sys.argv)
-    app.setStyle("Fusion")
+    
+    if env_mode == "GUI":
+        # 1. SET APP IDENTITY (Windows Taskbar Grouping)
+        import platform
+        if platform.system() == "Windows":
+            import ctypes
+            myappid = u'arean82.llmchatapp.v6.1'
+            try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            except: pass
+            
+        # 2. APPLY GLOBAL ICON
+        from ui.shared_widgets import set_app_icon
+        set_app_icon(app)
+
+        # 3. LOAD STYLES
+        from utils.path_utils import get_resource_path
+        app.setStyle("Fusion")
     
     # --- SINGLE INSTANCE LOCK (Restored from v6) ---
     from PySide6.QtCore import QLockFile, QDir
     lock_path = os.path.join(QDir.tempPath(), "llm_chat_app_v6.lock")
     lock_file = QLockFile(lock_path)
     if not lock_file.tryLock(500):
-        # Restore v6 Message Logic: Inform the user before exiting
-        from PySide6.QtWidgets import QMessageBox
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Already Running")
-        msg.setText("Another instance of LLM Chat App is already running.")
-        msg.setInformativeText("Please close the existing instance before launching a new one.")
-        msg.exec()
+        if env_mode == "GUI":
+            from PySide6.QtWidgets import QMessageBox
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Already Running")
+            msg.setText("Another instance of LLM Chat App is already running.")
+            msg.setInformativeText("Please close the existing instance before launching a new one.")
+            msg.exec()
+        else:
+            print("[!] Error: Another instance of LLM Chat App is already running.")
         return
     
     # --- STORAGE CONFIGURATION LAYER ---
@@ -138,10 +172,13 @@ def main():
     
     # Perform permission-based mode detection
     if manager.detect_existing_mode() is None:
-        # Only prompts if Writable folder exists AND no setting was saved previously
-        setup_dlg = FirstRunDialog()
-        if setup_dlg.exec() != FirstRunDialog.Accepted:
-            sys.exit(0) # Safe termination if they close selection dialog
+        if env_mode == "GUI":
+            setup_dlg = FirstRunDialog()
+            if setup_dlg.exec() != FirstRunDialog.Accepted:
+                sys.exit(0)
+        else:
+            # Headless default to APPDATA if not configured
+            manager.finalize_setup("APPDATA")
             
     # GLORIOUS GLOBAL SWITCHER:
     # If we are portable, we override default QSettings storage globally to prevent Registry writes.
@@ -153,32 +190,58 @@ def main():
     # Now copy files safely without permission crash
     copy_bundled_resources()
     
-    # Load stylesheet - use get_resource_path
-    stylesheet_path = get_resource_path("resources/styles.qss")
-    if stylesheet_path.exists():
-        with open(stylesheet_path, 'r', encoding='utf-8') as f:
-            app.setStyleSheet(f.read())
+    if env_mode == "GUI":
+        from ui.main_window import MainWindowClass
+        # Load stylesheet - use get_resource_path
+        stylesheet_path = get_resource_path("resources/styles.qss")
+        if stylesheet_path.exists():
+            with open(stylesheet_path, 'r', encoding='utf-8') as f:
+                app.setStyleSheet(f.read())
+                
+        # Apply Global Application Icon (ALREADY HANDLED AT TOP)
+        # from ui.shared_widgets import set_app_icon
+        # set_app_icon(app) 
+        
+        # 4. MANDATED LOGIN GATE (v6.1 Workflow)
+        from ui.login_dialog import LoginDialogClass
+        login_dlg = LoginDialogClass()
+        # Apply icon to dialog
+        from ui.shared_widgets import set_app_icon
+        set_app_icon(login_dlg)
+        
+        if not login_dlg.exec():
+            print("[*] Login cancelled. Exiting.")
+            sys.exit(0)
             
-    # Apply Global Application Icon (fixes taskbar icon before main window spawns)
-    from utils.helpers import set_app_icon
-    set_app_icon(app) 
-    
-    window = MainWindowClass()
-    
-    # --- PRE-FLIGHT SECURITY CHECK ---
-    # Run blocking authorization checks BEFORE rendering the viewport to guarantee zero visual artifacts/white-flashes upon cancellation.
-    if not window.llm_client.is_globally_authenticated():
-        authorized = window.open_settings()
-        if not authorized:
-            sys.exit(0) # Seal exit immediately without ever revealing the main canvas.
+        # 5. INITIALIZE MAIN WINDOW
+        window = MainWindowClass()
+        window.showMaximized()  
+        window.start_services()
+        sys.exit(app.exec())
+    else:
+        # --- HEADLESS EXECUTION PATH ---
+        from logic.llm_client import LLMClient
+        from logic.api_manager import ApiManager
+        
+        client = LLMClient()
+        # Verify Auth in headless
+        if not client.is_globally_authenticated():
+            print("[!] Error: API keys not configured. Run the GUI once to configure settings.")
+            return
 
-    # Restore V4/V5 Lock: Launch strictly in full-screen viewport mode.
-    window.showMaximized()  
-    
-    # 🟢 Activate background engine ONLY after auth is confirmed and window is mapped
-    window.start_services()
-    
-    sys.exit(app.exec())
+        print("[*] Initializing Standalone API Server...")
+        from headless.engine import HeadlessEngine
+        api_manager = ApiManager(client, request_handler_callback=HeadlessEngine.request_handler)
+        api_manager.start_api_server()
+        
+        print("[+] Headless Engine is live. Press Ctrl+C to terminate.")
+        try:
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("[*] Shutting down...")
+            api_manager.stop_api_server()
 
 
 if __name__ == "__main__":

@@ -13,8 +13,8 @@ class LocalModelDetector(QThread):
     # Emits: (provider_name, number_of_models_synced)
     detection_completed = Signal(str, int)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.targets = [
             {
                 "name": "Ollama",

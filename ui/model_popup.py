@@ -54,18 +54,26 @@ class ModelPopupClass(QDialog):
     def setup_table(self):
         table = self.ui.model_table
         
-        # Note: Columns and Labels are now handled by the .ui file
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.verticalHeader().setVisible(False)
+        table.setWordWrap(True) # Enable word wrap for long descriptions
         
-        # Set column widths for the 5-column layout
-        table.setColumnWidth(0, 60)  # Active
-        table.setColumnWidth(1, 120) # Ecosystem
-        table.setColumnWidth(2, 120) # Developer
-        table.setColumnWidth(3, 250) # Model Name
-        table.horizontalHeader().setStretchLastSection(True) # Description fills rest
+        from PySide6.QtWidgets import QHeaderView
+        header = table.horizontalHeader()
+        
+        # Define specific behaviors for columns
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        table.setColumnWidth(0, 60) # Active checkbox
+        
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents) # Ecosystem
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents) # Developer
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # Model Name
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)          # Description Stretch
+        
+        # Ensure row heights expand for wrapped text
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
     def populate_models(self):
         from logic.model_io import load_all_models

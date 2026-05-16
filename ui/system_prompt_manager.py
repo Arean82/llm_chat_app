@@ -1,7 +1,7 @@
 # ui/system_prompt_manager.py
 import json
 from pathlib import Path
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QTableWidgetItem, QHeaderView, QLabel, QTextEdit, QPushButton, QVBoxLayout, QLineEdit
 from PySide6.QtCore import Qt

@@ -118,6 +118,16 @@ class ChatViewWidget(QWidget):
         self.chat_display.setAcceptDrops(False)
         self.input_field.setAcceptDrops(False)
 
+    def shutdown(self):
+        """Safely stops background workers to prevent crashes on exit."""
+        if self.current_worker and self.current_worker.isRunning():
+            self.current_worker.terminate()
+            self.current_worker.wait()
+        if hasattr(self, 'vector_sync_thread') and self.vector_sync_thread and self.vector_sync_thread.isRunning():
+            # Don't terminate vector thread forcefully to avoid DB corruption
+            print("[Shutdown] Waiting for Vector Indexer to finish...")
+            self.vector_sync_thread.wait(5000) 
+
     # =========================================================
     # REFACTORED CHAT LOGIC METHODS FROM MAIN_WINDOW
     # =========================================================
@@ -450,7 +460,7 @@ class ChatViewWidget(QWidget):
              blueprint.append({"role": "user", "content": f"[{entry.get('role', 'user').upper()}]: {safe_c}"})
         blueprint.append({"role": "user", "content": "Execute synthesis."})
 
-        self.compactor_thread = ChatWorker(self.llm_client, blueprint, temperature=0.2, max_tokens=500)
+        self.compactor_thread = ChatWorker(self.llm_client, blueprint, temperature=0.2, max_tokens=500, parent=self)
         self.compactor_thread.stream = False
 
         def on_compaction_resolved(text_summary):
@@ -506,7 +516,8 @@ class ChatViewWidget(QWidget):
             temperature=a_temp, 
             max_tokens=a_tokens,
             web_search_query=active_search,
-            rag_engine=self.rag_engine
+            rag_engine=self.rag_engine,
+            parent=self
         )    
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
@@ -887,7 +898,8 @@ class ChatViewWidget(QWidget):
                             user_text=user_content,
                             assistant_text=assistant_content,
                             conversation_id=self.current_conv_id,
-                            model_id=self.model_btn.text()
+                            model_id=self.model_btn.text(),
+                            parent=self
                         )
                         self.vector_sync_thread.start()
                 except Exception as vec_e:

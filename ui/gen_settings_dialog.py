@@ -6,7 +6,7 @@ from PySide6.QtCore import QFile, QSettings, Qt
 from PySide6.QtGui import QIcon
 
 from utils.path_utils import get_resource_path, get_app_settings
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 
 class GenSettingsDialog(QDialog):
     def __init__(self, parent=None):

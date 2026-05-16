@@ -13,7 +13,7 @@ from PySide6.QtUiTools import QUiLoader
 
 from utils.storage_config import StorageManager
 from utils.path_utils import get_resource_path, get_app_settings
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 
 class StorageManagerDialog(QDialog):
     def __init__(self, theme="dark", parent=None):

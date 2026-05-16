@@ -132,3 +132,7 @@ class RAGManager:
             results.append(f"--- Segment {i} ---\n{content.strip()}")
             
         return "\n\n".join(results) + "\n\n--- END RAG CONTEXT ---"
+
+    def query(self, text: str, top_k: int = 5) -> str:
+        """Alias for search() to support legacy or alternative call patterns."""
+        return self.search(text, top_k)

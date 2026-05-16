@@ -28,13 +28,47 @@ class LLMClient:
         self.google_client = None # Modern Google GenAI Client
         self.genai_configured = False
 
+    def hydrate(self):
+        """Loads available credentials from OS Keyring to restore session state with deep search."""
+        import keyring
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        active_p = str(settings.value("active_provider_id", "nvidia")).lower()
+        
+        # 1. Restore Google Key (Centralized)
+        gk = keyring.get_password("LLMChatApp", "api_key_google")
+        if gk: self.set_google_api_key(gk)
+        
+        # 2. Deep Search for OpenAI/Generic Key
+        ak = None
+        # Priority A: Unified ID slot (e.g., api_key_nvidia)
+        ak = keyring.get_password("LLMChatApp", f"api_key_{active_p}")
+        
+        if not ak:
+            # Priority B: Legacy Ecosystem slot (e.g., api_key_openai_nvidia_nim)
+            eco_guess = active_p.replace("_", " ")
+            ak = keyring.get_password("LLMChatApp", f"api_key_openai_{eco_guess}")
+            
+        if not ak:
+            # Priority C: Global legacy slots
+            ak = keyring.get_password("LLMChatApp", "api_key") or keyring.get_password("LLMChatApp", "api_key_nvidia")
+            
+        if ak: 
+            self.set_api_key(ak)
+            # Restore URL for this provider
+            b_url = settings.value(f"url_{active_p}") or settings.value("base_url")
+            if b_url and active_p != "google" and "google" not in b_url:
+                self.set_base_url(b_url)
+
     def set_base_url(self, url: str):
+        print(f"[LLMClient] Base URL set to: {url}")
         self.base_url = url
         if self.api_key:
             self._reinit_openai_client()
 
     def set_api_key(self, api_key: str):
         """Sets the active Nvidia API key and triggers OpenAI init."""
+        print(f"[LLMClient] API Key updated (length: {len(api_key) if api_key else 0})")
         self.api_key = api_key
         self._reinit_openai_client()
 
@@ -400,7 +434,8 @@ class LLMClient:
                 # Heuristic evaluation to choose ideal model tag
                 base_url_lower = self.base_url.lower()
                 if "nvidia.com" in base_url_lower:
-                    embed_model = "nvidia/llama-3.2-nv-embedqa-1b-v2"
+                    embed_model = "nvidia/nv-embed-v1"
+                    print(f"[Debug] Using NVIDIA Embedding model: {embed_model}")
                 elif "api.openai.com" in base_url_lower:
                     embed_model = "text-embedding-3-small"
                 else:

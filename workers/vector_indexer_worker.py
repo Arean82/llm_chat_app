@@ -12,8 +12,8 @@ class VectorIndexerWorker(QThread):
     """
     completed = Signal(bool)
 
-    def __init__(self, llm_client, user_text: str, assistant_text: str, conversation_id: int, model_id: str):
-        super().__init__()
+    def __init__(self, llm_client, user_text: str, assistant_text: str, conversation_id: int, model_id: str, parent=None):
+        super().__init__(parent)
         self.llm_client = llm_client
         self.user_text = user_text
         self.assistant_text = assistant_text

@@ -4,10 +4,11 @@
 import sys
 import os
 import keyring
+from collections import defaultdict
 from PySide6.QtWidgets import (
     QDialog, QTableWidgetItem, QCheckBox, QHBoxLayout, 
     QWidget, QPushButton, QMessageBox, QHeaderView, QAbstractItemView,
-    QLabel
+    QLabel, QTableWidget, QVBoxLayout
 )
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
@@ -16,10 +17,11 @@ from utils.path_utils import get_resource_path, get_app_settings
 from logic.model_io import load_all_models, save_all_models
 
 class CredentialManagerDialog(QDialog):
-    def __init__(self, theme="dark", parent=None, theme_manager=None):
+    def __init__(self, parent=None, theme_manager=None):
         super().__init__(parent)
-        self.theme = theme
         self.theme_manager = theme_manager
+        from utils.path_utils import get_app_settings
+        self.theme = get_app_settings().value("theme", "dark")
         
         # Load UI
         loader = QUiLoader()
@@ -35,7 +37,6 @@ class CredentialManagerDialog(QDialog):
         # Initialization
         self.setup_connections()
         self.load_credentials()
-        self.apply_theme()
 
     def setup_connections(self):
         self.ui.close_btn.clicked.connect(self.accept)
@@ -112,15 +113,11 @@ class CredentialManagerDialog(QDialog):
             
             status = "ACTIVE" if is_live else ("AVAILABLE" if has_key else "UNAVAILABLE")
             status_label = QLabel(status)
-            status_label.setFixedSize(110, 25)
             status_label.setAlignment(Qt.AlignCenter)
             
-            # Phase 2: Unified 'WOW' Badge Styling (Safe-Gate)
-            if hasattr(self, 'theme_manager') and self.theme_manager:
-                try:
-                    status_label.setStyleSheet(self.theme_manager.get_status_badge_style(status))
-                except:
-                    pass
+            # Apply 'WOW' Badge Styling
+            if self.theme_manager:
+                status_label.setStyleSheet(self.theme_manager.get_status_badge_style(status))
             
             status_layout.addWidget(status_label)
             table.setCellWidget(row, 0, status_widget)
@@ -132,20 +129,18 @@ class CredentialManagerDialog(QDialog):
             table.setItem(row, 2, QTableWidgetItem(p['ecosystem']))
             
             # Col 3: Base URL
-            url = settings.value(f"url_{p['ecosystem'].lower().replace(' ', '_')}", p['url'])
+            url = settings.value(f"url_{p['id']}", p['url'])
             table.setItem(row, 3, QTableWidgetItem(url))
             
             # Col 4: API Key (Masked)
-            eco_key = p['ecosystem'].lower().replace(' ', '_')
-            key_id = f"api_key_{p['sdk']}_{eco_key}"
+            key_id = f"api_key_{p['id']}"
             key = keyring.get_password("LLMChatApp", key_id)
             
-            # Fallback for existing keys
+            # Fallback for generic slots
             if not key:
-                if "nvidia" in eco_key:
-                    key = keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key")
-                elif "google" in eco_key:
-                    key = keyring.get_password("LLMChatApp", "api_key_google")
+                key = keyring.get_password("LLMChatApp", "api_key")
+            if not key and p['id'] == "nvidia":
+                key = keyring.get_password("LLMChatApp", "api_key_nvidia")
             
             key_display = "********" if key else "Missing"
             key_item = QTableWidgetItem(key_display)
@@ -184,10 +179,14 @@ class CredentialManagerDialog(QDialog):
         
         new_key, ok = QInputDialog.getText(self, "Update API Key", f"Enter key for {p_data['ecosystem']}:", QLineEdit.Password)
         if ok and new_key:
+            key_id = f"api_key_{p_data['id']}"
             keyring.set_password("LLMChatApp", key_id, new_key)
             # If it's a google key, we also save to the legacy slot for compatibility
-            if p_data['sdk'] == "google-genai":
+            if p_data['id'] == "google":
                 keyring.set_password("LLMChatApp", "api_key_google", new_key)
+            if p_data['id'] == "nvidia":
+                keyring.set_password("LLMChatApp", "api_key_nvidia", new_key)
+                keyring.set_password("LLMChatApp", "api_key", new_key)
             
             self.load_credentials()
 
@@ -269,9 +268,6 @@ class CredentialManagerDialog(QDialog):
 
     def populate_model_tabs(self):
         """Re-implementing the tabbed developer view inside the Settings Hub."""
-        from collections import defaultdict
-        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QAbstractItemView, QHeaderView
-        
         selection = self.ui.modelEcosystemFilter.currentText()
         is_global = selection == "🌐 All Ecosystems"
         
@@ -286,6 +282,7 @@ class CredentialManagerDialog(QDialog):
             layout = QVBoxLayout(tab)
             table = QTableWidget()
             
+            # Setup Table Columns and Headers
             cols = ["Model Name", "Ecosystem", "Description", "Status"] if is_global else ["Model Name", "Description", "Status"]
             table.setColumnCount(len(cols))
             table.setHorizontalHeaderLabels(cols)
@@ -293,21 +290,46 @@ class CredentialManagerDialog(QDialog):
             table.setEditTriggers(QAbstractItemView.NoEditTriggers)
             table.setAlternatingRowColors(False)
             table.verticalHeader().setVisible(False)
-            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-            table.setColumnWidth(2, 120)
+            
+            # Word Wrap and Stretch Logic
+            table.setWordWrap(True)
+            table.setTextElideMode(Qt.ElideNone)
+            table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            
+            header = table.horizontalHeader()
+            if is_global:
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(2, QHeaderView.Stretch)
+                header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+            else:
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(1, QHeaderView.Stretch)
+                header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
             
             table.setRowCount(len(models))
             for row, m in enumerate(models):
                 table.setItem(row, 0, QTableWidgetItem(m.get('name', '')))
+                
+                # Dynamic Status Badge Injection
+                status_text = "Free" if m.get('free', True) else "Paid"
+                status_label = QLabel(status_text)
+                status_label.setAlignment(Qt.AlignCenter)
+                if self.theme_manager:
+                    status_label.setStyleSheet(self.theme_manager.get_status_badge_style(status_text))
+                
+                status_widget = QWidget()
+                status_layout = QHBoxLayout(status_widget)
+                status_layout.setContentsMargins(4, 2, 4, 2)
+                status_layout.addWidget(status_label)
+
                 if is_global:
                     table.setItem(row, 1, QTableWidgetItem(m.get('provider', 'nvidia').upper()))
                     table.setItem(row, 2, QTableWidgetItem(m.get('description', '')))
-                    is_free = m.get('free', True)
-                    table.setItem(row, 3, QTableWidgetItem("✅ Free" if is_free else "💰 Paid"))
+                    table.setCellWidget(row, 3, status_widget)
                 else:
                     table.setItem(row, 1, QTableWidgetItem(m.get('description', '')))
-                    is_free = m.get('free', True)
-                    table.setItem(row, 2, QTableWidgetItem("✅ Free" if is_free else "💰 Paid"))
+                    table.setCellWidget(row, 2, status_widget)
             
             layout.addWidget(table)
             self.ui.modelDeveloperTabs.addTab(tab, dev)
@@ -364,7 +386,7 @@ class CredentialManagerDialog(QDialog):
         target = self.fetch_queue.pop(0)
         from workers.model_fetch_worker import ModelFetchWorker
         
-        self.worker = ModelFetchWorker(target['key'], target['url'])
+        self.worker = ModelFetchWorker(target['key'], target['url'], parent=self)
         # Add provider metadata to the models during fetch
         self.current_fetch_provider = target['name'].lower().replace(" ", "")
         
@@ -403,12 +425,6 @@ class CredentialManagerDialog(QDialog):
 
     def delete_model(self):
         QMessageBox.warning(self, "Action Restricted", "Please select a model from the list below first.")
-
-    def apply_theme(self):
-        if self.theme == "dark":
-            self.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4;")
-        else:
-            self.setStyleSheet("background-color: #f5f5f5; color: #333;")
 
 class AddProviderDialog(QDialog):
     def __init__(self, parent=None):
@@ -516,9 +532,6 @@ class AddProviderDialog(QDialog):
             
         self.accept()
 
-# Helper function to launch the new hub
 def show_settings_hub(parent=None, theme_manager=None):
-    from utils.path_utils import get_app_settings
-    theme = get_app_settings().value("theme", "dark")
-    dialog = CredentialManagerDialog(theme=theme, parent=parent, theme_manager=theme_manager)
+    dialog = CredentialManagerDialog(parent=parent, theme_manager=theme_manager)
     dialog.exec()

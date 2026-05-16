@@ -265,11 +265,12 @@ class ThemeManager:
         elif s in ["AVAILABLE", "PAID", "UPGRADE"]:
             bg = "#1a237e" if is_dark else "#e8eaf6"
             fg = "#448aff" if is_dark else "#1a237e"
-        else: # UNAVAILABLE / ERROR
+        else: # UNAVAILABLE / ERROR / MISSING
             bg = "#3d1b1b" if is_dark else "#ffebee"
             fg = "#ff5252" if is_dark else "#c62828"
             
         return f"background-color: {bg}; color: {fg}; border: 1px solid {fg}; border-radius: 4px; font-weight: bold; padding: 2px 8px;"
+
 
     def get_copy_button_html(self):
         blue = "#0078d4" if self.current_theme == "dark" else "#0056b3"

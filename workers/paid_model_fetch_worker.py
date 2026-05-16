@@ -11,11 +11,10 @@ class PaidModelFetchWorker(QThread):
     finished = Signal()
     error = Signal(str)
     
-    def __init__(self, api_key: str, base_url: str = None):
-        super().__init__()
-        from utils.constants import OPENAI_BASE_URL
-        self.api_key = api_key
-        self.base_url = base_url if base_url else OPENAI_BASE_URL
+    def __init__(self, llm_client, parent=None):
+        super().__init__(parent)
+        self.api_key = llm_client.api_key
+        self.base_url = llm_client.base_url
         self.logger = get_logger()
         
     def run(self):

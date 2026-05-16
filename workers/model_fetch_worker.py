@@ -10,8 +10,8 @@ class ModelFetchWorker(QThread):
     finished = Signal(list)
     error = Signal(str)
     
-    def __init__(self, api_key: str, base_url: str = None):
-        super().__init__()
+    def __init__(self, api_key: str, base_url: str, parent=None):
+        super().__init__(parent)
         from utils.constants import OPENAI_BASE_URL
         self.api_key = api_key
         self.base_url = base_url if base_url else OPENAI_BASE_URL

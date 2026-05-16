@@ -16,7 +16,7 @@ from ui.theme_manager import ThemeManager
 from workers.connection_worker import ConnectionWorker
 from workers.local_model_detector import LocalModelDetector
 from utils.path_utils import get_resource_path, get_app_settings
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 
 # Import child modules
 from ui.chat_view import ChatViewWidget
@@ -72,12 +72,12 @@ class MainWindowClass(QMainWindow):
     def start_services(self):
         """Starts background workers only after authentication is confirmed."""
         # Setup Shared Connection Worker
-        self.connection_worker = ConnectionWorker()
+        self.connection_worker = ConnectionWorker(parent=self)
         self.connection_worker.status_changed.connect(self.on_connection_status_changed)
         self.connection_worker.start()
 
         # Fire non-blocking Local Model Auto-Detection Sweep (Ollama/LM Studio)
-        self.local_detector = LocalModelDetector()
+        self.local_detector = LocalModelDetector(parent=self)
         self.local_detector.detection_completed.connect(self.on_local_models_detected)
         self.local_detector.start()
 
@@ -119,6 +119,16 @@ class MainWindowClass(QMainWindow):
         # 2. Inject persistent announcement directly into the active chat log stream
         if hasattr(self, 'chat_view') and self.chat_view:
              self.chat_view.add_system_message(msg)
+
+    def on_api_status_changed(self, success, message):
+        """Callback from ApiManager to update UI status."""
+        if success:
+            self.chat_view.add_system_message(f"🌐 Universal API Server: {message}")
+            if hasattr(self, 'api_server_action'):
+                self.api_server_action.setChecked(True)
+        else:
+            if hasattr(self, 'api_server_action'):
+                self.api_server_action.setChecked(False)
 
     def setup_menu_bar(self):
         menubar = self.menuBar()
@@ -208,28 +218,32 @@ class MainWindowClass(QMainWindow):
         
         # 4. Restore Last Selected Model & UI States
         mid = str(settings.value("current_model_id", "")).strip()
-        # Explicitly filter out null cast strings and empty variants
+        from logic.model_io import load_all_models
+        all_models = load_all_models()
+        
+        # MASTER GATE SEAL: Confirm model ID actually exists in current ecosystem manifest
+        valid = False
         if mid and mid.lower() != "none" and mid != "":
-            # MASTER GATE SEAL: Confirm model ID actually exists in current ecosystem manifest
-            # Prevents rogue keys from re-enabling chat blindly without actual available model support.
-            valid = False
-            try:
-                from logic.model_io import load_all_models
-                for m in load_all_models():
-                    if m.get('id') == mid:
-                        valid = True
-                        break
-            except: pass
+            for m in all_models:
+                if m.get('id') == mid:
+                    valid = True
+                    break
+        
+        # Auto-recovery: If no valid model, pick the first one for the active provider
+        if not valid:
+            for m in all_models:
+                # Basic check: if provider is 'google', only pick google models. 
+                # If provider is 'nvidia', pick nvidia/llama/etc.
+                # For now, just pick the first available model in the list as a fallback.
+                mid = m.get('id')
+                valid = True
+                settings.setValue("current_model_id", mid)
+                break
 
-            if valid:
-                self.llm_client.set_model(mid)
-                self.chat_view.update_model_ui(mid)
-                self.chat_view.set_chat_enabled(True)
-            else:
-                # Manifest inconsistency detected! Zero cached memory to guarantee security.
-                get_app_settings().remove("current_model_id")
-                get_app_settings().sync()
-                self.chat_view.set_chat_enabled(False)
+        if valid:
+            self.llm_client.set_model(mid)
+            self.chat_view.update_model_ui(mid)
+            self.chat_view.set_chat_enabled(True)
         else:
             self.chat_view.set_chat_enabled(False)
 
@@ -261,9 +275,43 @@ class MainWindowClass(QMainWindow):
         if self.llm_client.is_globally_authenticated(): self.logout()
         else: self.open_settings()
 
+    def logout(self):
+        """Clears all session keys and returns to the login gate."""
+        if QMessageBox.question(self, "Logout", "Are you sure you want to log out and clear all API keys?") == QMessageBox.Yes:
+            import keyring
+            from utils.path_utils import get_app_settings
+            settings = get_app_settings()
+            
+            # 1. Clear keys from OS vault (Universal Sweep)
+            # We delete each slot independently to ensure one failure doesn't block the rest
+            slots = [
+                "api_key", 
+                "api_key_google", 
+                "api_key_nvidia",
+                f"api_key_{active_p}",
+                "api_key_openai_nvidia_nim",
+                "api_key_openai_nvidia"
+            ]
+            for slot in slots:
+                try: keyring.delete_password("LLMChatApp", slot)
+                except: pass
+            
+            # 2. Reset Client and Local State
+            self.llm_client.clear_keys()
+            settings.remove("active_provider_id")
+            settings.remove("current_model_id")
+            settings.sync()
+            
+            # 3. Reload and force return to Login Gate
+            self.load_settings()
+            self.chat_view.set_chat_enabled(False)
+            
+            # Close app and force restart to guarantee clean slate (Standard for security apps)
+            QApplication.quit()
+
     def open_settings(self):
-        from ui.login_dialog import SettingsDialogClass
-        dlg = SettingsDialogClass(parent=self)
+        from ui.login_dialog import LoginDialogClass
+        dlg = LoginDialogClass(parent=self)
         # Only reload if the user actually clicked Save/Login
         if dlg.exec():
             self.load_settings()
@@ -280,10 +328,14 @@ class MainWindowClass(QMainWindow):
             if sid:
                 # 1. Identify Provider of the newly selected model
                 models = load_all_models()
-                new_provider = "nvidia"
+                new_provider = "nvidia" # Default fallback
+                dev_name = "Unknown"
+                model_name = sid
                 for m in models:
                     if m.get('id') == sid:
                         new_provider = m.get('provider', 'nvidia')
+                        dev_name = m.get('developer', 'Unknown')
+                        model_name = m.get('name', sid)
                         break
                 
                 # 2. Persist the provider shift to settings to ensure correct key hydration on next reload
@@ -297,7 +349,7 @@ class MainWindowClass(QMainWindow):
                 
                 # 4. Trigger a settings reload to hydrate the newly active provider's key
                 self.load_settings()
-                self.chat_view.add_system_message(f"🔄 Ecosystem switched to {new_provider.upper()}")
+                self.chat_view.add_system_message(f"🔄 <b>Ecosystem:</b> {new_provider.upper()} | <b>Developer:</b> {dev_name} | <b>Model:</b> {model_name}", allow_html=True)
 
     def logout(self):
         """Clears the active session and returns to login screen."""
@@ -315,7 +367,7 @@ class MainWindowClass(QMainWindow):
     def open_settings(self) -> bool:
         """Entry point for the login/auth flow."""
         from ui.login_dialog import LoginDialogClass
-        dialog = LoginDialogClass(theme=self.theme_manager.current_theme, parent=self)
+        dialog = LoginDialogClass(parent=self)
         if dialog.exec():
             # Sync the client keys and reload
             self.llm_client.set_api_key(dialog.get_api_key())
@@ -326,11 +378,10 @@ class MainWindowClass(QMainWindow):
 
     def open_credential_manager(self):
         from ui.credential_manager import show_settings_hub
-        # Pass theme_manager to avoid AttributeError crash in v6.5
         show_settings_hub(parent=self, theme_manager=self.theme_manager)
         self.load_settings()
         if hasattr(self, 'chat_view'):
-            self.chat_view.update_model_ui()
+            self.chat_view.update_model_ui(self.llm_client.current_model)
 
     def edit_system_instructions(self):
         from ui.system_prompt_manager import SystemPromptManagerClass
@@ -542,8 +593,23 @@ class MainWindowClass(QMainWindow):
         QTimer.singleShot(50, self.restore_splitter_states)
 
     def closeEvent(self, event):
-        # Simply minimize to tray or quit safely
-        self.quit_app()
+        """Ensure all background threads are stopped before exiting."""
+        print("[Shutdown] Cleaning up services...")
+        
+        # 1. Stop global window-level workers
+        if hasattr(self, 'connection_worker') and self.connection_worker.isRunning():
+            self.connection_worker.stop()
+            self.connection_worker.quit()
+            self.connection_worker.wait(2000)
+            
+        if hasattr(self, 'local_detector') and self.local_detector.isRunning():
+            self.local_detector.terminate()
+            self.local_detector.wait(2000)
+
+        # 2. Stop view-specific workers (RAG, Chat, etc.)
+        if hasattr(self, 'chat_view'):
+            self.chat_view.shutdown()
+            
         event.accept()
 
     def changeEvent(self, event):
@@ -614,3 +680,4 @@ class MainWindowClass(QMainWindow):
         if QMessageBox.question(self, "Clear Logs", "Are you sure you want to delete all diagnostic logs?") == QMessageBox.Yes:
             get_logger().clear()
             QMessageBox.information(self, "Success", "Logs have been cleared.")
+

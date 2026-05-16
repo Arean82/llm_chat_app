@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QChe
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
 from utils.path_utils import get_resource_path, get_app_settings
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 
 class CustomProviderDialogClass(QDialog):
     def __init__(self, parent=None):

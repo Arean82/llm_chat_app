@@ -188,7 +188,7 @@ class APIServer:
             self.server_thread = Thread(target=run, daemon=True)
             self.server_thread.start()
             self.running = True
-            return True, "Success"
+            return True, "API Server Started. API is running on http://localhost:5000"
         except Exception as e:
             return False, f"Server Error: {str(e)}"
     
@@ -198,7 +198,7 @@ class APIServer:
             self.server.shutdown()
             self.server = None
         self.running = False
-        return True
+        return True, "API Server Stopped."
     
     def get_status(self):
         return {"running": self.running, "port": self.port, "model": self.llm_client.current_model}

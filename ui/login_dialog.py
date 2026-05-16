@@ -13,14 +13,13 @@ from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
 
 from utils.path_utils import get_resource_path, get_app_settings
-from utils.helpers import set_app_icon
+from ui.shared_widgets import set_app_icon
 from utils.storage_config import StorageManager
 from ui.custom_provider_dialog import CustomProviderDialogClass
 
 class LoginDialogClass(QDialog):
-    def __init__(self, theme="dark", parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.theme = theme
         
         # 1. Load base UI skeleton
         loader = QUiLoader()
@@ -37,10 +36,7 @@ class LoginDialogClass(QDialog):
         set_app_icon(self)
         self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
         
-        # Load Dynamic Theme (Respect passed-in theme)
-        if not hasattr(self, 'theme') or not self.theme:
-            settings = get_app_settings()
-            self.theme = settings.value("theme", "light")
+        # Standard window setup
         
         # 2. Map internal elements from UI
         self.group_label = self.ui.findChild(QLabel, "group_label")
@@ -59,8 +55,7 @@ class LoginDialogClass(QDialog):
         self.save_btn = self.ui.findChild(QPushButton, "save_btn")
         self.cancel_btn = self.ui.findChild(QPushButton, "cancel_btn")
         
-        # Apply dynamic styles based on recovered preference
-        self.apply_theme()
+        # Allow opening links in instructions natively
         
         # Allow opening links in instructions natively
         self.instructions_lbl.setTextFormat(Qt.RichText)
@@ -341,12 +336,6 @@ class LoginDialogClass(QDialog):
             if new_idx != -1:
                 self.provider_combo.setCurrentIndex(new_idx)
 
-    def apply_theme(self):
-        """Minimal theme enforcement as per v6.1 foundation."""
-        if self.theme == "dark":
-            self.setStyleSheet("QDialog { background-color: #2d2d2d; color: #e0e0e0; } QLabel { color: #e0e0e0; }")
-        else:
-            self.setStyleSheet("QDialog { background-color: #ffffff; color: #333333; } QLabel { color: #333333; }")
 
     def get_active_provider_id(self) -> str:
         return self.provider_combo.currentData()
