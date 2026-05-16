@@ -1,4 +1,7 @@
-# LLM Chat App
+# LLM Chat App (v6.1 Stable Baseline)
+> [!IMPORTANT]
+> This repository has been restored to the stable v6.1 foundation. All speculative regressions have been purged.
+
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![SQLite](https://img.shields.io/badge/SQLite-Transactional-003B57) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
