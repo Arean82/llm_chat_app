@@ -180,6 +180,7 @@ class MainWindowClass(QMainWindow):
         help_menu.addAction("📖 Readme", self.show_readme)
         help_menu.addAction("📜 License", self.show_license)
         help_menu.addAction("📡 API Documentation", self.api_doc)
+        help_menu.addAction("📟 Headless Engine Guide", self.show_headless_guide)
         help_menu.addAction("🔌 IDE Integration Guide", self.show_ide_integration)
         help_menu.addAction("🛡️ Security Policy", self.show_security_policy)
         help_menu.addSeparator()
@@ -253,19 +254,11 @@ class MainWindowClass(QMainWindow):
         QTimer.singleShot(100, self.restore_splitter_states)
 
     def restore_splitter_states(self):
-        settings = get_app_settings()
-        if hasattr(self, 'chat_view') and self.chat_view:
-            s = self.chat_view.findChild(QSplitter, "main_splitter")
-            state = settings.value("ui/main_splitter_state")
-            if s and state:
-                try: s.restoreState(state)
-                except Exception: pass
-        if hasattr(self, 'arena_view') and self.arena_view:
-            s = self.arena_view.findChild(QSplitter, "arena_splitter")
-            state = settings.value("ui/arena_splitter_state")
-            if s and state:
-                try: s.restoreState(state)
-                except Exception: pass
+        """Delegates layout restoration to active views."""
+        if hasattr(self, 'chat_view'):
+            self.chat_view.load_layout_settings()
+        if hasattr(self, 'arena_view'):
+            self.arena_view.load_layout_settings()
 
         # Fire persistent system tray icon if presence of active authentication is confirmed
         if self.llm_client.has_api_key(): 
@@ -281,6 +274,7 @@ class MainWindowClass(QMainWindow):
             import keyring
             from utils.path_utils import get_app_settings
             settings = get_app_settings()
+            active_p = settings.value("active_provider_id", "")
             
             # 1. Clear keys from OS vault (Universal Sweep)
             # We delete each slot independently to ensure one failure doesn't block the rest
@@ -606,9 +600,12 @@ class MainWindowClass(QMainWindow):
             self.local_detector.terminate()
             self.local_detector.wait(2000)
 
-        # 2. Stop view-specific workers (RAG, Chat, etc.)
+        # 2. Stop view-specific workers and save layouts
         if hasattr(self, 'chat_view'):
+            self.chat_view.save_layout_settings()
             self.chat_view.shutdown()
+        if hasattr(self, 'arena_view'):
+            self.arena_view.save_layout_settings()
             
         event.accept()
 
@@ -636,6 +633,17 @@ class MainWindowClass(QMainWindow):
         dialog = FileViewerDialog(
             title="Security & Privacy Policy",
             file_names=["SECURITY.md", "SECURITY.txt", "SECURITY"],
+            is_markdown=True,
+            size=(750, 600),
+            parent=self
+        )
+        dialog.exec()
+
+    def show_headless_guide(self):
+        from ui.file_viewer import FileViewerDialog
+        dialog = FileViewerDialog(
+            title="Headless Engine Guide",
+            file_names=["HEADLESS_GUIDE.md"],
             is_markdown=True,
             size=(750, 600),
             parent=self
@@ -680,4 +688,3 @@ class MainWindowClass(QMainWindow):
         if QMessageBox.question(self, "Clear Logs", "Are you sure you want to delete all diagnostic logs?") == QMessageBox.Yes:
             get_logger().clear()
             QMessageBox.information(self, "Success", "Logs have been cleared.")
-

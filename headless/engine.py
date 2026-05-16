@@ -10,6 +10,23 @@ class HeadlessEngine:
     Manages background chat requests for headless execution.
     Acts as the 'Handler' for the ApiManager.
     """
+
+    @staticmethod
+    def ensure_initialized(client: LLMClient):
+        """
+        CLI-based initialization gate. Ensures keys and models are ready.
+        Strictly decoupled from GUI dependencies.
+        """
+        if not client.is_globally_authenticated():
+            from headless.auth import HeadlessAuth
+            if not HeadlessAuth.run_login_flow(client):
+                raise RuntimeError("API key configuration failed or was cancelled.")
+
+        # Automated Model Manifest Sync (CLI)
+        from headless.models import HeadlessModels
+        if not load_all_models():
+             print("[*] Manifest empty. Performing initial fetch...")
+             HeadlessModels.update_models(client)
     
     @staticmethod
     def request_handler(params):
@@ -17,7 +34,12 @@ class HeadlessEngine:
         Processes API chat requests by spawning background HeadlessWorkers.
         Mimics the logic found in MainWindow but without UI dependencies.
         """
-        client = LLMClient()
+        # Use the hydrated client passed from the ApiManager
+        client = params.get("client")
+        if not client:
+            # Fallback (though ApiManager should always provide it)
+            client = LLMClient()
+            client.hydrate()
         
         # Extract parameters
         user_msg = params.get("message")

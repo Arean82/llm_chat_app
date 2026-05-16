@@ -73,6 +73,25 @@ class ArenaViewWidget(QWidget):
         self.check_ecosystems()
         
         self.ui.input_field.installEventFilter(self.window)
+        
+        # Restore Splitter Layout
+        self.load_layout_settings()
+
+    def load_layout_settings(self):
+        """Restores the visual proportions of the arena splitters."""
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        state = settings.value("arena_splitter_state")
+        if state and hasattr(self.ui, 'arena_splitter'):
+            self.ui.arena_splitter.restoreState(state)
+
+    def save_layout_settings(self):
+        """Persists the current visual proportions of the arena splitters."""
+        if hasattr(self.ui, 'arena_splitter'):
+            from utils.path_utils import get_app_settings
+            settings = get_app_settings()
+            settings.setValue("arena_splitter_state", self.ui.arena_splitter.saveState())
+            settings.sync()
 
     def check_ecosystems(self):
         """Checks if multiple ecosystems are configured; shows warning if not."""

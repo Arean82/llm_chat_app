@@ -75,7 +75,8 @@ class ApiManager:
             params = {
                 "message": user_message,
                 "messages_list": messages_list,
-                "api_response_queue": response_queue
+                "api_response_queue": response_queue,
+                "client": self.llm_client
             }
             params.update(kwargs)
             handler(params)
@@ -92,7 +93,8 @@ class ApiManager:
             stream_queue = queue.Queue()
             params = {
                 "message": user_message,
-                "stream_queue": stream_queue
+                "stream_queue": stream_queue,
+                "client": self.llm_client
             }
             params.update(kwargs)
             handler(params)

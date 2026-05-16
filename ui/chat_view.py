@@ -93,6 +93,23 @@ class ChatViewWidget(QWidget):
         self.set_send_button_idle()
         self.set_chat_enabled(False)
         
+        # Restore Splitter Layout
+        self.load_layout_settings()
+
+    def load_layout_settings(self):
+        """Restores the visual proportions of the main splitter."""
+        settings = get_app_settings()
+        state = settings.value("chat_splitter_state")
+        if state and hasattr(self.ui, 'main_splitter'):
+            self.ui.main_splitter.restoreState(state)
+
+    def save_layout_settings(self):
+        """Persists the current visual proportions of the main splitter."""
+        if hasattr(self.ui, 'main_splitter'):
+            settings = get_app_settings()
+            settings.setValue("chat_splitter_state", self.ui.main_splitter.saveState())
+            settings.sync()
+        
         # --- TOOL INJECTION PHASE ---
         from PySide6.QtWidgets import QCheckBox
         self.web_search_chk = QCheckBox("🌐 Enable Real-Time Web Search")

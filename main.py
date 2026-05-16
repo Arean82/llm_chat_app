@@ -202,46 +202,95 @@ def main():
         # from ui.shared_widgets import set_app_icon
         # set_app_icon(app) 
         
-        # 4. MANDATED LOGIN GATE (v6.1 Workflow)
-        from ui.login_dialog import LoginDialogClass
-        login_dlg = LoginDialogClass()
-        # Apply icon to dialog
-        from ui.shared_widgets import set_app_icon
-        set_app_icon(login_dlg)
+    # CLI Command Router
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("\n" + "="*50)
+        print(" LLM CHAT APP - Headless Engine v7.0")
+        print("="*50)
+        print("Usage: python main.py [options]")
+        print("\nOptions:")
+        print("  --headless        Launch the standalone API Server (Port 5000)")
+        print("  --list-models     List all models currently in the local manifest")
+        print("  --update-models   Fetch latest models from the active provider")
+        print("  --help / -h       Show this detailed help message")
         
-        if not login_dlg.exec():
-            print("[*] Login cancelled. Exiting.")
-            sys.exit(0)
-            
-        # 5. INITIALIZE MAIN WINDOW
-        window = MainWindowClass()
-        window.showMaximized()  
-        window.start_services()
-        sys.exit(app.exec())
-    else:
+        print("\nExamples:")
+        print("  1. Configure Auth:  python main.py --headless (triggers prompt)")
+        print("  2. Sync Models:     python main.py --update-models")
+        print("  3. View manifest:   python main.py --list-models")
+        
+        print("\nDocumentation: see HEADLESS_GUIDE.md")
+        print("="*50 + "\n")
+        return
+
+    if "--list-models" in sys.argv:
+        from headless.models import HeadlessModels
+        HeadlessModels.list_models()
+        return
+
+    if "--update-models" in sys.argv:
+        from logic.llm_client import LLMClient
+        from headless.models import HeadlessModels
+        client = LLMClient()
+        client.hydrate()
+        HeadlessModels.update_models(client)
+        return
+
+    if "--headless" in sys.argv or (sys.platform == "linux" and not os.environ.get('DISPLAY')):
         # --- HEADLESS EXECUTION PATH ---
         from logic.llm_client import LLMClient
-        from logic.api_manager import ApiManager
-        
         client = LLMClient()
-        # Verify Auth in headless
-        if not client.is_globally_authenticated():
-            print("[!] Error: API keys not configured. Run the GUI once to configure settings.")
+        client.hydrate()
+        
+        # 1. Initialize Headless Environment (CLI Auth + Manifest Sync)
+        from headless.engine import HeadlessEngine
+        try:
+            HeadlessEngine.ensure_initialized(client)
+        except Exception as e:
+            print(f"[!] Headless Setup Failed: {e}")
             return
 
-        print("[*] Initializing Standalone API Server...")
-        from headless.engine import HeadlessEngine
+        # 2. Start API Manager with Headless Handler
+        from logic.api_manager import ApiManager
         api_manager = ApiManager(client, request_handler_callback=HeadlessEngine.request_handler)
-        api_manager.start_api_server()
         
-        print("[+] Headless Engine is live. Press Ctrl+C to terminate.")
         try:
+            api_manager.start_api_server()
+            print("[+] Headless Engine is live. Listening for IDE requests...")
+            print("[+] Press Ctrl+C to terminate safely.")
+            
             import time
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("[*] Shutting down...")
+            print("\n[*] Termination signal received.")
+        finally:
+            print("[*] Cleaning up headless services...")
             api_manager.stop_api_server()
+            print("[+] Shutdown complete.")
+    else:
+        # --- GUI EXECUTION PATH ---
+        from logic.llm_client import LLMClient
+        client = LLMClient()
+        client.hydrate()
+        
+        # Session Check: Only show gate if NOT authenticated
+        if not client.is_globally_authenticated():
+            from ui.login_dialog import LoginDialogClass
+            login_dlg = LoginDialogClass()
+            from ui.shared_widgets import set_app_icon
+            set_app_icon(login_dlg)
+            
+            if not login_dlg.exec():
+                print("[*] Login cancelled. Exiting.")
+                sys.exit(0)
+            
+        # INITIALIZE MAIN WINDOW
+        from ui.main_window import MainWindowClass
+        window = MainWindowClass()
+        window.showMaximized()  
+        window.start_services()
+        sys.exit(app.exec())
 
 
 if __name__ == "__main__":
