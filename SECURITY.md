@@ -43,3 +43,11 @@
 
 * **Encrypted Piping:** All communication streams to remote AI providers (Google Vertex, OpenAI API, NVIDIA NIM) utilize mandatory **HTTPS TLS 1.3** pipelines.
 * **Local Overrides:** For highly sensitive offline operations, the app seamlessly enables zero-key workflows targeting locally-hosted offline engines (e.g., Ollama, LM Studio) which operate 100% disconnected from the external internet.
+
+---
+
+## 🖥️ 6. Headless Engine Security
+
+* **CLI Credential Vaulting:** The headless engine utilizes the same high-security `keyring` architecture as the GUI. Credentials provided via terminal are immediately vaulted into the OS security subsystem and never cached in plaintext history.
+* **Process Space Isolation:** Running in `--headless` mode spawns a dedicated orchestrator process with restricted access to non-essential UI resources, minimizing the attack surface for server-side deployments.
+* **Environment-Aware Logic:** Automatically detects secure vs insecure environments (e.g., SSH sessions) to toggle interactive prompts vs daemonized execution safely.

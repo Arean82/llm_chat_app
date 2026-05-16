@@ -1,7 +1,4 @@
-# LLM Chat App (v6.1 Stable Baseline)
-> [!IMPORTANT]
-> This repository has been restored to the stable v6.1 foundation. All speculative regressions have been purged.
-
+# LLM Chat App (v6.5 Stable Baseline)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![SQLite](https://img.shields.io/badge/SQLite-Transactional-003B57) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -13,7 +10,7 @@ A sleek, high-performance desktop chat application built with Python and PySide6
 
 ## 📖 About the Project
 
-**LLM Chat App** is engineered to be the definitive, secure gateway for modern Artificial Intelligence exploration. Developed for high-velocity prototyping and native desktop comfort, this workstation utility centralizes fragmented AI provider landscapes into a single, performant orchestrator. 
+**LLM Chat App** is engineered to be the definitive, secure gateway for modern Artificial Intelligence exploration. Developed for high-velocity prototyping and native desktop comfort, this workstation utility centralizes fragmented AI provider landscapes into a single, performant orchestrator.
 
 Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor-lock constraints by unifying **Cloud inference** and **Local compute** within one elite codebase. Leveraging hardware acceleration, OS-level credential custody, and recursive Adaptive Memory buffering, it delivers a fluid, virtually limitless conversational cognition engine.
 
@@ -67,20 +64,21 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 ## 🎨 User Interface Highlights
 
 ### 📸 Visual Overview
-| The AI Model Arena Benchmarking Suite |
-| :---: |
+
+|           The AI Model Arena Benchmarking Suite           |
+| :-------------------------------------------------------: |
 | ![The AI Model Arena](resources/screenshots/Arena_Mode.png) |
 
-| Main Application Chassis | Seamless Workstation Initialization |
-| :---: | :---: |
+|              Main Application Chassis              |                 Seamless Workstation Initialization                 |
+| :-------------------------------------------------: | :------------------------------------------------------------------: |
 | ![Main Window](resources/screenshots/Main_Window.png) | ![Initial Setup](resources/screenshots/Initial_Data_Setup_Preview.png) |
 
-| Modular Catalog Model Manager | Dynamic Log Telemetry Dashboard |
-| :---: | :---: |
+|              Modular Catalog Model Manager              |          Dynamic Log Telemetry Dashboard          |
+| :-----------------------------------------------------: | :-----------------------------------------------: |
 | ![Model Manager](resources/screenshots/Model_Manager.png) | ![Log Viewer](resources/screenshots/Log_Viewer.png) |
 
-| Segmented Keyring Authentication Vault | Custom Private Endpoint Integration |
-| :---: | :---: |
+|                Segmented Keyring Authentication Vault                |                Custom Private Endpoint Integration                |
+| :-------------------------------------------------------------------: | :----------------------------------------------------------------: |
 | ![Multi-Provider Configuration](resources/screenshots/Login_Dialog.png) | ![Add Custom Host](resources/screenshots/Custom_Provider_Dialog.png) |
 
 📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
@@ -159,6 +157,7 @@ llm_chat_app/
 ├── STRATEGIC_EVOLUTION_REPORT.md   # 📈 Phase 2 evolution blueprint
 ├── PROJECT_AUDIT_REPORT.md         # 🛡️ Master vulnerability remediation ledger
 ├── requirements.txt                # 📦 Python dependencies
+├── HEADLESS_GUIDE.md               # 🖥️ Headless Mode usage guide
 ├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
 ├── extension/                       # 📦 IDE Extensions
@@ -223,6 +222,12 @@ llm_chat_app/
 │   ├── paid_model_fetch_worker.py  # 💰 Subscription-tier loader
 │   └── update_logger.py            # 📋 Signal-driven live event emitter
 │
+├── headless/                       # 🖥️ Headless Mode Engine
+│   ├── auth.py                     # 🔐 CLI-based authentication handler
+│   ├── engine.py                   # ⚙️ Headless lifecycle orchestrator
+│   ├── models.py                   # 🤖 CLI model selection logic
+│   └── worker.py                   # 🧵 Headless stream processor
+│
 └── utils/                          # 🛠️ Low-Level System Helpers
     ├── storage_config.py           # 🗃️ Storage Location & portable runtime resolver
     ├── path_utils.py               # 📁 Dev & compiled relative locator
@@ -237,8 +242,8 @@ llm_chat_app/
 
 The application leverages a fully-isolated multi-threaded chassis designed to keep the user interface responsive, regardless of inference or indexing payloads:
 
-| Modular High-Performance System Architecture |
-| :---: |
+|                 Modular High-Performance System Architecture                 |
+| :--------------------------------------------------------------------------: |
 | ![System Architecture Diagram](resources/screenshots/Architecture_Diagram.png) |
 
 ---
@@ -254,14 +259,13 @@ The application leverages a fully-isolated multi-threaded chassis designed to ke
 This application does not use local `.env` files or plaintext config files for sensitive data.
 
 - **API Credentials:** Migrated away from plaintext. Securely injected into the OS vault subsystem using the Python `keyring` module (Windows Credential Manager / macOS Keychain).
-- **UI Settings:** Generic layout preferences stored using `QSettings`. 
+- **UI Settings:** Generic layout preferences stored using `QSettings`.
   - **Portable Mode:** Saved to `settings.ini` in the application folder (zero system footprint).
   - **Standard/Custom Mode:** Saved securely via native OS configurations.
     - *Windows:* Saved in the Registry (`HKEY_CURRENT_USER\Software\LLMChatApp\Settings`).
     - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
     - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
 - **Data Root:** Chat history (`chat_history.db`), logs, caches, and configs dynamically map to one centralized Data Root based on user preference (User Profile, Portable Folder, or Custom network drive).
-
 
 ---
 
@@ -316,13 +320,13 @@ The application features a comprehensive logging system for background operation
 | `Esc`                            | Exit true Fullscreen                                              |
 | `Close button (X)` or `Alt+F4` | Shows exit options (Exit Application / Minimize to Tray / Cancel) |
 | `Ctrl+Alt+S`                     | Toggle Universal API Server (if shortcut configured)              |
-| `Ctrl+N` | New Conversation |
-| `Ctrl+S` | Save Conversation |
-| `Ctrl+L` | Load Conversation |
-| `Ctrl+M` | Minimize to Tray |
-| `Ctrl+Q` | Exit |
-| `Ctrl+D` | Clear Chat |
-| `Ctrl+Shift+C` | Copy Last Response |
+| `Ctrl+N`                         | New Conversation                                                  |
+| `Ctrl+S`                         | Save Conversation                                                 |
+| `Ctrl+L`                         | Load Conversation                                                 |
+| `Ctrl+M`                         | Minimize to Tray                                                  |
+| `Ctrl+Q`                         | Exit                                                              |
+| `Ctrl+D`                         | Clear Chat                                                        |
+| `Ctrl+Shift+C`                   | Copy Last Response                                                |
 
 ---
 
@@ -394,11 +398,9 @@ pyinstaller LLM_Chat_App_combined.spec
 - One-dir: `dist/LLM_Chat_dir/` (folder containing the executable and all dependencies)
 - One-file: `dist/LLM_Chat_one_file/LLM Chat App.exe` (single executable file)
 - Combined: Both outputs are generated simultaneously
-
 - On first launch, the executable checks directory permissions. If running from a restricted system folder (like `C:\Program Files`), it automatically creates data resources inside `AppData` to ensure zero-crash operation.
 - If run from a writable folder (USB drive/Desktop), it prompts the user to select between **Portable**, **Standard**, or **Custom** storage paths.
 - Uses **Smart Sync** to safely unpack current UI versions to the active Data Root without wiping user configs.
-
 
 **Test the executable** before proceeding to package it!
 
@@ -419,6 +421,7 @@ The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` a
 For Ubuntu/Debian, use the automated build scripts:
 
 **1. Create a DEB Installer:**
+
 ```bash
 # Build onedir first
 pyinstaller LLM_Chat_App_onedir.spec
@@ -429,6 +432,7 @@ sudo dpkg -i llmchatapp_6.1.0.deb
 ```
 
 **2. Create a Portable AppImage:**
+
 ```bash
 # Build onedir first
 pyinstaller LLM_Chat_App_onedir.spec
@@ -464,21 +468,27 @@ Regardless of selection, the target root directory will structure itself like th
 - `/ui_designer/` - Extracted interface schemas
 - `/resources/update_log.txt` - Global application log file
 
-
 ---
 
 ## 👨‍💻 About the Team & Credits
 
 This framework is architected and curated with the vision of building transparent, universal gates into advanced AI technologies.
 
-*   **Lead Architect:** **Arean Narrayan** ([@Arean82](https://github.com/Arean82))
-*   **Design Ethos:** Deliver highly secure, agnostic interfaces free of platform bias or maintenance decay.
+* **Lead Architect:** **Arean Narrayan** ([@Arean82](https://github.com/Arean82))
+* **Design Ethos:** Deliver highly secure, agnostic interfaces free of platform bias or maintenance decay.
 
 ---
 
 ## 📅 Change Log
 
+### v6.5.0 – Headless Engine & 'Perfect' UI Refinement
+- 🖥️ **Headless CLI Support**: Introduced a full-featured headless engine for server-side and terminal-only operations. Includes automated environment detection and CLI-driven conversation flows (Audit ID 050).
+- ✨ **'Perfect' Model Manager UI**: Standardized row selection, word-wrap, and pill-shaped status badges to match the premium Credential Manager Hub style (Audit ID 051).
+- 🎨 **Aesthetic Unification**: Unified model management grids across standalone and embedded contexts for a seamless, professional experience.
+- 🛡️ **Stable Foundation Rebuild**: Purged legacy regressions and consolidated the codebase onto the high-performance v6.5 chassis.
+
 ### v6.1.0 – High-Performance Hybrid Memory & Centralized Authentication
+
 - 🔐 **Centralized Credential Hub**: Unified management of all API keys, URLs, and ecosystems into a single tabbed interface.
 - 🛡️ **Secure "Set Live" Transition**: Implemented mandatory logout confirmation gate for ecosystem switches to protect session integrity.
 - 🔄 **Smart Discovery Pipeline**: Overhauled "Fetch Models" logic with ecosystem-aware background workers and security-gate filtering.
@@ -490,6 +500,7 @@ This framework is architected and curated with the vision of building transparen
 - 🎨 **Dynamic High-Contrast Accessible UI**: Programmatic `QPalette` injection guaranteeing readable placeholder texts and input layouts across both light and dark themes.
 
 ### v6.0.0 – Universal Orchestration & Context Evolution
+
 - 🚀 **Adaptive Memory Compression**: Seamless background context synthesis unlocking infinite conversation depths.
 - ⚔️ **AI Model Arena**: Inaugural dual-concurrent comparison engine for competitive LLM benchmarking.
 - 🌍 **Universal Ecosystem Grid**: Formalized native integrations for Google, Groq, Ollama, and LM Studio.
@@ -498,6 +509,7 @@ This framework is architected and curated with the vision of building transparen
 - ✨ **System UI Overhaul**: Migrated monolith view to High-Velocity Modular Stack for optimized memory cycles.
 
 ### v5.0.0 – Modern Infrastructure Foundations
+
 - 💾 **SQLite Persistence Core**: Heavy-duty transactional chat logging with WAL-mode safety locks.
 - 🤖 **Dynamic Catalog Expansion**: Replaced static indices with segmented runtime ecosystem JSON catalogs.
 - 🌐 **Flask API Architecture**: Introduction of the background-threading local gateway for IDE bridges.
@@ -505,6 +517,7 @@ This framework is architected and curated with the vision of building transparen
 - 📡 **Extension Ecosystem V1**: Official stable launch of packaged VSCode and JetBrains connectivity clients.
 
 ### v4.0.0 – Framework Maturation
+
 - 📜 **Library Interface**: Deployed the persistent instruction repository and system-prompt configurator.
 - 📋 **Active Log Inspector**: Real-time event loop monitoring specifically for ecosystem fetches.
 - ⚙️ **Model Manager V1**: Basic graphical table added for provider addition/removal management.

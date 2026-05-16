@@ -13,11 +13,13 @@ a = Analysis(
         ('resources/', 'resources'),
         ('ui_designer/', 'ui_designer'),
         ('extension/', 'extension'),
+        ('headless/', 'headless'),
         ('README.md', '.'),           
         ('LICENSE', '.'),        
         ('API_SERVER.md', '.'),
         ('IDE_INTEGRATION.md', '.'),
         ('SECURITY.md', '.'),
+        ('HEADLESS_GUIDE.md', '.'),
     ],
     hiddenimports=[
         'flask',
