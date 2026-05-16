@@ -16,9 +16,10 @@ from utils.path_utils import get_resource_path, get_app_settings
 from logic.model_io import load_all_models, save_all_models
 
 class CredentialManagerDialog(QDialog):
-    def __init__(self, theme="dark", parent=None):
+    def __init__(self, theme="dark", parent=None, theme_manager=None):
         super().__init__(parent)
         self.theme = theme
+        self.theme_manager = theme_manager
         
         # Load UI
         loader = QUiLoader()
@@ -53,32 +54,33 @@ class CredentialManagerDialog(QDialog):
     def load_credentials(self):
         """Populates the Credential Table with SDK/Ecosystem data."""
         table = self.ui.credTable
+        table.setAlternatingRowColors(False)
         table.setRowCount(0)
         
         # Base list of SDKs from the provided table
         base_providers = [
-            {"sdk": "openai", "ecosystem": "NVIDIA NIM", "url": "https://integrate.api.nvidia.com/v1"},
-            {"sdk": "google-genai", "ecosystem": "Google Gemini", "url": "https://generativelanguage.googleapis.com/v1beta"},
-            {"sdk": "openai", "ecosystem": "Official OpenAI", "url": "https://api.openai.com/v1"},
-            {"sdk": "groq", "ecosystem": "GroqCloud", "url": "https://api.groq.com/openai/v1"},
-            {"sdk": "openai", "ecosystem": "OpenRouter", "url": "https://openrouter.ai/api/v1"},
-            {"sdk": "openai", "ecosystem": "DeepSeek", "url": "https://api.deepseek.com"},
-            {"sdk": "openai", "ecosystem": "Perplexity", "url": "https://api.perplexity.ai"},
-            {"sdk": "openai", "ecosystem": "Fireworks AI", "url": "https://api.fireworks.ai/inference/v1"},
-            {"sdk": "openai", "ecosystem": "Novita AI", "url": "https://api.novita.ai/v3/openai"},
-            {"sdk": "anthropic", "ecosystem": "Anthropic", "url": "https://api.anthropic.com/v1"},
-            {"sdk": "cohere", "ecosystem": "Cohere", "url": "https://api.cohere.ai/v1"},
-            {"sdk": "mistralai", "ecosystem": "Mistral AI", "url": "https://api.mistral.ai/v1"},
-            {"sdk": "together", "ecosystem": "Together AI", "url": "https://api.together.xyz/v1"},
-            {"sdk": "ollama", "ecosystem": "Ollama (Local)", "url": "http://localhost:11434/v1"},
-            {"sdk": "replicate", "ecosystem": "Replicate", "url": "https://api.replicate.com/v1"},
-            {"sdk": "huggingface_hub", "ecosystem": "Hugging Face", "url": "https://api-inference.huggingface.co/v1"},
-            {"sdk": "transformers", "ecosystem": "Local Transformers", "url": "local"},
-            {"sdk": "boto3", "ecosystem": "AWS Bedrock", "url": "aws"},
-            {"sdk": "vertexai", "ecosystem": "Google Vertex AI", "url": "gcp"},
-            {"sdk": "azure-ai-inference", "ecosystem": "Azure AI", "url": "azure"},
-            {"sdk": "vllm", "ecosystem": "vLLM Server", "url": "http://localhost:8000/v1"},
-            {"sdk": "litellm", "ecosystem": "LiteLLM Proxy", "url": "http://localhost:4000/v1"},
+            {"id": "nvidia", "sdk": "openai", "ecosystem": "NVIDIA NIM", "url": "https://integrate.api.nvidia.com/v1"},
+            {"id": "google", "sdk": "google-genai", "ecosystem": "Google Gemini", "url": "https://generativelanguage.googleapis.com/v1beta"},
+            {"id": "openai", "sdk": "openai", "ecosystem": "Official OpenAI", "url": "https://api.openai.com/v1"},
+            {"id": "groq", "sdk": "groq", "ecosystem": "GroqCloud", "url": "https://api.groq.com/openai/v1"},
+            {"id": "openrouter", "sdk": "openai", "ecosystem": "OpenRouter", "url": "https://openrouter.ai/api/v1"},
+            {"id": "deepseek", "sdk": "openai", "ecosystem": "DeepSeek", "url": "https://api.deepseek.com"},
+            {"id": "perplexity", "sdk": "openai", "ecosystem": "Perplexity", "url": "https://api.perplexity.ai"},
+            {"id": "fireworks", "sdk": "openai", "ecosystem": "Fireworks AI", "url": "https://api.fireworks.ai/inference/v1"},
+            {"id": "novita", "sdk": "openai", "ecosystem": "Novita AI", "url": "https://api.novita.ai/v3/openai"},
+            {"id": "anthropic", "sdk": "anthropic", "ecosystem": "Anthropic", "url": "https://api.anthropic.com/v1"},
+            {"id": "cohere", "sdk": "cohere", "ecosystem": "Cohere", "url": "https://api.cohere.ai/v1"},
+            {"id": "mistralai", "sdk": "mistralai", "ecosystem": "Mistral AI", "url": "https://api.mistral.ai/v1"},
+            {"id": "together", "sdk": "together", "ecosystem": "Together AI", "url": "https://api.together.xyz/v1"},
+            {"id": "ollama", "sdk": "ollama", "ecosystem": "Ollama (Local)", "url": "http://localhost:11434/v1"},
+            {"id": "replicate", "sdk": "replicate", "ecosystem": "Replicate", "url": "https://api.replicate.com/v1"},
+            {"id": "huggingface_hub", "sdk": "huggingface_hub", "ecosystem": "Hugging Face", "url": "https://api-inference.huggingface.co/v1"},
+            {"id": "transformers", "sdk": "transformers", "ecosystem": "Local Transformers", "url": "local"},
+            {"id": "boto3", "sdk": "boto3", "ecosystem": "AWS Bedrock", "url": "aws"},
+            {"id": "vertexai", "sdk": "vertexai", "ecosystem": "Google Vertex AI", "url": "gcp"},
+            {"id": "azure", "sdk": "azure-ai-inference", "ecosystem": "Azure AI", "url": "azure"},
+            {"id": "vllm", "sdk": "vllm", "ecosystem": "vLLM Server", "url": "http://localhost:8000/v1"},
+            {"id": "litellm", "sdk": "litellm", "ecosystem": "LiteLLM Proxy", "url": "http://localhost:4000/v1"},
         ]
         
         # Load any custom added providers from settings
@@ -96,8 +98,7 @@ class CredentialManagerDialog(QDialog):
         table.setRowCount(len(providers))
         for row, p in enumerate(providers):
             # Col 0: Status (Live Switch)
-            is_live = (p['ecosystem'].lower().replace(" ", "") == active_p or 
-                       (active_p == "nvidia" and p['ecosystem'] == "NVIDIA NIM"))
+            is_live = (p.get('id') == active_p)
             
             # Col 0: Status (Display Only as requested)
             eco_key = p['ecosystem'].lower().replace(' ', '_')
@@ -109,17 +110,17 @@ class CredentialManagerDialog(QDialog):
             status_layout.setAlignment(Qt.AlignCenter)
             status_layout.setContentsMargins(0,0,0,0)
             
-            status_text = "ACTIVE" if is_live else ("AVAILABLE" if has_key else "UNAVAILABLE")
-            status_label = QLabel(status_text)
-            status_label.setFixedSize(85, 25)
+            status = "ACTIVE" if is_live else ("AVAILABLE" if has_key else "UNAVAILABLE")
+            status_label = QLabel(status)
+            status_label.setFixedSize(110, 25)
             status_label.setAlignment(Qt.AlignCenter)
             
-            if is_live:
-                status_label.setStyleSheet("background-color: #4caf50; color: white; font-weight: bold; border-radius: 4px;")
-            elif has_key:
-                status_label.setStyleSheet("background-color: #1e3a1e; color: #00E676; border-radius: 4px; font-weight: bold; border: 1px solid #00E676;")
-            else:
-                status_label.setStyleSheet("background-color: #3d1b1b; color: #ff5252; border-radius: 4px; font-weight: bold; border: 1px solid #ff5252;")
+            # Phase 2: Unified 'WOW' Badge Styling (Safe-Gate)
+            if hasattr(self, 'theme_manager') and self.theme_manager:
+                try:
+                    status_label.setStyleSheet(self.theme_manager.get_status_badge_style(status))
+                except:
+                    pass
             
             status_layout.addWidget(status_label)
             table.setCellWidget(row, 0, status_widget)
@@ -176,7 +177,6 @@ class CredentialManagerDialog(QDialog):
 
     def edit_credential(self, row, p_data):
         """Simple inline or dialog edit for keys/urls."""
-        # For the playbook, we'll use a simple input prompt
         from PySide6.QtWidgets import QInputDialog, QLineEdit
         
         eco_key = p_data['ecosystem'].lower().replace(' ', '_')
@@ -291,8 +291,10 @@ class CredentialManagerDialog(QDialog):
             table.setHorizontalHeaderLabels(cols)
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            table.setAlternatingRowColors(False)
             table.verticalHeader().setVisible(False)
-            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+            table.setColumnWidth(2, 120)
             
             table.setRowCount(len(models))
             for row, m in enumerate(models):
@@ -515,8 +517,8 @@ class AddProviderDialog(QDialog):
         self.accept()
 
 # Helper function to launch the new hub
-def show_settings_hub(parent=None):
+def show_settings_hub(parent=None, theme_manager=None):
     from utils.path_utils import get_app_settings
     theme = get_app_settings().value("theme", "dark")
-    dialog = CredentialManagerDialog(theme=theme, parent=parent)
+    dialog = CredentialManagerDialog(theme=theme, parent=parent, theme_manager=theme_manager)
     dialog.exec()

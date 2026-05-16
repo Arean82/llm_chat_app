@@ -114,6 +114,21 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
+    # --- SINGLE INSTANCE LOCK (Restored from v6) ---
+    from PySide6.QtCore import QLockFile, QDir
+    lock_path = os.path.join(QDir.tempPath(), "llm_chat_app_v6.lock")
+    lock_file = QLockFile(lock_path)
+    if not lock_file.tryLock(500):
+        # Restore v6 Message Logic: Inform the user before exiting
+        from PySide6.QtWidgets import QMessageBox
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Already Running")
+        msg.setText("Another instance of LLM Chat App is already running.")
+        msg.setInformativeText("Please close the existing instance before launching a new one.")
+        msg.exec()
+        return
+    
     # --- STORAGE CONFIGURATION LAYER ---
     from utils.storage_config import StorageManager
     from ui.first_run_dialog import FirstRunDialog
@@ -159,6 +174,9 @@ def main():
 
     # Restore V4/V5 Lock: Launch strictly in full-screen viewport mode.
     window.showMaximized()  
+    
+    # 🟢 Activate background engine ONLY after auth is confirmed and window is mapped
+    window.start_services()
     
     sys.exit(app.exec())
 

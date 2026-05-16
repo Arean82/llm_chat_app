@@ -239,7 +239,8 @@ class LLMClient:
                 result["free"].append(model_info)   
             return result   
         except Exception as e:
-            print(f"Error fetching models: {e}")
+            from workers.update_logger import get_logger
+            get_logger().add_log(f"NVIDIA Model Discovery Failed: {e}", "ERROR")
             return result
 
     def fetch_google_catalog_models(self) -> dict:
@@ -273,7 +274,8 @@ class LLMClient:
                     result["free"].append(info)
             return result
         except Exception as e:
-            print(f"Google dynamic discovery failed: {e}")
+            from workers.update_logger import get_logger
+            get_logger().add_log(f"Google Model Discovery Failed: {e}", "ERROR")
             return result
 
     def _format_model_name(self, model_id: str) -> str:

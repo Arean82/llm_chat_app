@@ -17,9 +17,10 @@ from utils.helpers import set_app_icon
 from utils.storage_config import StorageManager
 from ui.custom_provider_dialog import CustomProviderDialogClass
 
-class SettingsDialogClass(QDialog):
-    def __init__(self, parent=None):
+class LoginDialogClass(QDialog):
+    def __init__(self, theme="dark", parent=None):
         super().__init__(parent)
+        self.theme = theme
         
         # 1. Load base UI skeleton
         loader = QUiLoader()
@@ -36,9 +37,10 @@ class SettingsDialogClass(QDialog):
         set_app_icon(self)
         self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
         
-        # Load Dynamic Theme
-        settings = get_app_settings()
-        self.theme = settings.value("theme", "light")
+        # Load Dynamic Theme (Respect passed-in theme)
+        if not hasattr(self, 'theme') or not self.theme:
+            settings = get_app_settings()
+            self.theme = settings.value("theme", "light")
         
         # 2. Map internal elements from UI
         self.group_label = self.ui.findChild(QLabel, "group_label")
@@ -205,7 +207,8 @@ class SettingsDialogClass(QDialog):
         requires_key = provider.get("requires_key", True)
         self.key_label.setVisible(requires_key)
         self.key_input.setVisible(requires_key)
-
+        self.url_label.setVisible(requires_key) # Show URL if it's not a local provider
+        
         # 3. Rehydrate URL field for THIS provider
         settings = get_app_settings()
         saved_url = settings.value(f"url_{p_id}", provider.get("default_url"))
@@ -339,49 +342,22 @@ class SettingsDialogClass(QDialog):
                 self.provider_combo.setCurrentIndex(new_idx)
 
     def apply_theme(self):
-        """Enforces global style inheritance across both dark and light runtime states."""
+        """Minimal theme enforcement as per v6.1 foundation."""
         if self.theme == "dark":
-            self.setStyleSheet("""
-                QDialog { background-color: #2d2d2d; color: #e0e0e0; }
-                QLabel { color: #e0e0e0; }
-                QLineEdit, QComboBox {
-                    background-color: #1e1e1e; color: #ffffff;
-                    border: 1px solid #3c3c3c; border-radius: 5px; padding: 6px;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: #1e1e1e; color: white;
-                    selection-background-color: #0078d4;
-                }
-                #instructions {
-                    background-color: #252526; padding: 10px; border-radius: 5px; color: #cccccc;
-                    border: 1px solid #3c3c3c;
-                }
-            """)
+            self.setStyleSheet("QDialog { background-color: #2d2d2d; color: #e0e0e0; } QLabel { color: #e0e0e0; }")
         else:
-            self.setStyleSheet("""
-                QDialog { background-color: #ffffff; color: #333333; }
-                QLabel { color: #333333; }
-                QLineEdit, QComboBox {
-                    background-color: #ffffff; color: #333333;
-                    border: 1px solid #cccccc; border-radius: 5px; padding: 6px;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: #ffffff; color: #333333;
-                    selection-background-color: #0078d4;
-                    selection-color: white;
-                }
-                #instructions {
-                    background-color: #f5f5f5; padding: 10px; border-radius: 5px; color: #444444;
-                    border: 1px solid #e0e0e0;
-                }
-                #cancel_btn { background-color: #e0e0e0; color: #333333; }
-            """)
+            self.setStyleSheet("QDialog { background-color: #ffffff; color: #333333; } QLabel { color: #333333; }")
 
     def get_active_provider_id(self) -> str:
         return self.provider_combo.currentData()
 
     def get_api_key(self) -> str:
         return self.key_input.text().strip()
+
+    def get_google_api_key(self) -> str:
+        if self.get_active_provider_id() == "google":
+            return self.key_input.text().strip()
+        return ""
 
     def get_base_url(self) -> str:
         return self.url_input.text().strip()

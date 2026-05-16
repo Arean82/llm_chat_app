@@ -21,8 +21,9 @@ class ModelManagerDialog(QDialog):
     _fetch_in_progress = False  # Class-level lock
     _fetch_instance = None       # Track running fetch
 
-    def __init__(self, theme="dark", parent=None):
+    def __init__(self, theme="dark", parent=None, theme_manager=None):
         super().__init__(parent)
+        self.theme_manager = theme_manager
 
         set_app_icon(self) 
         
@@ -121,7 +122,7 @@ class ModelManagerDialog(QDialog):
                 # Column 1: Description
                 table.setItem(row, 1, QTableWidgetItem(model.get("description", "")))
 
-                # Column 2: Free/Paid
+                # Column 2: Free/Paid (Simple Text)
                 is_free = model.get("free", True)
                 free_text = "✅ Free" if is_free else "💰 Paid"
                 free_item = QTableWidgetItem(free_text)

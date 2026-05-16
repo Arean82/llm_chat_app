@@ -51,16 +51,6 @@ class MainWindowClass(QMainWindow):
         self.setCentralWidget(self.ui)
         set_app_icon(self)
 
-        # Setup Shared Connection Worker
-        self.connection_worker = ConnectionWorker()
-        self.connection_worker.status_changed.connect(self.on_connection_status_changed)
-        self.connection_worker.start()
-
-        # Fire non-blocking Local Model Auto-Detection Sweep (Ollama/LM Studio)
-        self.local_detector = LocalModelDetector()
-        self.local_detector.detection_completed.connect(self.on_local_models_detected)
-        self.local_detector.start()
-
         # Instantiate Views dynamically!
         self.chat_view = ChatViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
         self.arena_view = ArenaViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
@@ -78,6 +68,18 @@ class MainWindowClass(QMainWindow):
         self.load_settings()
         
         print("Shell ready. Launching in default View Mode.")
+
+    def start_services(self):
+        """Starts background workers only after authentication is confirmed."""
+        # Setup Shared Connection Worker
+        self.connection_worker = ConnectionWorker()
+        self.connection_worker.status_changed.connect(self.on_connection_status_changed)
+        self.connection_worker.start()
+
+        # Fire non-blocking Local Model Auto-Detection Sweep (Ollama/LM Studio)
+        self.local_detector = LocalModelDetector()
+        self.local_detector.detection_completed.connect(self.on_local_models_detected)
+        self.local_detector.start()
 
     # ---------------------------------------------------------
     # DYNAMIC MODE SWITCHING ENGINE
@@ -310,10 +312,25 @@ class MainWindowClass(QMainWindow):
         if not self.open_settings():
              QApplication.instance().quit()
 
+    def open_settings(self) -> bool:
+        """Entry point for the login/auth flow."""
+        from ui.login_dialog import LoginDialogClass
+        dialog = LoginDialogClass(theme=self.theme_manager.current_theme, parent=self)
+        if dialog.exec():
+            # Sync the client keys and reload
+            self.llm_client.set_api_key(dialog.get_api_key())
+            self.llm_client.set_google_api_key(dialog.get_google_api_key())
+            self.load_settings()
+            return True
+        return False
+
     def open_credential_manager(self):
         from ui.credential_manager import show_settings_hub
-        show_settings_hub(parent=self)
+        # Pass theme_manager to avoid AttributeError crash in v6.5
+        show_settings_hub(parent=self, theme_manager=self.theme_manager)
         self.load_settings()
+        if hasattr(self, 'chat_view'):
+            self.chat_view.update_model_ui()
 
     def edit_system_instructions(self):
         from ui.system_prompt_manager import SystemPromptManagerClass
@@ -330,7 +347,12 @@ class MainWindowClass(QMainWindow):
                 "Please wait for it to complete before opening Model Manager."
             )
             return
-        ModelManagerDialog(theme=self.theme_manager.current_theme, parent=self).exec()
+        # Phase 2: Pass theme_manager for visual synchronization
+        ModelManagerDialog(
+            theme=self.theme_manager.current_theme, 
+            parent=self, 
+            theme_manager=self.theme_manager
+        ).exec()
 
     def show_storage_manager(self):
         """Launch UI to pivot the underlying app data storage directories"""
@@ -579,3 +601,16 @@ class MainWindowClass(QMainWindow):
             )
         else:
             QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
+
+    def show_update_log(self):
+        """Phase 1: Restored premium Log Viewer with filter logic and .ui integration."""
+        from ui.log_viewer import LogViewerDialog
+        dialog = LogViewerDialog(parent=self)
+        dialog.exec()
+
+    def clear_update_log(self):
+        """Clears the persistent diagnostic log."""
+        from workers.update_logger import get_logger
+        if QMessageBox.question(self, "Clear Logs", "Are you sure you want to delete all diagnostic logs?") == QMessageBox.Yes:
+            get_logger().clear()
+            QMessageBox.information(self, "Success", "Logs have been cleared.")
