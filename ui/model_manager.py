@@ -5,7 +5,9 @@
 import json
 import keyring
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QInputDialog, QMessageBox, QHeaderView, QAbstractItemView, QProgressDialog
+    QApplication, QDialog, QInputDialog, QMessageBox, QHeaderView, 
+    QAbstractItemView, QProgressDialog, QTableWidget, QTableWidgetItem,
+    QLabel, QWidget, QVBoxLayout, QHBoxLayout
 )
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QColor
@@ -79,7 +81,7 @@ class ModelManagerDialog(QDialog):
     def populate_table(self):
         """Dynamically create tabs for each developer"""
         from collections import defaultdict
-        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QLabel
 
         # Group models by developer
         models_by_developer = defaultdict(list)
@@ -102,16 +104,21 @@ class ModelManagerDialog(QDialog):
             # Create table with 3 columns (removed Model ID)
             table = QTableWidget()
             table.setColumnCount(3)
-            table.setHorizontalHeaderLabels(["Display Name", "Description", "Free"])
-            table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+            table.setHorizontalHeaderLabels(["Model Name", "Description", "Status"])
+            table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-            table.setAlternatingRowColors(True)
+            table.setAlternatingRowColors(False)
             table.verticalHeader().setVisible(False)
+            # Word Wrap and Stretch Logic (The 'Perfect' Settings)
+            table.setWordWrap(True)
+            table.setTextElideMode(Qt.ElideNone)
+            table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
             # Set column widths
             table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
             table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+            table.setColumnWidth(2, 100)
 
             # Populate rows
             table.setRowCount(len(models))
@@ -122,16 +129,21 @@ class ModelManagerDialog(QDialog):
                 # Column 1: Description
                 table.setItem(row, 1, QTableWidgetItem(model.get("description", "")))
 
-                # Column 2: Free/Paid (Simple Text)
-                is_free = model.get("free", True)
-                free_text = "✅ Free" if is_free else "💰 Paid"
-                free_item = QTableWidgetItem(free_text)
-                free_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                free_item.setForeground(QColor("#4caf50") if is_free else QColor("#ff9800"))
-                table.setItem(row, 2, free_item)
-
-            table.resizeRowsToContents()
-
+                # Column 2: Status (Using ThemeManager Badge style)
+                status_text = "Free" if model.get("free", True) else "Paid"
+                status_label = QLabel(status_text)
+                status_label.setAlignment(Qt.AlignCenter)
+                
+                # Fetch the 'Perfect' badge style
+                if self.theme_manager:
+                    status_label.setStyleSheet(self.theme_manager.get_status_badge_style(status_text))
+                
+                status_widget = QWidget()
+                status_layout = QHBoxLayout(status_widget)
+                status_layout.setContentsMargins(4, 2, 4, 2)
+                status_layout.addWidget(status_label)
+                table.setCellWidget(row, 2, status_widget)
+            
             # Store models for this tab
             table.setProperty("developer", developer)
             table.setProperty("models", models)
