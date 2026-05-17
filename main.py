@@ -20,15 +20,26 @@ from PySide6.QtCore import QFile, QIODevice
 
 def detect_environment():
     """
-    Logic: Detect if a Graphical User Interface is available.
-    - Windows: Always assumes GUI unless running as a service or with --headless.
-    - Linux: Checks for the 'DISPLAY' environment variable.
-    - CLI Flag: Overrides with --headless if provided.
+    Logic: Intelligently auto-detect if running in a Headless/CLI environment or a GUI environment.
+    - Explicit flags override: --headless or --cli.
+    - Linux: Checks for 'DISPLAY' or 'WAYLAND_DISPLAY'.
+    - SSH/TTY Check: Detects running in SSH terminals or non-interactive container services.
     """
     if "--headless" in sys.argv:
         return "HEADLESS"
-    if sys.platform == "linux" and not os.environ.get('DISPLAY'):
+    if "--cli" in sys.argv:
+        return "CLI"
+    if "--list-models" in sys.argv or "--update-models" in sys.argv:
+        return "CLI"
+        
+    # Check Linux displays
+    if sys.platform == "linux" and not os.environ.get('DISPLAY') and not os.environ.get('WAYLAND_DISPLAY'):
         return "HEADLESS"
+        
+    # Check if running under SSH terminal
+    if os.environ.get("SSH_CLIENT") or os.environ.get("SSH_TTY"):
+        return "CLI" if sys.stdin and sys.stdin.isatty() else "HEADLESS"
+        
     return "GUI"
 
 
@@ -119,17 +130,22 @@ def main():
     env_mode = detect_environment()
     
     import sys
-    from PySide6.QtWidgets import QApplication
     from PySide6.QtCore import QSettings
     
     # Global System-Level Configuration
     from utils.storage_config import StorageManager
     manager = StorageManager.get_instance()
     
-    # Create the App instance first so we can apply styles/icons to it
-    app = QApplication(sys.argv)
-    
+    # Create the App instance first so we can apply styles/icons to it (safely wrapped)
+    app = None
     if env_mode == "GUI":
+        try:
+            from PySide6.QtWidgets import QApplication
+            app = QApplication(sys.argv)
+        except Exception as e:
+            print(f"[*] Warning: Graphical Display server unavailable or failed to connect ({e}).")
+            print("[*] Automatically falling back to Headless Engine mode.")
+            env_mode = "HEADLESS"
         # 1. SET APP IDENTITY (Windows Taskbar Grouping)
         import platform
         if platform.system() == "Windows":
@@ -210,6 +226,7 @@ def main():
         print("Usage: python main.py [options]")
         print("\nOptions:")
         print("  --headless        Launch the standalone API Server (Port 5000)")
+        print("  --cli             Launch the interactive terminal chat session")
         print("  --list-models     List all models currently in the local manifest")
         print("  --update-models   Fetch latest models from the active provider")
         print("  --help / -h       Show this detailed help message")
@@ -218,6 +235,7 @@ def main():
         print("  1. Configure Auth:  python main.py --headless (triggers prompt)")
         print("  2. Sync Models:     python main.py --update-models")
         print("  3. View manifest:   python main.py --list-models")
+        print("  4. CLI Chat:        python main.py --cli")
         
         print("\nDocumentation: see HEADLESS_GUIDE.md")
         print("="*50 + "\n")
@@ -236,7 +254,136 @@ def main():
         HeadlessModels.update_models(client)
         return
 
-    if "--headless" in sys.argv or (sys.platform == "linux" and not os.environ.get('DISPLAY')):
+    if env_mode == "CLI" or "--cli" in sys.argv:
+        # --- CLI INTERACTIVE CHAT PATH ---
+        from logic.llm_client import LLMClient
+        from headless.engine import HeadlessEngine
+        from utils.path_utils import get_app_settings
+        from logic.model_io import load_all_models
+        import queue
+        
+        client = LLMClient()
+        client.hydrate()
+        
+        # 1. Initialize Headless Environment (CLI Auth + Manifest Sync)
+        try:
+            HeadlessEngine.ensure_initialized(client)
+        except Exception as e:
+            print(f"[!] CLI Setup Failed: {e}")
+            return
+            
+        # 2. Resolve Active Model
+        settings = get_app_settings()
+        active_model = settings.value("current_model_id", "")
+        models = load_all_models()
+        if not active_model and models:
+            active_model = models[0].get("id", "")
+            settings.setValue("current_model_id", active_model)
+            settings.sync()
+            
+        client.set_model(active_model)
+        active_provider = client.get_current_provider()
+        
+        # 3. Interactive CLI Banner
+        print("\n" + "="*80)
+        print("  LLM CHAT APP - INTERACTIVE TERMINAL CHAT (CLI MODE)")
+        print("="*80)
+        print(f"  Active Provider: {active_provider.upper()}")
+        print(f"  Active Model:    {active_model}")
+        print("-"*80)
+        print("  Special Commands:")
+        print("    /exit or /quit       - Exit interactive chat")
+        print("    /list                - List all available models")
+        print("    /model <model_id>    - Switch the active model")
+        print("    /help                - Show this help message")
+        print("="*80 + "\n")
+        
+        # 4. Interactive Chat Loop
+        messages_history = []
+        
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+            except (KeyboardInterrupt, EOFError):
+                print("\n[*] Exiting interactive chat.")
+                break
+                
+            if not user_input:
+                continue
+                
+            if user_input.startswith("/"):
+                parts = user_input.split(maxsplit=1)
+                cmd = parts[0].lower()
+                if cmd in ("/exit", "/quit"):
+                    print("[*] Exiting interactive chat.")
+                    break
+                elif cmd == "/list":
+                    from headless.models import HeadlessModels
+                    HeadlessModels.list_models()
+                    continue
+                elif cmd == "/model":
+                    if len(parts) < 2:
+                        print("[!] Usage: /model <model_id>")
+                        continue
+                    target_model = parts[1].strip()
+                    from headless.models import HeadlessModels
+                    if HeadlessModels.select_model(target_model):
+                        client.set_model(target_model)
+                        active_model = target_model
+                        active_provider = client.get_current_provider()
+                    continue
+                elif cmd == "/help":
+                    print("\nCommands:")
+                    print("  /exit, /quit       - Terminate session")
+                    print("  /list              - Show all recognized models")
+                    print("  /model <model_id>  - Switch target model")
+                    print("  /help              - Print commands roster\n")
+                    continue
+                else:
+                    print(f"[!] Unknown command: {cmd}")
+                    continue
+            
+            # Add user message to history
+            messages_history.append({"role": "user", "content": user_input})
+            
+            # Start streaming worker
+            q = queue.Queue()
+            from headless.worker import HeadlessWorker
+            
+            worker = HeadlessWorker(
+                client,
+                messages_history,
+                temperature=0.7,
+                max_tokens=4096,
+                on_chunk=lambda c: q.put(("chunk", c)),
+                on_error=lambda e: q.put(("error", e)),
+                on_finished=lambda: q.put(("finished", None))
+            )
+            worker.start()
+            
+            print("Assistant: ", end="", flush=True)
+            full_response = ""
+            while True:
+                try:
+                    event_type, val = q.get(timeout=0.1)
+                    if event_type == "chunk":
+                        print(val, end="", flush=True)
+                        full_response += val
+                    elif event_type == "error":
+                        print(f"\n[!] Error: {val}")
+                        break
+                    elif event_type == "finished":
+                        break
+                except queue.Empty:
+                    if not worker.is_alive():
+                        break
+            print() # end of line
+            
+            if full_response:
+                messages_history.append({"role": "assistant", "content": full_response})
+        return
+
+    if env_mode == "HEADLESS" or "--headless" in sys.argv:
         # --- HEADLESS EXECUTION PATH ---
         from logic.llm_client import LLMClient
         client = LLMClient()

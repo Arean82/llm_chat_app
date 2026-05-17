@@ -40,14 +40,22 @@ class HeadlessModels:
         # We reuse the ModelFetchWorker logic but run it synchronously for CLI
         worker = ModelFetchWorker(client.api_key, client.base_url)
         
-        # Capture the finished signal results (ModelFetchWorker normally emits Signal(list))
-        # Since we are running .run() directly in CLI, we need to handle the logic.
+        # Capture the finished signal results (ModelFetchWorker emits Signal(list))
+        models_list = []
+        worker.finished.connect(lambda res: models_list.extend(res))
+        
         try:
-            # Note: ModelFetchWorker.run() writes directly to models_nvidia.json if base_url is nvidia
-            # or returns/processes others.
             worker.run()
-            print("[SUCCESS] Model manifest updated successfully.")
-            return True
+            if models_list:
+                p_id = client.get_current_provider()
+                for m in models_list:
+                    m['provider'] = p_id
+                save_all_models(models_list)
+                print(f"[SUCCESS] Model manifest updated successfully. Saved {len(models_list)} models to models_{p_id}.json.")
+                return True
+            else:
+                print("[!] No models returned from provider.")
+                return False
         except Exception as e:
             print(f"[!] Update Failed: {e}")
             return False

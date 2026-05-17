@@ -46,8 +46,11 @@
 
 ---
 
-## 🖥️ 6. Headless Engine Security
+## 🖥️ 6. Headless & CLI Engine Security
 
-* **CLI Credential Vaulting:** The headless engine utilizes the same high-security `keyring` architecture as the GUI. Credentials provided via terminal are immediately vaulted into the OS security subsystem and never cached in plaintext history.
+* **CLI Credential Vaulting:** The headless engine utilizes the same high-security `keyring` architecture as the GUI. Credentials provided via the terminal are immediately vaulted into the OS security subsystem and never cached in plaintext history.
+* **Cross-Interface Vault Schema Alignment:** Patched CLI credentials storage routines to save concurrently to modern hierarchical status slots (`api_key_{sdk}_{ecosystem}`) and legacy compatibility slots, preventing vault schema mismatch security lockouts and guaranteeing uniform security postures between CLI and GUI.
+* **Strict Post-Logout Security Gate:** If no active session variable exists (the user logged out or explicitly ended the session), the client's `hydrate()` routine *strictly refuses* to pull orphaned keys from the OS Keyring. This prevents any silent extraction of leftover credentials from previous sessions.
+* **Unified Dynamic JSON Registry Protection:** All ecosystem endpoints are loaded dynamically from the centralized registry (`resources/api_providers.json`), preventing hardcoded endpoint manipulation or unauthorized proxy injection, ensuring secure and predictable API routing.
 * **Process Space Isolation:** Running in `--headless` mode spawns a dedicated orchestrator process with restricted access to non-essential UI resources, minimizing the attack surface for server-side deployments.
-* **Environment-Aware Logic:** Automatically detects secure vs insecure environments (e.g., SSH sessions) to toggle interactive prompts vs daemonized execution safely.
+* **Environment-Aware Auto-Detection:** Automatically identifies environment parameters (GUI display, SSH sessions, TTY states) to safely toggle interactive prompts vs daemonized background execution.

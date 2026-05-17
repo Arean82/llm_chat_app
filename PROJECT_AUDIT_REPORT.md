@@ -1,6 +1,6 @@
 # Project Audit Report: LLM Chat App
-**Date:** 2026-05-14
-**Status:** 🔴 100% - 47/47 ITEMS REMEDIATED (ALL CORE BUGS RESOLVED)
+**Date:** 2026-05-17
+**Status:** 🔴 100% - 50/50 ITEMS REMEDIATED (ALL CORE BUGS RESOLVED)
 
 ## 📊 Audit Summary Table
 
@@ -53,9 +53,12 @@
 | 045 | **UX / UI** | `ThemeManager` | 🟡 Low | ✅ **Resolved** | Low Visibility: High-contrast dynamic palette injected protecting placeholder text readability. |
 | 046 | **Architecture** | `Credential Hub`| 🔴 High | ✅ **Resolved** | Centralized Credential Hub replaces fragmented login modals. |
 | 047 | **Architecture** | `Model Filter` | 🔴 High | ✅ **Resolved** | Universal normalization ensures models match filter IDs correctly. |
-
+| 048 | **Headless / CLI** | `headless/models.py`| 🔴 High | ✅ **Resolved** | CLI `--update-models` runs synchronous fetch but never commits the manifest. |
+| 049 | **Headless / CLI** | `headless/engine.py`| 🔴 High | ✅ **Resolved** | Missing import `load_all_models` crashes headless startup check. |
+| 050 | **Headless / CLI** | `headless/auth.py`  | 🔴 High | ✅ **Resolved** | CLI authentication persists flat keyring schema instead of modern tabbed layouts. |
 
 ---
+
 
 ## ⚠️ CRITICAL ARCHITECTURAL PRECAUTIONS (READ BEFORE EDITING)
 
@@ -452,4 +455,37 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 ---
 
-*Final Audit Update Completed on 2026-05-14 (Hub Architecture & Provider Isolation).*
+#### 48. Audit ID 048: CLI Model Update Amnesia (Broken Sync)
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Details:** Running `python main.py --update-models` triggers `HeadlessModels.update_models(client)`, which correctly launches the synchronous `ModelFetchWorker` and runs through the complete provider discovery and model validation loops. However, the captured results list is never written back to the filesystem because `headless/models.py` fails to bind a callback to the worker's `finished` signal or call `save_all_models` with appropriate provider-specific shard tags.
+*   **Implementation:** Refactored `HeadlessModels.update_models(client)` to connect a collector callback to the `ModelFetchWorker.finished` signal, and synchronously write the collected catalog back to sharded database manifests via `save_all_models` after syncing provider keys.
+
+#### 49. Audit ID 049: Missing Import in Headless Engine
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Details:** `HeadlessEngine.ensure_initialized(client)` in `headless/engine.py` attempts to run a pre-flight model roster check on startup via `load_all_models()`. However, the module import `from logic.model_io import load_all_models` was omitted from the file imports, which triggers a fatal `NameError: name 'load_all_models' is not defined` crash when the manifest is checked or when initial discovery is kicked off.
+*   **Implementation:** Added the missing `from logic.model_io import load_all_models` import statement in the top-level block of `headless/engine.py` to allow pre-flight check validation.
+
+#### 50. Audit ID 050: Cross-Interface Vault Schema Desynchronization
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Details:** CLI authentication routines inside `headless/auth.py` store user credentials directly under the provider ID (e.g., `api_key_nvidia` or `api_key_google`). In contrast, the centralized GUI Credential Hub inside `ui/credential_manager.py` queries and manages vaults using a hierarchical `api_key_{sdk}_{ecosystem}` naming convention (e.g. `api_key_openai_nvidia_nim` or `api_key_google_google_gemini`). This schema mismatch prevents credentials configured via the CLI from being recognized by the GUI, trapping users in infinite authorization states upon switching interfaces.
+*   **Implementation:** Patched `headless/auth.py:run_login_flow(client)` to write key credentials concurrently to both modern hierarchical status slots (`api_key_{sdk}_{ecosystem}`) and standard legacy compatibility slots.
+
+#### 51. Audit ID 051: Hardcoded Platform & Ecosystem Duplicate Rosters
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Details:** The CLI flow (`headless/auth.py`) and GUI Credential Hub (`ui/credential_manager.py`) maintained separate duplicate, hardcoded lists of API provider ecosystems and SDK configurations, making list updates extremely error-prone and breaking database centralization.
+*   **Implementation:** Fully decoupled both CLI and GUI from hardcoded providers. Both interfaces now dynamically parse and hydrate their Platform SDK Groups and Ecosystem items on-the-fly from the single unified database `resources/api_providers.json`, supporting 16 individual SDK groups and 22 ecosystems out-of-the-box.
+
+#### 52. Audit ID 052: PySide Combo-Box Signal Initialization Lifecycle Bug
+*   **Severity:** 🔴 High
+*   **Status:** ✅ **Resolved**
+*   **Location:** [`ui/login_dialog.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/login_dialog.py)
+*   **Details:** When loading the settings dialog, the Platform combo-box defaults to index `0` ("OpenAI Compatible SDK"). If the active system provider is `nvidia` (which belongs to group index `0`), the subsequent activation call `setCurrentIndex(0)` is treated as a no-op by PySide and does not emit the `currentIndexChanged` event signal. As a result, the dependent Service combo-box was left completely unpopulated (empty dropdown), and instruction labels remained blank.
+*   **Remediation:** Patched `load_active_state()` to always explicitly execute the group filtering callback `on_group_switched()` during initial hydration, guaranteeing proper ecosystem and field loading on startup.
+
+---
+
+*Final Audit Update Completed on 2026-05-17 (Hub Architecture, Headless Engines, CLI Auditing, & Unified Dynamic Registry).*

@@ -481,10 +481,11 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
-### v6.5.0 – Headless Engine & 'Perfect' UI Refinement
-- 🖥️ **Headless CLI Support**: Introduced a full-featured headless engine for server-side and terminal-only operations. Includes automated environment detection and CLI-driven conversation flows (Audit ID 050).
-- ✨ **'Perfect' Model Manager UI**: Standardized row selection, word-wrap, and pill-shaped status badges to match the premium Credential Manager Hub style (Audit ID 051).
-- 🎨 **Aesthetic Unification**: Unified model management grids across standalone and embedded contexts for a seamless, professional experience.
+### v6.5.0 – Headless Engine, Decoupled Registries, & Display-Safe Auto-Detection
+- 🖥️ **Headless CLI Support & Auto-Detection**: Introduced a full-featured headless engine for server-side and terminal-only operations. Features 100% automatic platform, display, SSH terminal, and TTY environment identification.
+- 🛡️ **Display-Safe No-Crash Fallback**: Integrated a safe-guard trap for GUI initialization. If running on headless servers, Remote SSH, or Docker without graphics display libraries, the system automatically catches PySide connection failures and falls back to Headless mode smoothly instead of crashing.
+- 🔗 **Decoupled Unified JSON Registry**: Fully decoupled both the GUI (`ui/credential_manager.py`) and CLI (`headless/auth.py`) provider catalog structures. Both interfaces now dynamically parse and load Platforms and Ecosystems from the centralized `resources/api_providers.json` config, supporting 16 individual SDK groups and 22 ecosystems out-of-the-box.
+- 🐛 **Combo-Box Lifecycle Patch**: Fixed a PySide index race condition where settings dialog default loads failed to trigger dependent ecosystem updates, ensuring correct field populations on launch.
 - 🛡️ **Stable Foundation Rebuild**: Purged legacy regressions and consolidated the codebase onto the high-performance v6.5 chassis.
 
 ### v6.1.0 – High-Performance Hybrid Memory & Centralized Authentication

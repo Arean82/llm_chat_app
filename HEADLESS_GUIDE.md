@@ -1,28 +1,82 @@
-# Headless & API Engine Guide (v7.0)
+# Headless & API Engine Guide (v6.5)
 
 This guide explains how to use the **LLM Chat App** in Headless mode for IDE integration, API serving, and CLI model management.
 
 ---
 
-## 1. Quick Start (Terminal)
+## 1. Quick Start (Terminal Modes)
 
-To launch the application in headless mode, use the `--headless` flag:
+### 🚀 100% Automatic Environment Auto-Detection
+The application features complete environment self-awareness across Windows, macOS, and Linux out-of-the-box:
+- **Zero Configuration Fallback:** If you launch the application on a headless server, remote SSH terminal, or Docker container without standard display drivers, the system **automatically catches graphical display connection failures and boots directly into Headless server mode** without a single crash!
+- **Interactive SSH shells:** Launching the app within an SSH session automatically detects interactive terminal handles, booting either the direct CLI Chat Loop or the Headless API daemon seamlessly.
 
+The Headless Engine supports two primary manual execution workflows from the terminal:
+
+### A. Standalone API Server (for IDE Extensions)
+To launch the background server on Port 5000:
 ```bash
 python main.py --headless
 ```
 
-### Initial Setup
-If it is your first time running headless or you have logged out, the engine will automatically trigger the **CLI Authentication Gate**:
-1. Select your provider (nvidia, google, openai).
-2. Paste your API Key.
-3. (Optional) Provide a custom Base URL.
+### B. Interactive Terminal Chat (Direct CLI Mode)
+To launch a direct chat loop inside your command line:
+```bash
+python main.py --cli
+```
 
-Once authenticated, the engine will synchronize the model manifest and start the **Standalone API Server**.
+### Dynamic CLI Authentication Gate
+If running headless modes for the first time or after a manual logout, the engine will launch the secure **CLI Authentication Gate** directly in your terminal:
+
+1. **Step 1: Select Platform/SDK Group**:
+   You will select your target driver interface from the index:
+   ```text
+   Step 1: Select Platform/SDK Group:
+     [1] OpenAI Compatible SDK
+     [2] Google Gemini SDK
+     [3] Groq LPU Acceleration
+     [4] Anthropic Claude SDK
+     ...
+   ```
+2. **Step 2: Select Ecosystem**:
+   You will select your specific endpoint provider (e.g., under `OpenAI Compatible SDK`):
+   ```text
+   Step 2: Select Ecosystem under OpenAI Compatible SDK:
+     [1] NVIDIA NIM
+     [2] Official OpenAI
+     [3] OpenRouter
+     [4] DeepSeek
+     ...
+   ```
+3. **Automatic URL Configuration**:
+   All endpoints use **static, predefined Base URLs**. The user is never prompted to input a base URL; the system resolves and writes it behind the scenes automatically.
+4. **API Key Entry**:
+   You will be prompted to paste your API Key. The key is immediately saved securely into your OS native Keyring (Vault) and synchronized with the GUI.
+
+*Note for local/offline ecosystems (like Ollama): If you select an offline provider, the setup completes immediately without prompting you for an API key.*
 
 ---
 
-## 2. CLI Model Management
+## 2. Interactive CLI Mode Operations
+
+When you launch `python main.py --cli`, you enter a fully interactive terminal prompt.
+
+### Chat & Streaming
+* Type normal messages. The engine streams the assistant's response to your terminal in real-time.
+* Fully maintains conversational memory for the duration of the terminal session.
+
+### Special Commands
+You can control the active engine on-the-fly by typing commands prefixed with a `/` slash:
+
+* **`/list`**: Lists all available model IDs currently registered in the synchronized local manifests.
+* **`/model <model_id>`**: Instantly switches the active chat model to the specified ID.
+  * *Example:* `/model meta/llama-3.1-405b-instruct`
+* **`/help`**: Prints a quick roster of all available terminal commands.
+* **`/exit` or `/quit`**: Safely terminates the interactive session.
+
+---
+
+## 3. CLI Model Management
 
 The headless engine includes a modular model manager for terminal-based control.
 
@@ -33,14 +87,14 @@ python main.py --list-models
 ```
 
 ### Updating the Manifest
-To fetch the latest models from your active provider:
+To fetch the latest models from your active provider and write them straight to your local manifest shards:
 ```bash
 python main.py --update-models
 ```
 
 ---
 
-## 3. IDE Integration (VS Code / JetBrains)
+## 4. IDE Integration (VS Code / JetBrains)
 
 The Headless Engine acts as the primary API provider for our IDE extensions. 
 
@@ -50,22 +104,23 @@ The Headless Engine acts as the primary API provider for our IDE extensions.
 
 ---
 
-## 4. Key Features
+## 5. Security & Session Integrity
 
-*   **Zero-UI Dependency**: Can run on Linux servers without a desktop environment (X11/Wayland).
-*   **Automatic Auth Recovery**: Uses the same OS Vault (Keyring) as the GUI version.
-*   **Persistent API**: The server stays live until terminated with `Ctrl+C`, ensuring stable connections for long-running IDE sessions.
-*   **Safe Shutdown**: Implements full thread-joining logic to prevent data corruption in the vector database or model manifest.
+The application enforces absolute cryptographic session boundaries between the CLI and the GUI:
+
+* **OS-Level Keyring Custody**: API keys are always stored inside your system's native OS credential vault (Windows Credential Manager / Apple Keychain / Linux Secret Service) rather than plain-text configs.
+* **Post-Logout Security Gate**: When you click "Logout" in the GUI or explicitly reset settings, the active provider session variable is deleted. The logic-tier `hydrate()` mechanism enforces a strict security block: if no active session exists, it **refuses** to silently fetch or pull keys from the Keyring vault, forcing a fresh, secure login prompt.
+* **RAM Flushing**: Explicit logout sequences automatically trigger clean memory erasure and application restarts to guarantee zero diagnostic credential remnants in volatile memory.
 
 ---
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 | Issue | Solution |
 | :--- | :--- |
 | **Port 5000 busy** | Ensure no other instances of the app or Flask servers are running. |
-| **Auth Error** | Run `python main.py --headless` and re-enter your API key when prompted. |
-| **No models shown** | Run `python main.py --update-models` to refresh the manifest. |
+| **Auth Prompt Loop** | Run `python main.py --cli` once, select your ecosystem, enter your key, and verify completion. |
+| **No models shown** | Run `python main.py --update-models` to refresh the local sharded manifests. |
 
 ---
-*Maintenance: Decoupled Logic v7.1. Base: arean82.llmchatapp.v6.1*
+*Maintenance: Decoupled Logic v6.5. Base: arean82.llmchatapp.v6.5*

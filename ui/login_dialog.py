@@ -160,8 +160,8 @@ class LoginDialogClass(QDialog):
         if grp_idx != -1:
             self.group_combo.setCurrentIndex(grp_idx)
             
-        # NOTE: Modifying group_combo above triggers `on_group_switched` synchronously,
-        # which has filled `self.filtered_providers` and `self.provider_combo` by now.
+        # Always explicitly force execution of group filtering to guarantee population
+        self.on_group_switched(self.group_combo.currentIndex())
         
         # 3. Target the precise provider sub-element
         sub_idx = self.provider_combo.findData(active_id)
@@ -256,6 +256,13 @@ class LoginDialogClass(QDialog):
         if requires_key:
             keyring.set_password("LLMChatApp", f"api_key_{p_id}", api_key)
             keyring.set_password("LLMChatApp", "api_key", api_key)
+            
+            # Write to modern hierarchical status slot to synchronize GUI indicators
+            sdk = provider.get("sdk", "openai")
+            eco_name = provider.get("display_name", p_id)
+            eco_key = eco_name.lower().replace(' ', '_')
+            modern_key_id = f"api_key_{sdk}_{eco_key}"
+            keyring.set_password("LLMChatApp", modern_key_id, api_key)
         else:
             # Clear any legacy clutter if switching to local provider
             try:

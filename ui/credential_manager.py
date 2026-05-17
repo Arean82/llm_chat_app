@@ -58,31 +58,19 @@ class CredentialManagerDialog(QDialog):
         table.setAlternatingRowColors(False)
         table.setRowCount(0)
         
-        # Base list of SDKs from the provided table
-        base_providers = [
-            {"id": "nvidia", "sdk": "openai", "ecosystem": "NVIDIA NIM", "url": "https://integrate.api.nvidia.com/v1"},
-            {"id": "google", "sdk": "google-genai", "ecosystem": "Google Gemini", "url": "https://generativelanguage.googleapis.com/v1beta"},
-            {"id": "openai", "sdk": "openai", "ecosystem": "Official OpenAI", "url": "https://api.openai.com/v1"},
-            {"id": "groq", "sdk": "groq", "ecosystem": "GroqCloud", "url": "https://api.groq.com/openai/v1"},
-            {"id": "openrouter", "sdk": "openai", "ecosystem": "OpenRouter", "url": "https://openrouter.ai/api/v1"},
-            {"id": "deepseek", "sdk": "openai", "ecosystem": "DeepSeek", "url": "https://api.deepseek.com"},
-            {"id": "perplexity", "sdk": "openai", "ecosystem": "Perplexity", "url": "https://api.perplexity.ai"},
-            {"id": "fireworks", "sdk": "openai", "ecosystem": "Fireworks AI", "url": "https://api.fireworks.ai/inference/v1"},
-            {"id": "novita", "sdk": "openai", "ecosystem": "Novita AI", "url": "https://api.novita.ai/v3/openai"},
-            {"id": "anthropic", "sdk": "anthropic", "ecosystem": "Anthropic", "url": "https://api.anthropic.com/v1"},
-            {"id": "cohere", "sdk": "cohere", "ecosystem": "Cohere", "url": "https://api.cohere.ai/v1"},
-            {"id": "mistralai", "sdk": "mistralai", "ecosystem": "Mistral AI", "url": "https://api.mistral.ai/v1"},
-            {"id": "together", "sdk": "together", "ecosystem": "Together AI", "url": "https://api.together.xyz/v1"},
-            {"id": "ollama", "sdk": "ollama", "ecosystem": "Ollama (Local)", "url": "http://localhost:11434/v1"},
-            {"id": "replicate", "sdk": "replicate", "ecosystem": "Replicate", "url": "https://api.replicate.com/v1"},
-            {"id": "huggingface_hub", "sdk": "huggingface_hub", "ecosystem": "Hugging Face", "url": "https://api-inference.huggingface.co/v1"},
-            {"id": "transformers", "sdk": "transformers", "ecosystem": "Local Transformers", "url": "local"},
-            {"id": "boto3", "sdk": "boto3", "ecosystem": "AWS Bedrock", "url": "aws"},
-            {"id": "vertexai", "sdk": "vertexai", "ecosystem": "Google Vertex AI", "url": "gcp"},
-            {"id": "azure", "sdk": "azure-ai-inference", "ecosystem": "Azure AI", "url": "azure"},
-            {"id": "vllm", "sdk": "vllm", "ecosystem": "vLLM Server", "url": "http://localhost:8000/v1"},
-            {"id": "litellm", "sdk": "litellm", "ecosystem": "LiteLLM Proxy", "url": "http://localhost:4000/v1"},
-        ]
+        # Base list of SDKs loaded dynamically from the unified registry
+        from logic.model_io import load_provider_metadata
+        metadata = load_provider_metadata()
+        raw_providers = metadata.get("providers", [])
+        
+        base_providers = []
+        for p in raw_providers:
+            base_providers.append({
+                "id": p.get("id"),
+                "sdk": p.get("sdk", "openai"),
+                "ecosystem": p.get("display_name", p.get("id")),
+                "url": p.get("default_url", "")
+            })
         
         # Load any custom added providers from settings
         settings = get_app_settings()

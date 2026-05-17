@@ -30,10 +30,17 @@ class LLMClient:
 
     def hydrate(self):
         """Loads available credentials from OS Keyring to restore session state with deep search."""
-        import keyring
         from utils.path_utils import get_app_settings
         settings = get_app_settings()
-        active_p = str(settings.value("active_provider_id", "nvidia")).lower()
+        
+        # Security Gate: If no active provider session exists in settings (e.g. user logged out),
+        # strictly refuse to silently retrieve keys from the keyring vault.
+        active_p = settings.value("active_provider_id")
+        if not active_p:
+            return
+            
+        import keyring
+        active_p = str(active_p).lower()
         
         # 1. Restore Google Key (Centralized)
         gk = keyring.get_password("LLMChatApp", "api_key_google")

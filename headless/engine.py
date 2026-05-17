@@ -4,6 +4,7 @@
 
 from headless.worker import HeadlessWorker
 from logic.llm_client import LLMClient
+from logic.model_io import load_all_models
 
 class HeadlessEngine:
     """
