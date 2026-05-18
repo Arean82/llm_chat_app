@@ -39,10 +39,10 @@ class ConversationManager:
         # Guarantee parent directories exist
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Load active database configurations from global settings (defaulting to turso/libsql)
+        # Load active database configurations from global settings (defaulting to SQLite for zero-config local startup)
         from utils.path_utils import get_app_settings
         settings = get_app_settings()
-        db_type = str(settings.value("database_type", "turso")).lower().strip()
+        db_type = str(settings.value("database_type", "sqlite")).lower().strip()
         
         if db_type in ("postgres", "postgresql"):
             # Fetch remote or local PostgreSQL configurations
@@ -58,15 +58,14 @@ class ConversationManager:
             
             from logic.storage_drivers.postgres_driver import PostgreSQLStorageDriver
             self.driver = PostgreSQLStorageDriver(url)
-        else:
-            # Default to Turso/libSQL
+        elif db_type in ("turso", "libsql"):
+            # Fetch remote Turso configurations
             url = settings.value("database_url") or os.environ.get("TURSO_DATABASE_URL")
             token = settings.value("database_auth_token") or os.environ.get("TURSO_AUTH_TOKEN")
             
             if not url:
                 raise ConnectionError(
                     "[ConversationManager] Error: Turso/libSQL Database URL is not configured. "
-                    "SQLite is fully disabled to prevent multi-process database write-locking failures under concurrent GUI, CLI, and SaaS operations. "
                     "Please configure 'database_url' in settings or set TURSO_DATABASE_URL in the environment."
                 )
                 
@@ -77,6 +76,10 @@ class ConversationManager:
             
             from logic.storage_drivers.libsql_driver import LibSQLStorageDriver
             self.driver = LibSQLStorageDriver(url, token)
+        else:
+            # Default fallback: Zero-configuration local SQLite with high-concurrency WAL mode enabled
+            from logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
+            self.driver = LocalSQLiteDriver(self.db_path)
         
         # Run legacy json migrations (if any JSON files exist to import)
         self.migrate_json_files()

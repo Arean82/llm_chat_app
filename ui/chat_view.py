@@ -137,9 +137,10 @@ class ChatViewWidget(QWidget):
 
     def shutdown(self):
         """Safely stops background workers to prevent crashes on exit."""
-        if self.current_worker and self.current_worker.isRunning():
-            self.current_worker.terminate()
-            self.current_worker.wait()
+        worker = self.current_worker
+        if worker and worker.isRunning():
+            worker.terminate()
+            worker.wait()
         if hasattr(self, 'vector_sync_thread') and self.vector_sync_thread and self.vector_sync_thread.isRunning():
             # Don't terminate vector thread forcefully to avoid DB corruption
             print("[Shutdown] Waiting for Vector Indexer to finish...")
@@ -599,7 +600,11 @@ class ChatViewWidget(QWidget):
         if self.current_response_text == "":
             self.remove_typing_indicator()
             self.chat_display.append("<b>Assistant:</b> ")
-            self.stream_start_position = self.chat_display.textCursor().position()
+            
+            # Create a dedicated cursor copy moved to the absolute end to anchor position correctly
+            temp_cursor = self.chat_display.textCursor()
+            temp_cursor.movePosition(QTextCursor.End)
+            self.stream_start_position = temp_cursor.position()
 
         self.current_response_text += chunk
         cursor = self.chat_display.textCursor()
@@ -616,7 +621,10 @@ class ChatViewWidget(QWidget):
             thinking_color = self.theme_manager.get_thinking_color()
             self.chat_display.append(f"<i style='color: {thinking_color};'>🧠 Thinking...</i>")
             if self.stream_start_position is None:
-                self.stream_start_position = self.chat_display.textCursor().position()
+                # Create a dedicated cursor copy moved to the absolute end to anchor position correctly
+                temp_cursor = self.chat_display.textCursor()
+                temp_cursor.movePosition(QTextCursor.End)
+                self.stream_start_position = temp_cursor.position()
 
         cursor = self.chat_display.textCursor()
         cursor.movePosition(cursor.MoveOperation.End)
@@ -633,8 +641,9 @@ class ChatViewWidget(QWidget):
             cursor.removeSelectedText()
             html_content = self.formatter.format_ai_response(full_response)
             self.chat_display.insertHtml(f"<br>{html_content}<br>")
+            
+            # Record the assistant block including copy buttons in history log
             copy_buttons = self.theme_manager.get_copy_button_html()
-            self.chat_display.insertHtml(copy_buttons)
             self.chat_html_history.append(f"<b>Assistant:</b><br>{html_content}<br>{copy_buttons}")
             self.stream_start_position = None
             
@@ -647,6 +656,7 @@ class ChatViewWidget(QWidget):
             self.chat_display.append("<b>Assistant:</b> ") 
             html = self.formatter.format_ai_response(full_response)
             self.chat_display.insertHtml(html)
+            self.chat_html_history.append(f"<b>Assistant:</b><br>{html}<br>{self.theme_manager.get_copy_button_html()}")
 
         self.auto_save_current_chat()
         self.chat_display.insertHtml(self.theme_manager.get_copy_button_html())

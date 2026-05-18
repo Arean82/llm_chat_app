@@ -1,4 +1,4 @@
-# whatWorking Plan: Attaining v7.0 (Master Progress Log)
+# Working Plan: Attaining v7.0 (Master Progress Log)
 
 This is the tactical manual for evolving the **fixed v6.6 concurrency foundation** into the v7.0 Headless/SaaS architecture.
 
@@ -51,6 +51,8 @@ This is the tactical manual for evolving the **fixed v6.6 concurrency foundation
 * **Unified Dynamic JSON Registry**: Fully decoupled both the GUI (`ui/credential_manager.py`) and CLI (`headless/auth.py`) provider catalog definitions. Both now load their platforms and ecosystems dynamically on-the-fly from the centralized `resources/api_providers.json` config, supporting 16 individual SDK groups and 22 ecosystems out-of-the-box.
 * **Offline Local Support**: Integrated keyless providers (like Ollama local hosting) to resolve configuration endpoints instantly without forcing the user to supply empty API keys.
 * **Post-Logout Security Gate**: Patched `logic/llm_client.py`'s `hydrate()` routine with a logical gate. If no active session exists (the user logged out), the client strictly refuses to query or pull orphaned credentials from Keyring. This fully hardens session integrity without touching visual GUI controllers.
+
+---
 
 ## 🟢 Phase 2: Storage Decoupling & Repository Refactoring [STATUS: COMPLETED]
 
@@ -138,9 +140,130 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 
 ---
 
-## 🔴 Phase 4: SaaS Scale-out (Isolated Multi-Tenant Sandbox) [STATUS: NOT STARTED]
+## 🟡 Phase 4: Cognitive Hybrid Synergy (RAG & Large Context) [STATUS: IN PROGRESS]
 
-Phase 4 implements the complete cloud deployment scaling, adopting the **Bring Your Own Key (BYOK)** tenant model and designing a stunning, responsive SaaS Administrative Web Portal.
+While databases provide high-concurrency storage, Phase 4 implements an intelligent reasoning runtime. By combining semantic Vector Space (RAG) with expansive Large Context Windows, the application dynamically balances absolute detail precision against computational scale.
+
+### 4.1 Pluggable Cognitive Optimizations
+
+| #               | Task                                                                                                                            | Status     |
+| :-------------- | :------------------------------------------------------------------------------------------------------------------------------ | :--------- |
+| **4.1.1** | **Dynamic Context Routing**: Auto-swap between Direct Ingestion (<15k chars) and Qdrant semantic RAG (>15k chars)         | ✅**DONE** |
+| **4.1.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5     | ⏳ PENDING |
+| **4.1.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%         | ⏳ PENDING |
+| **4.1.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion    | ⏳ PENDING |
+| **4.1.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database        | ⏳ PENDING |
+| **4.1.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads            | ⏳ PENDING |
+| **4.1.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)   | ⏳ PENDING |
+| **4.1.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)     | ⏳ PENDING |
+
+### 🌐 System Topology: Agentic Cognitive Flow
+
+```mermaid
+flowchart TD
+    %% Define Premium Styled Colors
+    classDef query fill:#3A506B,stroke:#5BC0BE,stroke-width:2px,color:#FFFFFF;
+    classDef agent fill:#0B132B,stroke:#5BC0BE,stroke-width:2px,color:#FFFFFF,stroke-dasharray: 5 5;
+    classDef source fill:#1C2541,stroke:#5BC0BE,stroke-width:2px,color:#FFFFFF;
+    classDef stage fill:#5BC0BE,stroke:#1C2541,stroke-width:2px,color:#0B132B,font-weight:bold;
+    classDef model fill:#1C2541,stroke:#6FFFE9,stroke-width:2px,color:#FFFFFF;
+    classDef output fill:#6FFFE9,stroke:#0B132B,stroke-width:2px,color:#0B132B,font-weight:bold;
+
+    UserQuery["[User Query]"]:::query
+    RouterAgent["[Router Agent]"]:::agent
+    GraphRAG["[GraphRAG]"]:::source
+    SQLAPI["[SQL API]"]:::source
+    VectorDB["[Vector DB]"]:::source
+    StagingArea["[Context Staging Area]"]:::stage
+    LargeModel["[Large Context Window Model]"]:::model
+    Response["[Generated Response]"]:::output
+
+    %% Connect Cognitive Flow
+    UserQuery --> RouterAgent
+    RouterAgent --> GraphRAG
+    RouterAgent --> SQLAPI
+    RouterAgent --> VectorDB
+    GraphRAG --> StagingArea
+    SQLAPI --> StagingArea
+    VectorDB --> StagingArea
+    StagingArea --> LargeModel
+    LargeModel --> Response
+```
+
+**Technical Notes (4.1):**
+
+* **Dynamic Context Routing (4.1.1)**: Live in `ui/chat_view.py`'s `send_message()` routine. It calculates incoming payload characters dynamically:
+  * *Direct Ingestion (Large Context)*: If context is precise (<15k characters), it injects the complete raw file context, giving the LLM 100% full detail.
+  * *Vector Ingestion (RAG)*: If context is massive (>15k characters), it triggers Qdrant chunking and semantic embeddings (via `nvidia/nv-embed-v1`), retrieving only the most conceptually relevant chunks to drop into the context window.
+* **Prompt Context Caching (4.1.3)**: Intended to target Anthropic / DeepSeek caching protocols, preserving common directories inside the server's cache space to achieve sub-second generation speeds.
+* **Hybrid Search (4.1.4)**: Merges lexical keyword-precision of BM25 (critical for tracing functions/variables like `BaseStorageDriver`) with semantic dense vectors, using Reciprocal Rank Fusion (RRF) to generate a balanced candidate list.
+* **GraphRAG Code Mapping (4.1.5)**: Maps repository structures (inheritance, class hierarchies, imports) into a local knowledge graph database, tracing class relations dynamically to retrieve highly connected dependencies.
+* **Context Staging Workspace (4.1.6)**: Provides a premium visual tray in the GUI to view, check/uncheck, toggle, and pin active file payloads before prompting, with real-time token tracking to prevent prompt overflow.
+* **Model-Side Tool Calling API (4.1.7)**: Migrates from manual client-side prepended context to native dynamic Function Calling schemas, giving the LLM active autonomy to trigger `web_search()` or `read_file()` only when needed.
+* **Qdrant Metadata Payload Filtering (4.1.8)**: Secures and focuses search space. Instead of global vectors scan, Qdrant enforces hard payload query conditions using `tenant_id` (ensuring multi-tenant security), `conversation_id` (limiting scan scope), and `source_type` / `timestamp`.
+## 🟡 Phase 5: Pluggable Two-Stage Reranking (Hybrid A + B Architecture) [STATUS: IN PROGRESS]
+
+To maximize code and prompt precision across both offline desktop environments and online SaaS deployments, the reranking layer acts as a pluggable, multi-provider micro-service:
+
+### 5.1 Pluggable Reranking Optimizations
+
+| #               | Task                                                                                                   | Status     |
+| :-------------- | :----------------------------------------------------------------------------------------------------- | :--------- |
+| **5.1.1** | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ⏳ PENDING |
+| **5.1.2** | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs  | ⏳ PENDING |
+| **5.1.3** | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20% | ⏳ PENDING |
+| **5.1.4** | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity  | ⏳ PENDING |
+| **5.1.5** | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes    | ⏳ PENDING |
+
+```
+[ Top 20 Candidates from Hybrid Search ]
+                 │
+                 ▼
+ ┌───────────────────────────────┐
+ │       PLUGGABLE RERANKER      │
+ │  - Local: BGE-Reranker-v2-m3  │
+ │  - Cloud: Cohere v3 / OpenAPI │
+ └───────────────┬───────────────┘
+                 │ (Raw Scores 0.0 - 1.0)
+                 ▼
+ ┌───────────────────────────────┐
+ │   HYBRID A: STRUCTURAL BIAS   │
+ │   Boosts class/def/interfaces │
+ └───────────────┬───────────────┘
+                 │ (Boosted Scores)
+                 ▼
+ ┌───────────────────────────────┐
+ │     HYBRID B: DIVERSITY MMR   │
+ │   Prunes redundant code duplication
+ └───────────────┬───────────────┘
+                 │
+                 ▼
+ [ Top 5 Grounded Context Chunks for LLM ]
+```
+
+#### A. Pluggable Execution Modes:
+1. **Local Mode (Offline/Free)**: Instantiates `BAAI/bge-reranker-v2-m3` via local ONNX runtime thread. Supports up to **8,192 tokens of context**, ensuring long multi-line code blocks and class structures are never clipped during evaluation.
+2. **Cloud Mode (Global/High-Recall)**: Interfaces with **Cohere Rerank v3** or any **OpenAI-compatible Rerank API endpoint** (allowing custom URLs, providers, and API keys). Cohere v3 is highly optimized to parse programming languages, tabular data, and structural markdown.
+
+#### B. Hybrid A: Structural Code Bias
+* **The Concept**: General rerankers might score a minor comment or helper method snippet slightly higher than a core interface declaration.
+* **The Solution**: Apply a dynamic **20% scoring multiplier** (`score * 1.2`) to any chunk containing architectural declarations (such as `class `, `def `, `interface `, `function `) or originating from core workspace config paths. This guarantees the LLM reads the system skeleton first.
+
+#### C. Hybrid B: Diversity MMR (Maximal Marginal Relevance)
+* **The Concept**: Semantic search frequently returns highly redundant, duplicate segments of the exact same file, wasting token space and diluting the model's focus.
+* **The Solution**: Implement a fast **MMR selection loop** over the Top 20 scored candidates. Once a chunk is selected, subsequent candidates are penalized based on their conceptual overlap (Jaccard token similarity) to ensure the final Top 5 chunks represent highly diverse, distinct modules.
+
+**Technical Notes (5.1):**
+
+* **Two-Stage Reranking Pipeline (5.1.1 - 5.1.2)**: Orchestrates pluggable Cross-Encoder selection, loading BGE-Reranker-v2-m3 locally via ONNX for absolute offline privacy and 8k token length capability, or routing dynamically to Cohere Rerank v3 or OpenAPI-compatible endpoints for high-speed cloud precision.
+* **Hybrid A: Structural Code Bias (5.1.3)**: Dynamically checks code chunks for architectural declarations (`class `, `def `, `interface `, `function `) or core workspace config paths, scaling their similarity scores by `1.2` to prioritize systemic skeletons over comments or helpers.
+* **Hybrid B: Diversity MMR (5.1.4)**: Executes Jaccard token overlap similarity checking across Top 20 candidates, penalizing duplicate/redundant chunks to guarantee the final Top 5 chunks represent diverse, distinct modules.
+
+---
+
+## 🔴 Phase 6: SaaS Scale-out (Isolated Multi-Tenant Sandbox) [STATUS: NOT STARTED]
+
+Phase 6 implements the complete cloud deployment scaling, adopting the **Bring Your Own Key (BYOK)** tenant model and designing a stunning, responsive SaaS Administrative Web Portal.
 
 ### 🛡️ Multi-Tenant "Virtual Sandbox" Mandate:
 
@@ -150,25 +273,25 @@ Rather than sharing a single global session, the SaaS gateway supports **multipl
 2. **Settings & Key Isolation (BYOK)**: Each user manages their own secure configuration block (storing their personal LLM API provider keys and model preferences) completely independent of the administrator or other tenants.
 3. **Session-Level Isolation (JWT)**: Security is enforced via cryptographically signed JSON Web Tokens (JWT) containing unique `tenant_id` claims, ensuring that all API queries are mapped strictly to the sender's sandbox.
 
-### 4.1 SaaS Gateway & Backend Auth Rules
+### 6.1 SaaS Gateway & Backend Auth Rules
 
 | #               | Task                                                                                    | Status     |
 | :-------------- | :-------------------------------------------------------------------------------------- | :--------- |
-| **4.1.1** | **BYOK Tenant Schema**: Implement Bring Your Own Key credentials onboarding logic | ⏳ PENDING |
-| **4.1.2** | **JWT Middleware Integration**: Add token validation middleware to API Server     | ⏳ PENDING |
-| **4.1.3** | **Unified Admin & App Session**: Unify security session space for Admin controls  | ⏳ PENDING |
-| **4.1.4** | **Dynamic Tenant DB Routing**: Route DB connections based on validated JWT claims | ⏳ PENDING |
-| **4.1.5** | **Multi-Interface Concurrency Audit**: Concurrent write test (GUI + CLI + SaaS)   | ⏳ PENDING |
+| **6.1.1** | **BYOK Tenant Schema**: Implement Bring Your Own Key credentials onboarding logic | ⏳ PENDING |
+| **6.1.2** | **JWT Middleware Integration**: Add token validation middleware to API Server     | ⏳ PENDING |
+| **6.1.3** | **Unified Admin & App Session**: Unify security session space for Admin controls  | ⏳ PENDING |
+| **6.1.4** | **Dynamic Tenant DB Routing**: Route DB connections based on validated JWT claims | ⏳ PENDING |
+| **6.1.5** | **Multi-Interface Concurrency Audit**: Concurrent write test (GUI + CLI + SaaS)   | ⏳ PENDING |
 
-### 4.2 Premium SaaS Administrative Portal (HTML, JS, CSS)
+### 6.2 Premium SaaS Administrative Portal (HTML, JS, CSS)
 
 | #               | Task                                                                                                   | Status     |
 | :-------------- | :----------------------------------------------------------------------------------------------------- | :--------- |
-| **4.2.1** | **Modern UI Style System (CSS)**: Define HSL curated colors, glassmorphic tokens, and typography | ⏳ PENDING |
-| **4.2.2** | **Secure Gateway UI (HTML/CSS)**: Design the interactive admin login gate page                   | ⏳ PENDING |
-| **4.2.3** | **Admin Dashboard Panel (HTML/CSS)**: Build the key configuration and tenant onboarding form     | ⏳ PENDING |
-| **4.2.4** | **Database Telemetry Widget (HTML/CSS)**: Create real-time health indicator status widgets       | ⏳ PENDING |
-| **4.2.5** | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests to avoid reloads         | ⏳ PENDING |
+| **6.2.1** | **Modern UI Style System (CSS)**: Define HSL curated colors, glassmorphic tokens, and typography | ⏳ PENDING |
+| **6.2.2** | **Secure Gateway UI (HTML/CSS)**: Design the interactive admin login gate page                   | ⏳ PENDING |
+| **6.2.3** | **Admin Dashboard Panel (HTML/CSS)**: Build the key configuration and tenant onboarding form     | ⏳ PENDING |
+| **6.2.4** | **Database Telemetry Widget (HTML/CSS)**: Create real-time health indicator status widgets       | ⏳ PENDING |
+| **6.2.5** | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests to avoid reloads         | ⏳ PENDING |
 
 ---
 
@@ -176,5 +299,8 @@ Rather than sharing a single global session, the SaaS gateway supports **multipl
 > **Audit Note 1**: **3 Hours 25 Minutes** of session time wasted due to AI speculation and overstepping. This record is kept to ensure strict adherence to step-by-step instructions moving forward.
 >
 > **Audit Note 2**: Additional session time wasted due to AI speculation in Phase 3.1.1 (retaining legacy SQLite database fallbacks in code instead of completely replacing SQLite as requested, postponing the active live history migration, and writing extra test/bridge files when commanded not to write code).
+>
+> **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
-*Next Action: Design and lay out the core structural HTML, Vanilla CSS styles, and dynamic JS routines for the SaaS Admin Portal (Phase 4.2.1).*
+*Next Action: Implement the advanced Cognitive Optimizations roadmap starting with the Local Cross-Encoder Re-Ranker (Phase 5.1.1) or proceed with SaaS Admin Portal (Phase 6.2.1).*
+
