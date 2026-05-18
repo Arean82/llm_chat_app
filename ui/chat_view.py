@@ -846,6 +846,10 @@ class ChatViewWidget(QWidget):
         self.clear_chat()
         self.ui.chat_history_list.clearSelection()
 
+    def start_new_chat_without_saving(self):
+        self.clear_chat()
+        self.ui.chat_history_list.clearSelection()
+
     def _extract_safe_text(self, content):
         """Isolates pure string text from potentially complex mixed binary lists."""
         if isinstance(content, str): return content
@@ -962,7 +966,7 @@ class ChatViewWidget(QWidget):
         reply = QMessageBox.question(self, "Delete All", "Are you sure you want to delete ALL conversations?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.conversation_manager.clear_all()
-            self.start_new_chat()
+            self.start_new_chat_without_saving()
             self.refresh_history_list()
 
     def show_history_context_menu(self, pos):
@@ -981,7 +985,7 @@ class ChatViewWidget(QWidget):
         if reply == QMessageBox.Yes:
             self.conversation_manager.delete_conversation(c_id)
             self.refresh_history_list()
-            self.start_new_chat()
+            self.start_new_chat_without_saving()
 
     def save_conversation(self):
         """Export current active memory tree to formatted external JSON"""

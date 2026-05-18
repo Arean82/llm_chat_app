@@ -1,53 +1,50 @@
 # logic/conversation_manager.py
 import json
-import sqlite3
 from datetime import datetime
 from pathlib import Path
 
 from utils.storage_config import StorageManager
+from logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
 
 class ConversationManager:
-    def __init__(self):
+    """
+    High-level conversation orchestrator for the application.
+    Dynamically initializes and interfaces with BaseStorageDriver subclasses
+    to handle chat histories, JSON migrations, and backup operations.
+    """
+
+    def __init__(self, tenant_id: str = "default_user"):
         self.base_dir = StorageManager.get_instance().get_storage_root()
         self.conversations_dir = self.base_dir / "conversations"
         self.conversations_dir.mkdir(parents=True, exist_ok=True)
         
-        self.db_path = self.conversations_dir / "chat_history.db"
-        self.init_db()
+        # Dynamic Tenant Database Resolution (Phase 2.1.4)
+        self.active_tenant_id = None
+        self.db_path = None
+        self.driver = None
+        self.set_tenant(tenant_id)
+
+    def set_tenant(self, tenant_id: str):
+        """
+        Dynamically shifts the database storage path to isolate a specific tenant/user.
+        If 'default_user' is specified, it maintains the legacy desktop path for backward-compatibility.
+        """
+        self.active_tenant_id = tenant_id
+        
+        # Map tenant ID to its isolated database path
+        if tenant_id == "default_user":
+            self.db_path = self.conversations_dir / "chat_history.db"
+        else:
+            self.db_path = self.conversations_dir / "tenants" / tenant_id / "chat_history.db"
+            
+        # Guarantee parent directories exist
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Instantiate the database driver for this tenant's path
+        self.driver = LocalSQLiteDriver(self.db_path)
+        
+        # Run legacy json migrations (if any JSON files exist to import)
         self.migrate_json_to_sqlite()
-
-    def init_db(self):
-        """Initializes the SQLite database and creates the conversations table."""
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            # Enable WAL mode for better concurrency and crash resistance
-            cursor.execute('PRAGMA journal_mode=WAL;')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS conversations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT,
-                    timestamp TEXT,
-                    model_id TEXT,
-                    messages_json TEXT,
-                    messages_html TEXT
-                )
-            ''')
-            # Audit ID 020: Index high-traffic timestamp column to preserve sidebar speed over scale
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON conversations(timestamp);')
-            # Migration: Ensure messages_html column exists for older databases
-            try:
-                cursor.execute('ALTER TABLE conversations ADD COLUMN messages_html TEXT')
-            except sqlite3.OperationalError:
-                pass 
-
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Database initialization error: {e}")
-        finally:
-            if conn:
-                conn.close()
 
     def migrate_json_to_sqlite(self):
         """Finds existing JSON files and imports them into the DB if they aren't already there."""
@@ -55,149 +52,65 @@ class ConversationManager:
         if not json_files:
             return
 
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+        for file_path in json_files:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Use filename as title if not present
+                title = file_path.stem.replace("conversation_", "").replace("_", " ")
+                timestamp = data.get("timestamp", datetime.now().isoformat())
+                model_id = data.get("model_id", "")
+                messages = data.get("messages", [])
 
-            for file_path in json_files:
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                    
-                    # Use filename as title if not present
-                    title = file_path.stem.replace("conversation_", "").replace("_", " ")
-                    timestamp = data.get("timestamp", datetime.now().isoformat())
-                    model_id = data.get("model_id", "")
-                    messages = json.dumps(data.get("messages", []))
+                # Save into the database via the dynamic driver interface
+                self.driver.save_conversation(
+                    conversation=messages,
+                    title=title,
+                    conv_id=None,
+                    model_id=model_id,
+                    messages_html=None,
+                    timestamp=timestamp
+                )
+                
+                # Immediately delete source JSON after verified insertion to prevent clutter
+                file_path.unlink()
+            except Exception as e:
+                print(f"[ConversationManager] Migration error for {file_path}: {e}")
 
-                    # Insert into DB
-                    cursor.execute('''
-                        INSERT INTO conversations (title, timestamp, model_id, messages_json)
-                        VALUES (?, ?, ?, ?)
-                    ''', (title, timestamp, model_id, messages))
-                    
-                    # Immediately delete source JSON after verified insertion to prevent clutter
-                    file_path.unlink()
-                except Exception as e:
-                    print(f"Migration error for {file_path}: {e}")
+        # Global Housekeeping: Search and destroy any previously left behind .bak files
+        for bak_file in self.conversations_dir.glob("*.json.bak"):
+             try:
+                 bak_file.unlink()
+             except Exception:
+                 pass
 
-            # Global Housekeeping: Search and destroy any previously left behind .bak files
-            for bak_file in self.conversations_dir.glob("*.json.bak"):
-                 try:
-                     bak_file.unlink()
-                 except Exception:
-                     pass
-
-
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Migration error: {e}")
-        finally:
-            if conn:
-                conn.close()
-
-    def save_conversation(self, conversation: list, title: str = "New Conversation", conv_id: int = None, model_id: str = "", messages_html: str = None):
-        """Saves or updates a conversation in the SQLite DB."""
-        messages_json = json.dumps(conversation)
-
-        timestamp = datetime.now().isoformat()
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            if conv_id is not None:
-                # Update existing
-                cursor.execute('''
-                    UPDATE conversations 
-                    SET title = ?, timestamp = ?, messages_json = ?, messages_html = ? 
-                    WHERE id = ?
-                ''', (title, timestamp, messages_json, messages_html, conv_id))
-            else:
-                # Insert new
-                cursor.execute('''
-                    INSERT INTO conversations (title, timestamp, model_id, messages_json, messages_html)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (title, timestamp, model_id, messages_json, messages_html))
-                conv_id = cursor.lastrowid
-
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Save error: {e}")
-        finally:
-            if conn:
-                conn.close()
-        return conv_id
+    def save_conversation(self, conversation: list, title: str = "New Conversation", 
+                          conv_id: int = None, model_id: str = "", messages_html: str = None) -> int:
+        """Saves or updates a conversation in the active database via the pluggable driver."""
+        return self.driver.save_conversation(
+            conversation=conversation,
+            title=title,
+            conv_id=conv_id,
+            model_id=model_id,
+            messages_html=messages_html
+        )
 
     def load_conversation(self, conv_id: int) -> dict:
-        """Loads a specific conversation by its ID."""
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('SELECT title, timestamp, model_id, messages_json, messages_html FROM conversations WHERE id = ?', (conv_id,))
-            row = cursor.fetchone()
-            
-            if row:
-                return {
-                    "id": conv_id,
-                    "title": row[0],
-                    "timestamp": row[1],
-                    "model_id": row[2],
-                    "messages": json.loads(row[3]),
-                    "messages_html": row[4]
-                }
-        except sqlite3.Error as e:
-            print(f"Load error: {e}")
-        finally:
-            if conn:
-                conn.close()
-        return None
+        """Loads a specific conversation by its ID via the pluggable driver."""
+        return self.driver.load_conversation(conv_id)
 
-    def get_all_conversations(self):
-        """Returns a list of all conversations for the sidebar."""
-        conn = None
-        rows = []
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('SELECT id, title, timestamp FROM conversations ORDER BY timestamp DESC')
-            rows = cursor.fetchall()
-        except sqlite3.Error as e:
-            print(f"Get all error: {e}")
-        finally:
-            if conn:
-                conn.close()
-        return rows
+    def get_all_conversations(self) -> list:
+        """Returns a list of all conversations for the sidebar via the pluggable driver."""
+        return self.driver.get_all_conversations()
 
     def delete_conversation(self, conv_id: int):
-        """Deletes a specific conversation by ID."""
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM conversations WHERE id = ?', (conv_id,))
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Delete error: {e}")
-        finally:
-            if conn:
-                conn.close()
+        """Deletes a specific conversation by ID via the pluggable driver."""
+        self.driver.delete_conversation(conv_id)
 
     def clear_all(self):
-        """Wipes the entire conversations table."""
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM conversations')
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Clear all error: {e}")
-        finally:
-            if conn:
-                conn.close()
+        """Wipes the entire conversations table via the pluggable driver."""
+        self.driver.clear_all()
 
     def export_to_json(self, conversation: list, file_path: str, model_id: str = ""):
         """Manually exports a conversation to a JSON file (standard format)."""

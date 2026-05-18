@@ -233,13 +233,12 @@ class MainWindowClass(QMainWindow):
         # Auto-recovery: If no valid model, pick the first one for the active provider
         if not valid:
             for m in all_models:
-                # Basic check: if provider is 'google', only pick google models. 
-                # If provider is 'nvidia', pick nvidia/llama/etc.
-                # For now, just pick the first available model in the list as a fallback.
-                mid = m.get('id')
-                valid = True
-                settings.setValue("current_model_id", mid)
-                break
+                prov = m.get('provider')
+                if prov and str(prov).lower() == str(active_p).lower():
+                    mid = m.get('id')
+                    valid = True
+                    settings.setValue("current_model_id", mid)
+                    break
 
         if valid:
             self.llm_client.set_model(mid)
@@ -300,8 +299,12 @@ class MainWindowClass(QMainWindow):
             self.load_settings()
             self.chat_view.set_chat_enabled(False)
             
-            # Close app and force restart to guarantee clean slate (Standard for security apps)
-            QApplication.quit()
+            # 4. Hide main window and prompt for new credentials instead of abruptly closing
+            self.hide()
+            if self.open_settings():
+                self.showMaximized()
+            else:
+                QApplication.quit()
 
     def open_settings(self):
         from ui.login_dialog import LoginDialogClass
@@ -345,30 +348,7 @@ class MainWindowClass(QMainWindow):
                 self.load_settings()
                 self.chat_view.add_system_message(f"🔄 <b>Ecosystem:</b> {new_provider.upper()} | <b>Developer:</b> {dev_name} | <b>Model:</b> {model_name}", allow_html=True)
 
-    def logout(self):
-        """Clears the active session and returns to login screen."""
-        get_app_settings().remove("current_model_id")
-        get_app_settings().remove("active_provider_id")
-        get_app_settings().sync()
-        
-        # Clear memory session
-        self.llm_client.clear_keys()
-        
-        # Open login screen; if cancelled, exit the app
-        if not self.open_settings():
-             QApplication.instance().quit()
 
-    def open_settings(self) -> bool:
-        """Entry point for the login/auth flow."""
-        from ui.login_dialog import LoginDialogClass
-        dialog = LoginDialogClass(parent=self)
-        if dialog.exec():
-            # Sync the client keys and reload
-            self.llm_client.set_api_key(dialog.get_api_key())
-            self.llm_client.set_google_api_key(dialog.get_google_api_key())
-            self.load_settings()
-            return True
-        return False
 
     def open_credential_manager(self):
         from ui.credential_manager import show_settings_hub
