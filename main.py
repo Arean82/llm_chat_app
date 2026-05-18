@@ -150,7 +150,7 @@ def main():
         import platform
         if platform.system() == "Windows":
             import ctypes
-            myappid = u'arean82.llmchatapp.v6.5'
+            myappid = u'arean82.llmchatapp.v6.6'
             try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except: pass
             
@@ -221,7 +221,7 @@ def main():
     # CLI Command Router
     if "--help" in sys.argv or "-h" in sys.argv:
         print("\n" + "="*50)
-        print(" LLM CHAT APP - Headless Engine v6.5")
+        print(" LLM CHAT APP - Headless Engine v6.6")
         print("="*50)
         print("Usage: python main.py [options]")
         print("\nOptions:")
@@ -229,6 +229,7 @@ def main():
         print("  --cli             Launch the interactive terminal chat session")
         print("  --list-models     List all models currently in the local manifest")
         print("  --update-models   Fetch latest models from the active provider")
+        print("  --migrate         Migrate chat history transactionally between databases")
         print("  --help / -h       Show this detailed help message")
         
         print("\nExamples:")
@@ -236,6 +237,7 @@ def main():
         print("  2. Sync Models:     python main.py --update-models")
         print("  3. View manifest:   python main.py --list-models")
         print("  4. CLI Chat:        python main.py --cli")
+        print("  5. Relocate DB:     python main.py --migrate")
         
         print("\nDocumentation: see HEADLESS_GUIDE.md")
         print("="*50 + "\n")
@@ -252,6 +254,11 @@ def main():
         client = LLMClient()
         client.hydrate()
         HeadlessModels.update_models(client)
+        return
+
+    if "--migrate" in sys.argv:
+        from logic.migration_bridge import run_interactive_cli_migration
+        run_interactive_cli_migration()
         return
 
     if env_mode == "CLI" or "--cli" in sys.argv:

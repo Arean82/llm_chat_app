@@ -29,11 +29,11 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("LLM Chat App v6.5")
+        self.setWindowTitle("LLM Chat App v6.6")
         
         # Ensure Taskbar Icon is visible on Windows
         import ctypes
-        myappid = u'arean82.llmchatapp.v6.5'
+        myappid = u'arean82.llmchatapp.v6.6'
         try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except: pass
 

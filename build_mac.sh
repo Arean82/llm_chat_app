@@ -3,7 +3,7 @@
 
 APP_NAME="LLM Chat App"
 BUNDLE_NAME="$APP_NAME.app"
-VERSION="6.5.0"
+VERSION="6.6.0"
 IDENTIFIER="com.arean82.llmchatapp"
 OUTPUT_PKG="LLM_Chat_App_Installer.pkg"
 

@@ -1,4 +1,4 @@
-# Headless & API Engine Guide (v6.5)
+# Headless & API Engine Guide (v6.6)
 
 This guide explains how to use the **LLM Chat App** in Headless mode for IDE integration, API serving, and CLI model management.
 
@@ -123,4 +123,4 @@ The application enforces absolute cryptographic session boundaries between the C
 | **No models shown** | Run `python main.py --update-models` to refresh the local sharded manifests. |
 
 ---
-*Maintenance: Decoupled Logic v6.5. Base: arean82.llmchatapp.v6.5*
+*Maintenance: Decoupled Logic v6.6. Base: arean82.llmchatapp.v6.6*

@@ -1,10 +1,10 @@
 # logic/conversation_manager.py
+import os
 import json
 from datetime import datetime
 from pathlib import Path
 
 from utils.storage_config import StorageManager
-from logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
 
 class ConversationManager:
     """
@@ -18,7 +18,7 @@ class ConversationManager:
         self.conversations_dir = self.base_dir / "conversations"
         self.conversations_dir.mkdir(parents=True, exist_ok=True)
         
-        # Dynamic Tenant Database Resolution (Phase 2.1.4)
+        # Dynamic Tenant Database Resolution
         self.active_tenant_id = None
         self.db_path = None
         self.driver = None
@@ -27,7 +27,6 @@ class ConversationManager:
     def set_tenant(self, tenant_id: str):
         """
         Dynamically shifts the database storage path to isolate a specific tenant/user.
-        If 'default_user' is specified, it maintains the legacy desktop path for backward-compatibility.
         """
         self.active_tenant_id = tenant_id
         
@@ -40,13 +39,49 @@ class ConversationManager:
         # Guarantee parent directories exist
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Instantiate the database driver for this tenant's path
-        self.driver = LocalSQLiteDriver(self.db_path)
+        # Load active database configurations from global settings (defaulting to turso/libsql)
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        db_type = str(settings.value("database_type", "turso")).lower().strip()
+        
+        if db_type in ("postgres", "postgresql"):
+            # Fetch remote or local PostgreSQL configurations
+            url = settings.value("database_url") or os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_DATABASE_URL")
+            if not url:
+                raise ConnectionError(
+                    "[ConversationManager] Error: PostgreSQL Database URL is not configured. "
+                    "Please configure 'database_url' in settings or set DATABASE_URL / POSTGRES_DATABASE_URL in the environment."
+                )
+            
+            # Dynamic Template Expansion for SaaS Tenant sharding
+            url = url.replace("{tenant_id}", tenant_id)
+            
+            from logic.storage_drivers.postgres_driver import PostgreSQLStorageDriver
+            self.driver = PostgreSQLStorageDriver(url)
+        else:
+            # Default to Turso/libSQL
+            url = settings.value("database_url") or os.environ.get("TURSO_DATABASE_URL")
+            token = settings.value("database_auth_token") or os.environ.get("TURSO_AUTH_TOKEN")
+            
+            if not url:
+                raise ConnectionError(
+                    "[ConversationManager] Error: Turso/libSQL Database URL is not configured. "
+                    "SQLite is fully disabled to prevent multi-process database write-locking failures under concurrent GUI, CLI, and SaaS operations. "
+                    "Please configure 'database_url' in settings or set TURSO_DATABASE_URL in the environment."
+                )
+                
+            # Dynamic Template Expansion for SaaS Tenant Database-per-Tenant sharding
+            url = url.replace("{tenant_id}", tenant_id)
+            if token:
+                token = token.replace("{tenant_id}", tenant_id)
+            
+            from logic.storage_drivers.libsql_driver import LibSQLStorageDriver
+            self.driver = LibSQLStorageDriver(url, token)
         
         # Run legacy json migrations (if any JSON files exist to import)
-        self.migrate_json_to_sqlite()
+        self.migrate_json_files()
 
-    def migrate_json_to_sqlite(self):
+    def migrate_json_files(self):
         """Finds existing JSON files and imports them into the DB if they aren't already there."""
         json_files = list(self.conversations_dir.glob("*.json"))
         if not json_files:

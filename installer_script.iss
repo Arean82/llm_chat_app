@@ -3,13 +3,13 @@
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-1234567890AB}
 AppName=LLM Chat App
-AppVersion=6.5.0
+AppVersion=6.6.0
 AppPublisher=Arean Narrayan
 DefaultDirName={commonpf}\LLM Chat App
 DefaultGroupName=LLM Chat App
 DisableProgramGroupPage=yes
 OutputDir=installer_output
-OutputBaseFilename=LLM_Chat_App_Setup_v6.5.0
+OutputBaseFilename=LLM_Chat_App_Setup_v6.6.0
 Compression=lzma2/ultra64
 SolidCompression=yes
 SetupIconFile=resources\app_icon.ico

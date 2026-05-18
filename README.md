@@ -1,6 +1,6 @@
-# LLM Chat App (v6.5 Stable Baseline)
+# LLM Chat App (v6.6 Stable Baseline)
 
-![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![SQLite](https://img.shields.io/badge/SQLite-Transactional-003B57) ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-ecosystem hub, it interfaces seamlessly with **Google Gemini**, **NVIDIA NIM**, **Groq**, **Ollama**, and **LM Studio**—alongside infinite support for your own custom local endpoints—to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
 
@@ -240,32 +240,100 @@ llm_chat_app/
 
 ## 🏛️ System Architecture
 
-The application leverages a fully-isolated multi-threaded chassis designed to keep the user interface responsive, regardless of inference or indexing payloads:
+The application leverages a fully-isolated, multi-threaded modular chassis designed to support concurrent operations across multiple interfaces without database locking or UI freezing:
 
-|                 Modular High-Performance System Architecture                 |
-| :--------------------------------------------------------------------------: |
-| ![System Architecture Diagram](resources/screenshots/Architecture_Diagram.png) |
+```mermaid
+graph TD
+    %% Client Layer
+    subgraph Clients ["Multi-Interface Clients (Version 6.6)"]
+        GUI["PySide6 Desktop GUI<br>(Multi-threaded, Async Workers)"]
+        CLI["Terminal CLI<br>(Interactive Chat Loop)"]
+        Headless["Headless API Server<br>(Port 5000 / OpenAI-Compatible)"]
+    end
+
+    %% Core Orchestration Layer
+    subgraph Core ["Core Orchestration Chassis"]
+        Mgr["ConversationManager<br>(Context & History Dispatcher)"]
+        Client["LLMClient<br>(Agnostic Model Provider Hub)"]
+        Mgr --> Client
+    end
+
+    %% Storage Drivers
+    subgraph Storage ["Decoupled Storage Tier (100% WAL/MVCC)"]
+        DriverContract["BaseStorageDriver<br>(Abstract Interface)"]
+        TursoDriver["LibSQLStorageDriver<br>(Turso Cloud Shards / Hranas Edge)"]
+        PGDriver["PostgreSQLStorageDriver<br>(Enterprise Cluster / Row Locks)"]
+        
+        DriverContract --> TursoDriver
+        DriverContract --> PGDriver
+    end
+
+    %% Multi-Tenant Sandbox Datastores
+    subgraph Datastores ["Dynamic Tenant Sandbox Datastores"]
+        TursoDB[("Turso Cloud Database<br>{tenant_id} Partition")]
+        PGDB[("PostgreSQL Server Database<br>{tenant_id} Schema")]
+        
+        TursoDriver -->|Zero-Locking Writes| TursoDB
+        PGDriver -->|MVCC Row-Level Locks| PGDB
+    end
+
+    %% Relations
+    GUI -->|Direct Local Driver| DriverContract
+    CLI -->|Direct Local Driver| DriverContract
+    Headless -->|JWT Tenant Sessions| DriverContract
+    
+    GUI -->|Load Models| Core
+    CLI -->|Query Models| Core
+    Headless -->|Inference Gate| Core
+
+    %% Styling
+    style Clients fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
+    style Core fill:#181825,stroke:#f5e0dc,stroke-width:2px,color:#cdd6f4
+    style Storage fill:#11111b,stroke:#a6adc8,stroke-width:2px,color:#cdd6f4
+    style Datastores fill:#0f0f17,stroke:#fab387,stroke-width:2px,color:#cdd6f4
+    style GUI fill:#89b4fa,stroke:#1e66f5,stroke-dasharray: 5 5,color:#11111b
+    style CLI fill:#a6e3a1,stroke:#40a02b,color:#11111b
+    style Headless fill:#cba6f7,stroke:#8839ef,color:#11111b
+```
+
+### 🧱 Three-Tier Modular System Layout:
+
+1. **Multi-Interface Clients Layer**:
+   * **PySide6 Desktop GUI**: A highly responsive, multi-threaded workspace executing long-running network operations via background worker threads to ensure zero main-loop freezing.
+   * **Terminal CLI**: A lightweight, interactive command-line interface equipped with direct streaming, model hot-swapping, and metadata commands.
+   * **Headless API Server (SaaS Gateway - Port 5000)**: Serves multiple concurrent registered users, providing secure JWT-signed session authentication and dynamic resource isolation.
+
+2. **Core Orchestration Chassis**:
+   * Anchored by `ConversationManager`, this tier decouples business logic from physical storage layers using an abstract database driver interface (`BaseStorageDriver`), ensuring complete data portability.
+
+3. **High-Concurrency Pluggable Storage Tier**:
+   * **libSQL / Turso Edge Shards (Default)**: Leverages lightweight Hranas edge replication and database-per-tenant sharding to support zero-locking remote transactional operations.
+   * **PostgreSQL Cluster Engine**: Offers enterprise-grade multi-process concurrency, implementing raw row-level locking and Multi-Version Concurrency Control (MVCC).
+   * **Isolated Multi-Tenant Sandbox**: Enforces complete tenant isolation at the database, settings/BYOK credentials, and cryptographic session levels, acting exactly like a separate virtual desktop instance for every user.
 
 ---
 
 ## 🧱 Tech Stack
 
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)       ![Qt](https://img.shields.io/badge/PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=black)       ![OpenAI](https://img.shields.io/badge/OpenAI_SDK-412991?style=for-the-badge&logo=openai&logoColor=white)       ![NVIDIA](https://img.shields.io/badge/NVIDIA_NIM-76B900?style=for-the-badge&logo=nvidia&logoColor=white)       ![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)       ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)       ![Markdown](https://img.shields.io/badge/markdown-%23000000.svg?style=for-the-badge&logo=markdown&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)       ![Qt](https://img.shields.io/badge/PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=black)       ![OpenAI](https://img.shields.io/badge/OpenAI_SDK-412991?style=for-the-badge&logo=openai&logoColor=white)       ![NVIDIA](https://img.shields.io/badge/NVIDIA_NIM-76B900?style=for-the-badge&logo=nvidia&logoColor=white)       ![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)       ![Turso](https://img.shields.io/badge/Turso-000000?style=for-the-badge&logo=turso&logoColor=cyan)       ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)       ![Markdown](https://img.shields.io/badge/markdown-%23000000.svg?style=for-the-badge&logo=markdown&logoColor=white)
 
 ---
 
-## ⚙️ Configuration & Data Storage
+## ⚙️ Configuration & High-Concurrency Data Storage
 
-This application does not use local `.env` files or plaintext config files for sensitive data.
+This application does not use local `.env` files or plaintext config files for sensitive data. 
 
-- **API Credentials:** Migrated away from plaintext. Securely injected into the OS vault subsystem using the Python `keyring` module (Windows Credential Manager / macOS Keychain).
-- **UI Settings:** Generic layout preferences stored using `QSettings`.
-  - **Portable Mode:** Saved to `settings.ini` in the application folder (zero system footprint).
-  - **Standard/Custom Mode:** Saved securely via native OS configurations.
-    - *Windows:* Saved in the Registry (`HKEY_CURRENT_USER\Software\LLMChatApp\Settings`).
-    - *macOS:* Saved in `~/Library/Preferences/com.LLMChatApp.Settings.plist`.
-    - *Linux:* Saved in `~/.config/LLMChatApp/Settings.conf`.
-- **Data Root:** Chat history (`chat_history.db`), logs, caches, and configs dynamically map to one centralized Data Root based on user preference (User Profile, Portable Folder, or Custom network drive).
+To eliminate multi-process write-locking timeout crashes across simultaneous **GUI (Desktop)**, **CLI (Terminal)**, and **SaaS API (Port 5000)** connections, **SQLite has been 100% purged** from the primary engine. In its place, the application implements pluggable MVCC/cloud storage:
+
+* **API Credentials:** Migrated away from plaintext. Securely injected into the OS vault subsystem using the Python `keyring` module (Windows Credential Manager / macOS Keychain).
+* **UI Settings:** Layout preferences stored dynamically using `QSettings`.
+  * **Portable Mode:** Saved to `settings.ini` in the application folder (zero system footprint).
+  * **Standard/Custom Mode:* Saved securely via native OS configurations (Windows Registry, macOS plist, Linux conf).
+* **Pluggable Storage Chassis**:
+  * **Turso / libSQL (Default)**: Executes queries over Hranas transactions with edge-replicated cloud database-per-tenant sharding.
+  * **PostgreSQL (Enterprise)**: Connects dynamically to remote/local PG clusters, implementing native row-level locks and MVCC.
+* **Isolated Multi-Tenant Sandboxing**: 
+  Supports multiple concurrent registered users working in private "virtual sandboxes" (each acting like a separate virtual desktop app instance). Isolates history, metadata, and BYOK credentials via dynamic tenant sharded DB paths, isolated settings blocks, and JWT-authenticated session tokens.
 
 ---
 
@@ -480,6 +548,15 @@ This framework is architected and curated with the vision of building transparen
 ---
 
 ## 📅 Change Log
+
+### v6.6.0 – Multi-Engine Cloud Concurrency & Isolated Multi-Tenant Sandbox
+- 🗃️ **Complete Purge of SQLite**: Entirely eliminated local SQLite write-locking bottlenecks and database timeout crashes, guaranteeing zero-locking concurrent operations across GUI, CLI, and Headless sessions.
+- ☁️ **Pluggable Cloud Engines (Turso & PostgreSQL)**: Integrated abstract `BaseStorageDriver` mapping to highly concurrent cloud sharded databases:
+  - *Turso / libSQL*: Supports synchronous Hranas edge replication.
+  - *PostgreSQL*: Incorporates native row-level locking, MVCC parameters escaping, and atomic serial key retrieval (`RETURNING id`).
+- 🌁 **Live Database Relocation Bridge (CLI)**: Developed an interactive database-to-database live history copy engine (`python main.py --migrate`) supporting non-destructive transfers between Turso and PostgreSQL.
+- 🛡️ **Isolated Multi-Tenant Sandboxing Specs**: Formulated Phase 4 scaling architectural plans, establishing isolated user "virtual sandboxes" partitioned via dynamic sharded tenant DB paths (`{tenant_id}`), dedicated per-user credentials blocks, and cryptographically signed JWT session tokens.
+- 🏛️ **Live Mermaid Architecture-as-Code**: Replaced static binary diagrams with an interactive, plain-text Mermaid visual graph directly inside repository documentation, ensuring absolute maintainability and consistency.
 
 ### v6.5.0 – Headless Engine, Decoupled Registries, & Display-Safe Auto-Detection
 - 🖥️ **Headless CLI Support & Auto-Detection**: Introduced a full-featured headless engine for server-side and terminal-only operations. Features 100% automatic platform, display, SSH terminal, and TTY environment identification.
