@@ -96,7 +96,7 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 
 **Technical Notes (3.1):**
 
-* **libSQL / Turso Driver (3.1.1)**: Successfully, fully replaced SQLite inside `ConversationManager`. Completely deleted `LocalSQLiteDriver` imports, dynamic storage fallbacks, and fallback routes. Integrated the `LibSQLStorageDriver` as the absolute primary engine, configured to throw an immediate, helpful `ConnectionError` if database URLs are missing or unconfigured—preventing any silent fallbacks that would lead to database write-locking failures under concurrent GUI, CLI, and SaaS operations.
+* **libSQL / Turso Driver (3.1.1)**: Successfully integrated the `LibSQLStorageDriver` as the absolute primary, zero-configuration default engine inside `ConversationManager`. By default, if no remote cloud URL is configured, it dynamically maps connection paths to a local libSQL database using the `file:` scheme (offline-first local libSQL execution). This eliminates legacy SQLite as the main active codebase default while ensuring perfect zero-friction local boots and 100% preparation for local replication sync.
 * **PostgreSQL Concurrency Engine (3.1.2)**: Developed [logic/storage_drivers/postgres_driver.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/storage_drivers/postgres_driver.py) implementing `PostgreSQLStorageDriver` over the pure-Python DB-API 2.0 `pg8000` client. Outlines robust tables initialization, indices setups, parameters escaping, and high-concurrency TRUNCATE support. Implemented atomic auto-increment serial ID return using PostgreSQL's native `RETURNING id` clause. Integrated the PG engine dynamically inside `ConversationManager` to automatically route database calls if `"database_type": "postgres"` is configured.
 * **Live Migration Bridge (3.1.3)**: Designed a database-agnostic live data migration utility at [logic/migration_bridge.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/migration_bridge.py). By leveraging the abstract `BaseStorageDriver` methods, it safely extracts all thread headers, timestamps, message arrays, model IDs, and HTML caches from a source engine (e.g. Turso) and transactionally writes them into the newly targeted engine (e.g. PostgreSQL) without destroying the source records. This enables perfect, lossless database migrations when switching backend engines.
 
@@ -205,17 +205,15 @@ flowchart TD
 
 ## 🟡 Phase 5: Pluggable Two-Stage Reranking (Hybrid A + B Architecture) [STATUS: IN PROGRESS]
 
-To maximize code and prompt precision across both offline desktop environments and online SaaS deployments, the reranking layer acts as a pluggable, multi-provider micro-service:
+To maximize code and prompt precision across both offline desktop environments and online SaaS deployments, the reranking layer acts as a pluggable, multi-provider micro-service directly under Phase 5:
 
-### 5.1 Pluggable Reranking Optimizations
-
-| #               | Task                                                                                                   | Status     |
-| :-------------- | :----------------------------------------------------------------------------------------------------- | :--------- |
-| **5.1.1** | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ⏳ PENDING |
-| **5.1.2** | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs  | ⏳ PENDING |
-| **5.1.3** | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20% | ⏳ PENDING |
-| **5.1.4** | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity  | ⏳ PENDING |
-| **5.1.5** | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes    | ⏳ PENDING |
+| #         | Task                                                                                                       | Status     |
+| :-------- | :--------------------------------------------------------------------------------------------------------- | :--------- |
+| **5.1**   | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ⏳ PENDING |
+| **5.2**   | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs      | ⏳ PENDING |
+| **5.3**   | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20%     | ⏳ PENDING |
+| **5.4**   | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity      | ⏳ PENDING |
+| **5.5**   | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes       | ⏳ PENDING |
 
 ```
 [ Top 20 Candidates from Hybrid Search ]
@@ -257,9 +255,9 @@ To maximize code and prompt precision across both offline desktop environments a
 
 **Technical Notes (5.1):**
 
-* **Two-Stage Reranking Pipeline (5.1.1 - 5.1.2)**: Orchestrates pluggable Cross-Encoder selection, loading BGE-Reranker-v2-m3 locally via ONNX for absolute offline privacy and 8k token length capability, or routing dynamically to Cohere Rerank v3 or OpenAPI-compatible endpoints for high-speed cloud precision.
-* **Hybrid A: Structural Code Bias (5.1.3)**: Dynamically checks code chunks for architectural declarations (`class `, `def `, `interface `, `function `) or core workspace config paths, scaling their similarity scores by `1.2` to prioritize systemic skeletons over comments or helpers.
-* **Hybrid B: Diversity MMR (5.1.4)**: Executes Jaccard token overlap similarity checking across Top 20 candidates, penalizing duplicate/redundant chunks to guarantee the final Top 5 chunks represent diverse, distinct modules.
+* **Two-Stage Reranking Pipeline (5.1 - 5.2)**: Orchestrates pluggable Cross-Encoder selection, loading BGE-Reranker-v2-m3 locally via ONNX for absolute offline privacy and 8k token length capability, or routing dynamically to Cohere Rerank v3 or OpenAPI-compatible endpoints for high-speed cloud precision.
+* **Hybrid A: Structural Code Bias (5.3)**: Dynamically checks code chunks for architectural declarations (`class `, `def `, `interface `, `function `) or core workspace config paths, scaling their similarity scores by `1.2` to prioritize systemic skeletons over comments or helpers.
+* **Hybrid B: Diversity MMR (5.4)**: Executes Jaccard token overlap similarity checking across Top 20 candidates, penalizing duplicate/redundant chunks to guarantee the final Top 5 chunks represent diverse, distinct modules.
 
 ---
 
@@ -295,6 +293,37 @@ Rather than sharing a single global session, the SaaS gateway supports **multipl
 | **6.2.4** | **Database Telemetry Widget (HTML/CSS)**: Create real-time health indicator status widgets       | ⏳ PENDING |
 | **6.2.5** | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests to avoid reloads         | ⏳ PENDING |
 
+### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
+
+| #               | Task                                                                                                   | Status     |
+| :-------------- | :----------------------------------------------------------------------------------------------------- | :--------- |
+| **6.3.1** | **Optimistic Concurrency Control (OCC)**: Integrate a `version` column and check-before-write logic | ⏳ PENDING |
+| **6.3.2** | **Client-Side Connection Pooling**: Integrate a shared database connection pool to handle parallel sockets | ⏳ PENDING |
+| **6.3.3** | **High-Concurrency Stress Tester**: Script a multi-threaded writer to simulate concurrent row access | ⏳ PENDING |
+| **6.3.4** | **Relocation Schema Auditing**: Expand the migration bridge to verify schema drifts and index size checks | ⏳ PENDING |
+
+**Technical Notes (6.3):**
+* **Optimistic Concurrency Control (6.3.1)**: Solves the same-row simultaneous write problem for collaborative sessions. Storage drivers will compare target row versions before committing, preventing silent data overwrites.
+* **Connection Pooling (6.3.2)**: Bypasses socket exhaustion by queuing and recycling database connections across active tenant threads.
+* **High-Concurrency Stress Tester (6.3.3)**: Generates a test script located in `/scratch/test_db_scaling.py` using `threading` or `asyncio` to write to the same table, column, and row at the exact same millisecond. This formally validates PostgreSQL's row-locking mechanics.
+* **Relocation Schema Auditing (6.3.4)**: Adds automated validation queries inside `migration_bridge.py` to confirm index sizes, row counts, and checksums are 100% identical post-migration.
+
+---
+
+## 🔴 Phase 7: Semantic Chunk Cache Warehousing [STATUS: NOT STARTED]
+
+Phase 7 introduces the ultimate latency and cost-reduction layer, establishing an intelligent, cryptographic cache for chunked documents and semantic queries, optimized for tenant sandboxes.
+
+### 7.1 Secure Ingestion & Semantic Query Caching
+
+| #         | Task                                                                                                   | Status     |
+| :-------- | :----------------------------------------------------------------------------------------------------- | :--------- |
+| **7.1**   | **Cryptographic Chunk Cache**: Implement SHA-256 staging payload hashes (tenant-scoped) inside SQLite   | ⏳ PENDING |
+| **7.2**   | **Dynamic Ingestion Bypass**: Bind worker instantly to cached Qdrant collections on file hash hits    | ⏳ PENDING |
+| **7.3**   | **Semantic Response Cache**: Create a high-similarity query matching collection in Qdrant (>0.96 cosine) | ⏳ PENDING |
+| **7.4**   | **Cache Eviction & Lifecycle (TTL)**: Build automatic cleanup schedules for cached indices and assets  | ⏳ PENDING |
+| **7.5**   | **Cache Monitoring Telemetry**: Add cache hit/miss metrics logging to support SaaS Admin UI stats      | ⏳ PENDING |
+
 ---
 
 > [!IMPORTANT]
@@ -304,5 +333,5 @@ Rather than sharing a single global session, the SaaS gateway supports **multipl
 >
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
-*Next Action: Implement the advanced Cognitive Optimizations roadmap starting with the Local Cross-Encoder Re-Ranker (Phase 5.1.1) or proceed with SaaS Admin Portal (Phase 6.2.1).*
+*Next Action: Implement the advanced Cognitive Optimizations roadmap starting with the Local Cross-Encoder Re-Ranker (Phase 5.1) or proceed with SaaS Admin Portal (Phase 6.2.1).*
 

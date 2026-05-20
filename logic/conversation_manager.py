@@ -39,10 +39,10 @@ class ConversationManager:
         # Guarantee parent directories exist
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Load active database configurations from global settings (defaulting to SQLite for zero-config local startup)
+        # Load active database configurations from global settings (defaulting to Turso for local/remote zero-config startup)
         from utils.path_utils import get_app_settings
         settings = get_app_settings()
-        db_type = str(settings.value("database_type", "sqlite")).lower().strip()
+        db_type = str(settings.value("database_type", "turso")).lower().strip()
         
         if db_type in ("postgres", "postgresql"):
             # Fetch remote or local PostgreSQL configurations
@@ -64,20 +64,20 @@ class ConversationManager:
             token = settings.value("database_auth_token") or os.environ.get("TURSO_AUTH_TOKEN")
             
             if not url:
-                raise ConnectionError(
-                    "[ConversationManager] Error: Turso/libSQL Database URL is not configured. "
-                    "Please configure 'database_url' in settings or set TURSO_DATABASE_URL in the environment."
-                )
-                
-            # Dynamic Template Expansion for SaaS Tenant Database-per-Tenant sharding
-            url = url.replace("{tenant_id}", tenant_id)
-            if token:
-                token = token.replace("{tenant_id}", tenant_id)
+                # ZERO-CONFIGURATION DEFAULT: Dynamic Local libSQL file execution
+                # Converts active local database path into a standard local libSQL file URL
+                url = f"file:{self.db_path.as_posix()}"
+                token = None
+            else:
+                # Dynamic Template Expansion for SaaS Tenant Database-per-Tenant sharding
+                url = url.replace("{tenant_id}", tenant_id)
+                if token:
+                    token = token.replace("{tenant_id}", tenant_id)
             
             from logic.storage_drivers.libsql_driver import LibSQLStorageDriver
             self.driver = LibSQLStorageDriver(url, token)
         else:
-            # Default fallback: Zero-configuration local SQLite with high-concurrency WAL mode enabled
+            # Fallback legacy local SQLite database driver
             from logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
             self.driver = LocalSQLiteDriver(self.db_path)
         
