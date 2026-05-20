@@ -4,6 +4,116 @@ This is the tactical manual for evolving the **fixed v6.6 concurrency foundation
 
 ---
 
+## 🌌 Complete System Architecture & Multi-Tier Storage Workflow
+
+This diagram governs the ingestion, vector storage sharding (Turso edge vs. Qdrant cold), dynamic query routing, and optional PostgreSQL failover layers for your SaaS model:
+
+```mermaid
+flowchart TD
+    %% Styling Classes
+    classDef doc fill:#1e1e2e,stroke:#f5c2e7,stroke-width:2px,color:#cdd6f4;
+    classDef layer fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4;
+    classDef storage fill:#313244,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4;
+    classDef query fill:#181825,stroke:#f9e2af,stroke-width:2px,color:#cdd6f4;
+    classDef action fill:#1e1e2e,stroke:#cba6f7,stroke-width:2px,color:#cdd6f4;
+    classDef postgres fill:#11111b,stroke:#fab387,stroke-dasharray: 5 5,stroke-width:2px,color:#cdd6f4;
+
+    Raw["📄 Raw Documents"]:::doc
+    L1["🧩 Layer 1: Chunking (pymrsf / Meta)"]:::layer
+    L2["✨ Layer 2: Embedding (Sentence-BERT)"]:::layer
+
+    subgraph StorageFork ["🗄️ Multi-Tier Storage Infrastructure"]
+        Qdrant["🔮 Qdrant (Cold/Main)<br>• All Vectors<br>• Heavy Storage<br>• Batch Ingestion<br>• HNSW Indexing"]:::storage
+        Turso["⚡ Turso (Hot/Edge)<br>• libSQL + vector<br>• Edge-deployed<br>• &lt;10ms reads<br>• Native DiskANN"]:::storage
+        Cache["🚀 Cache (vCache)<br>• Query Results<br>• Fast Semantic Matching"]:::storage
+    end
+
+    Raw --> L1 --> L2
+    L2 --> Qdrant
+    L2 --> Turso
+    L2 --> Cache
+
+    Query["🔍 Query Arrives"]:::query
+    CheckCache["1️⃣ Check vCache (Semantic Match)"]:::query
+    CheckTurso["2️⃣ Check Turso (Hot Vectors)"]:::query
+    FallbackQdrant["3️⃣ Fallback to Qdrant (Cold Storage)"]:::query
+    RerankPipeline["🧠 Rerank & Pruning Pipeline<br>• Local BGE Cross-Encoder / Cloud Cohere<br>• Hybrid A (Structural Bias) & Hybrid B (MMR)"]:::action
+    Return["🎉 Return to User & Cache Results"]:::action
+    Postgres["💾 Optional: PostgreSQL (pgvector)<br>if tenant swaps database_type"]:::postgres
+
+    Query --> CheckCache
+    CheckCache -->|Hit| Return
+    CheckCache -->|Miss| CheckTurso
+    CheckTurso -->|Hit| RerankPipeline
+    CheckTurso -->|Miss| FallbackQdrant
+    FallbackQdrant --> RerankPipeline
+    RerankPipeline --> Return
+    Return -.->|Swap Engine| Postgres
+```
+
+### 📋 High-Fidelity Workflow Pipeline (Visual Mapping)
+```text
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         COMPLETE WORKFLOW (with Turso)                           │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────────────────┐
+                              │    RAW DOCUMENTS     │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │  LAYER 1: CHUNKING   │
+                              │   (pymrsf / Meta)    │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │   LAYER 2: EMBEDDING │
+                              │  (Sentence-BERT)     │
+                              └──────────┬───────────┘
+                                         │
+              ┌──────────────────────────┼──────────────────────────┐
+              │                          │                          │
+              ▼                          ▼                          ▼
+┌─────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────────┐
+│   QDRANT (Cold/Main)    │  │   TURSO (Hot/Edge)      │  │   CACHE (vCache)        │
+│   • All vectors         │  │   • libSQL + vector     │  │   • Query results       │
+│   • Heavy storage       │  │   • Edge-deployed       │  │   • Fast semantic       │
+│   • Batch ingestion     │  │   • <10ms reads         │  │     matching            │
+│   • HNSW indexing       │  │   • Native DiskANN      │  │                         │
+└───────────┬─────────────┘  └───────────┬─────────────┘  └───────────┬─────────────┘
+            │                            │                            │
+            └────────────────────────────┼────────────────────────────┘
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                    │                    │                    │
+                    ▼                    ▼                    ▼
+          ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+          │  QUERY arrives  │─▶│  Check vCache   │─▶│  Check Turso    │
+          │                 │  │  (semantic)     │  │  (hot vectors)  │
+          └─────────────────┘  └─────────────────┘  └────────┬────────┘
+                                                              │
+                                            ┌─────────────────┴─────────────────┐
+                                            │                                   │
+                                            ▼                                   ▼
+                                  ┌─────────────────┐                 ┌─────────────────┐
+                                  │  FALLBACK to    │                 │  RETURN to      │
+                                  │  Qdrant         │                 │  user + cache   │
+                                  │  (cold storage) │                 │                 │
+                                  └─────────────────┘                 └─────────────────┘
+
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │   OPTIONAL: PG       │
+                              │   if user switches   │
+                              │   (pgvector)         │
+                              └──────────────────────┘
+```
+
+---
+
 ## 🟢 Phase 1: The Headless Engine [STATUS: COMPLETED]
 
 ### 1.1 UI-Neutral Logic (Decoupling)
