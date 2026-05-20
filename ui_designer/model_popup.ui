@@ -142,14 +142,90 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="show_all_cb">
-     <property name="styleSheet">
-      <string notr="true">color: #0078d4; font-weight: bold;</string>
-     </property>
-     <property name="text">
-      <string>Show models from all providers</string>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="filter_bar_layout">
+     <item>
+      <widget class="QCheckBox" name="show_all_cb">
+       <property name="styleSheet">
+        <string notr="true">color: #0078d4; font-weight: bold;</string>
+       </property>
+       <property name="text">
+        <string>Show models from all providers</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="filterSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="filter_label">
+       <property name="styleSheet">
+        <string notr="true">color: #d4d4d4; font-weight: bold; font-size: 13px;</string>
+       </property>
+       <property name="text">
+        <string>Filter by Capability:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="capability_filter">
+       <property name="minimumSize">
+        <size>
+         <width>220</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QComboBox {
+    background-color: #2d2d2d;
+    border: 1px solid #3c3c3c;
+    border-radius: 5px;
+    padding: 3px 10px;
+    color: #ffffff;
+    font-weight: bold;
+}
+QComboBox::drop-down {
+    border: none;
+}
+QComboBox QAbstractItemView {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    selection-background-color: #0078d4;
+    border: 1px solid #3c3c3c;
+}</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>🌐 All Capabilities</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>💬 General Chat</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>🛠️ Supports Tools</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>👁️ Multimodal / Vision</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="button_layout">

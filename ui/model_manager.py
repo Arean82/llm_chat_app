@@ -71,6 +71,7 @@ class ModelManagerDialog(QDialog):
         self.fetch_free_btn = self.findChild(object, "fetch_free_btn")
         self.fetch_paid_btn = self.findChild(object, "fetch_paid_btn")
         self.generate_desc_btn = self.findChild(object, "generate_desc_btn")
+        self.capability_filter = self.findChild(object, "capability_filter")
 
         #self.setup_table()
         self.setup_connections()
@@ -86,7 +87,45 @@ class ModelManagerDialog(QDialog):
         # Group models by developer
         models_by_developer = defaultdict(list)
 
-        for model in self.models:
+        # Get capability filter selection
+        filter_idx = 0
+        if hasattr(self, 'capability_filter') and self.capability_filter:
+            filter_idx = self.capability_filter.currentIndex()
+
+        filtered_models = []
+        if filter_idx > 0:
+            from utils.model_config import does_model_support_tools
+            for model in self.models:
+                m_id = model.get("id", "")
+                m_desc = model.get("description", "").lower()
+                m_id_lower = m_id.lower()
+                m_type = model.get("type", "chat")
+                
+                supports_tools = does_model_support_tools(m_id)
+                is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc or "multimodal" in m_desc
+                
+                if filter_idx == 1: # General Chat
+                    if not is_vision and m_type == "chat":
+                        filtered_models.append(model)
+                elif filter_idx == 2: # Supports Tools
+                    if supports_tools and m_type == "chat":
+                        filtered_models.append(model)
+                elif filter_idx == 3: # Multimodal / Vision
+                    if is_vision and m_type == "chat":
+                        filtered_models.append(model)
+                elif filter_idx == 4: # Embeddings
+                    if m_type == "embedding" or "embed" in m_id_lower:
+                        filtered_models.append(model)
+                elif filter_idx == 5: # Rerankers
+                    if m_type == "reranking" or "rerank" in m_id_lower:
+                        filtered_models.append(model)
+                elif filter_idx == 6: # Audio / Voice
+                    if m_type == "audio" or any(k in m_id_lower for k in ["audio", "voice", "canary", "stt", "tts"]):
+                        filtered_models.append(model)
+        else:
+            filtered_models = list(self.models)
+
+        for model in filtered_models:
             developer = model.get('developer', 'Other')
             if not developer:
                 developer = 'Other'
@@ -124,7 +163,10 @@ class ModelManagerDialog(QDialog):
             table.setRowCount(len(models))
             for row, model in enumerate(models):
                 # Column 0: Display Name
-                table.setItem(row, 0, QTableWidgetItem(model.get("name", "")))
+                from utils.model_config import does_model_support_tools
+                supports_tools = does_model_support_tools(model.get('id'))
+                name_suffix = " 🛠️" if supports_tools else ""
+                table.setItem(row, 0, QTableWidgetItem(model.get("name", "") + name_suffix))
 
                 # Column 1: Description
                 table.setItem(row, 1, QTableWidgetItem(model.get("description", "")))
@@ -156,7 +198,7 @@ class ModelManagerDialog(QDialog):
             # Add tab with count
             self.tabWidget.addTab(tab_widget, f"{developer} ({len(models)})")
 
-        self.update_count_label()
+        self.update_count_label(len(filtered_models))
 
     def on_table_selection_changed(self, table):
         """Store reference to currently selected table and model"""
@@ -208,6 +250,9 @@ class ModelManagerDialog(QDialog):
         self.fetch_paid_btn.clicked.connect(self.fetch_paid_models_from_nvidia)
         self.generate_desc_btn.clicked.connect(self.generate_descriptions) 
 
+        if hasattr(self, 'capability_filter') and self.capability_filter:
+            self.capability_filter.currentIndexChanged.connect(self.populate_table)
+
     def apply_theme(self):
         if self.theme == "dark":
             self.setStyleSheet("""
@@ -233,6 +278,24 @@ class ModelManagerDialog(QDialog):
                 #infoLabel {
                     color: #888888;
                     font-size: 12px;
+                }
+                QComboBox {
+                    background-color: #1e1e1e;
+                    border: 1px solid #3c3c3c;
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    color: #e0e0e0;
+                    font-weight: bold;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #1e1e1e;
+                    color: #e0e0e0;
+                    selection-background-color: #0078d4;
+                    selection-color: white;
+                    border: 1px solid #3c3c3c;
                 }
                 QTableWidget {
                     background-color: #1e1e1e;
@@ -318,6 +381,24 @@ class ModelManagerDialog(QDialog):
                 #infoLabel {
                     color: #888888;
                     font-size: 12px;
+                }
+                QComboBox {
+                    background-color: #ffffff;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    color: #333333;
+                    font-weight: bold;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #ffffff;
+                    color: #333333;
+                    selection-background-color: #0078d4;
+                    selection-color: white;
+                    border: 1px solid #e0e0e0;
                 }
                 QTableWidget {
                     background-color: #ffffff;
@@ -409,8 +490,11 @@ class ModelManagerDialog(QDialog):
         full_sync_list = all_other_models + self.models
         save_all_models(full_sync_list)
 
-    def update_count_label(self):
-        self.count_label.setText(f"{len(self.models)} model(s)")
+    def update_count_label(self, filtered_count=None):
+        if filtered_count is not None and filtered_count < len(self.models):
+            self.count_label.setText(f"{filtered_count} of {len(self.models)} model(s)")
+        else:
+            self.count_label.setText(f"{len(self.models)} model(s)")
 
     def add_model(self):
         dialog = ModelEditDialog(theme=self.theme, parent=self)
@@ -455,13 +539,13 @@ class ModelManagerDialog(QDialog):
             self.populate_table()  # Refresh display
 
     def delete_model(self):
-        row = self.get_selected_row_index()
-        if row is None:
+        selected_model = self.get_selected_model()
+        if selected_model is None:
             QMessageBox.information(self, "No Selection", "Please select a model to delete.")
             return
 
-        model_name = self.models[row].get("name", self.models[row].get("id", "Unknown"))
-        model_id = self.models[row].get("id", "")
+        model_name = selected_model.get("name", selected_model.get("id", "Unknown"))
+        model_id = selected_model.get("id", "")
 
         reply = QMessageBox.question(
             self, "Confirm Delete",
@@ -473,7 +557,8 @@ class ModelManagerDialog(QDialog):
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            del self.models[row]
+            # Safely remove the selected model from self.models list by ID
+            self.models = [m for m in self.models if m.get("id") != model_id]
             self.save_models()
             self.populate_table()
 

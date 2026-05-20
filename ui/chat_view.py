@@ -23,7 +23,7 @@ class ChatViewWidget(QWidget):
         self.llm_client = llm_client
         self.theme_manager = theme_manager
         self.formatter = formatter
-        self.rag_engine = RAGManager() # Autonomous Local Memory Cache
+        self.large_document_text = None
         
         # Internal State
         self.conversation_manager = ConversationManager()
@@ -70,6 +70,12 @@ class ChatViewWidget(QWidget):
 
         # Event filters from parent can be installed or replicated locally
         self.input_field.installEventFilter(self.window) # Let main window handle key hooks
+
+        # Phase 4.1.6: Context Staging Workspace
+        self.context_staging_list = self.ui.context_staging_list
+        self.token_progress_bar = self.ui.token_progress_bar
+        self.token_tracker_label = self.ui.token_tracker_label
+        self.context_staging_list.itemChanged.connect(self._on_staging_item_changed)
 
         # Setup Connections
         self.send_btn.clicked.connect(self.handle_send_stop_toggle)
@@ -231,6 +237,7 @@ class ChatViewWidget(QWidget):
                     self.add_system_message(f"⚠️ No supported source code files found in directory: `{p.name}`")
             elif p.is_file():
                 self.process_single_file(str(p))
+        self._refresh_context_staging_ui()
 
     def process_single_file(self, file_path):
         """Standalone extractor isolating file system IO from interaction handlers."""
@@ -370,6 +377,49 @@ class ChatViewWidget(QWidget):
     def clear_attachments(self):
         self.attached_files = []
         self.input_field.setPlaceholderText("")
+        self._refresh_context_staging_ui()
+
+    def _on_staging_item_changed(self, item):
+        name = item.text()
+        is_active = (item.checkState() == Qt.Checked)
+        for f in self.attached_files:
+            if f['name'] == name:
+                f['active'] = is_active
+                break
+        self._refresh_token_tracker()
+
+    def _refresh_context_staging_ui(self):
+        self.context_staging_list.blockSignals(True)
+        self.context_staging_list.clear()
+        for f in self.attached_files:
+            item = QListWidgetItem(f['name'])
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            state = Qt.Checked if f.get('active', True) else Qt.Unchecked
+            item.setCheckState(state)
+            self.context_staging_list.addItem(item)
+        self.context_staging_list.blockSignals(False)
+        self._refresh_token_tracker()
+
+    def _refresh_token_tracker(self):
+        total_tokens = 0
+        for f in self.attached_files:
+            if f.get('active', True):
+                if f.get('type') != 'image':
+                    total_tokens += len(f['content']) // 3
+                else:
+                    total_tokens += 1000
+        limit = 32000
+        self.token_progress_bar.setMaximum(limit)
+        self.token_progress_bar.setValue(min(total_tokens, limit))
+        
+        if total_tokens > limit:
+            self.token_progress_bar.setStyleSheet("QProgressBar::chunk { background-color: #ff4444; }")
+            self.token_tracker_label.setStyleSheet("color: #ff4444; font-weight: bold;")
+        else:
+            self.token_progress_bar.setStyleSheet("")
+            self.token_tracker_label.setStyleSheet("")
+            
+        self.token_tracker_label.setText(f"Tokens: {total_tokens:,} / {limit:,}")
 
     def send_message(self, api_response_queue=None, custom_messages=None, custom_temp=None, custom_max_tokens=None, override_prompt=None, api_stream_queue=None):
         # ADAPTIVE PROMPT SOURCE: Favor direct injection logic to avoid UI contamination (Audit ID 039 Fix)
@@ -410,8 +460,9 @@ class ChatViewWidget(QWidget):
         final_prompt = user_message
         
         # Segregate attachments into functional domains: textual logic vs multimodal vision
-        txt_files = [f for f in self.attached_files if f.get('type') != 'image']
-        img_files = [f for f in self.attached_files if f.get('type') == 'image']
+        active_files = [f for f in self.attached_files if f.get('active', True)]
+        txt_files = [f for f in active_files if f.get('type') != 'image']
+        img_files = [f for f in active_files if f.get('type') == 'image']
 
         if txt_files:
             agg_text = "\n\n".join([f"--- File: {f['name']} ---\n{f['content']}" for f in txt_files])
@@ -419,17 +470,9 @@ class ChatViewWidget(QWidget):
             # DYNAMIC RAG ROUTER: If aggregate text scales past payload safety boundary (15,000 chars),
             # bypass direct prompt dump and redirect stream into fast local vector database automatically.
             if len(agg_text) > 15000:
-                self.add_system_message("⚡ **Dataset scales beyond optimal window. Ingesting into local Vector Space...**")
-                try:
-                    self.rag_engine.ingest_document(agg_text)
-                    self.add_system_message("✅ **Local Vector Memory built.** Dynamic semantic retrieval is now active.")
-                    final_prompt = user_message if user_message else "Perform deep inference using the semantic vector index built from large local files."
-                except Exception as e:
-                     self.add_system_message(f"⚠️ **Vector Matrix Collided:** {str(e)}. Falling back to direct context load.")
-                     # Emergency Fallback: Just dump it directly despite size, better than losing user data
-                     attachment_blocks = [f"--- File: {f['name']} ---\n```\n{f['content']}\n```" for f in txt_files]
-                     combined_text = "\n\n".join(attachment_blocks)
-                     final_prompt = f"{combined_text}\n\nUser Request: {user_message}" if user_message else f"{combined_text}\n\nPlease review the attached file(s)."
+                self.add_system_message("⚡ **Dataset scales beyond optimal window. Ingesting into Qdrant Vector Space (Background)...**")
+                self.large_document_text = agg_text
+                final_prompt = user_message if user_message else "Perform deep inference using the semantic vector index built from large local files."
             else:
                 # Dataset is small enough for clean, direct context injection
                 attachment_blocks = [f"--- File: {f['name']} ---\n```\n{f['content']}\n```" for f in txt_files]
@@ -543,9 +586,10 @@ class ChatViewWidget(QWidget):
             temperature=a_temp, 
             max_tokens=a_tokens,
             web_search_query=active_search,
-            rag_engine=self.rag_engine,
+            large_document_text=getattr(self, 'large_document_text', None),
             parent=self
-        )    
+        )
+        self.large_document_text = None # Clear after handing off to worker
         self.current_worker.stream_chunk.connect(self.on_stream_chunk)
         self.current_worker.thinking_chunk.connect(self.on_thinking_chunk)
         self.current_worker.response_received.connect(self.on_response_complete)
@@ -857,7 +901,7 @@ class ChatViewWidget(QWidget):
         self.total_tokens = 0
         self.current_response_text = ""
         self.current_conv_id = None
-        self.rag_engine.clear() # Purge memory bank for clean session
+        self.large_document_text = None
         self.add_system_message("New conversation started")
 
     def start_new_chat(self):

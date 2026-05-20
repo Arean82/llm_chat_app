@@ -37,8 +37,9 @@ class ModelPopupClass(QDialog):
         self.setMinimumSize(900, 650)
         self.setup_table()
         
-        # Link the UI-defined checkbox to the refresh logic
+        # Link the UI-defined checkbox and capability filter combobox to the refresh logic
         self.ui.show_all_cb.stateChanged.connect(self.populate_models)
+        self.ui.capability_filter.currentIndexChanged.connect(self.populate_models)
         
         if self.force_show_all:
             self.ui.show_all_cb.setChecked(True)
@@ -101,11 +102,35 @@ class ModelPopupClass(QDialog):
                 if has_key:
                     connected_models.append(m)
             
-            # Final filtering based on Ecosystem and 'Show All' toggle
+            # Final filtering based on Ecosystem and 'Show All' toggle (strictly show chat models only)
             self.models_data = [
                 m for m in connected_models 
-                if show_all or m.get('provider', 'nvidia') == active_p
+                if (show_all or m.get('provider', 'nvidia') == active_p) and m.get('type', 'chat') == 'chat'
             ]
+
+            # Dynamic capability filtering
+            filter_idx = self.ui.capability_filter.currentIndex()
+            if filter_idx > 0:
+                from utils.model_config import does_model_support_tools
+                filtered_by_cap = []
+                for m in self.models_data:
+                    m_id = m.get("id", "")
+                    m_desc = m.get("description", "").lower()
+                    m_id_lower = m_id.lower()
+                    
+                    supports_tools = does_model_support_tools(m_id)
+                    is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc or "multimodal" in m_desc
+                    
+                    if filter_idx == 1: # General Chat
+                        if not is_vision:
+                            filtered_by_cap.append(m)
+                    elif filter_idx == 2: # Supports Tools
+                        if supports_tools:
+                            filtered_by_cap.append(m)
+                    elif filter_idx == 3: # Multimodal / Vision
+                        if is_vision:
+                            filtered_by_cap.append(m)
+                self.models_data = filtered_by_cap
         except Exception as e:
             print(f"Error fetching models for popup: {e}")
             self.models_data = []
@@ -143,7 +168,10 @@ class ModelPopupClass(QDialog):
             table.setItem(row, 2, dev_item)
                         
             # Col 3: Model Name
-            name_item = QTableWidgetItem(model.get('name', 'Unnamed'))
+            from utils.model_config import does_model_support_tools
+            supports_tools = does_model_support_tools(model.get('id'))
+            name_suffix = " 🛠️" if supports_tools else ""
+            name_item = QTableWidgetItem(model.get('name', 'Unnamed') + name_suffix)
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(row, 3, name_item)
             

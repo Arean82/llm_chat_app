@@ -106,3 +106,48 @@ def get_context_limit(model_id: str) -> int:
         
     # Final default
     return 512_000  # Safe default
+
+def does_model_support_tools(model_id: str) -> bool:
+    """Checks if the model is flagged as supporting tools (defaulting to True)."""
+    if not model_id:
+        return True
+    models = _load_models_data()
+    for model in models:
+        if model.get("id") == model_id:
+            # Returns the saved status, defaulting to True if not yet set/tested
+            return model.get("supports_tools", True)
+    return True
+
+def update_model_capability(model_id: str, supports_tools: bool):
+    """Updates and saves the supports_tools metadata flag inside the models JSON shards."""
+    if not model_id:
+        return
+    
+    res_dir = get_models_directory_path()
+    pattern = os.path.join(res_dir, "models_*.json")
+    found_files = glob.glob(pattern)
+    
+    base_file = get_resource_path("resources/models.json")
+    if base_file.exists():
+        found_files.append(str(base_file))
+        
+    for fp in found_files:
+        try:
+            with open(fp, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            models = data.get("models", [])
+            updated = False
+            for m in models:
+                if m.get("id") == model_id:
+                    m["supports_tools"] = supports_tools
+                    updated = True
+            if updated:
+                with open(fp, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=4, ensure_ascii=False)
+                # Purge global memory cache to force dynamic re-scan on next load
+                global _models_cache
+                _models_cache = None
+                print(f"[ModelConfig] Saved capability update: '{model_id}' -> supports_tools={supports_tools}")
+                break
+        except Exception as e:
+            print(f"[ModelConfig] Error updating dynamic metadata shard {fp}: {e}")

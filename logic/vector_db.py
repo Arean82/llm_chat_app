@@ -95,7 +95,7 @@ class VectorDatabase:
             print(f"[VectorDB] Upsert failed in {collection_name}: {e}")
             return False
 
-    def search_similar(self, collection_name: str, query_vector: list, limit: int = 5, score_threshold: float = 0.3) -> list:
+    def search_similar(self, collection_name: str, query_vector: list, limit: int = 5, score_threshold: float = 0.3, metadata_filters: dict = None) -> list:
         """Locates top-K semantically closest snippets from vector database."""
         if not self.client or not query_vector:
             return []
@@ -108,11 +108,26 @@ class VectorDatabase:
             if not self.client.collection_exists(versioned_name):
                 return []
 
+            # Phase 4.1.8: Qdrant Metadata Payload Filtering
+            query_filter = None
+            if metadata_filters:
+                must_conditions = []
+                for k, v in metadata_filters.items():
+                    must_conditions.append(
+                        models.FieldCondition(
+                            key=k,
+                            match=models.MatchValue(value=v)
+                        )
+                    )
+                if must_conditions:
+                    query_filter = models.Filter(must=must_conditions)
+
             # Using the modern high-level Unified Query Points Interface 
             response = self.client.query_points(
                 collection_name=versioned_name,
                 query=query_vector,
                 limit=limit,
+                query_filter=query_filter,
                 score_threshold=score_threshold,
                 with_payload=True
             )

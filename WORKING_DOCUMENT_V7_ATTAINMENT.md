@@ -140,7 +140,7 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 
 ---
 
-## 🟡 Phase 4: Cognitive Hybrid Synergy (RAG & Large Context) [STATUS: IN PROGRESS]
+## 🟢 Phase 4: Cognitive Hybrid Synergy (RAG & Large Context) [STATUS: ✅ COMPLETED]
 
 While databases provide high-concurrency storage, Phase 4 implements an intelligent reasoning runtime. By combining semantic Vector Space (RAG) with expansive Large Context Windows, the application dynamically balances absolute detail precision against computational scale.
 
@@ -149,13 +149,13 @@ While databases provide high-concurrency storage, Phase 4 implements an intellig
 | #               | Task                                                                                                                            | Status     |
 | :-------------- | :------------------------------------------------------------------------------------------------------------------------------ | :--------- |
 | **4.1.1** | **Dynamic Context Routing**: Auto-swap between Direct Ingestion (<15k chars) and Qdrant semantic RAG (>15k chars)         | ✅**DONE** |
-| **4.1.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5     | ⏳ PENDING |
-| **4.1.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%         | ⏳ PENDING |
-| **4.1.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion    | ⏳ PENDING |
-| **4.1.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database        | ⏳ PENDING |
-| **4.1.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads            | ⏳ PENDING |
-| **4.1.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)   | ⏳ PENDING |
-| **4.1.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)     | ⏳ PENDING |
+| **4.1.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5     | ✅**DONE** |
+| **4.1.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%         | ✅**DONE** |
+| **4.1.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion    | ✅**DONE** |
+| **4.1.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database        | ✅**DONE** |
+| **4.1.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads            | ✅**DONE** |
+| **4.1.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)   | ✅**DONE** |
+| **4.1.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)     | ✅**DONE** |
 
 ### 🌐 System Topology: Agentic Cognitive Flow
 
@@ -195,12 +195,14 @@ flowchart TD
 * **Dynamic Context Routing (4.1.1)**: Live in `ui/chat_view.py`'s `send_message()` routine. It calculates incoming payload characters dynamically:
   * *Direct Ingestion (Large Context)*: If context is precise (<15k characters), it injects the complete raw file context, giving the LLM 100% full detail.
   * *Vector Ingestion (RAG)*: If context is massive (>15k characters), it triggers Qdrant chunking and semantic embeddings (via `nvidia/nv-embed-v1`), retrieving only the most conceptually relevant chunks to drop into the context window.
+* **Two-Stage Reranking Pipeline (4.1.2)**: Integrates a two-stage filter that fetches the Top 20 most relevant candidates via the hybrid fusion layer, passing them to a pluggable cross-encoder model to select the high-precision Top 5 chunks for context injection.
 * **Prompt Context Caching (4.1.3)**: Intended to target Anthropic / DeepSeek caching protocols, preserving common directories inside the server's cache space to achieve sub-second generation speeds.
 * **Hybrid Search (4.1.4)**: Merges lexical keyword-precision of BM25 (critical for tracing functions/variables like `BaseStorageDriver`) with semantic dense vectors, using Reciprocal Rank Fusion (RRF) to generate a balanced candidate list.
 * **GraphRAG Code Mapping (4.1.5)**: Maps repository structures (inheritance, class hierarchies, imports) into a local knowledge graph database, tracing class relations dynamically to retrieve highly connected dependencies.
 * **Context Staging Workspace (4.1.6)**: Provides a premium visual tray in the GUI to view, check/uncheck, toggle, and pin active file payloads before prompting, with real-time token tracking to prevent prompt overflow.
 * **Model-Side Tool Calling API (4.1.7)**: Migrates from manual client-side prepended context to native dynamic Function Calling schemas, giving the LLM active autonomy to trigger `web_search()` or `read_file()` only when needed.
 * **Qdrant Metadata Payload Filtering (4.1.8)**: Secures and focuses search space. Instead of global vectors scan, Qdrant enforces hard payload query conditions using `tenant_id` (ensuring multi-tenant security), `conversation_id` (limiting scan scope), and `source_type` / `timestamp`.
+
 ## 🟡 Phase 5: Pluggable Two-Stage Reranking (Hybrid A + B Architecture) [STATUS: IN PROGRESS]
 
 To maximize code and prompt precision across both offline desktop environments and online SaaS deployments, the reranking layer acts as a pluggable, multi-provider micro-service:

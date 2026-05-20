@@ -108,6 +108,7 @@ class ModelFetchWorker(QThread):
                         "developer": developer.capitalize(),
                         "free": True,
                         "context_length": getattr(model, 'max_model_len', None),
+                        "type": "chat"
                     })
                     
                     self.working_count += 1
@@ -115,17 +116,59 @@ class ModelFetchWorker(QThread):
                     
                 except Exception as e:
                     error_msg = str(e)
-                    # Truncate long error messages for log readability
-                    if len(error_msg) > 100:
-                        error_msg = error_msg[:100] + "..."
-                    self.logger.add_log(f"✗ {model_id} - failed: {error_msg}", "WARNING")
+                    model_id_lower = model_id.lower()
+                    developer = model_id.split('/')[0] if '/' in model_id else "NVIDIA"
+                    model_name = model_id.split('/')[-1] if '/' in model_id else model_id
+                    
+                    # Classify if this is a specialized non-chat model we want to keep
+                    is_specialized = False
+                    model_type = "other"
+                    description = ""
+                    
+                    if "embed" in model_id_lower:
+                        is_specialized = True
+                        model_type = "embedding"
+                        description = f"Embedding model from {developer.capitalize()} for high-density vector representations and similarity tasks."
+                    elif "rerank" in model_id_lower:
+                        is_specialized = True
+                        model_type = "reranking"
+                        description = f"Reranker model from {developer.capitalize()} for high-accuracy semantic relevance refinement."
+                    elif any(k in model_id_lower for k in ["audio", "voice", "canary", "stt", "tts", "speech"]):
+                        is_specialized = True
+                        model_type = "audio"
+                        description = f"Audio/Voice processing model from {developer.capitalize()} for speech-to-text, translation, or voice synthesis."
+                    elif any(k in model_id_lower for k in ["diffusion", "image", "sd", "paint", "kosmos"]):
+                        is_specialized = True
+                        model_type = "image"
+                        description = f"Visual generative model from {developer.capitalize()} for image and multi-modal synthesis."
+                    elif any(k in model_id_lower for k in ["guard", "nemoguard", "shield"]):
+                        is_specialized = True
+                        model_type = "guardrail"
+                        description = f"Safety and content guardrail model from {developer.capitalize()}."
+                        
+                    if is_specialized:
+                        working_models.append({
+                            "id": model_id,
+                            "name": self._format_name(model_id),
+                            "description": description,
+                            "developer": developer.capitalize(),
+                            "free": True,
+                            "context_length": getattr(model, 'max_model_len', None),
+                            "type": model_type
+                        })
+                        self.working_count += 1
+                        self.logger.add_log(f"✓ {model_id} - identified as {model_type} model ({self.working_count}/{total})", "SUCCESS")
+                    else:
+                        if len(error_msg) > 100:
+                            error_msg = error_msg[:100] + "..."
+                        self.logger.add_log(f"✗ {model_id} - skipped/failed: {error_msg}", "WARNING")
                     continue
                 
                 # Rate limit safety
                 if i < total - 1:
                     self.msleep(200)
             
-            self.logger.add_log(f"Fetch complete! Found {self.working_count} working chat models", "SUCCESS")
+            self.logger.add_log(f"Fetch complete! Found {self.working_count} total models", "SUCCESS")
             self.finished.emit(working_models)
             
         except Exception as e:

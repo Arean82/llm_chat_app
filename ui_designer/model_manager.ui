@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>850</width>
-    <height>550</height>
+    <width>1069</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -184,13 +184,6 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="close_btn">
-       <property name="text">
-        <string>Close</string>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -233,12 +226,23 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>0</width>
-         <height>0</height>
+         <width>40</width>
+         <height>20</height>
         </size>
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QPushButton" name="close_btn">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QPushButton" name="fetch_free_btn">
        <property name="text">
@@ -247,11 +251,112 @@
       </widget>
      </item>
      <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="filter_label">
+       <property name="styleSheet">
+        <string notr="true">color: #a6adc8; font-weight: bold; font-size: 13px;</string>
+       </property>
+       <property name="text">
+        <string>Filter:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="capability_filter">
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>35</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QComboBox {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 12px;
+    padding: 5px 15px;
+    color: #cdd6f4;
+    font-weight: bold;
+}
+QComboBox::drop-down {
+    border: none;
+}
+QComboBox QAbstractItemView {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    selection-background-color: rgba(137, 180, 250, 0.2);
+    selection-color: #89b4fa;
+    border: 1px solid #45475a;
+}</string>
+       </property>
+        <item>
+         <property name="text">
+          <string>🌐 All Capabilities</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>💬 General Chat</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>🛠️ Supports Tools</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>👁️ Multimodal / Vision</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>🔌 Embeddings</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>🔄 Rerankers</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>🎙️ Audio / Voice</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     <item>
       <widget class="QPushButton" name="fetch_paid_btn">
        <property name="text">
         <string>💎 Paid Models</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item>
       <widget class="QPushButton" name="refresh_btn">

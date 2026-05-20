@@ -51,8 +51,14 @@ class RAGManager:
         
         if num_docs == 0: return
 
+    def ingest_chunks(self, chunks: list):
+        """Phase 4.1.4: Ingests pre-chunked arrays to align with Dense Embedder chunks."""
+        self.chunks = chunks
+        num_docs = len(chunks)
+        if num_docs == 0: return
+
         # 2. Build High-Dimensional Vocabulary Index
-        tokenized_docs = [self._tokenize(c) for c in raw_chunks]
+        tokenized_docs = [self._tokenize(c) for c in chunks]
         all_words = set(word for doc in tokenized_docs for word in doc)
         self.vocab = {word: i for i, word in enumerate(sorted(all_words))}
         vocab_size = len(self.vocab)
@@ -132,6 +138,33 @@ class RAGManager:
             results.append(f"--- Segment {i} ---\n{content.strip()}")
             
         return "\n\n".join(results) + "\n\n--- END RAG CONTEXT ---"
+
+    def search_raw(self, query: str, top_k: int = 5) -> list:
+        """Phase 4.1.4: Returns raw hit objects for Reciprocal Rank Fusion."""
+        if self.tfidf_matrix is None or not query or not self.vocab:
+            return []
+            
+        q_tokens = self._tokenize(query)
+        q_vec = np.zeros(len(self.vocab), dtype=np.float32)
+        q_counts = Counter(q_tokens)
+        
+        for word, count in q_counts.items():
+            if word in self.vocab:
+                v_idx = self.vocab[word]
+                tf = count / (len(q_tokens) or 1)
+                q_vec[v_idx] = tf * self.idf[v_idx]
+        
+        q_norm = np.linalg.norm(q_vec)
+        if q_norm > 0: q_vec /= q_norm
+            
+        scores = np.dot(self.tfidf_matrix, q_vec)
+        top_indices = np.argsort(scores)[::-1][:top_k]
+        
+        hits = []
+        for idx in top_indices:
+            if scores[idx] > 0.01:
+                hits.append({"score": float(scores[idx]), "text": self.chunks[idx]})
+        return hits
 
     def query(self, text: str, top_k: int = 5) -> str:
         """Alias for search() to support legacy or alternative call patterns."""
