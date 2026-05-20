@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>480</width>
-    <height>400</height>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="title_label">
      <property name="styleSheet">
-      <string notr="true">font-size: 14px; font-weight: bold;</string>
+      <string notr="true">font-size: 14px; font-weight: bold; margin-bottom: 5px;</string>
      </property>
      <property name="text">
       <string>Smart Generation Settings</string>
@@ -25,151 +25,264 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label_presets">
-     <property name="text">
-      <string>Quick Presets (Auto Idle):</string>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
+     <widget class="QWidget" name="tab_general">
+      <attribute name="title">
+       <string>💡 Model Parameters</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLabel" name="label_presets">
+         <property name="text">
+          <string>Quick Presets (Auto Idle):</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="preset_combo">
+         <item>
+          <property name="text">
+           <string>Custom</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>🎯 Precise (Coding &amp; Truths)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>⚖️ Balanced (General chat)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>🎨 Creative (Writing &amp; Ideas)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>🧠 Model Default (Server Passthrough)</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_temp">
+         <property name="styleSheet">
+          <string notr="true">font-weight: bold;</string>
+         </property>
+         <property name="text">
+          <string>Temperature:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="temp_input">
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>2.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.700000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="temp_desc">
+         <property name="styleSheet">
+          <string notr="true">color: #aaaaaa; font-style: italic;</string>
+         </property>
+         <property name="text">
+          <string>Explanation of temperature effect goes here.</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_tokens">
+         <property name="styleSheet">
+          <string notr="true">font-weight: bold;</string>
+         </property>
+         <property name="text">
+          <string>Max Completion Tokens:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="tokens_input">
+         <property name="minimum">
+          <number>64</number>
+         </property>
+         <property name="maximum">
+          <number>131072</number>
+         </property>
+         <property name="singleStep">
+          <number>512</number>
+         </property>
+         <property name="value">
+          <number>4096</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="token_desc">
+         <property name="styleSheet">
+          <string notr="true">color: #aaaaaa; font-style: italic;</string>
+         </property>
+         <property name="text">
+          <string>The max length of the assistant output.</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_tab1">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_rerank">
+      <attribute name="title">
+       <string>🔍 Retrieval Reranking</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QGroupBox" name="rerank_group">
+         <property name="title">
+          <string>🔍 Pluggable Two-Stage Reranking</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout">
+          <property name="verticalSpacing">
+           <number>10</number>
+          </property>
+          <item row="0" column="0" colspan="2">
+           <widget class="QCheckBox" name="rerank_enable_cb">
+            <property name="toolTip">
+             <string>Activates secondary cross-encoder scoring to prune and re-order context chunks.</string>
+            </property>
+            <property name="text">
+             <string>Enable Two-Stage Retrieval Reranking (BGE/Cohere)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_rerank_engine">
+            <property name="text">
+             <string>Rerank Engine:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="rerank_engine_combo">
+            <item>
+             <property name="text">
+              <string>Local BGE Cross-Encoder (ONNX Heuristic)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Cloud Cohere Rerank v3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Custom OpenAPI-Compatible Endpoint</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_rerank_endpoint">
+            <property name="text">
+             <string>Endpoint URL:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="rerank_endpoint_input">
+            <property name="placeholderText">
+             <string>e.g. https://api.your-endpoint.com/v1/rerank</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_rerank_key">
+            <property name="text">
+             <string>Rerank API Key:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="rerank_key_input">
+            <property name="echoMode">
+             <enum>QLineEdit::EchoMode::Password</enum>
+            </property>
+            <property name="placeholderText">
+             <string>Enter Cohere or Endpoint API Key</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_tab2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
-   </item>
-   <item>
-    <widget class="QComboBox" name="preset_combo">
-     <item>
-      <property name="text">
-       <string>Custom</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>🎯 Precise (Coding &amp; Truths)</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>⚖️ Balanced (General chat)</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>🎨 Creative (Writing &amp; Ideas)</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>🧠 Model Default (Server Passthrough)</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item>
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="label_temp">
-     <property name="styleSheet">
-      <string notr="true">font-weight: bold;</string>
-     </property>
-     <property name="text">
-      <string>Temperature:</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QDoubleSpinBox" name="temp_input">
-     <property name="minimum">
-      <double>0.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>2.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.100000000000000</double>
-     </property>
-     <property name="value">
-      <double>0.700000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="temp_desc">
-     <property name="styleSheet">
-      <string notr="true">color: #aaaaaa; font-style: italic;</string>
-     </property>
-     <property name="text">
-      <string>Explanation of temperature effect goes here.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>10</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QLabel" name="label_tokens">
-     <property name="styleSheet">
-      <string notr="true">font-weight: bold;</string>
-     </property>
-     <property name="text">
-      <string>Max Completion Tokens:</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QSpinBox" name="tokens_input">
-     <property name="minimum">
-      <number>64</number>
-     </property>
-     <property name="maximum">
-      <number>131072</number>
-     </property>
-     <property name="singleStep">
-      <number>512</number>
-     </property>
-     <property name="value">
-      <number>4096</number>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="token_desc">
-     <property name="styleSheet">
-      <string notr="true">color: #aaaaaa; font-style: italic;</string>
-     </property>
-     <property name="text">
-      <string>The max length of the assistant output.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

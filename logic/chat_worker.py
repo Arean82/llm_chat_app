@@ -23,9 +23,62 @@ class ChatWorker(QThread):
         self.stream = True
         self._is_running = True
 
-    def _dummy_rerank(self, hits, top_k=5):
-        # Placeholder for Phase 5.1.1 (NVIDIA/BGE Reranker)
-        return hits[:top_k]
+    def _execute_rerank(self, hits, top_k=5):
+        try:
+            from utils.path_utils import get_app_settings
+            from logic.rerank_engine import RerankEngine
+            
+            settings = get_app_settings()
+            rerank_enabled = str(settings.value("rerank_enabled", "false")).lower() == "true"
+            
+            if not rerank_enabled:
+                self.thinking_chunk.emit("🔍 Reranking pipeline is disabled in settings. Using baseline top candidates.\n")
+                return hits[:top_k]
+                
+            rerank_engine_name = str(settings.value("rerank_engine", "local")).lower().strip()
+            rerank_settings = {
+                "rerank_enabled": "true",
+                "rerank_engine": rerank_engine_name,
+                "rerank_api_key": str(settings.value("rerank_api_key", "")),
+                "rerank_endpoint": str(settings.value("rerank_endpoint", ""))
+            }
+            
+            engine = RerankEngine.get_instance()
+            
+            # Print initial info to thinking stream
+            self.thinking_chunk.emit(f"🔍 Initiating pluggable reranking pipeline using '{rerank_engine_name}' engine...\n")
+            if rerank_engine_name == "local":
+                if engine.sentence_transformers_available:
+                    self.thinking_chunk.emit("  ├─ Running local BGE Cross-Encoder Model...\n")
+                else:
+                    self.thinking_chunk.emit("  ├─ Local dependencies (sentence-transformers/onnxruntime) absent.\n")
+                    self.thinking_chunk.emit("  ├─ Falling back to offline High-Precision Jaccard Token Overlap...\n")
+            elif rerank_engine_name == "cloud_cohere":
+                self.thinking_chunk.emit("  ├─ Requesting Cloud Cohere Rerank v3 API...\n")
+            elif rerank_engine_name == "cloud_custom":
+                self.thinking_chunk.emit(f"  ├─ Querying custom OpenAPI Rerank endpoint at {rerank_settings['rerank_endpoint']}...\n")
+            
+            query_text = self.web_search_query if self.web_search_query else str(self.messages[-1].get("content", ""))
+            
+            top_5 = engine.rerank(
+                query=query_text,
+                hits=hits,
+                top_k=top_k,
+                settings=rerank_settings
+            )
+            
+            # Check structural boost stats
+            boosted_count = sum(1 for h in top_5 if h.get("structural_boosted", False))
+            
+            if boosted_count > 0:
+                self.thinking_chunk.emit(f"  ├─ Hybrid A: Applied +20% score boost to {boosted_count} structural code chunks\n")
+            self.thinking_chunk.emit("  ├─ Hybrid B: Applied Maximal Marginal Relevance (MMR) Jaccard token overlap filter\n")
+            self.thinking_chunk.emit(f"  └─ Finalized {len(top_5)} high-precision, diverse chunks for context injection.\n")
+            
+            return top_5
+        except Exception as e:
+            self.thinking_chunk.emit(f"⚠️ Reranking failed: {e}. Falling back to baseline sorting.\n")
+            return hits[:top_k]
         
     def _extract_graph_rag(self, text: str) -> str:
         # Phase 4.1.5: GraphRAG Code Mapping
@@ -109,7 +162,7 @@ class ChatWorker(QThread):
                         
                         # Phase 4.1.2: Reranker (Top 5)
                         self.thinking_chunk.emit("🧠 Reranking Top 20 Hybrid candidates for Top 5 precision...\n")
-                        top_5 = self._dummy_rerank(merged_top_20, top_k=5)
+                        top_5 = self._execute_rerank(merged_top_20, top_k=5)
                         
                         if top_5:
                             context_str = "\n\n---\n\n".join([h["payload"].get("text", "") for h in top_5])

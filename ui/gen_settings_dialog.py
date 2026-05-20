@@ -44,6 +44,32 @@ class GenSettingsDialog(QDialog):
                     color: #ffffff;
                     selection-background-color: #0078d4;
                 }
+                QTabWidget::pane {
+                    border: 1px solid #3c3c3c;
+                    border-radius: 6px;
+                    background-color: #1e1e1e;
+                    padding: 10px;
+                }
+                QTabBar::tab {
+                    background: #2d2d2d;
+                    color: #aaaaaa;
+                    padding: 8px 16px;
+                    border-top-left-radius: 6px;
+                    border-top-right-radius: 6px;
+                    margin-right: 2px;
+                    border: 1px solid #3c3c3c;
+                    border-bottom: none;
+                }
+                QTabBar::tab:selected {
+                    background: #1e1e1e;
+                    color: #ffffff;
+                    font-weight: bold;
+                    border-bottom: 2px solid #0078d4;
+                }
+                QTabBar::tab:hover {
+                    background: #252526;
+                    color: #ffffff;
+                }
                 QPushButton#cancel_btn { 
                     background-color: #3c3c3c; 
                     color: white; 
@@ -61,6 +87,32 @@ class GenSettingsDialog(QDialog):
                     border: 1px solid #cccccc; 
                     border-radius: 5px; 
                     padding: 5px; 
+                }
+                QTabWidget::pane {
+                    border: 1px solid #cccccc;
+                    border-radius: 6px;
+                    background-color: #fafafa;
+                    padding: 10px;
+                }
+                QTabBar::tab {
+                    background: #e1e1e1;
+                    color: #666666;
+                    padding: 8px 16px;
+                    border-top-left-radius: 6px;
+                    border-top-right-radius: 6px;
+                    margin-right: 2px;
+                    border: 1px solid #cccccc;
+                    border-bottom: none;
+                }
+                QTabBar::tab:selected {
+                    background: #fafafa;
+                    color: #0078d4;
+                    font-weight: bold;
+                    border-bottom: 2px solid #0078d4;
+                }
+                QTabBar::tab:hover {
+                    background: #f0f0f0;
+                    color: #333333;
                 }
                 QPushButton#cancel_btn { 
                     background-color: #e1e1e1; 
@@ -80,8 +132,8 @@ class GenSettingsDialog(QDialog):
         if self.ui and self.ui.layout():
             self.setLayout(self.ui.layout())
             
-        self.setMinimumSize(480, 400)
-        self.resize(480, 400)
+        self.setMinimumSize(500, 480)
+        self.resize(500, 480)
         
         # Bind references
         self.preset_combo = self.findChild(QComboBox, "preset_combo")
@@ -104,7 +156,115 @@ class GenSettingsDialog(QDialog):
         if self.cancel_btn:
             self.cancel_btn.clicked.connect(self.reject)
         
+        self.setup_rerank_ui(is_dark)
         self.load_current_settings()
+        
+    def setup_rerank_ui(self, is_dark: bool):
+        """Resolves references to Advanced Retrieval Reranking elements loaded from the UI file, and applies dynamic styling."""
+        from PySide6.QtWidgets import QGroupBox, QCheckBox, QComboBox, QLineEdit
+        
+        self.rerank_group = self.findChild(QGroupBox, "rerank_group")
+        self.rerank_enable_cb = self.findChild(QCheckBox, "rerank_enable_cb")
+        self.rerank_engine_combo = self.findChild(QComboBox, "rerank_engine_combo")
+        self.rerank_endpoint_input = self.findChild(QLineEdit, "rerank_endpoint_input")
+        self.rerank_key_input = self.findChild(QLineEdit, "rerank_key_input")
+        
+        # Premium CSS styling matching the active dialog theme
+        if is_dark:
+            if self.rerank_group:
+                self.rerank_group.setStyleSheet("""
+                    QGroupBox {
+                        font-weight: bold;
+                        color: #ffffff;
+                        border: 1px solid #3c3c3c;
+                        border-radius: 6px;
+                        margin-top: 15px;
+                        padding-top: 20px;
+                    }
+                    QGroupBox::title {
+                        subcontrol-origin: margin;
+                        subcontrol-position: top left;
+                        left: 10px;
+                        padding: 0 5px;
+                    }
+                    QCheckBox { color: #ffffff; font-weight: normal; }
+                    QLineEdit, QComboBox {
+                        background-color: #2d2d2d; 
+                        color: #ffffff; 
+                        border: 1px solid #3c3c3c; 
+                        border-radius: 5px; 
+                        padding: 5px; 
+                    }
+                    QLineEdit:disabled, QComboBox:disabled {
+                        background-color: #1e1e1e;
+                        color: #777777;
+                        border: 1px solid #252526;
+                    }
+                """)
+        else:
+            if self.rerank_group:
+                self.rerank_group.setStyleSheet("""
+                    QGroupBox {
+                        font-weight: bold;
+                        color: #333333;
+                        border: 1px solid #cccccc;
+                        border-radius: 6px;
+                        margin-top: 15px;
+                        padding-top: 20px;
+                    }
+                    QGroupBox::title {
+                        subcontrol-origin: margin;
+                        subcontrol-position: top left;
+                        left: 10px;
+                        padding: 0 5px;
+                    }
+                    QCheckBox { color: #333333; font-weight: normal; }
+                    QLineEdit, QComboBox {
+                        background-color: #f5f5f5; 
+                        border: 1px solid #cccccc; 
+                        border-radius: 5px; 
+                        padding: 5px; 
+                    }
+                    QLineEdit:disabled, QComboBox:disabled {
+                        background-color: #e1e1e1;
+                        color: #aaaaaa;
+                        border: 1px solid #cccccc;
+                    }
+                """)
+            
+        # Scale dialog size to host the new GroupBox without clipping
+        self.setMinimumSize(500, 480)
+        self.resize(500, 480)
+        
+        # Connect visual signal reactions
+        if self.rerank_enable_cb:
+            self.rerank_enable_cb.toggled.connect(self.on_rerank_enabled_toggled)
+        if self.rerank_engine_combo:
+            self.rerank_engine_combo.currentIndexChanged.connect(self.on_rerank_engine_changed)
+
+    def on_rerank_enabled_toggled(self, checked: bool):
+        """Disables or enables reranker input fields dynamically depending on toggle state."""
+        self.rerank_engine_combo.setEnabled(checked)
+        if checked:
+            self.on_rerank_engine_changed(self.rerank_engine_combo.currentIndex())
+        else:
+            self.rerank_endpoint_input.setEnabled(False)
+            self.rerank_key_input.setEnabled(False)
+
+    def on_rerank_engine_changed(self, index: int):
+        """Shows/hides custom endpoint and secret key parameters depending on selected model style."""
+        if not self.rerank_enable_cb.isChecked():
+            return
+            
+        if index == 0:  # Local Mode
+            self.rerank_endpoint_input.setEnabled(False)
+            self.rerank_key_input.setEnabled(False)
+        elif index == 1:  # Cloud Cohere Mode
+            self.rerank_endpoint_input.setEnabled(False)
+            self.rerank_key_input.setEnabled(True)
+        elif index == 2:  # Custom OpenAPI Mode
+            self.rerank_endpoint_input.setEnabled(True)
+            self.rerank_key_input.setEnabled(True)
         
     def load_current_settings(self):
         settings = get_app_settings()
@@ -118,6 +278,29 @@ class GenSettingsDialog(QDialog):
             self.temp_input.setValue(curr_temp)
         if self.tokens_input:
             self.tokens_input.setValue(curr_tokens)
+            
+        # Hydrate custom reranking config
+        rerank_enabled = str(settings.value("rerank_enabled", "false")).lower() == "true"
+        rerank_engine = str(settings.value("rerank_engine", "local")).lower().strip()
+        rerank_endpoint = str(settings.value("rerank_endpoint", ""))
+        rerank_api_key = str(settings.value("rerank_api_key", ""))
+        
+        if hasattr(self, "rerank_enable_cb"):
+            self.rerank_enable_cb.setChecked(rerank_enabled)
+            
+            # Match engine index
+            engine_idx = 0
+            if rerank_engine == "cloud_cohere":
+                engine_idx = 1
+            elif rerank_engine == "cloud_custom":
+                engine_idx = 2
+            self.rerank_engine_combo.setCurrentIndex(engine_idx)
+            
+            self.rerank_endpoint_input.setText(rerank_endpoint)
+            self.rerank_key_input.setText(rerank_api_key)
+            
+            # Fire initial visibility states
+            self.on_rerank_enabled_toggled(rerank_enabled)
         
         if use_defaults:
             if self.preset_combo:
@@ -214,4 +397,16 @@ class GenSettingsDialog(QDialog):
             settings.setValue("gen_temperature", self.temp_input.value())
         if self.tokens_input:
             settings.setValue("gen_max_tokens", self.tokens_input.value())
+            
+        # Commit custom reranking changes
+        if hasattr(self, "rerank_enable_cb"):
+            settings.setValue("rerank_enabled", "true" if self.rerank_enable_cb.isChecked() else "false")
+            
+            engine_map = {0: "local", 1: "cloud_cohere", 2: "cloud_custom"}
+            idx = self.rerank_engine_combo.currentIndex()
+            settings.setValue("rerank_engine", engine_map.get(idx, "local"))
+            
+            settings.setValue("rerank_endpoint", self.rerank_endpoint_input.text().strip())
+            settings.setValue("rerank_api_key", self.rerank_key_input.text().strip())
+            
         self.accept()

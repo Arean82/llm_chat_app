@@ -313,19 +313,54 @@ flowchart TD
 * **Model-Side Tool Calling API (4.1.7)**: Migrates from manual client-side prepended context to native dynamic Function Calling schemas, giving the LLM active autonomy to trigger `web_search()` or `read_file()` only when needed.
 * **Qdrant Metadata Payload Filtering (4.1.8)**: Secures and focuses search space. Instead of global vectors scan, Qdrant enforces hard payload query conditions using `tenant_id` (ensuring multi-tenant security), `conversation_id` (limiting scan scope), and `source_type` / `timestamp`.
 
-## 🟡 Phase 5: Pluggable Two-Stage Reranking (Hybrid A + B Architecture) [STATUS: IN PROGRESS]
+## 🟢 Phase 5: Pluggable Two-Stage Reranking (Hybrid A + B Architecture) [STATUS: COMPLETED]
 
 To maximize code and prompt precision across both offline desktop environments and online SaaS deployments, the reranking layer acts as a pluggable, multi-provider micro-service directly under Phase 5:
 
 | #         | Task                                                                                                       | Status     |
 | :-------- | :--------------------------------------------------------------------------------------------------------- | :--------- |
-| **5.1**   | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ⏳ PENDING |
-| **5.2**   | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs      | ⏳ PENDING |
-| **5.3**   | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20%     | ⏳ PENDING |
-| **5.4**   | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity      | ⏳ PENDING |
-| **5.5**   | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes       | ⏳ PENDING |
+| **5.1**   | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ✅**DONE** |
+| **5.2**   | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs      | ✅**DONE** |
+| **5.3**   | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20%     | ✅**DONE** |
+| **5.4**   | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity      | ✅**DONE** |
+| **5.5**   | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes       | ✅**DONE** |
 
+```mermaid
+flowchart TD
+    subgraph UI ["🖥️ UI & Control Layer"]
+        Designer["📐 gen_settings.ui XML Layout<br>• Scaled height to 580px<br>• Defined QGroupBox and input forms"]
+        Dialog["🐍 gen_settings_dialog.py Code<br>• Binds widgets dynamically<br>• Theme CSS engine for Dark/Light<br>• Reactive inputs toggles"]
+    end
+
+    subgraph Core ["⚙️ Core RAG Execution Loop"]
+        Worker["🧑‍💻 chat_worker.py execution<br>• Loads QSettings dynamically<br>• Emits real-time diagnostic logs"]
+        Engine["⚡ rerank_engine.py Chassis"]
+    end
+
+    subgraph Pipeline ["🧠 Two-Stage Reranking Pipeline"]
+        Decide{"🚀 Engine Choice?"}
+        LocalST["Local Cross-Encoder<br>(BAAI/bge-reranker-v2-m3)"]
+        LocalFall["Lexical Jaccard Fallback<br>(Offline zero-config safety)"]
+        Cohere["Cloud Cohere Rerank v3 API<br>(Direct HTTPS POST)"]
+        CustomAPI["Custom OpenAPI Endpoint<br>(Bearer authorization)"]
+
+        Stage2["⚖️ Stage 2: Hybrid A Structural Bias<br>• Regex boost multiplier x1.2 for classes/funcs"]
+        Stage3["🎨 Stage 3: Hybrid B MMR Diversity<br>• Prunes token redundancy >50% overlap"]
+    end
+
+    Designer -.->|Loads XML| Dialog
+    Dialog -->|Saves settings| Worker
+    Worker -->|Triggers| Engine
+    Engine --> Decide
+    Decide -->|Local + dependencies| LocalST
+    Decide -->|Local + fallback| LocalFall
+    Decide -->|Cohere| Cohere
+    Decide -->|Custom OpenAPI| CustomAPI
+    
+    LocalST & LocalFall & Cohere & CustomAPI --> Stage2 --> Stage3
 ```
+
+```text
 [ Top 20 Candidates from Hybrid Search ]
                  │
                  ▼
@@ -365,7 +400,8 @@ To maximize code and prompt precision across both offline desktop environments a
 
 **Technical Notes (5.1):**
 
-* **Two-Stage Reranking Pipeline (5.1 - 5.2)**: Orchestrates pluggable Cross-Encoder selection, loading BGE-Reranker-v2-m3 locally via ONNX for absolute offline privacy and 8k token length capability, or routing dynamically to Cohere Rerank v3 or OpenAPI-compatible endpoints for high-speed cloud precision.
+* **Two-Stage Reranking Pipeline (5.1 - 5.2)**: Orchestrated pluggable Cross-Encoder selection, loading BGE-Reranker-v2-m3 locally via ONNX for absolute offline privacy and 8k token length capability, or routing dynamically to Cohere Rerank v3 or OpenAPI-compatible endpoints for high-speed cloud precision.
+* **Direct UI XML Integration**: Abandoned dynamic python-side widget creation to protect structural integrity. All visual controls (`QGroupBox`, `QCheckBox`, `QComboBox`, `QLineEdit` for secret keys/endpoints) are defined directly inside [gen_settings.ui](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui_designer/gen_settings.ui), completely avoiding XML schema drifts.
 * **Hybrid A: Structural Code Bias (5.3)**: Dynamically checks code chunks for architectural declarations (`class `, `def `, `interface `, `function `) or core workspace config paths, scaling their similarity scores by `1.2` to prioritize systemic skeletons over comments or helpers.
 * **Hybrid B: Diversity MMR (5.4)**: Executes Jaccard token overlap similarity checking across Top 20 candidates, penalizing duplicate/redundant chunks to guarantee the final Top 5 chunks represent diverse, distinct modules.
 
