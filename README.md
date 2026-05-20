@@ -263,30 +263,32 @@ graph TD
     %% Storage Drivers
     subgraph Storage ["Decoupled Storage Tier (100% WAL/MVCC)"]
         DriverContract["BaseStorageDriver<br>(Abstract Interface)"]
+        SQLiteDriver["LocalSQLiteDriver<br>(Zero-Config Desktop / WAL Mode)"]
         TursoDriver["LibSQLStorageDriver<br>(Turso Cloud Shards / Hranas Edge)"]
         PGDriver["PostgreSQLStorageDriver<br>(Enterprise Cluster / Row Locks)"]
         
+        DriverContract --> SQLiteDriver
         DriverContract --> TursoDriver
         DriverContract --> PGDriver
     end
 
     %% Multi-Tenant Sandbox Datastores
     subgraph Datastores ["Dynamic Tenant Sandbox Datastores"]
+        SQLiteDB[("Local SQLite Database<br>chat_history.db")]
         TursoDB[("Turso Cloud Database<br>{tenant_id} Partition")]
         PGDB[("PostgreSQL Server Database<br>{tenant_id} Schema")]
         
+        SQLiteDriver -->|High-Perf local WAL| SQLiteDB
         TursoDriver -->|Zero-Locking Writes| TursoDB
         PGDriver -->|MVCC Row-Level Locks| PGDB
     end
 
     %% Relations
-    GUI -->|Direct Local Driver| DriverContract
-    CLI -->|Direct Local Driver| DriverContract
-    Headless -->|JWT Tenant Sessions| DriverContract
+    GUI -->|Execute Actions| Core
+    CLI -->|Execute Actions| Core
+    Headless -->|JWT Tenant Session Requests| Core
     
-    GUI -->|Load Models| Core
-    CLI -->|Query Models| Core
-    Headless -->|Inference Gate| Core
+    Mgr -->|Orchestrates Storage Operations| DriverContract
 
     %% Styling
     style Clients fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
