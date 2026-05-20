@@ -195,6 +195,7 @@ Modify `~/.continue/config.json`:
 
 * **🔒 Security:** The server binds strictly to `localhost`. It is not accessible from external networks.
 * **⚙️ Model Selection:** The API automatically uses whichever model is currently active in the main application UI.
+* **🧠 Model Capabilities:** The `/v1/models` endpoint exposes all cataloged models across multiple dynamic types (`chat`, `embedding`, `reranking`, `audio`). This allows connecting IDE tools or custom pipelines to fetch the exact capability set they require.
 * **⏳ Performance:** Responses are synchronous. The default request timeout is **60 seconds**.
 * **🔑 Auth:** All requests **require** the mandatory local verification token: `llm-local-auth-82c4f3eb0d`. Pass this as the `apiKey` or standard `Authorization: Bearer` header.
 * **🌡️ Temperature Range:** 0.0 (focused/deterministic) to 1.0 (creative/diverse).

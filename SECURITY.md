@@ -13,6 +13,7 @@
   * **macOS:** Apple Keychain (SecKeychain Services)
   * **Linux:** Freedesktop Secret Service (via dbus/gnome-keyring)
 * **Comprehensive Wiping:** Activating the "Logout" action triggers an immediate, hardware-flushed purge of the active ecosystem's security slots, ensuring zero trace remnants.
+* **Universal Credential-Aware Visibility Gate:** To protect against accidental exposure of endpoints and models for providers that do not have authenticated credentials on the current system, the model manager and selection popups implement a credential-aware visibility filter. Models are only visible and loadable if a valid cryptographic vault API key matches their provider signature, enforcing strict credential custody before catalog display.
 
 ---
 

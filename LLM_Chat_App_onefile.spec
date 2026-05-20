@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec file for LLM Chat App
 # One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
-# One_file can be used to create a single executable file, but it may increase the build time and the size of the executable.   
+# One_file can be used to create a single executable file, but it may increase the build time and the size of the executable. (v6.6.0 Stable Sync)
 
 a = Analysis(
     ['main.py'],

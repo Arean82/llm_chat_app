@@ -136,6 +136,7 @@ A dedicated Visual Studio 2022 extension can be built using the same API. Reques
 | "Failed to connect" | Ensure LLM Chat App is running with API server enabled (✅ icon) |
 | Port 5000 conflict | Port 5000 is mandatory for most integrations. On macOS, disable **AirPlay Receiver** in System Settings. On Windows, check for other web services. |
 | No response | Check that a model is selected in LLM Chat App |
+| Model capability mismatch | Active chat selection popup strictly filters for Chat models (`type == "chat"`). For embeddings or rerankers, the server exposes them directly through specialized endpoints. |
 | Timeout | Increase timeout in your IDE settings or check network connectivity |
 
 ---

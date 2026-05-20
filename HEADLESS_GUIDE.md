@@ -85,6 +85,7 @@ To see which models are currently cached in your local manifest:
 ```bash
 python main.py --list-models
 ```
+*Note: Models are grouped dynamically by their capability categories (`chat`, `embedding`, `reranking`, `audio`) and display their specialized capability markers and auto-generated descriptions.*
 
 ### Updating the Manifest
 To fetch the latest models from your active provider and write them straight to your local manifest shards:
