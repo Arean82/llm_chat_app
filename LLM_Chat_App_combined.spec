@@ -3,7 +3,7 @@
 # One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
 # One_dir can be used to specify the output directory for the built application.
 # One_file can be used to create a single executable file, but it may increase the build time and the size of the executable.   
-# Gives Both OneDIr and OneFile Build (v6.6.0 Stable Sync)
+# Gives Both OneDIr and OneFile Build (v6.7.0 Stable Sync)
 
 a = Analysis(
     ['main.py'],

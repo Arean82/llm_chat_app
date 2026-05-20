@@ -1,4 +1,4 @@
-# LLM Chat App (v6.6 Stable Baseline)
+# LLM Chat App (v6.7 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -25,6 +25,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🤖 **Scalable Architecture (V6):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
 - 🎛️ **Dynamic Capability-Based Filtering:** Intelligently filter models by **General Chat**, **Supports Tools**, **Vision/Multimodal**, **Embeddings**, **Rerankers**, or **Audio/Voice** using a unified, re-ordered UI filter that prioritizes active conversational models first.
 - 📂 **Universal Model Cataloging:** Dynamically auto-classifies and indexes non-chat models from API endpoints during background fetches. The chat selection popup remains cleanly partitioned (strictly showing chat-capable models), while specialized layers (Embeddings, Rerankers, Audio) are cataloged for backend integrations.
+- 🔍 **Pluggable Two-Stage Reranking Pipeline:** Maximizes code context and prompt grounding precision. Pairs candidate retrieval (Top 20) with high-recall cross-encoder rerankers (Local BGE / Cloud Cohere / Custom OpenAPI-compatible endpoints), featuring Hybrid A Structural Code Bias (scoring class/def blocks higher) and Hybrid B Diversity MMR (Maximal Marginal Relevance) overlap pruning.
 - ➕ **Unlimited Custom Endpoints:** Dynamically inject custom, private, or locally-hosted model hosts into your roster without writing a single line of code.
 - 🏠 **True Offline Capability:** Specialized zero-key mode automatically detects local tooling (like Ollama), bypassing verification blockers entirely.
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
@@ -34,7 +35,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🔄 **Background Model Fetching:** Smarter "Fetch Models" logic with ecosystem-aware background workers and real-time status telemetry (Audit ID 024).
 - 🛡️ **Universal Key-Aware Filtering:** The UI automatically hides models from providers lacking active credentials, ensuring a zero-pollution catalog (Audit ID 047).
 - ✨ **Premium Visual Identity:** Upgraded to a custom-generated 4K glassmorphism design with optimized assets for Windows (.ico), macOS (.icns), and Linux (.png) (Audit ID 018).
-- 🔧 **Smart Generation Parameters:** Take granular control over LLM outputs. Tweak temperature and response length via a dedicated UI, or use 'Model Default' to let remote servers decide natively.
+- 🔧 **Smart Tabbed Generation Parameters:** Take granular control over LLM outputs and RAG options through a beautiful, responsive tabbed interface. Tweak temperature, presets, and response lengths under "Model Parameters", and configure the dynamic two-stage reranker, endpoints, and secure API keys under "Retrieval Reranking".
 - 🧠 **Reasoning Support:** Automatically detects and beautifully formats model "thinking/reasoning" tokens.
 - 🎨 **Rich Markdown Rendering:** Stunning display of code blocks with syntax highlighting, tables, and bold formatting.
 - 💾 **Robust History Management:** Uses a high-performance **SQLite** backend with **WAL (Write-Ahead Logging)** mode to ensure data integrity and prevent corruption, even during crashes or power loss.
@@ -247,7 +248,7 @@ The application leverages a fully-isolated, multi-threaded modular chassis desig
 ```mermaid
 graph TD
     %% Client Layer
-    subgraph Clients ["Multi-Interface Clients (Version 6.6)"]
+    subgraph Clients ["Multi-Interface Clients (Version 6.7)"]
         GUI["PySide6 Desktop GUI<br>(Multi-threaded, Async Workers)"]
         CLI["Terminal CLI<br>(Interactive Chat Loop)"]
         Headless["Headless API Server<br>(Port 5000 / OpenAI-Compatible)"]
@@ -553,11 +554,15 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
+### v6.7.0 – Pluggable Two-Stage Reranking Pipeline & Modern Tabbed UI
+- 🎛️ **Modern Tabbed Settings UI**: Restructured the generation settings dialog into a premium `QTabWidget` containing "Model Parameters" and "Retrieval Reranking" tabs. Injected customizable stylesheets matching active Dark/Light system preferences.
+- 📐 **Symmetrical Size Normalization**: Constrained the dialog bounding dimensions to a sleek `500x480` profile across all layout and initialization threads to eliminate vertical gaps and visual stretching.
+- 🧠 **Dynamic Two-Stage Reranking Pipeline**: High-precision semantic ranking supporting local BGE Cross-Encoder ONNX execution (with lexical Jaccard fallback), cloud Cohere Rerank v3 API, or custom OpenAPI-compatible endpoints.
+- ⚙️ **Hybrid A Structural Bias**: Automatically boosts similarity scoring by 20% (`score * 1.2`) for context chunks containing code structural declarations (`class `, `def `, `interface `, `function `) to keep system blueprints highly prioritized.
+- 🎨 **Hybrid B Diversity MMR**: Prunes redundant context chunks sharing high token overlap (Jaccard similarity threshold `> 0.5`) to prevent repeating the same source code fragments within the prompt.
+- 📡 **Interactive Visual Diagnostics**: Streams step-by-step thinking diagnostics detailing precise pipeline execution steps, scoring engines, boosts, and prunings.
+
 ### v6.6.0 – Multi-Engine Cloud Concurrency & Isolated Multi-Tenant Sandbox
-- 🎛️ **Dynamic Capability-Based Filtering**: Created a runtime dynamic filtering dropdown system mapping capabilities such as General Chat, Supports Tools, Multimodal/Vision, Embeddings, Rerankers, and Audio/Voice across model selection popups and developer tab views.
-- 💬 **Dialogue-First Dropdown Ordering**: Prioritized conversational and reasoning layouts by ranking General Chat at index 1 in the capability selection dropdowns.
-- 📂 **Specialized Model Cataloging**: Rebuilt API fetch workers to intelligently identify, auto-classify, tag, and persist non-chat endpoints (e.g. Embeddings, Rerankers, Audio/Voice) into local manifests rather than discarding them, while strict-filtering the active chat picker popup to cleanly prevent selection of non-chat types in interactive chats.
-- 🐛 **Dropdown Alignment Fix**: Fixed an index mapping discrepancy in `ui/model_popup.py` to ensure capability selections precisely target correct model lists under the new General Chat-first ordering.
 - 🗃️ **Complete Purge of SQLite**: Entirely eliminated local SQLite write-locking bottlenecks and database timeout crashes, guaranteeing zero-locking concurrent operations across GUI, CLI, and Headless sessions.
 - ☁️ **Pluggable Cloud Engines (Turso & PostgreSQL)**: Integrated abstract `BaseStorageDriver` mapping to highly concurrent cloud sharded databases:
   - *Turso / libSQL*: Supports synchronous Hranas edge replication.
