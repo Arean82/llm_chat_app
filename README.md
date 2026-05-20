@@ -155,12 +155,16 @@ llm_chat_app/
 ├── LLM_Chat_App_combined.spec      # PyInstaller spec - Both builds
 ├── README.md                       # 📖 Documentation
 ├── LICENSE                         # ⚖️ MIT License
+├── SECURITY.md                     # 🛡️ Security policy and vulnerability disclosure
 ├── API_SERVER.md                   # 📡 API documentation
 ├── IDE_INTEGRATION.md              # 🔌 IDE setup guide
 ├── STRATEGIC_EVOLUTION_REPORT.md   # 📈 Phase 2 evolution blueprint
 ├── PROJECT_AUDIT_REPORT.md         # 🛡️ Master vulnerability remediation ledger
+├── WORKING_DOCUMENT_V7_ATTAINMENT.md # 📓 Tactical manual for v7 Headless/SaaS attainment
+├── SAAS_STORAGE_ARCHITECTURE_PLAN.md # 🗃️ SaaS high-concurrency multi-tenant database blueprint
 ├── requirements.txt                # 📦 Python dependencies
 ├── HEADLESS_GUIDE.md               # 🖥️ Headless Mode usage guide
+├── test_reranker.py                # 🧪 Offline reranking validation script
 ├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
 ├── extension/                       # 📦 IDE Extensions
@@ -215,7 +219,9 @@ llm_chat_app/
 │   ├── conversation_manager.py     # 🗄️ High-perf Transactional SQLite WAL engine
 │   ├── model_io.py                 # 🤖 Multi-shard provider catalog Load/Save
 │   ├── tool_manager.py             # 🔍 Dynamic background OS/Web query tools
-│   └── formatter.py                # 🎨 Pre-rendering Markdown/Codeblock engine
+│   ├── formatter.py                # 🎨 Pre-rendering Markdown/Codeblock engine
+│   ├── rerank_engine.py            # 🧠 Advanced Two-Stage Rerank Engine
+│   └── migration_bridge.py         # 🌁 Live database-to-database relocator
 │
 ├── workers/                        # 🧵 Non-blocking Background Daemons
 │   ├── connection_worker.py        # 🌐 Socket-level internet ping listener
