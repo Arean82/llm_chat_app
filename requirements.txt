@@ -46,6 +46,10 @@ azure-ai-inference
 vllm
 litellm
 
+# Database Drivers
+libsql-client
+pg8000
+
 # Development & Packaging
 pyinstaller>=6.3.0
 Pillow>=10.0.0

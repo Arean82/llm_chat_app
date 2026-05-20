@@ -400,28 +400,6 @@ class MainWindowClass(QMainWindow):
         dialog = GenSettingsDialog(None)
         if dialog.exec():
             self.chat_view.add_system_message("✅ Generation parameters updated.")
-
-    def show_update_log(self):
-        """Restored from baseline: Access real-time engine logging stream"""
-        from ui.log_viewer import LogViewerDialog
-        dialog = LogViewerDialog(self)
-        dialog.exec()
-
-    def clear_update_log(self):
-        """Restored from baseline: Hard reset of runtime update datasets"""
-        from PySide6.QtWidgets import QMessageBox
-        from workers.update_logger import get_logger
-        reply = QMessageBox.question(
-            self,
-            "Clear Log",
-            "Are you sure you want to clear all update logs?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            logger = get_logger()
-            logger.clear()
-            self.chat_view.add_system_message("🗑️ Update logs purged successfully.")
-
     def show_about(self):
         from utils.constants import APP_VERSION
         border_color = "#3c3c3c" if self.theme_manager.current_theme == "dark" else "#e0e0e0"
@@ -667,4 +645,4 @@ class MainWindowClass(QMainWindow):
         from workers.update_logger import get_logger
         if QMessageBox.question(self, "Clear Logs", "Are you sure you want to delete all diagnostic logs?") == QMessageBox.Yes:
             get_logger().clear()
-            QMessageBox.information(self, "Success", "Logs have been cleared.")
+            self.chat_view.add_system_message("🗑️ Update logs purged successfully.")

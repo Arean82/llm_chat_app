@@ -11,7 +11,7 @@ from logic.conversation_manager import ConversationManager
 
 class TestStorageDrivers(unittest.TestCase):
     def setUp(self):
-        self.test_dir = Path("./test_conversations_temp")
+        self.test_dir = Path("./scratch/test_conversations_temp")
         self.test_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.test_dir / "test_chat.db"
 
@@ -21,7 +21,7 @@ class TestStorageDrivers(unittest.TestCase):
             shutil.rmtree(self.test_dir)
             
         # Clean up local libsql file if any
-        libsql_file = Path("test_libsql.db")
+        libsql_file = Path("./scratch/test_libsql.db")
         if libsql_file.exists():
             try: libsql_file.unlink()
             except Exception: pass
@@ -105,7 +105,7 @@ class TestStorageDrivers(unittest.TestCase):
         from logic.storage_drivers.libsql_driver import LibSQLStorageDriver
         
         # Use file scheme to test LibSQL driver locally without needing active Cloud Turso DB URL
-        driver = LibSQLStorageDriver(url="file:test_libsql.db")
+        driver = LibSQLStorageDriver(url="file:./scratch/test_libsql.db")
         
         # 1. Initialize Tables
         driver.init_db()
@@ -158,5 +158,66 @@ class TestStorageDrivers(unittest.TestCase):
         self.assertEqual(len(driver.get_all_conversations()), 0)
         print("[LibSQL Test] Table clear completed successfully.")
 
+    def test_postgres_driver_lifecycle(self):
+        """Tests PostgreSQLStorageDriver using a mocked connection to verify query compliance."""
+        print("\n--- Running PostgreSQLStorageDriver Mock Tests ---")
+        from unittest.mock import MagicMock, patch
+        from logic.storage_drivers.postgres_driver import PostgreSQLStorageDriver
+
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        
+        # Mock connection to return mock_conn
+        with patch('pg8000.dbapi.connect', return_value=mock_conn) as mock_connect:
+            driver = PostgreSQLStorageDriver(url="postgresql://user:pass@localhost:5432/db")
+            
+            # 1. Initialize Tables
+            driver.init_db()
+            mock_cursor.execute.assert_any_call('''
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT,
+                    timestamp TEXT,
+                    model_id TEXT,
+                    messages_json TEXT,
+                    messages_html TEXT
+                )
+            ''')
+            
+            # 2. Save Conversation (Insert)
+            mock_cursor.fetchone.return_value = (42,)
+            conv = [{"role": "user", "content": "Hello PG!"}]
+            conv_id = driver.save_conversation(
+                conversation=conv,
+                title="PG verification",
+                conv_id=None,
+                model_id="google/gemini-1.5-pro",
+                messages_html="<b>PG</b>"
+            )
+            self.assertEqual(conv_id, 42)
+            
+            # 3. Load Conversation
+            mock_cursor.fetchone.return_value = ("PG verification", "timestamp", "google/gemini-1.5-pro", json.dumps(conv), "<b>PG</b>")
+            loaded = driver.load_conversation(42)
+            self.assertIsNotNone(loaded)
+            self.assertEqual(loaded["title"], "PG verification")
+            
+            # 4. Get All Conversations
+            mock_cursor.fetchall.return_value = [(42, "PG verification", "timestamp")]
+            all_convs = driver.get_all_conversations()
+            self.assertEqual(len(all_convs), 1)
+            
+            # 5. Delete Conversation
+            driver.delete_conversation(42)
+            mock_cursor.execute.assert_any_call('DELETE FROM conversations WHERE id = %s', (42,))
+            
+            # 6. Clear All
+            driver.clear_all()
+            mock_cursor.execute.assert_any_call('TRUNCATE TABLE conversations')
+            
+        print("[PostgreSQL Test] All query structures and mock states validated successfully.")
+
 if __name__ == "__main__":
     unittest.main()
+

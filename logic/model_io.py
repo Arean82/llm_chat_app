@@ -105,12 +105,23 @@ def save_all_models(all_models: list):
     for provider, models_sublist in buckets.items():
         filename = f"models_{provider}.json"
         target_path = os.path.join(res_dir, filename)
+        output_data = {"models": models_sublist}
+        
+        # Surgical delta check: only write if data has actually changed
+        if os.path.exists(target_path):
+            try:
+                with open(target_path, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+                if existing_data == output_data:
+                    # Content is identical; skip writing to avoid file locking and I/O hazards
+                    continue
+            except Exception:
+                pass
         
         try:
-            output_data = {"models": models_sublist}
             with open(target_path, 'w', encoding='utf-8') as f:
                 json.dump(output_data, f, indent=4, ensure_ascii=False)
-            print(f"Saved {len(models_sublist)} models to {filename}")
+            print(f"Saved {len(models_sublist)} models to {filename} (delta update)")
         except Exception as e:
              print(f"ERROR writing to {target_path}: {e}")
              

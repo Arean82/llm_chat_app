@@ -142,3 +142,13 @@ class VectorDatabase:
             print("[VectorDB] Fully purged all internal data collections.")
         except Exception as e:
              print(f"[VectorDB] Database purge failure: {e}")
+
+    def close(self):
+        """Explicitly teardown the Qdrant connection to release SQLite locks and prevent shutdown warnings."""
+        if self.client:
+            try:
+                self.client.close()
+            except Exception as e:
+                print(f"[VectorDB] Error closing client: {e}")
+            finally:
+                self.client = None

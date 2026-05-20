@@ -94,7 +94,7 @@ class StorageManager:
         """Fetch the JSON-based settings manager."""
         if self._settings: return self._settings
         if self.is_portable or (self.get_exe_dir() / "portable.txt").exists():
-            config_path = self.get_exe_dir() / "config.json"
+            config_path = self.get_exe_dir() / "resources" / "config.json"
         else:
             config_path = self.get_default_app_data_path() / "config.json"
         config_path.parent.mkdir(parents=True, exist_ok=True)

@@ -161,6 +161,11 @@ def main():
         # 3. LOAD STYLES
         from utils.path_utils import get_resource_path
         app.setStyle("Fusion")
+        
+    # Ensure QCoreApplication exists for Headless / CLI threads to avoid "QCoreApplication must be created before QObject"
+    if not app:
+        from PySide6.QtCore import QCoreApplication
+        app = QCoreApplication.instance() or QCoreApplication(sys.argv)
     
     # --- SINGLE INSTANCE LOCK (Restored from v6) ---
     from PySide6.QtCore import QLockFile, QDir

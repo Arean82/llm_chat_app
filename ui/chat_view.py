@@ -146,6 +146,15 @@ class ChatViewWidget(QWidget):
             print("[Shutdown] Waiting for Vector Indexer to finish...")
             self.vector_sync_thread.wait(5000) 
 
+        # Explicitly close the singleton VectorDatabase client connection to avoid interpreter shutdown warnings/race exceptions
+        try:
+            from logic.vector_db import VectorDatabase
+            if VectorDatabase._instance:
+                vdb = VectorDatabase.get_instance()
+                vdb.close()
+        except Exception as e:
+            print(f"[Shutdown] Error closing VectorDatabase: {e}") 
+
     # =========================================================
     # REFACTORED CHAT LOGIC METHODS FROM MAIN_WINDOW
     # =========================================================
@@ -720,6 +729,7 @@ class ChatViewWidget(QWidget):
 
     def on_worker_finished(self):
         self.set_send_button_idle()
+        self.input_field.setEnabled(True)
         self.input_field.setFocus()
         self.current_worker = None
 
