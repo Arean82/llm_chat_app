@@ -17,6 +17,8 @@ from workers.connection_worker import ConnectionWorker
 from workers.local_model_detector import LocalModelDetector
 from utils.path_utils import get_resource_path, get_app_settings
 from ui.shared_widgets import set_app_icon
+from saas.app import SaaSServer
+from saas.config_manager import SaaSConfigManager
 
 # Import child modules
 from ui.chat_view import ChatViewWidget
@@ -55,6 +57,9 @@ class MainWindowClass(QMainWindow):
         self.chat_view = ChatViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
         self.arena_view = ArenaViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
         
+        # Instantiate and auto-start SaaS Server if configured
+        self.saas_server = SaaSServer()
+        
         # Push them into our master stack!
         self.ui.main_stack.addWidget(self.chat_view)
         self.ui.main_stack.addWidget(self.arena_view)
@@ -66,6 +71,9 @@ class MainWindowClass(QMainWindow):
         self.setup_menu_bar()
         self.setup_tray()
         self.load_settings()
+        
+        # Apply SaaS configuration state
+        self.apply_saas_state()
         
         print("Shell ready. Launching in default View Mode.")
 
@@ -122,13 +130,14 @@ class MainWindowClass(QMainWindow):
 
     def on_api_status_changed(self, success, message):
         """Callback from ApiManager to update UI status."""
-        if success:
+        if success or message:
             self.chat_view.add_system_message(f"🌐 Universal API Server: {message}")
-            if hasattr(self, 'api_server_action'):
-                self.api_server_action.setChecked(True)
-        else:
-            if hasattr(self, 'api_server_action'):
-                self.api_server_action.setChecked(False)
+            
+        if hasattr(self, 'api_server_action'):
+            is_running = False
+            if hasattr(self, 'api_manager') and self.api_manager.api_server:
+                is_running = self.api_manager.api_server.running
+            self.api_server_action.setChecked(is_running)
 
     def setup_menu_bar(self):
         menubar = self.menuBar()
@@ -161,6 +170,7 @@ class MainWindowClass(QMainWindow):
         settings_menu.addAction("📦 Model Manager", self.show_model_manager)
         settings_menu.addAction("✏️ System Instructions", self.edit_system_instructions, "Ctrl+I")
         settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
+        settings_menu.addAction("📡 SaaS Gateway Configuration", self.show_saas_settings)
         settings_menu.addSeparator()
         settings_menu.addAction("🗄️ Storage Manager", self.show_storage_manager)
         settings_menu.addAction("📂 Open Data Folder", self.open_storage_location)
@@ -172,6 +182,11 @@ class MainWindowClass(QMainWindow):
 
         # Tools Menu
         tools_menu = menubar.addMenu("Tools")
+        
+        self.saas_console_action = tools_menu.addAction("🖥️ Open SaaS Web Console")
+        self.saas_console_action.triggered.connect(self.open_saas_web_console)
+        self.saas_console_action.setEnabled(False)
+        
         self.api_server_action = tools_menu.addAction("🌐 Universal API Server")
         self.api_server_action.setCheckable(True)
         self.api_server_action.triggered.connect(self.api_manager.toggle_api_server)
@@ -400,6 +415,62 @@ class MainWindowClass(QMainWindow):
         dialog = GenSettingsDialog(None)
         if dialog.exec():
             self.chat_view.add_system_message("✅ Generation parameters updated.")
+
+    def show_saas_settings(self):
+        """Phase 7: Opens the SaaS architecture configuration dialog."""
+        from ui.saas_settings_dialog import SaaSSettingsDialogClass
+        dialog = SaaSSettingsDialogClass(parent=self)
+        if dialog.exec():
+            # Refresh server state based on new config
+            self.apply_saas_state()
+
+    def apply_saas_state(self):
+        """Evaluates SaaS config and starts/stops the background daemon."""
+        cfg = SaaSConfigManager()
+        enabled = cfg.get_bool("NETWORK", "enabled", True)
+        host = cfg.get_str("NETWORK", "host", "127.0.0.1")
+        port = cfg.get_int("NETWORK", "port", 8000)
+        
+        if not enabled:
+            if self.saas_server.running:
+                self.saas_server.stop()
+                if hasattr(self, 'chat_view') and self.chat_view:
+                    self.chat_view.add_system_message("🔴 SaaS Gateway disabled.")
+            if hasattr(self, 'saas_console_action'):
+                self.saas_console_action.setEnabled(False)
+            return
+
+        # Restart server if host/port changed or if not running
+        if self.saas_server.running:
+            if self.saas_server.host != host or self.saas_server.port != port:
+                self.saas_server.stop()
+            else:
+                if hasattr(self, 'saas_console_action'):
+                    self.saas_console_action.setEnabled(True)
+                return # Already running on correct bind
+
+        self.saas_server.host = host
+        self.saas_server.port = port
+        success, msg = self.saas_server.start_server()
+        
+        if hasattr(self, 'saas_console_action'):
+            self.saas_console_action.setEnabled(success)
+            
+        if success:
+            alert = f"🟢 SaaS Gateway running at http://{host}:{port}"
+        else:
+            alert = f"🔴 SaaS Gateway failed to start: {msg}"
+            
+        if hasattr(self, 'chat_view') and self.chat_view:
+            self.chat_view.add_system_message(alert)
+
+    def open_saas_web_console(self):
+        """Opens the SaaS gateway portal in the user's default browser."""
+        if hasattr(self, 'saas_server') and self.saas_server.running:
+            import webbrowser
+            url = f"http://{self.saas_server.host}:{self.saas_server.port}"
+            webbrowser.open(url)
+
     def show_about(self):
         from utils.constants import APP_VERSION
         border_color = "#3c3c3c" if self.theme_manager.current_theme == "dark" else "#e0e0e0"
@@ -496,6 +567,10 @@ class MainWindowClass(QMainWindow):
         # 1. Stop background API server if running
         if hasattr(self, 'api_manager'):
             self.api_manager.stop_api_server()
+            
+        # 1.5 Stop background SaaS Server
+        if hasattr(self, 'saas_server') and self.saas_server.running:
+            self.saas_server.stop()
 
         # 2. Graceful Thread Teardown
         if hasattr(self, 'connection_worker'):
@@ -557,6 +632,10 @@ class MainWindowClass(QMainWindow):
         if hasattr(self, 'local_detector') and self.local_detector.isRunning():
             self.local_detector.terminate()
             self.local_detector.wait(2000)
+            
+        # 1.5 Stop background SaaS Server
+        if hasattr(self, 'saas_server') and self.saas_server.running:
+            self.saas_server.stop()
 
         # 2. Stop view-specific workers and save layouts
         if hasattr(self, 'chat_view'):

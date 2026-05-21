@@ -11,6 +11,7 @@ from logic.chat_worker import ChatWorker
 from logic.conversation_manager import ConversationManager
 from logic.rag_manager import RAGManager
 from utils.path_utils import get_resource_path, get_app_settings
+from utils.helpers import strip_markdown
 from utils.model_config import get_context_limit
 from utils.constants import RESPONSE_BUFFER_CHARS
 
@@ -161,7 +162,7 @@ class ChatViewWidget(QWidget):
             for m in models:
                 if m['id'] == model_id:
                     name = m.get('name', model_id)
-                    desc = m.get('description', '')
+                    desc = strip_markdown(m.get('description', ''))
                     break
         except Exception as e:
             print(f"Error loading model data: {e}")

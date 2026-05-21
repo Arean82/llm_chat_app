@@ -20,7 +20,8 @@ class TenantDatabaseManager:
     def __init__(self, db_name="saas_tenants.db"):
         # Anchor SaaS DB directly inside Storage Root to maintain portability
         storage_root = StorageManager.get_instance().get_storage_root()
-        self.db_path = storage_root / db_name
+        self.db_path = storage_root / "data" / db_name
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_db()
 
     def get_connection(self):
@@ -242,15 +243,45 @@ class TenantDatabaseManager:
 
     # --- ADMIN ROUTINES ---
 
+    def reset_admin_account(self):
+        """Forcefully resets the super admin account to default credentials."""
+        admin_hash = self.hash_password("admin")
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT id FROM users WHERE username = 'admin'")
+            row = cursor.fetchone()
+            if row:
+                conn.execute("""
+                    UPDATE users 
+                    SET password_hash = ?, api_key = 'admin_master_passport', email = 'admin@quantum-saas.local', key_type = 'admin_funded', status = 'active'
+                    WHERE username = 'admin'
+                """, (admin_hash,))
+            else:
+                conn.execute("""
+                    INSERT INTO users (username, email, password_hash, api_key, key_type, status)
+                    VALUES ('admin', 'admin@quantum-saas.local', ?, 'admin_master_passport', 'admin_funded', 'active')
+                """, (admin_hash,))
+            conn.commit()
+            return True
+
     def get_all_tenants(self):
         """Retrieves a master roster of all provisioned accounts for operator analytics."""
         with self.get_connection() as conn:
             cursor = conn.execute("""
-                SELECT id, username, email, key_type, created_at, status 
-                FROM users 
-                ORDER BY id DESC
+                SELECT u.id, u.username, u.email, u.key_type, u.created_at, u.status,
+                       COALESCE(SUM(uu.total_tokens), 0) as total_tokens
+                FROM users u
+                LEFT JOIN user_usage uu ON u.id = uu.user_id
+                GROUP BY u.id
+                ORDER BY u.id DESC
             """)
             return [dict(row) for row in cursor.fetchall()]
+
+    def update_user_status(self, user_id: int, status: str):
+        """Allows operator to instantly ban/kick or reactivate a user's web passport."""
+        with self.get_connection() as conn:
+            conn.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
+            conn.commit()
+            return True
 
     def get_global_usage(self):
         """Aggregates all telemetry tokens consumed across the platform."""

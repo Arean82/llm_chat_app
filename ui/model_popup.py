@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QColor
 
 from utils.path_utils import get_resource_path, get_app_settings
+from utils.helpers import strip_markdown
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtUiTools import QUiLoader
@@ -176,7 +177,7 @@ class ModelPopupClass(QDialog):
             table.setItem(row, 3, name_item)
             
             # Col 4: Description
-            desc_item = QTableWidgetItem(model.get('description', ''))
+            desc_item = QTableWidgetItem(strip_markdown(model.get('description', '')))
             desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(row, 4, desc_item)
             

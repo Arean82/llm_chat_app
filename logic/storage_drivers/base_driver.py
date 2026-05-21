@@ -2,6 +2,15 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
+
+class ConcurrencyError(Exception):
+    """
+    Raised when an optimistic concurrency control (OCC) check fails.
+    This indicates that the target row was modified by another writer
+    between the time it was read and the attempted write-back.
+    """
+    pass
+
 class BaseStorageDriver(ABC):
     """
     Abstract Base Class defining the required storage interface for the application.
@@ -20,7 +29,8 @@ class BaseStorageDriver(ABC):
     @abstractmethod
     def save_conversation(self, conversation: list, title: str = "New Conversation", 
                           conv_id: int = None, model_id: str = "", 
-                          messages_html: str = None, timestamp: str = None) -> Optional[int]:
+                          messages_html: str = None, timestamp: str = None,
+                          expected_version: int = None) -> Optional[int]:
         """
         Saves or updates a conversation thread in the database.
         
@@ -31,9 +41,16 @@ class BaseStorageDriver(ABC):
             model_id (str): The ID of the model used in the session.
             messages_html (str): Pre-rendered HTML cache of the conversation stream.
             timestamp (str): Optional. A pre-set timestamp representing when the conversation occurred (useful for imports/migrations).
+            expected_version (int): Optional. The version number the caller expects the row to currently hold.
+                If provided during an update (conv_id is not None), the driver will enforce an OCC check:
+                the UPDATE will only succeed if the stored version matches expected_version.
+                On success, the version is incremented atomically. On mismatch, ConcurrencyError is raised.
 
         Returns:
             Optional[int]: The database conversation ID (newly inserted or updated).
+
+        Raises:
+            ConcurrencyError: If expected_version is provided and the stored version does not match.
         """
         pass
 
@@ -53,7 +70,8 @@ class BaseStorageDriver(ABC):
                     "timestamp": str,
                     "model_id": str,
                     "messages": list,
-                    "messages_html": str
+                    "messages_html": str,
+                    "version": int
                 }
                 Returns None if not found.
         """

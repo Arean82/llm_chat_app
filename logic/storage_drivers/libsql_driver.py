@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-from logic.storage_drivers.base_driver import BaseStorageDriver
+from logic.storage_drivers.base_driver import BaseStorageDriver, ConcurrencyError
 
 class LibSQLStorageDriver(BaseStorageDriver):
     """
@@ -36,6 +36,7 @@ class LibSQLStorageDriver(BaseStorageDriver):
     def init_db(self) -> None:
         """
         Initializes the libSQL database tables and high-speed timestamp indices.
+        Includes migration for the OCC `version` column.
         """
         import libsql_client
         with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
@@ -47,7 +48,8 @@ class LibSQLStorageDriver(BaseStorageDriver):
                     timestamp TEXT,
                     model_id TEXT,
                     messages_json TEXT,
-                    messages_html TEXT
+                    messages_html TEXT,
+                    version INTEGER DEFAULT 1
                 )
             ''')
             
@@ -58,13 +60,21 @@ class LibSQLStorageDriver(BaseStorageDriver):
             try:
                 client.execute('ALTER TABLE conversations ADD COLUMN messages_html TEXT')
             except Exception:
-                pass 
+                pass
+
+            # Migration check: Ensure version column exists for OCC (Phase 6.3.1)
+            try:
+                client.execute('ALTER TABLE conversations ADD COLUMN version INTEGER DEFAULT 1')
+            except Exception:
+                pass
 
     def save_conversation(self, conversation: list, title: str = "New Conversation", 
                           conv_id: int = None, model_id: str = "", 
-                          messages_html: str = None, timestamp: str = None) -> Optional[int]:
+                          messages_html: str = None, timestamp: str = None,
+                          expected_version: int = None) -> Optional[int]:
         """
         Saves or updates a conversation thread in the libSQL/Turso database.
+        Supports Optimistic Concurrency Control (OCC) via the expected_version parameter.
         """
         import libsql_client
         messages_json = json.dumps(conversation)
@@ -73,18 +83,34 @@ class LibSQLStorageDriver(BaseStorageDriver):
             
         with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
             if conv_id is not None:
-                # Update existing conversation record
-                client.execute('''
-                    UPDATE conversations 
-                    SET title = ?, timestamp = ?, messages_json = ?, messages_html = ? 
-                    WHERE id = ?
-                ''', (title, timestamp, messages_json, messages_html, conv_id))
+                if expected_version is not None:
+                    # OCC-protected update: only succeed if stored version matches
+                    res = client.execute('''
+                        UPDATE conversations 
+                        SET title = ?, timestamp = ?, messages_json = ?, messages_html = ?,
+                            version = version + 1
+                        WHERE id = ? AND version = ?
+                    ''', (title, timestamp, messages_json, messages_html, conv_id, expected_version))
+
+                    if res.rows_affected == 0:
+                        raise ConcurrencyError(
+                            f"Concurrency conflict on conversation {conv_id}: "
+                            f"expected version {expected_version} but row was modified by another writer."
+                        )
+                else:
+                    # Standard update (no OCC enforcement) — backwards compatible
+                    client.execute('''
+                        UPDATE conversations 
+                        SET title = ?, timestamp = ?, messages_json = ?, messages_html = ?,
+                            version = version + 1
+                        WHERE id = ?
+                    ''', (title, timestamp, messages_json, messages_html, conv_id))
             else:
                 # Insert new conversation record and fetch last inserted ID within a single transaction
                 with client.transaction() as tx:
                     tx.execute('''
-                        INSERT INTO conversations (title, timestamp, model_id, messages_json, messages_html)
-                        VALUES (?, ?, ?, ?, ?)
+                        INSERT INTO conversations (title, timestamp, model_id, messages_json, messages_html, version)
+                        VALUES (?, ?, ?, ?, ?, 1)
                     ''', (title, timestamp, model_id, messages_json, messages_html))
                     
                     res = tx.execute("SELECT last_insert_rowid()")
@@ -97,11 +123,12 @@ class LibSQLStorageDriver(BaseStorageDriver):
     def load_conversation(self, conv_id: int) -> Optional[dict]:
         """
         Loads a single conversation thread from the libSQL database by its ID.
+        Includes the OCC version number for concurrency-safe write-back operations.
         """
         import libsql_client
         with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
             res = client.execute(
-                'SELECT title, timestamp, model_id, messages_json, messages_html FROM conversations WHERE id = ?', 
+                'SELECT title, timestamp, model_id, messages_json, messages_html, version FROM conversations WHERE id = ?', 
                 (conv_id,)
             )
             if res.rows:
@@ -112,7 +139,8 @@ class LibSQLStorageDriver(BaseStorageDriver):
                     "timestamp": row[1],
                     "model_id": row[2],
                     "messages": json.loads(row[3]),
-                    "messages_html": row[4]
+                    "messages_html": row[4],
+                    "version": row[5] if row[5] is not None else 1
                 }
         return None
 

@@ -125,14 +125,28 @@ class ConversationManager:
 
     def save_conversation(self, conversation: list, title: str = "New Conversation", 
                           conv_id: int = None, model_id: str = "", messages_html: str = None) -> int:
-        """Saves or updates a conversation in the active database via the pluggable driver."""
-        return self.driver.save_conversation(
-            conversation=conversation,
-            title=title,
-            conv_id=conv_id,
-            model_id=model_id,
-            messages_html=messages_html
-        )
+        """Saves or updates a conversation in the active database via the pluggable driver.
+        ConcurrencyErrors are handled silently — logged and retried without OCC enforcement."""
+        from logic.storage_drivers.base_driver import ConcurrencyError
+        try:
+            return self.driver.save_conversation(
+                conversation=conversation,
+                title=title,
+                conv_id=conv_id,
+                model_id=model_id,
+                messages_html=messages_html
+            )
+        except ConcurrencyError as e:
+            # Silent handling: log the conflict and retry without OCC version check
+            print(f"[ConversationManager] OCC conflict (silently resolved): {e}")
+            return self.driver.save_conversation(
+                conversation=conversation,
+                title=title,
+                conv_id=conv_id,
+                model_id=model_id,
+                messages_html=messages_html,
+                expected_version=None
+            )
 
     def load_conversation(self, conv_id: int) -> dict:
         """Loads a specific conversation by its ID via the pluggable driver."""

@@ -24,7 +24,7 @@ flowchart TD
 
     subgraph StorageFork ["🗄️ Multi-Tier Storage Infrastructure"]
         Qdrant["🔮 Qdrant (Cold/Main)<br>• All Vectors<br>• Heavy Storage<br>• Batch Ingestion<br>• HNSW Indexing"]:::storage
-        Turso["⚡ Turso (Hot/Edge)<br>• libSQL + vector<br>• Edge-deployed<br>• &lt;10ms reads<br>• Native DiskANN"]:::storage
+        Turso["⚡ Turso (Hot/Edge)<br>• libSQL + vector<br>• Edge-deployed<br>• <10ms reads<br>• Native DiskANN"]:::storage
         Cache["🚀 Cache (vCache)<br>• Query Results<br>• Fast Semantic Matching"]:::storage
     end
 
@@ -52,6 +52,7 @@ flowchart TD
 ```
 
 ### 📋 High-Fidelity Workflow Pipeline (Visual Mapping)
+
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                         COMPLETE WORKFLOW (with Turso)                           │
@@ -256,16 +257,16 @@ While databases provide high-concurrency storage, Phase 4 implements an intellig
 
 ### 4.1 Pluggable Cognitive Optimizations
 
-| #               | Task                                                                                                                            | Status     |
-| :-------------- | :------------------------------------------------------------------------------------------------------------------------------ | :--------- |
-| **4.1.1** | **Dynamic Context Routing**: Auto-swap between Direct Ingestion (<15k chars) and Qdrant semantic RAG (>15k chars)         | ✅**DONE** |
-| **4.1.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5     | ✅**DONE** |
-| **4.1.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%         | ✅**DONE** |
-| **4.1.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion    | ✅**DONE** |
-| **4.1.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database        | ✅**DONE** |
-| **4.1.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads            | ✅**DONE** |
-| **4.1.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)   | ✅**DONE** |
-| **4.1.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)     | ✅**DONE** |
+| #               | Task                                                                                                                               | Status           |
+| :-------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **4.1.1** | **Dynamic Context Routing**: Auto-swap between Direct Ingestion (<15k chars) and Qdrant semantic RAG (>15k chars)            | ✅**DONE** |
+| **4.1.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5  | ✅**DONE** |
+| **4.1.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%       | ✅**DONE** |
+| **4.1.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion | ✅**DONE** |
+| **4.1.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database      | ✅**DONE** |
+| **4.1.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads          | ✅**DONE** |
+| **4.1.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)  | ✅**DONE** |
+| **4.1.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)  | ✅**DONE** |
 
 ### 🌐 System Topology: Agentic Cognitive Flow
 
@@ -317,13 +318,13 @@ flowchart TD
 
 To maximize code and prompt precision across both offline desktop environments and online SaaS deployments, the reranking layer acts as a pluggable, multi-provider micro-service directly under Phase 5:
 
-| #         | Task                                                                                                       | Status     |
-| :-------- | :--------------------------------------------------------------------------------------------------------- | :--------- |
-| **5.1**   | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ✅**DONE** |
-| **5.2**   | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs      | ✅**DONE** |
-| **5.3**   | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20%     | ✅**DONE** |
-| **5.4**   | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity      | ✅**DONE** |
-| **5.5**   | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes       | ✅**DONE** |
+| #             | Task                                                                                                             | Status           |
+| :------------ | :--------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **5.1** | **Local BGE-Reranker-v2-m3 Engine**: Implement background thread for 8k-token BGE Cross-Encoder ONNX model | ✅**DONE** |
+| **5.2** | **Cloud Cohere/OpenAPI Connector**: Build API client for Cohere Rerank v3 and generic compatible URLs      | ✅**DONE** |
+| **5.3** | **Hybrid A (Structural Bias)**: Write regex/parser checks to dynamically boost class/def blocks by 20%     | ✅**DONE** |
+| **5.4** | **Hybrid B (Diversity MMR)**: Write selection loop to penalize redundant chunks via Jaccard similarity     | ✅**DONE** |
+| **5.5** | **Dynamic GUI Rerank settings**: Integrate options into settings dashboard to toggle reranking modes       | ✅**DONE** |
 
 ```mermaid
 flowchart TD
@@ -356,7 +357,7 @@ flowchart TD
     Decide -->|Local + fallback| LocalFall
     Decide -->|Cohere| Cohere
     Decide -->|Custom OpenAPI| CustomAPI
-    
+  
     LocalST & LocalFall & Cohere & CustomAPI --> Stage2 --> Stage3
 ```
 
@@ -387,14 +388,17 @@ flowchart TD
 ```
 
 #### A. Pluggable Execution Modes:
+
 1. **Local Mode (Offline/Free)**: Instantiates `BAAI/bge-reranker-v2-m3` via local ONNX runtime thread. Supports up to **8,192 tokens of context**, ensuring long multi-line code blocks and class structures are never clipped during evaluation.
 2. **Cloud Mode (Global/High-Recall)**: Interfaces with **Cohere Rerank v3** or any **OpenAI-compatible Rerank API endpoint** (allowing custom URLs, providers, and API keys). Cohere v3 is highly optimized to parse programming languages, tabular data, and structural markdown.
 
 #### B. Hybrid A: Structural Code Bias
+
 * **The Concept**: General rerankers might score a minor comment or helper method snippet slightly higher than a core interface declaration.
 * **The Solution**: Apply a dynamic **20% scoring multiplier** (`score * 1.2`) to any chunk containing architectural declarations (such as `class `, `def `, `interface `, `function `) or originating from core workspace config paths. This guarantees the LLM reads the system skeleton first.
 
 #### C. Hybrid B: Diversity MMR (Maximal Marginal Relevance)
+
 * **The Concept**: Semantic search frequently returns highly redundant, duplicate segments of the exact same file, wasting token space and diluting the model's focus.
 * **The Solution**: Implement a fast **MMR selection loop** over the Top 20 scored candidates. Once a chunk is selected, subsequent candidates are penalized based on their conceptual overlap (Jaccard token similarity) to ensure the final Top 5 chunks represent highly diverse, distinct modules.
 
@@ -407,7 +411,7 @@ flowchart TD
 
 ---
 
-## 🟢 Phase 6: SaaS Scale-out (Isolated Multi-Tenant Sandbox) [STATUS: COMPLETED]
+## ✅ Phase 6: SaaS Scale-out (Isolated Multi-Tenant Sandbox) [STATUS: COMPLETED]
 
 Phase 6 implements the complete cloud deployment scaling, adopting the **Bring Your Own Key (BYOK)** tenant model and designing a stunning, responsive SaaS administrative and user web console layout.
 
@@ -432,7 +436,7 @@ flowchart TD
     classDef sub fill:#313244,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4;
 
     App["🌐 Quantum SaaS Web Portal"]:::main
-    
+  
     App --> S1["🛡️ Screen A: Secure Passport Gate<br>(Auth/Onboarding)"]:::screen
     App --> S2["💬 Screen B: Quantum Grid Workspace<br>(Chat Console & Arena)"]:::screen
     App --> S3["⚙️ Screen C: Grid Vault Modal<br>(Preferences & Keys)"]:::screen
@@ -443,94 +447,101 @@ flowchart TD
     S1 --> S1a["1. Pre-flight Validation"]:::sub
     S1 --> S1b["2. Account Provisioning"]:::sub
     S1 --> S1c["3. Security Sign-in"]:::sub
-    
+  
     S2 --> S2a["1. Sandboxed History Sidebar"]:::sub
     S2 --> S2b["2. Dual-Model Arena Split"]:::sub
     S2 --> S2c["3. Dynamic Telemetry Tracker"]:::sub
 ```
 
 #### 🛡️ Screen A: Secure Passport Gateway (Registration, Pre-flight & Login) [✅ COMPLETED]
-*   **Purpose**: The universal access control node for onboarding and authenticating tenants.
-*   **Design & Features**:
-    *   **Dynamic Multi-Step Flow**:
-        *   **Step 1: Passport Verification Form**: Implements real-time pre-flight API handshakes. The system locks registry inputs until an active NVIDIA NIM or OpenAI API Key passport is verified against live endpoints.
-        *   **Step 2: Profile Provisioning Form**: Collects username, email, and master password, dynamically initializing the sandboxed database nodes.
-        *   **Step 3: Standard Security Sign-In**: Legacy credentials form issuing cryptographically signed local keys.
-    *   **Visual Aesthetics**: Floating blurred orb gradients, interactive neon input highlights, and animated transitions between step selectors.
+
+* **Purpose**: The universal access control node for onboarding and authenticating tenants.
+* **Design & Features**:
+  * **Dynamic Multi-Step Flow**:
+    * **Step 1: Passport Verification Form**: Implements real-time pre-flight API handshakes. The system locks registry inputs until an active NVIDIA NIM or OpenAI API Key passport is verified against live endpoints.
+    * **Step 2: Profile Provisioning Form**: Collects username, email, and master password, dynamically initializing the sandboxed database nodes.
+    * **Step 3: Standard Security Sign-In**: Legacy credentials form issuing cryptographically signed local keys.
+  * **Visual Aesthetics**: Floating blurred orb gradients, interactive neon input highlights, and animated transitions between step selectors.
 
 #### 💬 Screen B: Quantum Grid Workspace (Master Interactive Console & Arena) [✅ COMPLETED]
-*   **Purpose**: The central desktop-class workstation enabling chat completions and dual-model evaluations.
-*   **Design & Features**:
-    *   **Isolated Streams Sidebar**: Lists sandboxed user conversations queried dynamically from the user's sqlite or libSQL shard.
-    *   **Ecosystem Priority Selector**: Grouped model option lists prioritizing official native providers (Google, NVIDIA, OpenAI) ahead of local desktop instances.
-    *   **Model Arena Matrix**: A side-by-side comparative split grid allowing parallel inference streams to run concurrently in real-time, matching two distinct models against a single query.
-    *   **Dynamic Telemetry Tracker**: Top bar stats widget charting live Prompt Token and Completion Token aggregates locally.
-    *   **Input Canvas**: Rich glassmorphic text input supporting multiline inputs, auto-growing height bounds, and SSE stream triggers.
+
+* **Purpose**: The central desktop-class workstation enabling chat completions and dual-model evaluations.
+* **Design & Features**:
+  * **Isolated Streams Sidebar**: Lists sandboxed user conversations queried dynamically from the user's sqlite or libSQL shard.
+  * **Ecosystem Priority Selector**: Grouped model option lists prioritizing official native providers (Google, NVIDIA, OpenAI) ahead of local desktop instances.
+  * **Model Arena Matrix**: A side-by-side comparative split grid allowing parallel inference streams to run concurrently in real-time, matching two distinct models against a single query.
+  * **Dynamic Telemetry Tracker**: Top bar stats widget charting live Prompt Token and Completion Token aggregates locally.
+  * **Input Canvas**: Rich glassmorphic text input supporting multiline inputs, auto-growing height bounds, and SSE stream triggers.
 
 #### ⚙️ Screen C: Grid Vault Settings (Preferences & Keys Modal) [✅ COMPLETED]
-*   **Purpose**: Overlay dialog for profile management and secure key rotations.
-*   **Design & Features**:
-    *   **Vault Controls**: Interactive text fields to update Display Names, rotate Master API passports, and configure Master Passwords.
-    *   **Interactive Masks**: Password toggles with dynamic show/hide eye icons to preview hidden keys.
-    *   **AJAX Sync Status**: Live feedback alerts notifying the user when profiles synchronize with database sandboxes.
+
+* **Purpose**: Overlay dialog for profile management and secure key rotations.
+* **Design & Features**:
+  * **Vault Controls**: Interactive text fields to update Display Names, rotate Master API passports, and configure Master Passwords.
+  * **Interactive Masks**: Password toggles with dynamic show/hide eye icons to preview hidden keys.
+  * **AJAX Sync Status**: Live feedback alerts notifying the user when profiles synchronize with database sandboxes.
 
 #### 📊 Screen D: Operator Command Console (Administrative Dashboard Panel) [✅ COMPLETED]
-*   **Purpose**: Command center for server host operators to audit system performance and manage tenant accounts.
-*   **Design & Features**:
-    *   **Public Signup Toggle**: Security switch to toggle public registration capability instantly.
-    *   **Tenant Catalog Grid**: Tabular view of all registered tenant IDs, displaying Display Names, Email addresses, registered tiers (`byok` vs `admin_funded`), and creation dates.
-    *   **Consumption Ledger Analytics**: High-quality visual metrics detailing active concurrent users, database transaction speeds, and a daily bar graph aggregating global token consumption ledgers.
-    *   **SMTP Relay Config Panel**: Interface to audit host server SMTP credentials and verify notification test alerts.
+
+* **Purpose**: Command center for server host operators to audit system performance and manage tenant accounts.
+* **Design & Features**:
+  * **Public Signup Toggle**: Security switch to toggle public registration capability instantly.
+  * **Tenant Catalog Grid**: Tabular view of all registered tenant IDs, displaying Display Names, Email addresses, registered tiers (`byok` vs `admin_funded`), and creation dates.
+  * **Consumption Ledger Analytics**: High-quality visual metrics detailing active concurrent users, database transaction speeds, and a daily bar graph aggregating global token consumption ledgers.
+  * **SMTP Relay Config Panel**: Interface to audit host server SMTP credentials and verify notification test alerts.
 
 #### 🔮 Screen E: Semantic Memory Explorer (Vector Vault Viewer) [✅ COMPLETED]
-*   **Purpose**: Dedicated workspace allowing tenants to inspect and manage files synced to their RAG database collection.
-*   **Design & Features**:
-    *   **Memory Index Roster**: Lists all indexed documents, code libraries, or files currently stored in `vector_db/collections/user_{user_id}`.
-    *   **Semantic Search Test Bench**: Text query field demonstrating real-time BM25 + Dense hybrid retrieval searches, displaying relevance scores and matched code chunks with high-contrast syntax highlights.
-    *   **Interactive Pruning Controls**: Single-click delete buttons allowing tenants to clear specific chunks or wipe active collections instantly.
+
+* **Purpose**: Dedicated workspace allowing tenants to inspect and manage files synced to their RAG database collection.
+* **Design & Features**:
+  * **Memory Index Roster**: Lists all indexed documents, code libraries, or files currently stored in `vector_db/collections/user_{user_id}`.
+  * **Semantic Search Test Bench**: Text query field demonstrating real-time BM25 + Dense hybrid retrieval searches, displaying relevance scores and matched code chunks with high-contrast syntax highlights.
+  * **Interactive Pruning Controls**: Single-click delete buttons allowing tenants to clear specific chunks or wipe active collections instantly.
 
 #### 🔗 Screen F: Public Orbit Sharing Node (Read-Only Conversational Logs) [✅ COMPLETED]
-*   **Purpose**: A secure, public-facing static page allowing tenants to share conversations.
-*   **Design & Features**:
-    *   **Static Rendering**: Renders a read-only, high-contrast, fully readable version of a specific conversation stream, completely omitting private user badges, sidebar navigation, or settings paths.
-    *   **Copy Share Link**: Button that generates cryptographically secure, unique share URLs.
-    *   **Responsive Layout**: Fully optimized for mobile views to allow seamless sharing on external communication portals.
+
+* **Purpose**: A secure, public-facing static page allowing tenants to share conversations.
+* **Design & Features**:
+  * **Static Rendering**: Renders a read-only, high-contrast, fully readable version of a specific conversation stream, completely omitting private user badges, sidebar navigation, or settings paths.
+  * **Copy Share Link**: Button that generates cryptographically secure, unique share URLs.
+  * **Responsive Layout**: Fully optimized for mobile views to allow seamless sharing on external communication portals.
 
 ---
 
 ### 6.1 SaaS Gateway & Backend Auth Rules
 
-| #               | Task                                                                                    | Status     |
-| :-------------- | :-------------------------------------------------------------------------------------- | :--------- |
-| **6.1.1** | **BYOK Tenant Schema**: Implement Bring Your Own Key credentials onboarding logic | ✅**DONE** |
+| #               | Task                                                                                                 | Status           |
+| :-------------- | :--------------------------------------------------------------------------------------------------- | :--------------- |
+| **6.1.1** | **BYOK Tenant Schema**: Implement Bring Your Own Key credentials onboarding logic              | ✅**DONE** |
 | **6.1.2** | **Passport Middleware Integration**: Add passport token validation middleware to Flask gateway | ✅**DONE** |
-| **6.1.3** | **Unified Admin & App Session**: Unify security session space for Admin controls  | ✅**DONE** |
-| **6.1.4** | **Dynamic Tenant DB Routing**: Route DB connections based on validated passport claims | ✅**DONE** |
-| **6.1.5** | **Multi-Interface Concurrency Audit**: Concurrent write test (GUI + CLI + SaaS)   | ⏳ PENDING |
+| **6.1.3** | **Unified Admin & App Session**: Unify security session space for Admin controls               | ✅**DONE** |
+| **6.1.4** | **Dynamic Tenant DB Routing**: Route DB connections based on validated passport claims         | ✅**DONE** |
+| **6.1.5** | **Multi-Interface Concurrency Audit**: Concurrent write test (GUI + CLI + SaaS)                | ✅**DONE** |
 
 ### 6.2 Premium SaaS Administrative Portal (HTML, JS, CSS)
 
-| #               | Task                                                                                                   | Status     |
-| :-------------- | :----------------------------------------------------------------------------------------------------- | :--------- |
-| **6.2.1** | **Modern UI Style System (CSS)**: Define HSL curated colors, glassmorphic tokens, and typography | ✅**DONE** |
-| **6.2.2** | **Secure Gateway UI (HTML/CSS)**: Design the interactive passport login gate page                | ✅**DONE** |
+| #               | Task                                                                                                     | Status           |
+| :-------------- | :------------------------------------------------------------------------------------------------------- | :--------------- |
+| **6.2.1** | **Modern UI Style System (CSS)**: Define HSL curated colors, glassmorphic tokens, and typography   | ✅**DONE** |
+| **6.2.2** | **Secure Gateway UI (HTML/CSS)**: Design the interactive passport login gate page                  | ✅**DONE** |
 | **6.2.3** | **Chat Workspace Dashboard (HTML/CSS)**: Build the chat console, arena split, and telemetry header | ✅**DONE** |
-| **6.2.4** | **Settings Vault Modal (HTML/CSS)**: Create the profile/key rotation overlay dialog              | ✅**DONE** |
-| **6.2.5** | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests and SSE stream reader   | ✅**DONE** |
-| **6.2.6** | **Operator Command Console (HTML/JS)**: Build the admin stats grid and user roster       | ✅**DONE** |
-| **6.2.7** | **Semantic Memory Explorer (HTML/JS)**: Build RAG collection viewer and manager          | ✅**DONE** |
-| **6.2.8** | **Public Orbit Sharing Node (HTML/JS)**: Build read-only sharing route and static page   | ✅**DONE** |
+| **6.2.4** | **Settings Vault Modal (HTML/CSS)**: Create the profile/key rotation overlay dialog                | ✅**DONE** |
+| **6.2.5** | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests and SSE stream reader      | ✅**DONE** |
+| **6.2.6** | **Operator Command Console (HTML/JS)**: Build the admin stats grid and user roster                 | ✅**DONE** |
+| **6.2.7** | **Semantic Memory Explorer (HTML/JS)**: Build RAG collection viewer and manager                    | ✅**DONE** |
+| **6.2.8** | **Public Orbit Sharing Node (HTML/JS)**: Build read-only sharing route and static page             | ✅**DONE** |
 
 ### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
 
-| #               | Task                                                                                                   | Status     |
-| :-------------- | :----------------------------------------------------------------------------------------------------- | :--------- |
-| **6.3.1** | **Optimistic Concurrency Control (OCC)**: Integrate a `version` column and check-before-write logic | ⏳ PENDING |
-| **6.3.2** | **Client-Side Connection Pooling**: Integrate a shared database connection pool to handle parallel sockets | ⏳ PENDING |
-| **6.3.3** | **High-Concurrency Stress Tester**: Script a multi-threaded writer to simulate concurrent row access | ⏳ PENDING |
-| **6.3.4** | **Relocation Schema Auditing**: Expand the migration bridge to verify schema drifts and index size checks | ⏳ PENDING |
+| #               | Task                                                                                                             | Status           |
+| :-------------- | :--------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **6.3.1** | **Optimistic Concurrency Control (OCC)**: Integrate a `version` column and check-before-write logic      | ✅**DONE** |
+| **6.3.2** | **Client-Side Connection Pooling**: Integrate a shared database connection pool to handle parallel sockets | ✅**DONE** |
+| **6.3.3** | **High-Concurrency Stress Tester**: Script a multi-threaded writer to simulate concurrent row access       | ✅**DONE** |
+| **6.3.4** | **Relocation Schema Auditing**: Expand the migration bridge to verify schema drifts and index size checks  | ✅**DONE** |
 
 **Technical Notes (6.3):**
+
 * **Optimistic Concurrency Control (6.3.1)**: Solves the same-row simultaneous write problem for collaborative sessions. Storage drivers will compare target row versions before committing, preventing silent data overwrites.
 * **Connection Pooling (6.3.2)**: Bypasses socket exhaustion by queuing and recycling database connections across active tenant threads.
 * **High-Concurrency Stress Tester (6.3.3)**: Generates a test script located in `/scratch/test_db_scaling.py` using `threading` or `asyncio` to write to the same table, column, and row at the exact same millisecond. This formally validates PostgreSQL's row-locking mechanics.
@@ -538,19 +549,42 @@ flowchart TD
 
 ---
 
-## 🔴 Phase 7: Semantic Chunk Cache Warehousing [STATUS: NOT STARTED]
+## 🟢 Phase 7: Master Console Integration (Option 3 + 4 Hybrid) [STATUS: COMPLETED]
 
-Phase 7 introduces the ultimate latency and cost-reduction layer, establishing an intelligent, cryptographic cache for chunked documents and semantic queries, optimized for tenant sandboxes.
+Phase 7 merges the Desktop PySide6 application with the Flask SaaS Web Server, transforming the desktop app into the "Master Console" that hosts the web portal natively in the background, allowing absolute control over tenant management and API key inheritance.
 
-### 7.1 Secure Ingestion & Semantic Query Caching
+### 7.1 The Desktop Host & Unified Models
 
-| #         | Task                                                                                                   | Status     |
-| :-------- | :----------------------------------------------------------------------------------------------------- | :--------- |
-| **7.1**   | **Cryptographic Chunk Cache**: Implement SHA-256 staging payload hashes (tenant-scoped) inside SQLite   | ⏳ PENDING |
-| **7.2**   | **Dynamic Ingestion Bypass**: Bind worker instantly to cached Qdrant collections on file hash hits    | ⏳ PENDING |
-| **7.3**   | **Semantic Response Cache**: Create a high-similarity query matching collection in Qdrant (>0.96 cosine) | ⏳ PENDING |
-| **7.4**   | **Cache Eviction & Lifecycle (TTL)**: Build automatic cleanup schedules for cached indices and assets  | ⏳ PENDING |
-| **7.5**   | **Cache Monitoring Telemetry**: Add cache hit/miss metrics logging to support SaaS Admin UI stats      | ⏳ PENDING |
+| #               | Task                                                                                                                 | Status                                                  |
+| :-------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| **7.1**   | **Flask SaaS Gateway**                                                                                         | Implement `saas/app.py` for routing SaaS user queries |
+| **7.1.1** | **Integrated Web Host**: Build a PySide6 QThread to silently run the Flask SaaS server (`app.py`) internally | ✅ DONE                                                 |
+| **7.1.2** | **Unified Key Inheritance**: Refactor SaaS Admin-Funded generation to read `settings.ini` instead of JSON    | ✅ DONE                                                 |
+| **7.1.3** | **SaaS Operator Panel**: Add a new Desktop UI tab to Start/Stop the server and view local access IP address    | ✅ DONE                                                 |
+| **7.1.4** | **Cross-Platform Web Search**: Port `web_search` toggle into SaaS HTML UI and harden Desktop crash fallbacks | ✅**DONE**                                        |
+
+### 7.2 Native Desktop Tenant Managemednt
+
+| #               | Task                                                                                                                | Status  |
+| :-------------- | :------------------------------------------------------------------------------------------------------------------ | :------ |
+| **7.2.1** | **Live Telemetry View**: Desktop dashboard showing live token consumption and web sessions for remote tenants | ✅ DONE |
+| **7.2.2** | **Tenant Access Controls**: Desktop UI capabilities to kick, ban, or reset web user passwords natively        | ✅ DONE |
+
+---
+
+## 🔴 Phase 8: Semantic Chunk Cache Warehousing [STATUS: NOT STARTED]
+
+Phase 8 introduces the ultimate latency and cost-reduction layer, establishing an intelligent, cryptographic cache for chunked documents and semantic queries, optimized for tenant sandboxes.
+
+### 8.1 Secure Ingestion & Semantic Query Caching
+
+| #             | Task                                                                                                           | Status     |
+| :------------ | :------------------------------------------------------------------------------------------------------------- | :--------- |
+| **8.1** | **Cryptographic Chunk Cache**: Implement SHA-256 staging payload hashes (tenant-scoped) inside SQLite    | ⏳ PENDING |
+| **8.2** | **Dynamic Ingestion Bypass**: Bind worker instantly to cached Qdrant collections on file hash hits       | ⏳ PENDING |
+| **8.3** | **Semantic Response Cache**: Create a high-similarity query matching collection in Qdrant (>0.96 cosine) | ⏳ PENDING |
+| **8.4** | **Cache Eviction & Lifecycle (TTL)**: Build automatic cleanup schedules for cached indices and assets    | ⏳ PENDING |
+| **8.5** | **Cache Monitoring Telemetry**: Add cache hit/miss metrics logging to support SaaS Admin UI stats        | ⏳ PENDING |
 
 ---
 
@@ -562,4 +596,3 @@ Phase 7 introduces the ultimate latency and cost-reduction layer, establishing a
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
 *Next Action: Implement the advanced Cognitive Optimizations roadmap starting with the Local Cross-Encoder Re-Ranker (Phase 5.1) or proceed with SaaS Admin Portal (Phase 6.2.1).*
-

@@ -23,7 +23,7 @@ body.theme-light {
     /* Gradient Palettes */
     --gradient-logo: linear-gradient(135deg, #0891b2 0%, #2563eb 100%);
     --gradient-btn: linear-gradient(135deg, #2563eb 0%, #6d28d9 100%);
-    --gradient-bubble: linear-gradient(135deg, rgba(219, 234, 254, 0.85) 0%, rgba(2ede, 212, 255, 0.85) 100%);
+    --gradient-bubble: linear-gradient(135deg, rgba(219, 234, 254, 0.85) 0%, rgba(237, 212, 255, 0.85) 100%);
     
     /* Glass inputs for light theme */
     --input-bg: rgba(255, 255, 255, 0.6);

@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SaaSSettingsDialog</class>
+ <widget class="QDialog" name="SaaSSettingsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>460</width>
+    <height>420</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>📡 SaaS Server Architecture Configuration</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_main">
+   <property name="spacing">
+    <number>15</number>
+   </property>
+   <property name="leftMargin">
+    <number>20</number>
+   </property>
+   <property name="topMargin">
+    <number>20</number>
+   </property>
+   <property name="rightMargin">
+    <number>20</number>
+   </property>
+   <property name="bottomMargin">
+    <number>20</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="header_lbl">
+     <property name="text">
+      <string>&lt;html&gt;&lt;body&gt;&lt;h2 style=&quot;margin-bottom:0px; color:#0078d4;&quot;&gt;📡 SaaS Node Configuration&lt;/h2&gt;&lt;p style=&quot;color:#777; margin-top:2px;&quot;&gt;Govern backend network hosting and tenant safety parameters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>4</number>
+     </property>
+     <widget class="QWidget" name="tab_network">
+      <attribute name="title">
+       <string>🌐 Network Node</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_tab1">
+       <property name="spacing">
+        <number>12</number>
+       </property>
+       <property name="leftMargin">
+        <number>15</number>
+       </property>
+       <property name="topMargin">
+        <number>15</number>
+       </property>
+       <property name="rightMargin">
+        <number>15</number>
+       </property>
+       <item>
+        <widget class="QCheckBox" name="chk_enabled">
+         <property name="font">
+          <font>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>🚀 Enable Background Network SaaS Node</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="network_frame">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <layout class="QFormLayout" name="formLayout_net">
+          <property name="verticalSpacing">
+           <number>10</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="lbl_host">
+            <property name="text">
+             <string>Bind Address (Host):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="cbo_host">
+            <item>
+             <property name="text">
+              <string>Local Machine (127.0.0.1)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Expose to LAN/Wi-Fi (0.0.0.0)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_port">
+            <property name="text">
+             <string>Listener Port:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="spn_port">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>65535</number>
+            </property>
+            <property name="value">
+             <number>8000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="hint_net">
+         <property name="text">
+          <string>&lt;html&gt;&lt;body&gt;&lt;p style=&quot;color:#888; font-size:11px;&quot;&gt;&lt;b&gt;Security Tip:&lt;/b&gt; Use 127.0.0.1 for secure local development. Expose to 0.0.0.0 only if you trust clients connected to your Wi-Fi network.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="status_box">
+         <property name="title">
+          <string>Server Status</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QLabel" name="lbl_status">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+              <pointsize>9</pointsize>
+              <italic>false</italic>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font: 700 9pt &quot;Segoe UI&quot;;</string>
+            </property>
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Status: Unknown&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="lbl_address">
+            <property name="styleSheet">
+             <string notr="true"> color: #0078d4;
+font: 600 9pt &quot;Segoe UI&quot;;</string>
+            </property>
+            <property name="text">
+             <string>Local Access URL: N/A</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_security">
+      <attribute name="title">
+       <string>🔒 Auth &amp; Alerts</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_tab2">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <property name="leftMargin">
+        <number>15</number>
+       </property>
+       <property name="topMargin">
+        <number>15</number>
+       </property>
+       <property name="rightMargin">
+        <number>15</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="grp_security">
+         <property name="title">
+          <string>Tenant Registration Gateway</string>
+         </property>
+         <layout class="QVBoxLayout" name="vLayout_sec">
+          <item>
+           <widget class="QCheckBox" name="chk_signup">
+            <property name="text">
+             <string>Allow Open Passport Registrations (Public Signup)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="grp_smtp">
+         <property name="title">
+          <string>Autonomous SMTP Relay Notification Alerts</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <layout class="QFormLayout" name="formLayout_smtp">
+          <property name="verticalSpacing">
+           <number>8</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="lbl_smtp_host">
+            <property name="text">
+             <string>SMTP Host:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="txt_smtp_host">
+            <property name="placeholderText">
+             <string>smtp.gmail.com</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_smtp_port">
+            <property name="text">
+             <string>Port:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="spn_smtp_port">
+            <property name="maximum">
+             <number>65535</number>
+            </property>
+            <property name="value">
+             <number>587</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lbl_smtp_user">
+            <property name="text">
+             <string>Email Address:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="txt_smtp_user"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="lbl_smtp_pass">
+            <property name="text">
+             <string>Password / App Key:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="txt_smtp_pass">
+            <property name="echoMode">
+             <enum>QLineEdit::EchoMode::Password</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_admin">
+      <attribute name="title">
+       <string>🛡️ Admin Reset</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_tab3">
+       <property name="spacing">
+        <number>15</number>
+       </property>
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>20</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="lbl_admin_warning">
+         <property name="text">
+          <string>&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;b style=&quot;color:#d83b01;&quot;&gt;Warning:&lt;/b&gt; This will forcefully reset the Master Admin account to its default state. This action cannot be undone.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_reset_admin">
+         <property name="font">
+          <font>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string>color: #d83b01; padding: 10px;</string>
+         </property>
+         <property name="text">
+          <string>🔄 Reset SaaS Admin Credentials</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_tab3">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_telemetry">
+      <attribute name="title">
+       <string>📊 Live Telemetry</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_tel">
+       <item>
+        <widget class="QLabel" name="lbl_global_prompt">
+         <property name="text">
+          <string>Total Prompt Tokens: 0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lbl_global_completion">
+         <property name="text">
+          <string>Total Completion Tokens: 0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_refresh_telemetry">
+         <property name="text">
+          <string>🔄 Refresh Telemetry</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_tel">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_tenants">
+      <attribute name="title">
+       <string>👥 Tenants</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_ten">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_ten">
+         <item>
+          <widget class="QPushButton" name="btn_refresh_tenants">
+           <property name="text">
+            <string>🔄 Refresh</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_toggle_ban">
+           <property name="text">
+            <string>🚫 Ban/Unban</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_reset_pass">
+           <property name="text">
+            <string>🔑 Reset Pass</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="table_tenants">
+         <property name="editTriggers">
+          <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+         </property>
+         <column>
+          <property name="text">
+           <string>ID</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Username</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Email</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Status</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Tokens</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_btns">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_save">
+       <property name="text">
+        <string>💾 Save Config</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_cancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

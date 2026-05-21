@@ -17,6 +17,7 @@ from ui.model_edit_dialog import ModelEditDialog
 from utils.path_utils import get_resource_path, get_app_settings
 from ui.shared_widgets import set_app_icon
 from utils.constants import OPENAI_BASE_URL
+from utils.helpers import strip_markdown
 
 class ModelManagerDialog(QDialog):
     """Main dialog for viewing and managing models."""
@@ -169,7 +170,7 @@ class ModelManagerDialog(QDialog):
                 table.setItem(row, 0, QTableWidgetItem(model.get("name", "") + name_suffix))
 
                 # Column 1: Description
-                table.setItem(row, 1, QTableWidgetItem(model.get("description", "")))
+                table.setItem(row, 1, QTableWidgetItem(strip_markdown(model.get("description", ""))))
 
                 # Column 2: Status (Using ThemeManager Badge style)
                 status_text = "Free" if model.get("free", True) else "Paid"

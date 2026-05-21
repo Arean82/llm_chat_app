@@ -61,6 +61,7 @@
 | 052 | **Headless / CLI** | `ui/login_dialog.py`      | 🔴 High |   ✅**Resolved**   | PySide Combo-Box index change no-op leaves dropdowns unpopulated.                                  |
 | 053 | **Stability**      | `ui/main_window.py`       |  🟠 Med  |   ✅**Resolved**   | Duplicate MainWindow methods override each other, breaking dynamic logging.                        |
 | 054 | **Deployment**     | `requirements.txt`        |  🟠 Med  |   ✅**Resolved**   | Missing remote SQLite/PostgreSQL drivers (`libsql-client`, `pg8000`) for Turso/PG.             |
+| 055 | **Architecture**   | `ui/saas_settings...`     | 🔴 High |   ✅**Resolved**   | Fragmented Desktop SaaS Control Panels bypassing Qt Designer & null-type crashes.                  |
 
 ---
 
@@ -510,6 +511,17 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Severity:** 🔴 High
 * **Status:** ✅ **Resolved**
 * **Details:** The CLI flow (`headless/auth.py`) and GUI Credential Hub (`ui/credential_manager.py`) maintained separate duplicate, hardcoded lists of API provider ecosystems and SDK configurations, making list updates extremely error-prone and breaking database centralization.
+
+#### 55. Audit ID 055: SaaS UI Fragmentation & Null Type Vulnerabilities
+
+* **Severity:** 🔴 High
+* **Status:** ✅ **Resolved**
+* **Location:** `ui/saas_settings_dialog.py`, `ui_designer/saas_settings.ui`
+* **Details:** Tenant Management and Live Telemetry dashboards were dangerously fragmented out into a secondary programmatic `saas_operator_view.py` outside of Qt Designer workflows, causing UI/UX desynchronization. Additionally, SQLite table reads were vulnerable to `NoneType` crashes when mapping empty email/username rows into QTableWidgets.
+* **Implementation:** 
+  1. Terminated external Operator View, safely migrating total data hydration loops (`refresh_tenants`, `toggle_ban_status`) into the core `SaaSSettingsDialog`. 
+  2. Injected custom `QTabWidget` expansions directly into native `ui_designer/saas_settings.ui` to preserve visual editability.
+  3. Wrapped all SQLite dictionary `.get()` payloads in strict string conversions with empty fallbacks (`str(t.get("email", ""))`) to guarantee UI thread stability across null database entries.
 * **Implementation:** Fully decoupled both CLI and GUI from hardcoded providers. Both interfaces now dynamically parse and hydrate their Platform SDK Groups and Ecosystem items on-the-fly from the single unified database `resources/api_providers.json`, supporting 16 individual SDK groups and 22 ecosystems out-of-the-box.
 
 #### 52. Audit ID 052: PySide Combo-Box Signal Initialization Lifecycle Bug

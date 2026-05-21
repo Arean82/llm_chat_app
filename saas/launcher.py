@@ -187,9 +187,16 @@ def run_headless_saas():
     
     print(f"[*] Mobilizing Cloud SaaS Platform Console ({host}:{port})...")
     from saas.app import SaaSServer
+    
+    # Initialize headless Qt Application context so QThread works
+    from PySide6.QtCore import QCoreApplication
+    import sys
+    if not QCoreApplication.instance():
+        app = QCoreApplication(sys.argv)
+        
     server = SaaSServer(host=host, port=port)
     
-    success, message = server.start()
+    success, message = server.start_server()
     if not success:
         print(f"[!] CRITICAL FAILURE: Gateway failed to bind. Details: {message}")
         sys.exit(1)

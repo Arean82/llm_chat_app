@@ -3,9 +3,24 @@
 
 import sys
 import os
+import shutil
 from pathlib import Path
 
-import shutil
+# --- Auto-Cleanup Block (Moves files improperly placed in root) ---
+try:
+    _root = Path(__file__).parent
+    if (_root / "saas_tenants.db").exists():
+        (_root / "data").mkdir(exist_ok=True)
+        shutil.move(str(_root / "saas_tenants.db"), str(_root / "data/saas_tenants.db"))
+    if (_root / "reset_admin.py").exists():
+        (_root / "scripts").mkdir(exist_ok=True)
+        shutil.move(str(_root / "reset_admin.py"), str(_root / "scripts/reset_admin.py"))
+    if (_root / "test_reranker.py").exists():
+        (_root / "scratch").mkdir(exist_ok=True)
+        shutil.move(str(_root / "test_reranker.py"), str(_root / "scratch/test_reranker.py"))
+except Exception:
+    pass
+# -----------------------------------------------------------------
 
 from utils.path_utils import get_resource_path
 
@@ -235,6 +250,7 @@ def main():
         print("  --list-models     List all models currently in the local manifest")
         print("  --update-models   Fetch latest models from the active provider")
         print("  --migrate         Migrate chat history transactionally between databases")
+        print("  --reset-admin     Reset the SaaS admin credentials to default")
         print("  --help / -h       Show this detailed help message")
         
         print("\nExamples:")
@@ -264,6 +280,11 @@ def main():
     if "--migrate" in sys.argv:
         from logic.migration_bridge import run_interactive_cli_migration
         run_interactive_cli_migration()
+        return
+        
+    if "--reset-admin" in sys.argv:
+        from scripts.reset_admin import reset_admin
+        reset_admin()
         return
 
     if env_mode == "CLI" or "--cli" in sys.argv:

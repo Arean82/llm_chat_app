@@ -439,15 +439,32 @@ def create_saas_app():
         api_execution_key = api_passport
         if user.get('key_type') == 'admin_funded':
             try:
-                from saas.config_manager import SaaSConfigManager
-                cfg = SaaSConfigManager()
-                # Attempt to extract dedicated operator-funded key from configuration
-                funded_key = cfg.get_str("GLOBAL_KEYS", f"{provider}_api_key", "").strip()
+                import keyring
+                # Priority 1: Direct link to Desktop Master Console Keyring
+                funded_key = keyring.get_password("LLMChatApp", f"api_key_{provider}")
+                if not funded_key and provider == "nvidia":
+                    funded_key = keyring.get_password("LLMChatApp", "api_key")
+                
+                # Priority 2: Fallback to old SaaSConfigManager flatfile
+                if not funded_key:
+                    from saas.config_manager import SaaSConfigManager
+                    cfg = SaaSConfigManager()
+                    funded_key = cfg.get_str("GLOBAL_KEYS", f"{provider}_api_key", "").strip()
+                    
                 if funded_key:
                     api_execution_key = funded_key
+                else:
+                    api_execution_key = None
+
             except Exception as cred_ex:
                 print(f"[Credentials Warning]: Failed to extract host-funded keys: {cred_ex}")
         
+        if not api_execution_key:
+            return jsonify({
+                "error": "Missing Credentials", 
+                "message": f"API key for '{provider}' is not configured in the Admin Desktop Console. Please add it via Settings -> Credential Manager."
+            }), 400
+
         if provider == "google":
             llm_client.set_google_api_key(api_execution_key)
         else:
@@ -464,34 +481,40 @@ def create_saas_app():
             if stream:
                 def generate_stream():
                     response_text = ""
-                    # Standard completions pipeline proxy
-                    if provider == "google":
-                        from google.genai import types
-                        chunks = llm_client.google_client.models.generate_content_stream(
-                            model=llm_client.current_model,
-                            contents=[m.get("content") for m in messages if m.get("role") != "system"],
-                            config=types.GenerateContentConfig(system_instruction=system_msg or None)
-                        )
-                        for chk in chunks:
-                            if chk.text:
-                                response_text += chk.text
-                                yield f"data: {json.dumps({'choices': [{'delta': {'content': chk.text}}]})}\n\n"
-                    else:
-                        stream_resp = llm_client.client.chat.completions.create(
-                            model=llm_client.current_model,
-                            messages=messages,
-                            stream=True
-                        )
-                        for chunk in stream_resp:
-                            if chunk.choices and chunk.choices[0].delta.content:
-                                text = chunk.choices[0].delta.content
-                                response_text += text
-                                yield f"data: {json.dumps({'choices': [{'delta': {'content': text}}]})}\n\n"
-                                
-                    # Post-stream tally execution
-                    approx_comp_tokens = int(len(response_text) / 4)
-                    db.record_usage(user['id'], approx_prompt_tokens, approx_comp_tokens)
-                    yield "data: [DONE]\n\n"
+                    try:
+                        # Standard completions pipeline proxy
+                        if provider == "google":
+                            from google.genai import types
+                            chunks = llm_client.google_client.models.generate_content_stream(
+                                model=llm_client.current_model,
+                                contents=[m.get("content") for m in messages if m.get("role") != "system"],
+                                config=types.GenerateContentConfig(system_instruction=system_msg or None)
+                            )
+                            for chk in chunks:
+                                if chk.text:
+                                    response_text += chk.text
+                                    yield f"data: {json.dumps({'choices': [{'delta': {'content': chk.text}}]})}\n\n"
+                        else:
+                            stream_resp = llm_client.client.chat.completions.create(
+                                model=llm_client.current_model,
+                                messages=messages,
+                                stream=True
+                            )
+                            for chunk in stream_resp:
+                                if chunk.choices and chunk.choices[0].delta.content:
+                                    text = chunk.choices[0].delta.content
+                                    response_text += text
+                                    yield f"data: {json.dumps({'choices': [{'delta': {'content': text}}]})}\n\n"
+                                    
+                        # Post-stream tally execution
+                        approx_comp_tokens = int(len(response_text) / 4)
+                        db.record_usage(user['id'], approx_prompt_tokens, approx_comp_tokens)
+                        yield "data: [DONE]\n\n"
+                        
+                    except Exception as e:
+                        err_msg = str(e).replace('"', '\\"')
+                        yield f"data: {json.dumps({'error': err_msg})}\n\n"
+                        yield "data: [DONE]\n\n"
 
                 return Response(stream_with_context(generate_stream()), mimetype="text/event-stream")
                 
@@ -539,27 +562,32 @@ def create_saas_app():
 
     return app
 
-class SaaSServer:
+from PySide6.QtCore import QThread, Signal
+
+class SaaSServer(QThread):
     """
     Autonomous multi-threaded executor hosting the SaaS Flask application context
-    inside background system threads for seamless desktop-shell execution.
+    inside a PySide6 QThread for seamless desktop-shell execution (Task 7.1.1).
     """
-    def __init__(self, host: str = '127.0.0.1', port: int = 5000):
-        self.app = create_saas_app()
+    
+    # Optional signals for GUI integration
+    status_changed = Signal(bool, str)
+
+    def __init__(self, host: str = '127.0.0.1', port: int = 5000, parent=None):
+        super().__init__(parent)
+        self.flask_app = create_saas_app()
         self.host = host
         self.port = port
         self.server = None
-        self.server_thread = None
         self.running = False
+        self._startup_error = None
 
-    def start(self):
-        """Locks onto target socket and launches Werkzeug listener thread."""
+    def start_server(self):
+        """Locks onto target socket and prepares the Werkzeug listener before starting the QThread."""
         if self.running:
             return True, "Already active"
             
         import socket
-        import sys
-        from threading import Thread
         
         # Standardize address interface mapping
         bind_address = '127.0.0.1' if self.host == 'localhost' else self.host
@@ -574,24 +602,28 @@ class SaaSServer:
                 
         try:
             from werkzeug.serving import make_server
-            self.server = make_server(bind_address, self.port, self.app, threaded=True)
-            
-            def run():
-                print(f"[SaaS Daemon] Background server established at http://{self.host}:{self.port}")
-                self.server.serve_forever()
-                
-            self.server_thread = Thread(target=run, daemon=True)
-            self.server_thread.start()
+            self.server = make_server(bind_address, self.port, self.flask_app, threaded=True)
             self.running = True
+            
+            # Start the QThread event loop
+            super().start()
             return True, "Success"
         except Exception as e:
             return False, f"Runtime Fault: {str(e)}"
 
+    def run(self):
+        """QThread execution block. Silently runs the Flask SaaS server internally."""
+        print(f"[SaaS Daemon] Background server established at http://{self.host}:{self.port}")
+        if self.server:
+            self.server.serve_forever()
+
     def stop(self):
-        """Triggers non-destructive shutdown loop."""
+        """Triggers non-destructive shutdown loop and terminates the QThread."""
         if self.server:
             print("[SaaS Daemon] Commencing soft shutdown sequence...")
             self.server.shutdown()
             self.server = None
         self.running = False
+        self.quit()
+        self.wait()
         return True

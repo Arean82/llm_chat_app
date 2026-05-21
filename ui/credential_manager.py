@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt, QSettings
 from PySide6.QtUiTools import QUiLoader
 
 from utils.path_utils import get_resource_path, get_app_settings
+from utils.helpers import strip_markdown
 from logic.model_io import load_all_models, save_all_models
 
 class CredentialManagerDialog(QDialog):
@@ -313,10 +314,10 @@ class CredentialManagerDialog(QDialog):
 
                 if is_global:
                     table.setItem(row, 1, QTableWidgetItem(m.get('provider', 'nvidia').upper()))
-                    table.setItem(row, 2, QTableWidgetItem(m.get('description', '')))
+                    table.setItem(row, 2, QTableWidgetItem(strip_markdown(m.get('description', ''))))
                     table.setCellWidget(row, 3, status_widget)
                 else:
-                    table.setItem(row, 1, QTableWidgetItem(m.get('description', '')))
+                    table.setItem(row, 1, QTableWidgetItem(strip_markdown(m.get('description', ''))))
                     table.setCellWidget(row, 2, status_widget)
             
             layout.addWidget(table)
