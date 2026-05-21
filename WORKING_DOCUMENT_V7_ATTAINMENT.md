@@ -532,6 +532,8 @@ flowchart TD
 | **6.2.8** | **Public Orbit Sharing Node (HTML/JS)**: Build read-only sharing route and static page             | ✅**DONE** |
 | **6.2.9** | **AI Settings Hub & Key Mirroring**: Tabbed Credential/Model Manager mimicking Desktop with Active Provider logic and `keyring` mirroring for Admins | ✅**DONE** |
 
+**Technical Notes (6.2):**
+* **Settings Hub 1:1 Parity (6.2.9)**: The SaaS AI Settings Hub has been structurally re-architected to serve as a strict, literal mirror of the desktop `QDialog` application. The layout perfectly translates the XML DOM hierarchy from `credential_manager.ui` into HTML. It features physical folder-tab css logic (bounding boxes with active tab border-masking), exact emojis (`🔐`, `📦`), dynamic developer sub-tabs extracted directly from the backend API payloads, and literal mirrored status badges (`[Free]`/`[Paid]`), completely abandoning conflicting modern web styling.
 ### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
 
 | #               | Task                                                                                                             | Status           |
