@@ -532,20 +532,43 @@
        </widget>
       </item>
       <item>
-       <widget class="QTextEdit" name="input_field">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>80</height>
-         </size>
+       <layout class="QVBoxLayout" name="input_vlayout">
+        <property name="spacing">
+         <number>2</number>
         </property>
-        <property name="placeholderText">
-         <string>Ask me anything about coding...</string>
-        </property>
-        <property name="toolTip">
-         <string>Type your message. Press Enter to send, Shift+Enter for new line</string>
-        </property>
-       </widget>
+        <item>
+         <widget class="QCheckBox" name="web_search_chk">
+          <property name="text">
+           <string>🌐 Enable Real-Time Web Search</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">
+            QCheckBox {
+                color: #0078d4;
+                font-weight: bold;
+                font-size: 11px;
+            }
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="input_field">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>80</height>
+           </size>
+          </property>
+          <property name="placeholderText">
+           <string>Ask me anything about coding...</string>
+          </property>
+          <property name="toolTip">
+           <string>Type your message. Press Enter to send, Shift+Enter for new line</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="QPushButton" name="send_btn">

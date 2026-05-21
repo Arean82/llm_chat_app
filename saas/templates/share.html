@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum SaaS - Shared Orbit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-bright);
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        .share-container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        .share-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .share-header .cyber-logo {
+            font-size: 2.5rem;
+            background: var(--gradient-logo);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body class="theme-dark">
+
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="share-container">
+        <header class="share-header">
+            <i class="fa-solid fa-brain cyber-logo"></i>
+            <h1 style="font-family:'Outfit', sans-serif;">Public <span>Orbit</span> Share</h1>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-top:5px;">Read-only conversational log snapshot.</p>
+        </header>
+
+        <div class="bubble-stream">
+            {% for msg in orbit.messages %}
+                <div class="chat-bubble {{ msg.role }}">
+                    <div class="bubble-meta">
+                        {% if msg.role == 'user' %} Satellite Feed (User) {% else %} Compute Result {% endif %}
+                    </div>
+                    <div class="bubble-content">{{ msg.content }}</div>
+                </div>
+            {% else %}
+                <div style="text-align:center; color:var(--text-dim);">No orbital data found in this transmission.</div>
+            {% endfor %}
+        </div>
+        
+        <div style="text-align:center; margin-top: 4rem; color:var(--text-dim); font-size: 0.8rem;">
+            Powered by <a href="/" style="color:var(--accent-cyan); text-decoration:none;">Quantum SaaS</a>
+        </div>
+    </div>
+
+</body>
+</html>

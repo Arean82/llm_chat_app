@@ -384,45 +384,79 @@ class ChatWorker(QThread):
             is_buffering = False
 
             if self.stream:
-                for chunk in response:
-                    if not self._is_running: break
-                    if not getattr(chunk, "choices", None): continue
-                    if not chunk.choices: continue
-                    
-                    delta = chunk.choices[0].delta
-                    
-                    # Phase 4.1.7: Tool Call Interception
-                    if hasattr(delta, 'tool_calls') and delta.tool_calls:
-                        for tc in delta.tool_calls:
-                            idx = tc.index
-                            if idx not in active_tool_calls:
-                                active_tool_calls[idx] = {
-                                    "id": tc.id if hasattr(tc, 'id') and tc.id else f"call_{int(time.time())}_{idx}",
-                                    "name": tc.function.name if (tc.function and tc.function.name) else "",
-                                    "arguments": ""
-                                }
-                            if tc.function and tc.function.arguments:
-                                active_tool_calls[idx]["arguments"] += tc.function.arguments
-                                
-                    content = delta.content
-                    if content:
-                        if first_chunk_time is None: first_chunk_time = time.perf_counter()
-                        full_response += content
-                        chunk_count += 1
+                try:
+                    for chunk in response:
+                        if not self._is_running: break
+                        if not getattr(chunk, "choices", None): continue
+                        if not chunk.choices: continue
                         
-                        # Active Buffering Trigger: If stream starts with '{'
-                        if len(full_response) == 1 and full_response.startswith("{"):
-                            is_buffering = True
+                        delta = chunk.choices[0].delta
+                        
+                        # Phase 4.1.7: Tool Call Interception
+                        if hasattr(delta, 'tool_calls') and delta.tool_calls:
+                            for tc in delta.tool_calls:
+                                idx = tc.index
+                                if idx not in active_tool_calls:
+                                    active_tool_calls[idx] = {
+                                        "id": tc.id if hasattr(tc, 'id') and tc.id else f"call_{int(time.time())}_{idx}",
+                                        "name": tc.function.name if (tc.function and tc.function.name) else "",
+                                        "arguments": ""
+                                    }
+                                if tc.function and tc.function.arguments:
+                                    active_tool_calls[idx]["arguments"] += tc.function.arguments
+                                    
+                        content = delta.content
+                        if content:
+                            if first_chunk_time is None: first_chunk_time = time.perf_counter()
+                            full_response += content
+                            chunk_count += 1
                             
-                        if is_buffering:
-                            buffered_content += content
-                            # If it grows too large, release it because it's not a short tool call JSON
-                            if len(buffered_content) > 500:
-                                is_buffering = False
-                                self.stream_chunk.emit(buffered_content)
-                                buffered_content = ""
-                        else:
-                            self.stream_chunk.emit(content)
+                            # Active Buffering Trigger: If stream starts with '{'
+                            if len(full_response) == 1 and full_response.startswith("{"):
+                                is_buffering = True
+                                
+                            if is_buffering:
+                                buffered_content += content
+                                # If it grows too large, release it because it's not a short tool call JSON
+                                if len(buffered_content) > 500:
+                                    is_buffering = False
+                                    self.stream_chunk.emit(buffered_content)
+                                    buffered_content = ""
+                            else:
+                                self.stream_chunk.emit(content)
+                except Exception as stream_ex:
+                    err_str = str(stream_ex).lower()
+                    if model_supports_tools and ("tool" in err_str or "auto" in err_str or "badrequesterror" in err_str or "400" in err_str or "not support" in err_str):
+                        print(f"[Worker] Native tool streaming rejected mid-flight. Falling back... Error: {stream_ex}")
+                        from utils.model_config import update_model_capability
+                        update_model_capability(self.client.current_model, False)
+                        
+                        # Strip tools from context
+                        for m in finalized_msgs:
+                            if m.get("role") == "system" and "You have access to tools" in str(m.get("content")):
+                                m["content"] = str(m["content"]).replace("You have access to tools, but you must only use them if the user's request explicitly requires real-time web search or external information. For general conversation, greetings (like 'hi', 'hello', 'how are you'), or general queries that don't need real-time data, do NOT call any tools. Respond directly in plain text.", "").strip()
+                        
+                        # Re-request the stream without tools
+                        response = self.client.client.chat.completions.create(
+                            model=self.client.current_model,
+                            messages=finalized_msgs,
+                            stream=True,
+                            temperature=self.temperature,
+                            max_tokens=self.max_tokens
+                        )
+                        
+                        full_response = ""
+                        for fallback_chunk in response:
+                            if not self._is_running: break
+                            if getattr(fallback_chunk, "choices", None) and fallback_chunk.choices:
+                                content = fallback_chunk.choices[0].delta.content
+                                if content:
+                                    if first_chunk_time is None: first_chunk_time = time.perf_counter()
+                                    full_response += content
+                                    chunk_count += 1
+                                    self.stream_chunk.emit(content)
+                    else:
+                        raise stream_ex
             else:
                 msg = response.choices[0].message
                 full_response = msg.content or ""

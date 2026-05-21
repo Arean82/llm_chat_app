@@ -7,7 +7,8 @@
             "free": true,
             "id": "google/gemma-3n-e2b-it",
             "name": "Gemma 3n E2b It",
-            "type": "chat"
+            "type": "chat",
+            "supports_tools": false
         },
         {
             "context_length": null,

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="app_title">Quantum SaaS - Multi-Tenant Cloud AI Console</title>
+    <meta name="description" content="Experience high-performance, low-latency inference with the self-hosted Quantum Multi-Tenant SaaS Cloud Workstation.">
+    
+    <!-- Modern Typography Stack -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Dynamic Aesthetic Stylesheet -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    
+    <!-- FontAwesome for Premium Iconography -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dark-theme">
+    
+    <!-- Dynamic Animated Background Sphere Glows -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <!-- APPLICATION SHELL -->
+    <div id="app-shell">
+        
+        <!-- ======================================================= -->
+        <!-- 🛡️ SCREEN A: SECURE PASSPORT GATEWAY (AUTH/ONBOARDING) -->
+        <!-- ======================================================= -->
+        <main id="auth-screen" class="view-container">
+            <div class="glass-panel auth-card animate-fade-in">
+                <header class="auth-header" style="position: relative;">
+                    <button class="btn-icon-toggle btn-theme-toggle" style="position: absolute; top: 0; right: 0;" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+                    <div class="app-logo">
+                        <i class="fa-solid fa-brain cyber-logo"></i>
+                        <h1><span data-i18n="brand.quantum">Quantum</span><span data-i18n="brand.saas">SaaS</span></h1>
+                    </div>
+                    <p class="subtitle" data-i18n="brand.subtitle">Universal Cloud Inference Gateway</p>
+                </header>
+
+                <!-- Step 1: Pre-Flight Passport Verification -->
+                <section id="passport-validation-step" class="auth-step">
+                    <div class="step-indicator"><span data-i18n="auth.step_1">Step 1/2</span> <span data-i18n="auth.step_1_title">Key-Passport Validation</span></div>
+                    <p class="instruction" data-i18n="auth.step_1_instruction">Please enter your private API Key to unlock and provision your multi-tenant sandbox.</p>
+                    
+                    <form id="form-validate-passport" class="cyber-form">
+                        <div class="input-group">
+                            <label for="provider-select"><i class="fa-solid fa-server"></i> <span data-i18n="auth.provider_label">Inference Provider</span></label>
+                            <select id="provider-select" required>
+                                <option value="nvidia" data-i18n="auth.provider_nvidia">NVIDIA NGC Cloud (Recommended)</option>
+                                <option value="openai" data-i18n="auth.provider_openai">OpenAI Ecosystem</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="passport-key-input"><i class="fa-solid fa-key"></i> <span data-i18n="auth.key_label">Private API Key</span></label>
+                            <input type="password" id="passport-key-input" data-i18n-placeholder="auth.key_placeholder" placeholder="nvapi-xxxxxxxx / sk-xxxxxxx" required autocomplete="current-password">
+                            <button type="button" class="btn-icon-toggle" onclick="togglePasswordVisibility('passport-key-input')">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <div id="passport-feedback" class="status-box hidden"></div>
+
+                        <button type="submit" class="btn-primary btn-glow-effect" id="btn-run-validation">
+                            <span class="idle-text"><i class="fa-solid fa-satellite-dish"></i> <span data-i18n="auth.btn_validate_idle">Run Pre-Flight Validation</span></span>
+                            <span class="loading-text hidden"><i class="fa-solid fa-spinner fa-spin"></i> <span data-i18n="auth.btn_validate_loading">Verifying Handshake...</span></span>
+                        </button>
+                    </form>
+                    
+                    <div class="auth-switch">
+                        <span data-i18n="auth.switch_login">Already possess a passport?</span> <a href="#" id="link-switch-login" data-i18n="auth.link_login">Sign In Here</a>
+                    </div>
+                </section>
+
+                <!-- Step 2: Account Provisioning (Revealed after Validation) -->
+                <section id="account-provision-step" class="auth-step hidden animate-slide-up">
+                    <div class="step-indicator success"><i class="fa-solid fa-circle-check"></i> <span data-i18n="auth.step_2_title">Key Validated! Finalize Profile</span></div>
+                    <p class="instruction" data-i18n="auth.step_2_instruction">Set your local credentials to initialize your secure database sandbox.</p>
+                    
+                    <form id="form-register" class="cyber-form">
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label for="reg-username"><i class="fa-solid fa-user-astronaut"></i> <span data-i18n="auth.display_name_label">Display Name</span></label>
+                                <input type="text" id="reg-username" data-i18n-placeholder="auth.display_name_placeholder" placeholder="CyberPilot" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="reg-email"><i class="fa-solid fa-envelope"></i> <span data-i18n="auth.email_label">Email Address</span></label>
+                                <input type="email" id="reg-email" data-i18n-placeholder="auth.email_placeholder" placeholder="pilot@grid.net" required>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="reg-password"><i class="fa-solid fa-lock"></i> <span data-i18n="auth.master_password_label">Master Password</span></label>
+                            <input type="password" id="reg-password" data-i18n-placeholder="auth.master_password_placeholder" placeholder="Minimum 8 characters" required minlength="8" autocomplete="new-password">
+                        </div>
+
+                        <div id="register-feedback" class="status-box hidden"></div>
+
+                        <button type="submit" class="btn-success btn-glow-effect" id="btn-complete-registration">
+                            <i class="fa-solid fa-rocket"></i> <span data-i18n="auth.btn_complete_registration">Complete Profile & Provision Space</span>
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Screen A.2: Standard Secure Login Portal -->
+                <section id="login-portal-step" class="auth-step hidden animate-fade-in">
+                    <div class="step-indicator" data-i18n="auth.login_title">System Access Control</div>
+                    <p class="instruction" data-i18n="auth.login_instruction">Provide authorization credentials to log into your dedicated workspace.</p>
+                    
+                    <form id="form-login" class="cyber-form">
+                        <div class="input-group">
+                            <label for="login-id"><i class="fa-solid fa-user-shield"></i> <span data-i18n="auth.login_id_label">Username or Email</span></label>
+                            <input type="text" id="login-id" data-i18n-placeholder="auth.login_id_placeholder" placeholder="Enter your credentials" required autocomplete="username">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="login-pass"><i class="fa-solid fa-fingerprint"></i> <span data-i18n="auth.login_pass_label">Secure Password</span></label>
+                            <input type="password" id="login-pass" data-i18n-placeholder="auth.login_pass_placeholder" placeholder="Enter Master Password" required autocomplete="current-password">
+                        </div>
+
+                        <div id="login-feedback" class="status-box hidden"></div>
+
+                        <button type="submit" class="btn-primary btn-glow-effect" id="btn-run-login">
+                            <span class="idle-text"><i class="fa-solid fa-unlock-keyhole"></i> <span data-i18n="auth.btn_login_idle">Authorize Entry</span></span>
+                            <span class="loading-text hidden"><i class="fa-solid fa-spinner fa-spin"></i> <span data-i18n="auth.btn_login_loading">Authenticating...</span></span>
+                        </button>
+                    </form>
+                    
+                    <div class="auth-switch">
+                        <span data-i18n="auth.switch_register">Need to provision a new space?</span> <a href="#" id="link-switch-register" data-i18n="auth.link_register">Create Workspace</a>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- ======================================================= -->
+        <!-- 💬 SCREEN B: SAAS DESKTOP-CLASS WORKSPACE (DASHBOARD) -->
+        <!-- ======================================================= -->
+        <main id="workspace-screen" class="view-container hidden animate-fade-in">
+            
+            <!-- 📦 COMMAND SIDEBAR (Navigation & History) -->
+            <aside class="workspace-sidebar">
+                <div class="sidebar-header">
+                    <div class="app-logo mini">
+                        <i class="fa-solid fa-brain cyber-logo"></i>
+                        <h2><span>Quantum</span>SaaS</h2>
+                    </div>
+                    <button id="btn-new-chat" class="btn-new"><i class="fa-solid fa-plus"></i> <span data-i18n="workspace.new_orbit">New Orbit</span></button>
+                    <div class="sidebar-nav" style="margin-top: 1rem; display: flex; gap: 8px;">
+                        <button id="nav-chat" class="btn-new" style="margin-top: 0; flex: 1;" title="Chat Console"><i class="fa-solid fa-message"></i></button>
+                        <button id="nav-memory" class="btn-new" style="margin-top: 0; flex: 1;" title="Semantic Memory"><i class="fa-solid fa-database"></i></button>
+                        <button id="nav-admin" class="btn-new hidden" style="margin-top: 0; flex: 1;" title="Operator Console"><i class="fa-solid fa-shield-halved"></i></button>
+                    </div>
+                    <button id="btn-arena-toggle" class="btn-arena" data-i18n-title="workspace.arena_tooltip" title="Initiate Dual-Model Confrontation"><i class="fa-solid fa-bolt-lightning"></i> <span data-i18n="workspace.btn_arena">Model Arena</span></button>
+                </div>
+
+                <nav class="chat-history-container">
+                    <div class="section-label" data-i18n="workspace.history_section_label">Physical Sandboxed Streams</div>
+                    <div id="history-list" class="history-list">
+                        <!-- Dynamically filled by JS -->
+                        <div class="empty-history" data-i18n="workspace.empty_history">No active orbital streams found.</div>
+                    </div>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="user-badge">
+                        <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                        <div class="user-info">
+                            <div class="username" id="display-username" data-i18n="workspace.guest_pilot">Guest Pilot</div>
+                            <div class="key-tag byok" id="display-tier" data-i18n="workspace.byok_tier">BYOK Tier</div>
+                        </div>
+                    </div>
+                    <div class="footer-actions">
+                        <button class="btn-footer-icon btn-theme-toggle" title="Toggle Theme">
+                            <i class="fa-solid fa-moon"></i>
+                        </button>
+                        <button id="btn-open-settings" data-i18n-title="workspace.settings_tooltip" title="Grid Preferences & Vault" class="btn-footer-icon">
+                            <i class="fa-solid fa-gears"></i>
+                        </button>
+                        <button id="btn-signout" data-i18n-title="workspace.signout_tooltip" title="Terminate Active Session" class="btn-logout">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 🗺️ CENTRAL WORKSPACE STREAM -->
+            <section class="workspace-main">
+                
+                <!-- 💎 DYNAMIC TELEMETRY HEADER -->
+                <header class="workspace-header">
+                    <div class="telemetry-summary">
+                        <div class="telemetry-item">
+                            <span class="t-label" data-i18n="workspace.telemetry_engine">Engine State</span>
+                            <span class="t-value status-online"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="workspace.telemetry_active">Active</span></span>
+                        </div>
+                        <div class="telemetry-item border-split">
+                            <span class="t-label" data-i18n="workspace.telemetry_prompt">Prompt Tally</span>
+                            <span class="t-value" id="counter-prompt">0</span>
+                        </div>
+                        <div class="telemetry-item border-split">
+                            <span class="t-label" data-i18n="workspace.telemetry_comp">Completion Tally</span>
+                            <span class="t-value" id="counter-comp">0</span>
+                        </div>
+                        <div class="telemetry-item border-split">
+                            <span class="t-label" data-i18n="workspace.telemetry_api">API Endpoint</span>
+                            <span class="t-value text-mono">/v1/chat</span>
+                        </div>
+                    </div>
+
+                    <div class="model-deployment-selector">
+                        <!-- Standard Selection View -->
+                        <div id="single-model-pane">
+                            <label for="model-selector"><i class="fa-solid fa-microchip"></i></label>
+                            <select id="model-selector">
+                                <option value="meta/llama-3.1-8b-instruct" data-i18n="workspace.model_standard_loading">Loading standard node...</option>
+                            </select>
+                        </div>
+                        <!-- Model Arena Split Controls -->
+                        <div id="dual-model-pane" class="hidden">
+                            <div class="arena-pickers">
+                                <div class="picker-col">
+                                    <label for="arena-model-left"><i class="fa-solid fa-circle-left"></i> <span data-i18n="workspace.arena_model_a">Pilot Model A</span></label>
+                                    <select id="arena-model-left"></select>
+                                </div>
+                                <div class="vs-separator" data-i18n="workspace.arena_vs">VS</div>
+                                <div class="picker-col">
+                                    <label for="arena-model-right"><span data-i18n="workspace.arena_model_b">Pilot Model B</span> <i class="fa-solid fa-circle-right"></i></label>
+                                    <select id="arena-model-right"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- 📜 THE CHAT SCROLL CONTAINER -->
+                <div class="chat-viewport" id="chat-scroll-frame">
+                    <!-- Empty state instructions -->
+                    <div id="chat-welcome-screen" class="chat-intro animate-fade-in">
+                        <i class="fa-solid fa-cubes-stacked intro-icon"></i>
+                        <h2 data-i18n="workspace.welcome_title">Quantum Virtual Sandbox Provisioned</h2>
+                        <p data-i18n="workspace.welcome_desc">Your communications are isolated and mapped strictly into your private server directory. Enter a prompt to mobilize the compute cluster.</p>
+                        
+                        <div class="quick-prompts">
+                            <button class="quick-p-btn" onclick="fillPrompt('Explain the architectural implications of multi-tenant isolation.')" data-i18n="workspace.prompt_suggest_1">💡 Explain Multi-Tenancy</button>
+                            <button class="quick-p-btn" onclick="fillPrompt('Write a clean Python function processing real-time SSE chunks.')" data-i18n="workspace.prompt_suggest_2">💻 Python SSE Processor</button>
+                            <button id="btn-share-orbit" class="quick-p-btn" title="Generate Public Link"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        </div>
+                    </div>
+
+                    <!-- Bubbles get generated here (Standard View) -->
+                    <div id="chat-bubble-stream" class="bubble-stream"></div>
+                    
+                    <!-- Side-by-side concurrent dual feeds (Arena View) -->
+                    <div id="arena-chat-grid" class="arena-grid hidden">
+                        <div class="arena-column" id="arena-col-left">
+                            <div class="arena-header"><i class="fa-solid fa-bolt-lightning"></i> <span data-i18n="workspace.arena_col_a">Orbit Module A</span></div>
+                            <div id="arena-bubbles-left" class="bubble-stream"></div>
+                        </div>
+                        <div class="arena-column" id="arena-col-right">
+                            <div class="arena-header"><i class="fa-solid fa-fire-flame-curved"></i> <span data-i18n="workspace.arena_col_b">Orbit Module B</span></div>
+                            <div id="arena-bubbles-right" class="bubble-stream"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⌨️ INTERACTIVE DYNAMIC INPUT BAR -->
+                <footer class="workspace-footer">
+                    <div class="input-canvas glass-panel">
+                        <textarea id="main-prompt-input" rows="1" data-i18n-placeholder="workspace.input_placeholder" placeholder="Enter system query... (Shift+Enter for newline)" autocomplete="off" spellcheck="false"></textarea>
+                        <div class="input-actions">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div class="mode-indicator"><i class="fa-solid fa-bolt"></i> <span data-i18n="workspace.mode_streaming">Streaming Engine Enabled</span></div>
+                                <label style="display: flex; align-items: center; gap: 5px; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; transition: color 0.2s ease;">
+                                    <input type="checkbox" id="web-search-toggle" style="accent-color: var(--accent-cyan);">
+                                    <i class="fa-solid fa-globe"></i> Web Search
+                                </label>
+                            </div>
+                            <button id="btn-send-prompt" class="btn-send-circle" disabled>
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                </footer>
+
+            </section>
+        </main>
+
+        <!-- ======================================================= -->
+        <!-- 🔮 SCREEN E: SEMANTIC MEMORY EXPLORER                   -->
+        <!-- ======================================================= -->
+        <main id="memory-screen" class="view-container hidden" style="align-items: flex-start; padding: 2rem; overflow-y: auto;">
+            <div class="glass-panel" style="width: 100%; max-width: 1000px; margin: 0 auto; padding: 2rem; border-radius: var(--radius-lg);">
+                <div class="modal-header" style="margin-bottom: 0;">
+                    <h3><i class="fa-solid fa-database"></i> Semantic Memory Explorer</h3>
+                </div>
+                <div style="color: var(--text-muted); margin-bottom: 2rem;">Manage vectorized semantic collections tied to your workspace.</div>
+                
+                <div id="memory-roster" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+                    <!-- Dynamic Roster Injection -->
+                </div>
+            </div>
+        </main>
+
+        <!-- ======================================================= -->
+        <!-- 📊 SCREEN D: OPERATOR COMMAND CONSOLE                   -->
+        <!-- ======================================================= -->
+        <main id="admin-screen" class="view-container hidden" style="align-items: flex-start; padding: 2rem; overflow-y: auto;">
+            <div class="glass-panel" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 2rem; border-radius: var(--radius-lg);">
+                <div class="modal-header" style="margin-bottom: 0;">
+                    <h3><i class="fa-solid fa-shield-halved"></i> Operator Command Console</h3>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                    <!-- Stats Card -->
+                    <div class="glass-panel" style="padding: 1.5rem; border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: 1rem; color: var(--accent-cyan);">Global Telemetry</h4>
+                        <div id="admin-stats-container" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Injected Stats -->
+                        </div>
+                    </div>
+                    
+                    <!-- Users Card -->
+                    <div class="glass-panel" style="padding: 1.5rem; border-radius: var(--radius-md); grid-column: 1 / -1;">
+                        <h4 style="margin-bottom: 1rem; color: var(--accent-violet);">Tenant Roster</h4>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-glow); color: var(--text-dim);">
+                                        <th style="padding: 10px;">ID</th>
+                                        <th style="padding: 10px;">Display Name</th>
+                                        <th style="padding: 10px;">Email</th>
+                                        <th style="padding: 10px;">Tier</th>
+                                        <th style="padding: 10px;">Status</th>
+                                        <th style="padding: 10px;">Registered</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-table">
+                                    <!-- Injected Users -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- ⚙️ SCREEN C: SECURE SETTINGS WORKSTATION (MODAL) -->
+    <div id="settings-modal" class="modal-overlay hidden animate-fade-in">
+        <div class="glass-panel modal-content animate-slide-up">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-gears"></i> <span data-i18n="settings.modal_title">Grid Security & API Vault</span></h3>
+                <button id="btn-close-settings" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="form-update-settings" class="cyber-form">
+                    <div class="section-title"><i class="fa-solid fa-user-gear"></i> <span data-i18n="settings.section_profile">Profile Settings</span></div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="set-username"><i class="fa-solid fa-user-astronaut"></i> <span data-i18n="auth.display_name_label">Display Name</span></label>
+                            <input type="text" id="set-username" data-i18n-placeholder="auth.display_name_placeholder" placeholder="Username" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="set-email"><i class="fa-solid fa-envelope"></i> <span data-i18n="auth.email_label">Email Address</span></label>
+                            <input type="email" id="set-email" data-i18n-placeholder="auth.email_placeholder" placeholder="Email" disabled style="opacity:0.6; cursor:not-allowed;">
+                        </div>
+                    </div>
+
+                    <div class="section-title"><i class="fa-solid fa-key"></i> <span data-i18n="settings.section_vault">Secure Key Vault</span></div>
+                    <div class="input-group">
+                        <label for="set-api-key"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="settings.vault_label">Private API Passport Key</span></label>
+                        <input type="password" id="set-api-key" data-i18n-placeholder="settings.vault_placeholder" placeholder="••••••••••••••••" autocomplete="new-password">
+                        <button type="button" class="btn-icon-toggle" onclick="toggleSettingKeyVisibility()">
+                            <i class="fa-regular fa-eye" id="toggle-setting-eye"></i>
+                        </button>
+                        <small class="input-desc" data-i18n="settings.vault_desc">Updates your private physical vault. Leave blank if you prefer using current passport credentials.</small>
+                    </div>
+                    
+                    <div class="section-title"><i class="fa-solid fa-lock"></i> <span data-i18n="settings.section_password">Password Management</span></div>
+                    <div class="input-group">
+                        <label for="set-password"><i class="fa-solid fa-fingerprint"></i> <span data-i18n="settings.update_password_label">Update Master Password</span></label>
+                        <input type="password" id="set-password" data-i18n-placeholder="settings.update_password_placeholder" placeholder="Enter new secure password" minlength="4">
+                    </div>
+
+                    <div id="settings-feedback" class="status-box hidden"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="btn-cancel-settings" class="btn-cancel" data-i18n="settings.btn_cancel">Cancel</button>
+                        <button type="submit" class="btn-primary btn-glow-effect" data-i18n="settings.btn_apply">Apply Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Local settings password visibility utility
+        function toggleSettingKeyVisibility() {
+            const field = document.getElementById('set-api-key');
+            const icon = document.getElementById('toggle-setting-eye');
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.replace('fa-regular', 'fa-solid');
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.replace('fa-solid', 'fa-regular');
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+
+    <!-- Modular SPA Javascript Controllers -->
+    <script type="module">
+        import { initI18n } from '/static/js/i18n.js';
+        import { initThemeToggle, toggleTheme } from '/static/js/theme-toggle.js';
+        
+        // Expose toggle to global scope for inline buttons if needed, or attach events
+        window.toggleTheme = toggleTheme;
+        
+        // Initialize i18n BEFORE loading main logic so strings are ready
+        // We will defer main.js execution by dynamically loading it after i18n is ready.
+        document.addEventListener('DOMContentLoaded', async () => {
+            initThemeToggle();
+            
+            // Attach theme toggle click events
+            document.querySelectorAll('.btn-theme-toggle').forEach(btn => {
+                btn.addEventListener('click', toggleTheme);
+            });
+            
+            await initI18n('en');
+            
+            // Now dynamically load main.js (which has been converted to an ES module)
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = '/static/js/main.js';
+            document.body.appendChild(script);
+        });
+    </script>
+</body>
+</html>

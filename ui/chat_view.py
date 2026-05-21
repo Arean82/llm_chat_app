@@ -117,24 +117,7 @@ class ChatViewWidget(QWidget):
             settings.sync()
         
         # --- TOOL INJECTION PHASE ---
-        from PySide6.QtWidgets import QCheckBox
-        self.web_search_chk = QCheckBox("🌐 Enable Real-Time Web Search")
-        # Inject styled grounding toggle directly into visual structure above bottom control bar
-        self.web_search_chk.setStyleSheet("""
-            QCheckBox {
-                color: #0078d4;
-                font-weight: bold;
-                font-size: 11px;
-                margin-left: 15px;
-                margin-bottom: 2px;
-            }
-            QCheckBox::indicator:checked {
-                border: 1px solid #0078d4;
-                background: #0078d4;
-            }
-        """)
-        # Insert directly above the horizontal bottom toolbar (main_layout node 2)
-        self.ui.main_layout.insertWidget(2, self.web_search_chk)
+        self.web_search_chk = self.ui.web_search_chk
 
         # Enable dynamic Drag & Drop ingestion matrix
         self.setAcceptDrops(True)
