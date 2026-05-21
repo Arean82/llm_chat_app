@@ -15,6 +15,10 @@
     --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+html {
+    font-size: 14px; /* Globally reduces all relative (rem) font sizes by ~2px compared to default 16px */
+}
+
 /* --------------------------------------------------------------
    Reset & Global Base Rules
    -------------------------------------------------------------- */

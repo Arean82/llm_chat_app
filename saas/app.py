@@ -239,7 +239,7 @@ def create_saas_app():
         Global passport gate middleware verifying API tokens and injected routing context.
         """
         # Exempt UI landing, static folders, health nodes, and onboarding endpoints
-        exempt_starts = ['/static', '/health', '/api/validate_passport', '/api/register', '/api/login']
+        exempt_starts = ['/static', '/health', '/api/validate_passport', '/api/register', '/api/login', '/app_icon.ico']
         if request.path == '/' or any(request.path.startswith(prefix) for prefix in exempt_starts):
             return None
             
@@ -313,6 +313,47 @@ def create_saas_app():
                     db.set_tenant_credential(request.tenant['id'], prov.lower(), key.strip())
             return jsonify({"status": "success", "message": "Credentials synchronized."})
 
+    @app.route('/v1/system/providers', methods=['GET'])
+    def list_system_providers():
+        """Returns the dynamic list of base providers + custom providers."""
+        try:
+            from logic.model_io import load_provider_metadata
+            from utils.path_utils import get_app_settings
+            import json
+            
+            metadata = load_provider_metadata()
+            raw_providers = metadata.get("providers", [])
+            
+            base_providers = []
+            for p in raw_providers:
+                base_providers.append({
+                    "id": p.get("id"),
+                    "sdk": p.get("sdk", "openai"),
+                    "ecosystem": p.get("display_name", p.get("id")),
+                    "default_url": p.get("default_url", "")
+                })
+                
+            settings = get_app_settings()
+            custom_raw = settings.value("custom_providers", "[]")
+            try:
+                custom_providers = json.loads(custom_raw)
+            except:
+                custom_providers = []
+                
+            formatted_custom = []
+            for c in custom_providers:
+                eco_key = c['ecosystem'].lower().replace(' ', '_')
+                formatted_custom.append({
+                    "id": f"{c['sdk']}_{eco_key}", 
+                    "sdk": c['sdk'],
+                    "ecosystem": c['ecosystem'],
+                    "default_url": c['url']
+                })
+                
+            return jsonify({"base": base_providers, "custom": formatted_custom})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     @app.route('/v1/models', methods=['GET'])
     def list_saas_models():
         """
@@ -333,12 +374,24 @@ def create_saas_app():
                 
                 has_key = False
                 if is_admin:
-                    if prov == "nvidia":
+                    if "nvidia" in prov:
                         has_key = bool(keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"))
-                    elif prov == "google":
+                    elif "google" in prov:
                         has_key = bool(keyring.get_password("LLMChatApp", "api_key_google"))
                     else:
-                        has_key = bool(keyring.get_password("LLMChatApp", f"api_key_openai_{prov}"))
+                        from utils.path_utils import get_app_settings
+                        import json
+                        custom = json.loads(get_app_settings().value("custom_providers", "[]"))
+                        
+                        def normalize(p):
+                            return str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
+                            
+                        for cp in custom:
+                            if normalize(cp['ecosystem']) == normalize(prov):
+                                eco_key = cp['ecosystem'].lower().replace(' ', '_')
+                                if keyring.get_password("LLMChatApp", f"api_key_{cp['sdk']}_{eco_key}"):
+                                    has_key = True
+                                    break
                 else:
                     has_key = prov in tenant_creds and bool(tenant_creds[prov])
                     
@@ -356,6 +409,9 @@ def create_saas_app():
                         "created": int(time.time()),
                         "owned_by": m.get("provider", "llm-chat-app"),
                         "name": m.get("name", m_id),
+                        "description": m.get("description", ""),
+                        "free": m.get("free", True),
+                        "developer": m.get("developer", ""),
                         "capabilities": {
                             "chat": m.get('type', 'chat') == 'chat',
                             "tools": does_model_support_tools(m_id),
