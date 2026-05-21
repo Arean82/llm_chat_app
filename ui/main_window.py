@@ -451,6 +451,9 @@ class MainWindowClass(QMainWindow):
 
         self.saas_server.host = host
         self.saas_server.port = port
+        # Persist the computed local URL for UI consumption
+        cfg = SaaSConfigManager()
+        cfg.set_local_url(host, port)
         success, msg = self.saas_server.start_server()
         
         if hasattr(self, 'saas_console_action'):

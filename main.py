@@ -147,9 +147,14 @@ def main():
     import sys
     from PySide6.QtCore import QSettings
     
-    # Global System-Level Configuration
     from utils.storage_config import StorageManager
+    from utils.logger import AppLogger
+    
     manager = StorageManager.get_instance()
+    
+    # Initialize Core Telemetry Logger
+    logger = AppLogger.get_instance()
+    logger.info("Quantum SaaS Multi-Tenant Cloud Platform initializing...")
     
     # Create the App instance first so we can apply styles/icons to it (safely wrapped)
     app = None

@@ -127,8 +127,8 @@ export async function loadModels() {
         
         populateStandardSelector();
         populateArenaSelectors();
-    } catch (err) {
-        console.error("[JS Engine]: Failed to dynamically harvest provider models:", err);
+    } catch (e) {
+        console.error("Admin dashboard failed to load", e);
     }
 }
 

@@ -26,6 +26,11 @@ class SaaSSettingsDialogClass(QDialog):
         # Assign loaded layout context directly onto self container
         if self.ui and self.ui.layout():
             self.setLayout(self.ui.layout())
+            # Carry over the geometry bounds specified in the Qt Designer .ui file and lock resizing
+            self.setFixedSize(self.ui.size())
+            
+        # Ensure window title is set correctly instead of defaulting to process name
+        self.setWindowTitle("📡 SaaS Node Configuration")
         
         # Bind interaction connections
         self.ui.btn_save.clicked.connect(self.on_save)
@@ -71,6 +76,13 @@ class SaaSSettingsDialogClass(QDialog):
             self.ui.cbo_host.setCurrentIndex(0)
             
         self.ui.spn_port.setValue(self.config.get_int("NETWORK", "port", 8000))
+        # Populate local access URL if present
+        if hasattr(self.ui, 'lbl_address'):
+            url = self.config.get_str("NETWORK", "local_access_url", "")
+            if url:
+                self.ui.lbl_address.setText(f"Local Access URL: {url}")
+            else:
+                self.ui.lbl_address.setText("Local Access URL: N/A")
         
         # Security Block
         self.ui.chk_signup.setChecked(self.config.get_bool("SECURITY", "public_signup", True))

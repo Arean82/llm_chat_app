@@ -141,6 +141,14 @@ openai_api_key =
             self.parser.add_section(section)
         self.parser.set(section, key, str(value).lower() if isinstance(value, bool) else str(value))
 
+    def set_local_url(self, host: str, port: int) -> None:
+        """Persist the computed local URL for the UI.
+        The URL is stored under the NETWORK section as `local_access_url`.
+        """
+        url = f"http://{host}:{port}"
+        self.set_val("NETWORK", "local_access_url", url)
+        self.save()
+
     def save(self):
         """Hardware-flushes active memory back to the INI text document."""
         try:

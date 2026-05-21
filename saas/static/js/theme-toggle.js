@@ -21,7 +21,7 @@ export function toggleTheme() {
 export function updateToggleIcons() {
     const isDark = document.body.classList.contains('theme-dark');
     document.querySelectorAll('.btn-theme-toggle').forEach(btn => {
-        btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        btn.innerHTML = isDark ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
         btn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
     });
 }

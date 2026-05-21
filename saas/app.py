@@ -257,6 +257,62 @@ def create_saas_app():
         request.tenant = user
         return None
 
+    @app.route('/v1/tenant/credentials', methods=['GET', 'POST'])
+    def manage_credentials():
+        """Retrieve masked keys or save new API keys for the current tenant."""
+        is_admin = request.tenant['username'] == 'admin'
+        
+        if request.method == 'GET':
+            if is_admin:
+                import keyring
+                creds = {
+                    'nvidia': keyring.get_password("LLMChatApp", "api_key_nvidia") or "",
+                    'nvidia_base_url': keyring.get_password("LLMChatApp", "url_nvidia") or "",
+                    'google': keyring.get_password("LLMChatApp", "api_key_google") or "",
+                    'google_base_url': keyring.get_password("LLMChatApp", "url_google") or "",
+                    'anthropic': keyring.get_password("LLMChatApp", "api_key_openai_anthropic") or "",
+                    'anthropic_base_url': keyring.get_password("LLMChatApp", "url_anthropic") or "",
+                    'openai': keyring.get_password("LLMChatApp", "api_key_openai_openai") or "",
+                    'openai_base_url': keyring.get_password("LLMChatApp", "url_openai") or ""
+                }
+            else:
+                creds = db.get_tenant_credentials(request.tenant['id'])
+                
+            masked = {}
+            for prov, key in creds.items():
+                if not key:
+                    continue
+                if prov.endswith('_base_url'):
+                    masked[prov] = key # don't mask URLs
+                elif len(key) > 8:
+                    masked[prov] = key[:4] + "...." + key[-4:]
+                else:
+                    masked[prov] = "********"
+            return jsonify(masked)
+        
+        elif request.method == 'POST':
+            data = request.json
+            if not isinstance(data, dict):
+                return jsonify({"error": "Invalid format"}), 400
+                
+            if is_admin:
+                import keyring
+                for prov, key in data.items():
+                    if prov.endswith('_base_url'):
+                        k_name = f"url_{prov.replace('_base_url', '')}"
+                    else:
+                        k_name = "api_key_nvidia" if prov == "nvidia" else "api_key_google" if prov == "google" else f"api_key_openai_{prov}"
+                    
+                    if key.strip():
+                        keyring.set_password("LLMChatApp", k_name, key.strip())
+                    else:
+                        try: keyring.delete_password("LLMChatApp", k_name)
+                        except: pass
+            else:
+                for prov, key in data.items():
+                    db.set_tenant_credential(request.tenant['id'], prov.lower(), key.strip())
+            return jsonify({"status": "success", "message": "Credentials synchronized."})
+
     @app.route('/v1/models', methods=['GET'])
     def list_saas_models():
         """
@@ -264,16 +320,48 @@ def create_saas_app():
         """
         try:
             from logic.model_io import load_all_models
+            from utils.model_config import does_model_support_tools
             all_models = load_all_models()
             
+            is_admin = request.tenant['username'] == 'admin' if hasattr(request, 'tenant') else False
+            tenant_creds = db.get_tenant_credentials(request.tenant['id']) if hasattr(request, 'tenant') and not is_admin else {}
+            
+            import keyring
             model_data = []
             for m in all_models:
-                model_data.append({
-                    "id": m.get("id"),
-                    "object": "model",
-                    "created": int(time.time()),
-                    "owned_by": m.get("provider", "llm-chat-app")
-                })
+                prov = m.get('provider', 'nvidia').lower()
+                
+                has_key = False
+                if is_admin:
+                    if prov == "nvidia":
+                        has_key = bool(keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"))
+                    elif prov == "google":
+                        has_key = bool(keyring.get_password("LLMChatApp", "api_key_google"))
+                    else:
+                        has_key = bool(keyring.get_password("LLMChatApp", f"api_key_openai_{prov}"))
+                else:
+                    has_key = prov in tenant_creds and bool(tenant_creds[prov])
+                    
+                if prov in ['local', 'ollama', 'lmstudio']:
+                    has_key = True
+                    
+                if has_key:
+                    m_id = m.get("id", "")
+                    m_desc = m.get("description", "").lower()
+                    is_vision = "vision" in m_id.lower() or "-vl" in m_id.lower() or "vision" in m_desc or "multimodal" in m_desc
+                    
+                    model_data.append({
+                        "id": m_id,
+                        "object": "model",
+                        "created": int(time.time()),
+                        "owned_by": m.get("provider", "llm-chat-app"),
+                        "name": m.get("name", m_id),
+                        "capabilities": {
+                            "chat": m.get('type', 'chat') == 'chat',
+                            "tools": does_model_support_tools(m_id),
+                            "vision": is_vision
+                        }
+                    })
                 
             # Global system safety fallback
             if not model_data:
@@ -361,6 +449,14 @@ def create_saas_app():
             "share_url": f"/share/{share_hash}"
         })
         
+    @app.route('/app_icon.ico')
+    def app_icon():
+        from flask import send_file
+        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'resources', 'app_icon.ico'))
+        if os.path.exists(icon_path):
+            return send_file(icon_path, mimetype='image/x-icon')
+        return "", 404
+
     @app.route('/share/<share_hash>', methods=['GET'])
     def view_shared_orbit(share_hash):
         """Renders the static, read-only conversational log."""

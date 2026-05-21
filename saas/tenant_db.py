@@ -76,6 +76,19 @@ class TenantDatabaseManager:
                     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
+            
+            # 4. BYOK Tenant Credentials
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS tenant_credentials (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    provider TEXT NOT NULL,
+                    api_key TEXT NOT NULL,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, provider),
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
             conn.commit()
 
             # 4. SEED DEFAULT SUPER ADMIN (Critical First-Run Bootloader Fix)
@@ -240,6 +253,36 @@ class TenantDatabaseManager:
                     VALUES (?, ?, ?, ?)
                 """, (user_id, prompt_tokens, completion_tokens, total))
             conn.commit()
+
+    def log_api_usage(self, user_id: int, prompt_tokens: int, completion_tokens: int):
+        """Records token burndown for the active billing cycle."""
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO user_usage (user_id, prompt_tokens, completion_tokens, total_tokens)
+                VALUES (?, ?, ?, ?)
+            """, (user_id, prompt_tokens, completion_tokens, prompt_tokens + completion_tokens))
+            conn.commit()
+
+    def set_tenant_credential(self, user_id: int, provider: str, api_key: str):
+        """Securely inserts or updates a BYOK LLM provider credential for a specific tenant."""
+        with self.get_connection() as conn:
+            if not api_key:
+                # If key is empty, delete the credential entry
+                conn.execute("DELETE FROM tenant_credentials WHERE user_id = ? AND provider = ?", (user_id, provider))
+            else:
+                conn.execute("""
+                    INSERT INTO tenant_credentials (user_id, provider, api_key, updated_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, provider) DO UPDATE SET
+                    api_key=excluded.api_key, updated_at=CURRENT_TIMESTAMP
+                """, (user_id, provider, api_key))
+            conn.commit()
+            
+    def get_tenant_credentials(self, user_id: int) -> dict:
+        """Retrieves all BYOK LLM provider credentials for a specific tenant."""
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT provider, api_key FROM tenant_credentials WHERE user_id = ?", (user_id,))
+            return {row['provider']: row['api_key'] for row in cursor.fetchall()}
 
     # --- ADMIN ROUTINES ---
 

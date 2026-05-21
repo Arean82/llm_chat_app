@@ -6,6 +6,9 @@
     <title data-i18n="app_title">Quantum SaaS - Multi-Tenant Cloud AI Console</title>
     <meta name="description" content="Experience high-performance, low-latency inference with the self-hosted Quantum Multi-Tenant SaaS Cloud Workstation.">
     
+    <!-- App Branding Icon -->
+    <link rel="icon" type="image/x-icon" href="/app_icon.ico">
+    
     <!-- Modern Typography Stack -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +16,8 @@
     
     <!-- Dynamic Aesthetic Stylesheet -->
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/theme-dark.css" id="theme-stylesheet">
+    <link rel="stylesheet" href="/static/css/settings_hub.css">
     
     <!-- FontAwesome for Premium Iconography -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -146,7 +151,7 @@
             <aside class="workspace-sidebar">
                 <div class="sidebar-header">
                     <div class="app-logo mini">
-                        <i class="fa-solid fa-brain cyber-logo"></i>
+                        <img src="/app_icon.ico" alt="App Logo" style="width: 24px; height: 24px; margin-right: 8px;">
                         <h2><span>Quantum</span>SaaS</h2>
                     </div>
                     <button id="btn-new-chat" class="btn-new"><i class="fa-solid fa-plus"></i> <span data-i18n="workspace.new_orbit">New Orbit</span></button>
@@ -215,7 +220,7 @@
                     <div class="model-deployment-selector">
                         <!-- Standard Selection View -->
                         <div id="single-model-pane">
-                            <label for="model-selector"><i class="fa-solid fa-microchip"></i></label>
+                            <button id="btn-open-model-manager" onclick="window.switchView('model-manager-screen'); window.loadSettingsHub();" class="btn-new" style="margin: 0 8px 0 0; padding: 4px 10px; font-size: 0.85rem; width: auto;"><i class="fa-solid fa-microchip"></i> Model Manager</button>
                             <select id="model-selector">
                                 <option value="meta/llama-3.1-8b-instruct" data-i18n="workspace.model_standard_loading">Loading standard node...</option>
                             </select>
@@ -295,8 +300,9 @@
         <!-- ======================================================= -->
         <main id="memory-screen" class="view-container hidden" style="align-items: flex-start; padding: 2rem; overflow-y: auto;">
             <div class="glass-panel" style="width: 100%; max-width: 1000px; margin: 0 auto; padding: 2rem; border-radius: var(--radius-lg);">
-                <div class="modal-header" style="margin-bottom: 0;">
+                <div class="modal-header" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
                     <h3><i class="fa-solid fa-database"></i> Semantic Memory Explorer</h3>
+                    <button onclick="window.switchView('workspace-screen')" class="btn-new" style="margin: 0; padding: 6px 12px; width: auto;"><i class="fa-solid fa-arrow-left"></i> Back to Chat</button>
                 </div>
                 <div style="color: var(--text-muted); margin-bottom: 2rem;">Manage vectorized semantic collections tied to your workspace.</div>
                 
@@ -307,12 +313,79 @@
         </main>
 
         <!-- ======================================================= -->
+        <!-- 🔐 SCREEN F: AI SETTINGS HUB (CREDENTIALS & MODELS)     -->
+        <!-- ======================================================= -->
+        <main id="model-manager-screen" class="view-container hidden" style="align-items: flex-start; padding: 2rem; overflow-y: auto;">
+            <div class="glass-panel" style="width: 100%; max-width: 1000px; margin: 0 auto; padding: 2rem; border-radius: var(--radius-lg);">
+                <div class="modal-header" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fa-solid fa-gears"></i> AI Settings Hub - Credential & Model Manager</h3>
+                    <button onclick="window.switchView('workspace-screen')" class="btn-new" style="margin: 0; padding: 6px 12px; width: auto;"><i class="fa-solid fa-arrow-left"></i> Back to Chat</button>
+                </div>
+                <div style="color: var(--text-muted); margin-bottom: 2rem;">Manage all your AI SDKs and API keys in one place. Only the 'Live' provider is active for chat.</div>
+                
+                <!-- Tab Headers -->
+                <div class="settings-tabs">
+                    <button id="tab-btn-credentials" class="settings-tab active" onclick="window.switchSettingsTab('credentials')">
+                        <i class="fa-solid fa-lock"></i> 🔐 Credential Manager
+                    </button>
+                    <button id="tab-btn-models" class="settings-tab" onclick="window.switchSettingsTab('models')">
+                        <i class="fa-solid fa-box"></i> 📦 Model Manager
+                    </button>
+                </div>
+                
+                <!-- Tab 1: Credential Manager -->
+                <div id="tab-content-credentials" class="settings-content active">
+                    <div style="margin-bottom: 1rem; color: var(--text-muted);">
+                        Configure SDK drivers, Ecosystems, and custom endpoints. The "Active" ecosystem is the primary one used for chat and routing.
+                    </div>
+                    
+                    <div class="model-sync-dashboard" style="overflow-x: auto;">
+                        <table class="model-sync-table" style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-glow); color: var(--text-dim); background: rgba(255,255,255,0.02);">
+                                    <th style="padding: 12px; text-align: center;">Status</th>
+                                    <th style="padding: 12px;">SDK (Driver)</th>
+                                    <th style="padding: 12px;">Ecosystem</th>
+                                    <th style="padding: 12px;">Base URL</th>
+                                    <th style="padding: 12px;">API Key</th>
+                                    <th style="padding: 12px; text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cred-manager-tbody">
+                                <!-- Injected dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Model Manager -->
+                <div id="tab-content-models" class="settings-content">
+                    <div class="model-sync-dashboard">
+                        <table class="model-sync-table">
+                            <thead>
+                                <tr>
+                                    <th>Ecosystem</th>
+                                    <th>Model Identifier</th>
+                                    <th style="text-align: center;">Capabilities</th>
+                                </tr>
+                            </thead>
+                            <tbody id="model-manager-tbody">
+                                <!-- Injected dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ======================================================= -->
         <!-- 📊 SCREEN D: OPERATOR COMMAND CONSOLE                   -->
         <!-- ======================================================= -->
         <main id="admin-screen" class="view-container hidden" style="align-items: flex-start; padding: 2rem; overflow-y: auto;">
             <div class="glass-panel" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 2rem; border-radius: var(--radius-lg);">
-                <div class="modal-header" style="margin-bottom: 0;">
+                <div class="modal-header" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
                     <h3><i class="fa-solid fa-shield-halved"></i> Operator Command Console</h3>
+                    <button onclick="window.switchView('workspace-screen')" class="btn-new" style="margin: 0; padding: 6px 12px; width: auto;"><i class="fa-solid fa-arrow-left"></i> Back to Chat</button>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
@@ -416,10 +489,12 @@
             }
         }
     </script>
-
-    <!-- Modular SPA Javascript Controllers -->
+    
+    <script type="module" src="/static/js/api.js"></script>
+    <script type="module" src="/static/js/workspace.js"></script>
+    <script type="module" src="/static/js/settings_hub.js"></script>
     <script type="module">
-        import { initI18n } from '/static/js/i18n.js';
+        import { initMainApp } from '/static/js/main.js';
         import { initThemeToggle, toggleTheme } from '/static/js/theme-toggle.js';
         
         // Expose toggle to global scope for inline buttons if needed, or attach events

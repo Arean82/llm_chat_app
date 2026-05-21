@@ -6,6 +6,7 @@ import {
     fillPrompt, toggleArenaMode, startNewOrbit, loadModels,
     dispatchPrompt, handleShareOrbit, loadMemoryRoster, loadAdminDashboard
 } from './workspace.js';
+import { loadSettingsHub, switchSettingsTab } from './settings_hub.js';
 
 export function initMainApp() {
     console.log("System initialized. Quantum client loaded.");
@@ -28,6 +29,9 @@ export function initMainApp() {
 
 // Ensure globally accessible for inline onclicks in HTML
 window.fillPrompt = fillPrompt;
+window.switchView = switchView;
+window.loadSettingsHub = loadSettingsHub;
+window.switchSettingsTab = switchSettingsTab;
 window.togglePasswordVisibility = function(id) {
     const input = document.getElementById(id);
     input.type = input.type === 'password' ? 'text' : 'password';
@@ -82,6 +86,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('nav-chat').addEventListener('click', () => switchView('workspace-screen'));
+    // document.getElementById('btn-save-credentials').addEventListener('click', handleSaveCredentials);
     document.getElementById('nav-memory').addEventListener('click', () => {
         switchView('memory-screen');
         loadMemoryRoster();

@@ -1,6 +1,6 @@
 # ui/gen_settings_dialog.py
 import os
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QDoubleSpinBox, QSpinBox, QComboBox, QLabel, QPushButton
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QDoubleSpinBox, QSpinBox, QComboBox, QLabel, QPushButton, QCheckBox
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QFile, QSettings, Qt
 from PySide6.QtGui import QIcon
@@ -143,6 +143,10 @@ class GenSettingsDialog(QDialog):
         self.token_desc = self.findChild(QLabel, "token_desc")
         self.save_btn = self.findChild(QPushButton, "save_btn")
         self.cancel_btn = self.findChild(QPushButton, "cancel_btn")
+        
+        # Logging Bindings
+        self.log_enable_cb = self.findChild(QCheckBox, "log_enable_cb")
+        self.debug_enable_cb = self.findChild(QCheckBox, "debug_enable_cb")
         
         # Signal bindings
         if self.temp_input:
@@ -301,6 +305,13 @@ class GenSettingsDialog(QDialog):
             
             # Fire initial visibility states
             self.on_rerank_enabled_toggled(rerank_enabled)
+            
+        # Hydrate logging config
+        if hasattr(self, "log_enable_cb") and self.log_enable_cb:
+            log_enabled = str(settings.value("logging/enable_log", "false")).lower() == "true"
+            debug_enabled = str(settings.value("logging/enable_debug", "false")).lower() == "true"
+            self.log_enable_cb.setChecked(log_enabled)
+            self.debug_enable_cb.setChecked(debug_enabled)
         
         if use_defaults:
             if self.preset_combo:
@@ -408,5 +419,15 @@ class GenSettingsDialog(QDialog):
             
             settings.setValue("rerank_endpoint", self.rerank_endpoint_input.text().strip())
             settings.setValue("rerank_api_key", self.rerank_key_input.text().strip())
+            
+        # Commit logging changes
+        if hasattr(self, "log_enable_cb") and self.log_enable_cb:
+            settings.setValue("logging/enable_log", "true" if self.log_enable_cb.isChecked() else "false")
+            settings.setValue("logging/enable_debug", "true" if self.debug_enable_cb.isChecked() else "false")
+            try:
+                from utils.logger import AppLogger
+                AppLogger.get_instance().reconfigure()
+            except ImportError:
+                pass
             
         self.accept()

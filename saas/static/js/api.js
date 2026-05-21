@@ -73,3 +73,22 @@ export async function generateShareLink(token, messages) {
     });
     return resp.json();
 }
+
+export async function fetchTenantCredentials(token) {
+    const resp = await fetch('/v1/tenant/credentials', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return resp.json();
+}
+
+export async function saveTenantCredentials(token, credentials) {
+    const resp = await fetch('/v1/tenant/credentials', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(credentials)
+    });
+    return resp.json();
+}
