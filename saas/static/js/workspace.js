@@ -70,10 +70,43 @@ export function renderHistorySidebar() {
 
         const div = document.createElement('div');
         div.className = `history-item ${id === App.activeConversationId ? 'active' : ''}`;
-        div.innerHTML = `<i class="fa-regular fa-comments"></i> <span>${preview}</span>`;
-        div.onclick = () => loadOrbitSession(id);
+        div.innerHTML = `
+            <div style="display: flex; align-items: center; width: 100%; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; max-width: 85%;">
+                    <i class="fa-regular fa-comments"></i> 
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${preview}</span>
+                </div>
+                <i class="fa-solid fa-trash btn-delete-history hover-text" style="cursor: pointer; opacity: 0.5; font-size: 0.85rem;" title="Delete Session"></i>
+            </div>
+        `;
+        
+        div.onclick = (e) => {
+            if (e.target.classList.contains('fa-trash')) {
+                deleteOrbitSession(id);
+            } else {
+                loadOrbitSession(id);
+            }
+        };
         list.appendChild(div);
     });
+}
+
+export function deleteOrbitSession(id) {
+    if (confirm("Are you sure you want to delete this session?")) {
+        delete App.conversations[id];
+        
+        // Notify backend to clear history from memory
+        fetch(`/v1/chat/history/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${App.token}` }
+        }).catch(err => console.error("Failed to delete backend session history:", err));
+
+        if (App.activeConversationId === id) {
+            startNewOrbit();
+        } else {
+            renderHistorySidebar();
+        }
+    }
 }
 
 export function loadOrbitSession(id) {

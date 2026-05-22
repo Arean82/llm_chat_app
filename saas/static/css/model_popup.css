@@ -1,29 +1,28 @@
-.model-popup-row {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    cursor: pointer;
-    transition: background 0.2s;
+/* model_popup.css - Pure isolated styles for the standalone model selection modal */
+
+#pure-model-selection-modal {
+    font-family: 'Inter', sans-serif;
 }
-.model-popup-row:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
+
+#pure-model-table-body .pure-model-row:hover {
+    background: rgba(255, 255, 255, 0.05);
 }
-.model-popup-row.selected {
-    background: rgba(37, 99, 235, 0.2) !important;
-    border-left: 3px solid var(--accent-blue);
+
+#pure-model-table-body .pure-model-row td {
+    vertical-align: middle;
 }
-.btn-ok-model {
-    background: var(--gradient-btn);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-    float: right;
-    margin-top: 15px;
+
+/* Custom scrollbar for the table container */
+#pure-model-selection-modal > div > div:nth-child(3)::-webkit-scrollbar {
+    width: 8px;
 }
-.btn-ok-model:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #555;
+#pure-model-selection-modal > div > div:nth-child(3)::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+#pure-model-selection-modal > div > div:nth-child(3)::-webkit-scrollbar-thumb {
+    background: var(--border-glow);
+    border-radius: 4px;
+}
+#pure-model-selection-modal > div > div:nth-child(3)::-webkit-scrollbar-thumb:hover {
+    background: var(--text-dim);
 }

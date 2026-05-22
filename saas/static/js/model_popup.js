@@ -1,19 +1,7 @@
-// model_popup.js - Modular Model Selection Logic
+// model_popup.js - Pure standalone model selection modal (1:1 Desktop Clone)
 import { App } from './state.js';
 
-export let pendingSelectedModelId = null;
-
-// The global model list is populated from settings_hub.js -> loadModels() -> App.modelsCache
-// We assume systemProviders are available globally via settings_hub if needed, 
-// but since systemProviders is inside settings_hub.js, we will just pass it or extract it.
-// To keep it simple, we'll read App.modelsCache.
-
-function normalizeProviderName(pName) {
-    let lower = (pName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (lower.includes('nvidia')) return 'nvidia';
-    if (lower.includes('google')) return 'google';
-    return lower;
-}
+let pendingModelId = null;
 
 function stripMarkdown(text) {
     if (!text) return '';
@@ -27,138 +15,108 @@ function stripMarkdown(text) {
                .trim();
 }
 
-export function selectModelRow(rowEl, modelId) {
-    // Clear previous selection visually
-    document.querySelectorAll('.model-popup-row').forEach(row => {
-        row.classList.remove('selected');
-        row.style.background = 'transparent';
-    });
-    
-    // Set new selection
-    rowEl.classList.add('selected');
-    rowEl.style.background = 'rgba(37, 99, 235, 0.2)';
-    pendingSelectedModelId = modelId;
-    
-    // Enable OK button
-    const okBtn = document.getElementById('btn-apply-model-selection');
-    if (okBtn) {
-        okBtn.disabled = false;
-    }
+function normalizeProviderName(pName) {
+    let lower = (pName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (lower.includes('nvidia')) return 'nvidia';
+    if (lower.includes('google')) return 'google';
+    if (lower.includes('openai')) return 'openai';
+    return lower;
 }
 
-export function renderModelPopupTabs(filterEcosystem, systemProviders = []) {
-    const tabsHeader = document.getElementById('model-dev-tabs-header');
-    const tabsContent = document.getElementById('model-dev-tabs-content');
-    if (!tabsHeader || !tabsContent) return;
+export function renderDesktopCloneTable() {
+    const tbody = document.getElementById('pure-model-table-body');
+    if (!tbody) return;
     
-    tabsHeader.innerHTML = '';
-    tabsContent.innerHTML = '';
+    // Desktop logic: Show all vs active provider
+    const showAll = document.getElementById('pure-model-show-all').checked;
+    const capabilityFilter = parseInt(document.getElementById('pure-model-capability-filter').value, 10) || 0;
     
-    if (!App.modelsCache || App.modelsCache.length === 0) {
-        tabsContent.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-dim);">No models fetched.</div>`;
-        return;
-    }
+    const activeProvider = App.activeProviderId || 'nvidia';
     
-    let filterId = null;
-    if (filterEcosystem !== "All" && systemProviders.length > 0) {
-        const prov = systemProviders.find(p => p.ecosystem === filterEcosystem);
-        if (prov) filterId = normalizeProviderName(prov.ecosystem);
-    }
-    
-    const modelsByDev = {};
-    App.modelsCache.forEach(m => {
-        const provNormalized = normalizeProviderName(m.provider || 'nvidia');
-        if (filterId && provNormalized !== filterId) return;
+    let filtered = (App.modelsCache || []).filter(m => {
+        const prov = normalizeProviderName(m.owned_by || 'nvidia');
         
-        let dev = m.developer || 'Other';
-        if (typeof dev === 'string' && dev.length > 0) {
-            dev = dev.charAt(0).toUpperCase() + dev.slice(1).toLowerCase();
+        // Strictly show chat models only
+        if (m.capabilities && m.capabilities.chat === false) return false;
+        if (!m.capabilities && m.type && m.type !== 'chat') return false; // Fallback
+        
+        if (!showAll && prov !== activeProvider) return false;
+        
+        // Capability filter based on the backend's provided capabilities object
+        const isVision = m.capabilities ? m.capabilities.vision : (m.id || '').toLowerCase().includes('vision');
+        const supportsTools = m.capabilities ? m.capabilities.tools : false;
+        
+        if (capabilityFilter === 1) { // General Chat (no vision)
+            if (isVision) return false;
+        } else if (capabilityFilter === 2) { // Supports Tools
+            if (!supportsTools) return false;
+        } else if (capabilityFilter === 3) { // Multimodal / Vision
+            if (!isVision) return false;
         }
-        if (!modelsByDev[dev]) modelsByDev[dev] = [];
-        modelsByDev[dev].push(m);
+        
+        return true;
     });
     
-    const sortedDevs = Object.keys(modelsByDev).sort();
+    tbody.innerHTML = '';
     
-    if (sortedDevs.length === 0) {
-        tabsContent.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-dim);">No models available.</div>`;
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-dim);">No models match the filter.</td></tr>`;
         return;
     }
     
-    let first = true;
-    sortedDevs.forEach(dev => {
-        const safeDevId = dev.replace(/[^a-zA-Z0-9]/g, '-');
+    filtered.forEach((m, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'pure-model-row';
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.style.cursor = 'pointer';
         
-        const btn = document.createElement('button');
-        btn.textContent = dev;
-        btn.className = 'settings-tab' + (first ? ' active' : '');
+        const isSelected = pendingModelId === m.id;
+        if (isSelected) {
+            tr.style.background = 'rgba(37, 99, 235, 0.2)';
+        }
         
-        const contentDiv = document.createElement('div');
-        contentDiv.id = `tab-dev-${safeDevId}`;
-        contentDiv.style.display = first ? 'block' : 'none';
-        
-        const isGlobal = (filterEcosystem === "All");
-        
-        let tableHtml = `
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
-                <thead style="border-bottom: 1px solid var(--border-glow); background: rgba(0,0,0,0.2);">
-                    <tr>
-                        <th>Model Name</th>
-                        ${isGlobal ? '<th>Ecosystem</th>' : ''}
-                        <th>Description</th>
-                        <th style="text-align: center;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
+        tr.innerHTML = `
+            <td style="text-align: center; padding: 10px;">
+                <input type="radio" name="pure_model_radio" value="${m.id}" ${isSelected ? 'checked' : ''} style="cursor: pointer;">
+            </td>
+            <td style="padding: 10px; color: var(--accent-cyan); font-weight: 500;">${(m.owned_by || 'nvidia').toUpperCase()}</td>
+            <td style="padding: 10px;">${m.developer || 'Other'}</td>
+            <td style="padding: 10px; font-weight: 600;">${m.name || m.id}</td>
+            <td style="padding: 10px; color: var(--text-dim); font-size: 0.85rem;">${stripMarkdown(m.description || '')}</td>
         `;
         
-        modelsByDev[dev].forEach(m => {
-            const isFree = m.free !== undefined ? m.free : true;
-            const statusText = isFree ? 'Free' : 'Paid';
-            const statusStyle = isFree ? 'color: #28a745; border: 1px solid #28a745;' : 'color: #dc3545; border: 1px solid #dc3545;';
-            const badge = `<span style="padding: 2px 6px; border-radius: 2px; font-size: 0.8rem; font-weight: bold; display: inline-block; ${statusStyle}">${statusText}</span>`;
-            const modelIdSafe = (m.id || m.name || '').replace(/'/g, "\\'");
+        tr.onclick = () => {
+            pendingModelId = m.id;
+            renderDesktopCloneTable(); // Re-render to update highlights and radios
             
-            tableHtml += `
-                <tr class="model-popup-row" onclick="window.selectModelRow(this, '${modelIdSafe}')">
-                    <td style="font-weight: 500;">${m.name || m.id}</td>
-                    ${isGlobal ? `<td style="color: var(--accent-cyan);">${(m.provider || 'nvidia').toUpperCase()}</td>` : ''}
-                    <td style="color: var(--text-dim); font-size: 0.8rem;">${stripMarkdown(m.description || '')}</td>
-                    <td style="text-align: center;">${badge}</td>
-                </tr>
-            `;
-        });
-        
-        tableHtml += `</tbody></table>`;
-        contentDiv.innerHTML = tableHtml;
-        
-        btn.onclick = () => {
-            Array.from(tabsHeader.children).forEach(c => c.classList.remove('active'));
-            Array.from(tabsContent.children).forEach(c => c.style.display = 'none');
-            btn.classList.add('active');
-            contentDiv.style.display = 'block';
+            // Enable apply button
+            const applyBtn = document.getElementById('pure-model-apply-btn');
+            if (applyBtn) {
+                applyBtn.disabled = false;
+            }
         };
         
-        tabsHeader.appendChild(btn);
-        tabsContent.appendChild(contentDiv);
-        first = false;
+        tbody.appendChild(tr);
     });
 }
 
-// Function called when "OK / Apply" is clicked in the modal
 export function applyModelSelection() {
-    if (!pendingSelectedModelId) return;
+    if (!pendingModelId) return;
     
     // Update global state
-    App.activeModelId = pendingSelectedModelId;
+    App.activeModelId = pendingModelId;
     
     // Update the visual label on the workspace
     const label = document.getElementById('active-model-label');
     if (label) {
-        label.textContent = pendingSelectedModelId;
+        label.textContent = pendingModelId;
         label.style.color = 'var(--text-bright)';
     }
     
     // Close the modal
-    document.getElementById('model-manager-modal').style.display = 'none';
+    document.getElementById('pure-model-selection-modal').style.display = 'none';
 }
+
+// Expose strictly to window so inline onclicks can reach them
+window.renderDesktopCloneTable = renderDesktopCloneTable;
+window.applyModelSelection = applyModelSelection;
