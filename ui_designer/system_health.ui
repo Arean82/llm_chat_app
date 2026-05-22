@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SystemHealthDialog</class>
+ <widget class="QDialog" name="SystemHealthDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>650</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>📊 System Health &amp; Telemetry Monitor</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_main">
+   <property name="spacing">
+    <number>12</number>
+   </property>
+   <property name="leftMargin">
+    <number>15</number>
+   </property>
+   <property name="topMargin">
+    <number>15</number>
+   </property>
+   <property name="rightMargin">
+    <number>15</number>
+   </property>
+   <property name="bottomMargin">
+    <number>15</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="lbl_failover_banner">
+     <property name="text">
+      <string>⚠️ TRANSPARENT FAILOVER ACTIVE: Primary provider is down. Operating on isolated tenant fallback gateway.</string>
+     </property>
+     <property name="styleSheet">
+      <string>background-color: #fff2cc; border: 1px solid #ffd966; color: #b45f06; padding: 10px; border-radius: 4px; font-weight: bold;</string>
+     </property>
+     <property name="alignment">
+      <enum>Qt::AlignmentFlag::AlignCenter</enum>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="grp_health">
+     <property name="title">
+      <string>System Core Health LED Monitors</string>
+     </property>
+     <layout class="QHBoxLayout" name="health_leds_layout">
+      <item>
+       <layout class="QHBoxLayout" name="led_storage_layout">
+        <item>
+         <widget class="QLabel" name="lbl_led_storage">
+          <property name="styleSheet">
+           <string>background-color: #718096; border-radius: 8px; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_txt_storage">
+          <property name="text">
+           <string>Storage Database</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="led_vector_layout">
+        <item>
+         <widget class="QLabel" name="lbl_led_vector">
+          <property name="styleSheet">
+           <string>background-color: #718096; border-radius: 8px; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_txt_vector">
+          <property name="text">
+           <string>Vector Database</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="led_cache_layout">
+        <item>
+         <widget class="QLabel" name="lbl_led_cache">
+          <property name="styleSheet">
+           <string>background-color: #718096; border-radius: 8px; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_txt_cache">
+          <property name="text">
+           <string>Semantic Cache</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="led_queue_layout">
+        <item>
+         <widget class="QLabel" name="lbl_led_queue">
+          <property name="styleSheet">
+           <string>background-color: #718096; border-radius: 8px; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_txt_queue">
+          <property name="text">
+           <string>Job Queue Engine</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="led_llm_layout">
+        <item>
+         <widget class="QLabel" name="lbl_led_llm">
+          <property name="styleSheet">
+           <string>background-color: #718096; border-radius: 8px; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_txt_llm">
+          <property name="text">
+           <string>LLM Connections</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="grp_active">
+     <property name="title">
+      <string>Active Background Execution Workers</string>
+     </property>
+     <layout class="QVBoxLayout" name="active_layout">
+      <item>
+       <widget class="QTableWidget" name="table_active_threads">
+        <property name="editTriggers">
+         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+        </property>
+        <column>
+         <property name="text">
+          <string>Worker Thread</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Running Job ID</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Task Description</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Status</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="grp_dlq">
+     <property name="title">
+      <string>Dead Letter Queue (DLQ) Serialized Fault Storage</string>
+     </property>
+     <layout class="QVBoxLayout" name="dlq_layout">
+      <item>
+       <widget class="QTableWidget" name="table_dlq_tasks">
+        <property name="editTriggers">
+         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+        </property>
+        <column>
+         <property name="text">
+          <string>Job ID</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Type</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Error Details</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Timestamp</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="dlq_actions_layout">
+        <item>
+         <spacer name="dlq_spacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_retry_task">
+          <property name="text">
+           <string>🔄 Reprocess &amp; Retry Selected Job</string>
+          </property>
+          <property name="styleSheet">
+           <string>background-color: #2563eb; color: white; font-weight: bold; padding: 6px 15px;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="dialog_actions_layout">
+     <item>
+      <spacer name="actions_spacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_close">
+       <property name="text">
+        <string>Close</string>
+       </property>
+       <property name="styleSheet">
+        <string>padding: 6px 20px;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

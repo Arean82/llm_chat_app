@@ -4,7 +4,7 @@
 import sys
 import os
 import keyring
-from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QSystemTrayIcon, QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QSplitter
+from PySide6.QtWidgets import QMainWindow, QMenu, QMessageBox, QSystemTrayIcon, QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QSplitter, QTableWidgetItem
 from PySide6.QtCore import QTimer, Qt, QSettings, QEvent
 from PySide6.QtGui import QIcon, QPixmap, QAction, QTextBlockUserData, QActionGroup
 from PySide6.QtUiTools import QUiLoader
@@ -31,14 +31,8 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("LLM Chat App v7.0")
+        self.setWindowTitle("LLM Chat App v7.1")
         
-        # Set App ID for Windows Taskbar Grouping
-        import ctypes
-        myappid = u'arean82.llmchatapp.v7.0'
-        try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        except: pass
-
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)
         self.api_manager = ApiManager(self)
@@ -66,7 +60,6 @@ class MainWindowClass(QMainWindow):
         
         # Default to Chat Mode on launch
         self.ui.main_stack.setCurrentWidget(self.chat_view)
-
         # System Setup
         self.setup_menu_bar()
         self.setup_tray()
@@ -79,6 +72,12 @@ class MainWindowClass(QMainWindow):
 
     def start_services(self):
         """Starts background workers only after authentication is confirmed."""
+        try:
+            from logic.services import ServiceRegistry
+            ServiceRegistry.initialize_all()
+        except Exception as e:
+            print(f"[Services] Failed to initialize: {e}")
+
         # Setup Shared Connection Worker
         self.connection_worker = ConnectionWorker(parent=self)
         self.connection_worker.status_changed.connect(self.on_connection_status_changed)
@@ -88,6 +87,7 @@ class MainWindowClass(QMainWindow):
         self.local_detector = LocalModelDetector(parent=self)
         self.local_detector.detection_completed.connect(self.on_local_models_detected)
         self.local_detector.start()
+
 
     # ---------------------------------------------------------
     # DYNAMIC MODE SWITCHING ENGINE
@@ -190,6 +190,10 @@ class MainWindowClass(QMainWindow):
         self.api_server_action = tools_menu.addAction("🌐 Universal API Server")
         self.api_server_action.setCheckable(True)
         self.api_server_action.triggered.connect(self.api_manager.toggle_api_server)
+        
+        tools_menu.addSeparator()
+        self.health_action = tools_menu.addAction("📊 System Health & Telemetry")
+        self.health_action.triggered.connect(self.show_system_health)
         
         help_menu = menubar.addMenu("Help")
         help_menu.addAction("📖 Readme", self.show_readme)
@@ -424,6 +428,12 @@ class MainWindowClass(QMainWindow):
             # Refresh server state based on new config
             self.apply_saas_state()
 
+    def show_system_health(self):
+        """Opens the standalone System Health & Telemetry dialog."""
+        from ui.system_health import SystemHealthDialog
+        dialog = SystemHealthDialog(parent=self)
+        dialog.exec()
+
     def apply_saas_state(self):
         """Evaluates SaaS config and starts/stops the background daemon."""
         cfg = SaaSConfigManager()
@@ -567,6 +577,15 @@ class MainWindowClass(QMainWindow):
         self.activateWindow()
 
     def quit_app(self):
+        # 0. Shutdown service layer
+        if hasattr(self, 'telemetry_timer'):
+            self.telemetry_timer.stop()
+        try:
+            from logic.services import ServiceRegistry
+            ServiceRegistry.shutdown_all()
+        except Exception:
+            pass
+
         # 1. Stop background API server if running
         if hasattr(self, 'api_manager'):
             self.api_manager.stop_api_server()
@@ -623,8 +642,15 @@ class MainWindowClass(QMainWindow):
         QTimer.singleShot(50, self.restore_splitter_states)
 
     def closeEvent(self, event):
-        """Ensure all background threads are stopped before exiting."""
+        # Ensure telemetry timer is terminated
+        if hasattr(self, 'telemetry_timer'):
+            self.telemetry_timer.stop()
         print("[Shutdown] Cleaning up services...")
+        try:
+            from logic.services import ServiceRegistry
+            ServiceRegistry.shutdown_all()
+        except Exception:
+            pass
         
         # 1. Stop global window-level workers
         if hasattr(self, 'connection_worker') and self.connection_worker.isRunning():
@@ -728,3 +754,4 @@ class MainWindowClass(QMainWindow):
         if QMessageBox.question(self, "Clear Logs", "Are you sure you want to delete all diagnostic logs?") == QMessageBox.Yes:
             get_logger().clear()
             self.chat_view.add_system_message("🗑️ Update logs purged successfully.")
+

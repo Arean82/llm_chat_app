@@ -370,6 +370,48 @@ def create_saas_app():
     # --- SECURED MULTI-TENANT API RUNTIME GATEWAY ---
 
     @app.before_request
+    def record_start_time():
+        request.start_time = time.perf_counter()
+
+    @app.after_request
+    def log_telemetry_metrics(response):
+        exempt_starts = ['/static', '/health', '/app_icon.ico']
+        if any(request.path.startswith(prefix) for prefix in exempt_starts):
+            return response
+            
+        start_time = getattr(request, 'start_time', None)
+        if start_time:
+            latency = time.perf_counter() - start_time
+            user = getattr(request, 'tenant', None)
+            tenant_id = user['id'] if user else "anonymous"
+            
+            tokens = 0
+            if request.path == '/v1/chat/completions' and response.status_code == 200:
+                try:
+                    data = request.get_json() or {}
+                    messages = data.get("messages", [])
+                    prompt_chars = sum(len(m.get("content", "")) for m in messages)
+                    tokens = int(prompt_chars / 4)
+                except:
+                    pass
+            
+            error = (response.status_code >= 400)
+            
+            try:
+                from logic.services import ServiceRegistry
+                telemetry_service = ServiceRegistry.get("telemetry")
+                telemetry_service.record_request(
+                    tenant_id=str(tenant_id),
+                    latency=latency,
+                    tokens=tokens,
+                    error=error
+                )
+            except:
+                pass
+                
+        return response
+
+    @app.before_request
     def enforce_tenant_authorization():
         """
         Global passport gate middleware verifying API tokens and injected routing context.
@@ -391,6 +433,18 @@ def create_saas_app():
             
         # Embed context securely onto the request context thread for routing resolution
         request.tenant = user
+
+        # Enforce rate-limiting via Token Bucket
+        try:
+            from logic.services import ServiceRegistry
+            conv_service = ServiceRegistry.get("conversation")
+            conv_service.check_rate_limit(user['id'])
+        except KeyError:
+            pass
+        except Exception as e:
+            if "Rate limit exceeded" in str(e):
+                return jsonify({"error": "Too Many Requests", "message": str(e)}), 429
+
         return None
 
     @app.route('/v1/tenant/credentials', methods=['GET', 'POST'])
@@ -609,6 +663,9 @@ def create_saas_app():
             return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         users = db.get_all_tenants()
+        for u in users:
+            settings = db.get_user_settings(u['id'])
+            u['requests_per_minute_limit'] = settings.get('requests_per_minute_limit', 60 if u['username'] != 'admin' else 0)
         return jsonify({"success": True, "users": users})
         
     @app.route('/api/admin/stats', methods=['GET'])
@@ -620,6 +677,85 @@ def create_saas_app():
             
         stats = db.get_global_usage()
         return jsonify({"success": True, "stats": stats})
+
+    @app.route('/api/admin/telemetry', methods=['GET'])
+    def admin_telemetry():
+        """Exposes dynamic central telemetry metrics to Screen D."""
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"error": "Forbidden. Operator access only."}), 403
+            
+        try:
+            from logic.services import ServiceRegistry
+            telemetry_service = ServiceRegistry.get("telemetry")
+            metrics = telemetry_service.get_realtime_metrics()
+            return jsonify({"success": True, "metrics": metrics})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/admin/tenants/<int:tenant_id>/rate-limit', methods=['POST'])
+    def admin_set_tenant_rate_limit(tenant_id):
+        """Updates specific tenant requests_per_minute_limit config bounds."""
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"error": "Forbidden. Operator access only."}), 403
+            
+        payload = request.get_json() or {}
+        rpm = payload.get("requests_per_minute_limit")
+        if rpm is None:
+            return jsonify({"error": "Missing requests_per_minute_limit"}), 400
+            
+        try:
+            rpm = int(rpm)
+            if rpm < 0:
+                return jsonify({"error": "Rate limit must be non-negative"}), 400
+        except ValueError:
+            return jsonify({"error": "Invalid rate limit value"}), 400
+            
+        try:
+            from logic.services import ServiceRegistry
+            auth_service = ServiceRegistry.get("auth")
+            current_settings = auth_service.get_user_settings(tenant_id)
+            current_settings["requests_per_minute_limit"] = rpm
+            auth_service.update_user_settings(tenant_id, current_settings)
+            return jsonify({"success": True, "message": f"Tenant rate limit updated to {rpm} RPM"})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/admin/dlq', methods=['GET'])
+    def admin_get_dlq():
+        """List failed background tasks for Operator DLQ review."""
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"error": "Forbidden. Operator access only."}), 403
+            
+        try:
+            from logic.queue.job_queue import JobQueueEngine
+            queue_engine = JobQueueEngine()
+            entries = queue_engine.get_dlq_entries()
+            return jsonify({"success": True, "dlq": entries})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/admin/dlq/retry', methods=['POST'])
+    def admin_retry_dlq_job():
+        """Retry a failed background task."""
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"error": "Forbidden. Operator access only."}), 403
+            
+        payload = request.get_json() or {}
+        job_id = payload.get("job_id")
+        if not job_id:
+            return jsonify({"error": "Missing job_id"}), 400
+            
+        try:
+            from logic.queue.job_queue import JobQueueEngine
+            queue_engine = JobQueueEngine()
+            new_job_id = queue_engine.retry_dlq_job(job_id)
+            return jsonify({"success": True, "new_job_id": new_job_id, "message": f"Job successfully enqueued as {new_job_id}."})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
 
     # --- MEMORY EXPLORER APIs ---
 
@@ -790,11 +926,43 @@ def create_saas_app():
         approx_prompt_tokens = int(prompt_chars / 4)
 
         try:
+            from logic.services import ServiceRegistry
+            circuit_breaker = ServiceRegistry.get("circuit_breaker")
+        except KeyError:
+            circuit_breaker = None
+
+        def run_completion():
+            if provider == "google":
+                from google.genai import types
+                resp = llm_client.google_client.models.generate_content(
+                    model=llm_client.current_model,
+                    contents=[m.get("content") for m in messages if m.get("role") != "system"],
+                    config=types.GenerateContentConfig(system_instruction=system_msg or None)
+                )
+                return resp.text
+            else:
+                resp = llm_client.client.chat.completions.create(
+                    model=llm_client.current_model,
+                    messages=messages
+                )
+                return resp.choices[0].message.content
+
+        try:
             if stream:
+                # Check circuit breaker state first
+                if circuit_breaker and circuit_breaker.is_enabled():
+                    current_cb_state = circuit_breaker.check_state()
+                    if current_cb_state == "OPEN":
+                        # Tripped. Execute failover synchronously and stream single block.
+                        text = circuit_breaker._execute_failover(user['id'], llm_client, run_completion)
+                        def generate_failover_stream():
+                            yield f"data: {json.dumps({'choices': [{'delta': {'content': text}}]})}\n\n"
+                            yield "data: [DONE]\n\n"
+                        return Response(stream_with_context(generate_failover_stream()), mimetype="text/event-stream")
+
                 def generate_stream():
                     response_text = ""
                     try:
-                        # Standard completions pipeline proxy
                         if provider == "google":
                             from google.genai import types
                             chunks = llm_client.google_client.models.generate_content_stream(
@@ -817,13 +985,18 @@ def create_saas_app():
                                     text = chunk.choices[0].delta.content
                                     response_text += text
                                     yield f"data: {json.dumps({'choices': [{'delta': {'content': text}}]})}\n\n"
-                                    
+                        
+                        if circuit_breaker:
+                            circuit_breaker.record_success()
+
                         # Post-stream tally execution
                         approx_comp_tokens = int(len(response_text) / 4)
                         db.record_usage(user['id'], approx_prompt_tokens, approx_comp_tokens)
                         yield "data: [DONE]\n\n"
                         
                     except Exception as e:
+                        if circuit_breaker:
+                            circuit_breaker.record_failure()
                         err_msg = str(e).replace('"', '\\"')
                         yield f"data: {json.dumps({'error': err_msg})}\n\n"
                         yield "data: [DONE]\n\n"
@@ -832,20 +1005,14 @@ def create_saas_app():
                 
             else:
                 # Standard blocking completions proxy
-                if provider == "google":
-                    from google.genai import types
-                    resp = llm_client.google_client.models.generate_content(
-                        model=llm_client.current_model,
-                        contents=[m.get("content") for m in messages if m.get("role") != "system"],
-                        config=types.GenerateContentConfig(system_instruction=system_msg or None)
+                if circuit_breaker and circuit_breaker.is_enabled():
+                    text = circuit_breaker.execute(
+                        user['id'],
+                        llm_client,
+                        run_completion
                     )
-                    text = resp.text
                 else:
-                    resp = llm_client.client.chat.completions.create(
-                        model=llm_client.current_model,
-                        messages=messages
-                    )
-                    text = resp.choices[0].message.content
+                    text = run_completion()
                 
                 # Ledger commit
                 approx_comp_tokens = int(len(text) / 4)

@@ -4,10 +4,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
 from utils.path_utils import get_resource_path
 from workers.update_logger import get_logger
+from ui.shared_widgets import set_app_icon
 
 class LogViewerDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        set_app_icon(self)
         
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/log_viewer.ui")

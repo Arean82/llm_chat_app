@@ -120,6 +120,8 @@ class FileViewerDialog(QDialog):
     
     def __init__(self, title: str, file_names: list, is_markdown: bool = False, size: tuple = (600, 450), parent=None):
         super().__init__(parent)
+        from ui.shared_widgets import set_app_icon
+        set_app_icon(self)
         self.setWindowTitle(title)
         self.resize(size[0], size[1])  
         self.setModal(True)

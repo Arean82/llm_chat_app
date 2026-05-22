@@ -16,10 +16,12 @@ from PySide6.QtUiTools import QUiLoader
 from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import strip_markdown
 from logic.model_io import load_all_models, save_all_models
+from ui.shared_widgets import set_app_icon
 
 class CredentialManagerDialog(QDialog):
     def __init__(self, parent=None, theme_manager=None):
         super().__init__(parent)
+        set_app_icon(self)
         self.theme_manager = theme_manager
         from utils.path_utils import get_app_settings
         self.theme = get_app_settings().value("theme", "dark")
@@ -418,6 +420,7 @@ class CredentialManagerDialog(QDialog):
 class AddProviderDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        set_app_icon(self)
         loader = QUiLoader()
         ui_file = get_resource_path("ui_designer/add_provider_dialog.ui")
         self.ui = loader.load(str(ui_file), self)

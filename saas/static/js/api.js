@@ -92,3 +92,41 @@ export async function saveTenantCredentials(token, credentials) {
     });
     return resp.json();
 }
+
+export async function fetchAdminTelemetry(token) {
+    const resp = await fetch('/api/admin/telemetry', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return resp.json();
+}
+
+export async function updateTenantRateLimit(token, tenantId, rpm) {
+    const resp = await fetch(`/api/admin/tenants/${tenantId}/rate-limit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ requests_per_minute_limit: rpm })
+    });
+    return resp.json();
+}
+
+export async function fetchAdminDLQ(token) {
+    const resp = await fetch('/api/admin/dlq', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return resp.json();
+}
+
+export async function retryDLQJob(token, jobId) {
+    const resp = await fetch('/api/admin/dlq/retry', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ job_id: jobId })
+    });
+    return resp.json();
+}

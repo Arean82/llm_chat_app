@@ -534,7 +534,6 @@ flowchart TD
 
 **Technical Notes (6.2):**
 * **Settings Hub 1:1 Parity (6.2.9)**: The SaaS AI Settings Hub has been structurally re-architected to serve as a strict, literal mirror of the desktop `QDialog` application. The layout perfectly translates the XML DOM hierarchy from `credential_manager.ui` into HTML. It features physical folder-tab css logic (bounding boxes with active tab border-masking), exact emojis (`🔐`, `📦`), dynamic developer sub-tabs extracted directly from the backend API payloads, and literal mirrored status badges (`[Free]`/`[Paid]`), completely abandoning conflicting modern web styling.
-* **Credential & Model Manager API Sync (6.2.9 Addendum)**: Implemented `POST /v1/system/providers` for Admin accounts to write custom providers into the shared `config.json` via API. Added `POST /api/admin/models` with an integrated SaaS Web GUI form (`add-model-modal`) to allow Admins to securely serialize and write new model definitions into the physical `resources/models.json` file in real-time, matching Desktop capabilities.
 ### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
 
 | #               | Task                                                                                                             | Status           |
@@ -576,19 +575,90 @@ Phase 7 merges the Desktop PySide6 application with the Flask SaaS Web Server, t
 
 ---
 
-## 🔴 Phase 8: Semantic Chunk Cache Warehousing [STATUS: NOT STARTED]
+## 🟢 Phase 8: Runtime Infrastructure & Service Layer [STATUS: COMPLETED]
 
-Phase 8 introduces the ultimate latency and cost-reduction layer, establishing an intelligent, cryptographic cache for chunked documents and semantic queries, optimized for tenant sandboxes.
+Phase 8 establishes operational reliability, service boundaries, background execution, and observability required for production-scale SaaS deployments.
 
-### 8.1 Secure Ingestion & Semantic Query Caching
+### 8.1 Core Service Architecture
 
-| #             | Task                                                                                                           | Status     |
-| :------------ | :------------------------------------------------------------------------------------------------------------- | :--------- |
-| **8.1** | **Cryptographic Chunk Cache**: Implement SHA-256 staging payload hashes (tenant-scoped) inside SQLite    | ⏳ PENDING |
-| **8.2** | **Dynamic Ingestion Bypass**: Bind worker instantly to cached Qdrant collections on file hash hits       | ⏳ PENDING |
-| **8.3** | **Semantic Response Cache**: Create a high-similarity query matching collection in Qdrant (>0.96 cosine) | ⏳ PENDING |
-| **8.4** | **Cache Eviction & Lifecycle (TTL)**: Build automatic cleanup schedules for cached indices and assets    | ⏳ PENDING |
-| **8.5** | **Cache Monitoring Telemetry**: Add cache hit/miss metrics logging to support SaaS Admin UI stats        | ⏳ PENDING |
+| # | Task | Status |
+|:--|:------|:--------|
+| **8.1.1** | **ConversationService**: Move conversation orchestration out of UI/workers | ✅ **DONE** |
+| **8.1.2** | **RAGService**: Centralize retrieval, reranking, GraphRAG and ingestion pipelines | ✅ **DONE** |
+| **8.1.3** | **StorageService**: Unified driver orchestration and migration control | ✅ **DONE** |
+| **8.1.4** | **AuthService**: Central JWT/session lifecycle manager | ✅ **DONE** |
+| **8.1.5** | **CacheService**: Central semantic and chunk cache manager | ✅ **DONE** |
+
+**Technical Notes (8.1):**
+* **Decoupled Service Boundaries**: Shifted core generation and embedding flows away from visual controllers into high-level, lifecycle-managed service singletons (`AuthService`, `ConversationService`, `RAGService`, `StorageService`, `CacheService`) implementing a robust `BaseService` structure.
+
+---
+
+### 8.2 Background Job Execution Layer
+
+| # | Task | Status |
+|:--|:------|:--------|
+| **8.2.1** | **Job Queue Engine**: Introduce Redis/Celery or internal async queue | ✅ **DONE** |
+| **8.2.2** | **Worker Pool Manager**: Background execution for embedding and indexing jobs | ✅ **DONE** |
+| **8.2.3** | **Retry Policies**: Add exponential retry and failure recovery | ✅ **DONE** |
+| **8.2.4** | **Dead Letter Queue**: Store failed ingestion tasks | ✅ **DONE** |
+| **8.2.5** | **Rate Limiter**: Per-user and per-tenant request limits | ✅ **DONE** |
+
+**Technical Notes (8.2):**
+* **Job Engine & DLQ**: Created `JobQueueEngine` for managing asynchronous ingestion and model index updates. Successfully built dynamic Dead Letter Queue (`data/dlq.json`) storing call traces.
+* **Token Bucket Rate Limiting**: Added thread-safe token bucket counters evaluating per-tenant Requests Per Minute (RPM) limits during requests.
+
+---
+
+### 8.3 Observability & Monitoring
+
+| # | Task | Status |
+|:--|:------|:--------|
+| **8.3.1** | **Structured Logging**: JSON logging across workers and APIs | ✅ **DONE** |
+| **8.3.2** | **OpenTelemetry Tracing**: Trace request → retrieval → generation flow | ✅ **DONE** |
+| **8.3.3** | **Metrics Collection**: Track latency, throughput, token usage | ✅ **DONE** |
+| **8.3.4** | **Health Endpoints**: Database/vector/cache health checks | ✅ **DONE** |
+| **8.3.5** | **Alert Rules**: Failure thresholds and notification triggers | ✅ **DONE** |
+
+**Technical Notes (8.3):**
+* **Dynamic Telemetry Poller**: Implemented an automated 5-second polling system matching `/api/admin/telemetry` values to the operator dashboard, built with resource-cleanup protections.
+* **Interactive Controls**: Linked roster dashboard rate limit fields and DLQ retry actions natively to active server hooks (`/api/admin/tenants/<id>/rate-limit` & `/api/admin/dlq/retry`).
+
+---
+
+### 8.4 Reliability Controls
+
+| # | Task | Status |
+|:--|:------|:--------|
+| **8.4.1** | **Circuit Breakers**: Prevent cascading failures on external providers | ✅ **DONE** |
+| **8.4.2** | **Backpressure Control**: Queue overload protection | ✅ **DONE** |
+| **8.4.3** | **Request Timeout Rules**: Global timeout enforcement | ✅ **DONE** |
+| **8.4.4** | **Graceful Degradation**: Local fallbacks during service failures | ✅ **DONE** |
+| **8.4.5** | **Provider Failover Chain**: Auto-switch between providers if unavailable | ✅ **DONE** |
+
+**Technical Notes (8.4):**
+* **Circuit-Breaker Controlled Auto-Failover**: Added provider fault detection (tripping after 5 consecutive timeouts) to route streamed query processes seamlessly to local models or sandboxed secondary BYOK instances without billing leakage.
+* **Settings XML Validation & Fix**: Resolved visual `.ui` XML parsing breaks under Qt Creator/Designer inside `ui_designer/saas_settings.ui` (line 461 unexpected double property), cleanly supporting PySide6's `QUiLoader` dynamic parsing with zero workflow or layout modifications.
+
+---
+
+## 🔴 Phase 9: Semantic Chunk Cache Warehousing [STATUS: NOT STARTED]
+
+Phase 9 introduces a tenant-scoped multi-layer cache architecture for document ingestion, embedding reuse, semantic retrieval, and response optimization.
+
+### 9.1 Secure Ingestion & Semantic Query Caching
+
+| # | Task | Status |
+|:--|:------|:--------|
+| **9.1.1** | **Content Hash Registry**: Store SHA-256 hashes for normalized document payloads and chunk metadata (tenant-scoped) | ⏳ PENDING |
+| **9.1.2** | **Partial Chunk Reuse**: Detect unchanged chunks during re-upload and reprocess only modified chunks instead of entire documents | ⏳ PENDING |
+| **9.1.3** | **Embedding Cache Layer**: Reuse existing embeddings for identical chunk hashes to avoid redundant model execution | ⏳ PENDING |
+| **9.1.4** | **Dynamic Ingestion Bypass**: Bind worker directly to cached Qdrant collections on complete hash matches | ⏳ PENDING |
+| **9.1.5** | **Semantic Query Cache**: Store query embeddings and match similar queries via vector similarity search | ⏳ PENDING |
+| **9.1.6** | **Hierarchical Cache Storage**: Introduce L1 (memory) + L2 (SQLite) + L3 (Qdrant) cache tiers | ⏳ PENDING |
+| **9.1.7** | **Cache Invalidation Rules**: Trigger automatic invalidation after document updates, embedding model changes, or tenant configuration changes | ⏳ PENDING |
+| **9.1.8** | **TTL & Cleanup Scheduler**: Remove expired indices, vectors, temporary assets, and orphaned chunks | ⏳ PENDING |
+| **9.1.9** | **Cache Telemetry & Analytics**: Monitor hit ratio, latency reduction, storage growth, and embedding cost savings | ⏳ PENDING |
 
 ---
 
@@ -599,4 +669,4 @@ Phase 8 introduces the ultimate latency and cost-reduction layer, establishing a
 >
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
-*Next Action: Proceed to **Phase 8: Semantic Chunk Cache Warehousing** to implement cryptographic caching and ingestion bypass logic.*
+*Next Action: Proceed to **Phase 9: Semantic Chunk Cache Warehousing** to implement cryptographic caching and ingestion bypass logic.*

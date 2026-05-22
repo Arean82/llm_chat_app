@@ -18,6 +18,13 @@ class HeadlessEngine:
         CLI-based initialization gate. Ensures keys and models are ready.
         Strictly decoupled from GUI dependencies.
         """
+        # Boot service layer
+        try:
+            from logic.services import ServiceRegistry
+            ServiceRegistry.initialize_all()
+        except Exception as e:
+            print(f"[*] Services initialization failed: {e}")
+
         if not client.is_globally_authenticated():
             from headless.auth import HeadlessAuth
             if not HeadlessAuth.run_login_flow(client):

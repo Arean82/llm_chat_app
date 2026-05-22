@@ -1,8 +1,22 @@
 # main.py
 # This is the main entry point for the LLM Chat App. It initializes the application and shows the main window.  
-
 import sys
 import os
+import platform
+
+# 1. SET APP IDENTITY (Windows Taskbar Grouping) - MUST BE SET BEFORE ANY QT GUI CLASS/DLL INITS
+if platform.system() == "Windows":
+    import ctypes
+    myappid = 'arean82.llmchatapp.v7.1'
+    try:
+        # Explicitly declare argument and return types for wide-string (Unicode) translation
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [ctypes.c_wchar_p]
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID.restype = ctypes.c_long
+        res = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        print(f"[Icon Loader] Windows AppUserModelID set to '{myappid}' successfully at script startup. Result: {res}")
+    except Exception as e:
+        print(f"[Icon Loader] Warning: Failed to set AppUserModelID at script startup: {e}")
+
 import shutil
 from pathlib import Path
 
@@ -166,13 +180,6 @@ def main():
             print(f"[*] Warning: Graphical Display server unavailable or failed to connect ({e}).")
             print("[*] Automatically falling back to Headless Engine mode.")
             env_mode = "HEADLESS"
-        # 1. SET APP IDENTITY (Windows Taskbar Grouping)
-        import platform
-        if platform.system() == "Windows":
-            import ctypes
-            myappid = u'arean82.llmchatapp.v7.0'
-            try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-            except: pass
             
         # 2. APPLY GLOBAL ICON
         from ui.shared_widgets import set_app_icon
@@ -246,7 +253,7 @@ def main():
     # CLI Command Router
     if "--help" in sys.argv or "-h" in sys.argv:
         print("\n" + "="*50)
-        print(" LLM CHAT APP - Headless Engine v7.0")
+        print(" LLM CHAT APP - Headless Engine v7.1")
         print("="*50)
         print("Usage: python main.py [options]")
         print("\nOptions:")

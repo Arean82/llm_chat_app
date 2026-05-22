@@ -465,6 +465,114 @@ font: 600 9pt &quot;Segoe UI&quot;;</string>
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_reliability">
+      <attribute name="title">
+       <string>⚡ Reliability &amp; Rates</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_rel">
+       <property name="spacing">
+        <number>12</number>
+       </property>
+       <property name="leftMargin">
+        <number>15</number>
+       </property>
+       <property name="topMargin">
+        <number>15</number>
+       </property>
+       <property name="rightMargin">
+        <number>15</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="grp_rates">
+         <property name="title">
+          <string>Rate Limiting (Token Bucket)</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout_rates">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lbl_rpm">
+            <property name="text">
+             <string>Requests Per Minute (RPM) Limit:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spn_rpm">
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+            <property name="value">
+             <number>60</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="grp_failover">
+         <property name="title">
+          <string>Outbound Provider Failover Routing</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_failover">
+          <item>
+           <widget class="QCheckBox" name="chk_failover_enable">
+            <property name="text">
+             <string>Enable Transparent Auto-Failover</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QFormLayout" name="formLayout_failover_seq">
+            <item row="0" column="0">
+             <widget class="QLabel" name="lbl_failover_seq">
+              <property name="text">
+               <string>Failover Sequence (Priority):</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="txt_failover_seq">
+              <property name="text">
+               <string>google,openai,ollama</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="lbl_failover_hint">
+            <property name="text">
+             <string>&lt;html&gt;&lt;body&gt;&lt;p style=&quot;color:#888; font-size:11px;&quot;&gt;&lt;b&gt;Note:&lt;/b&gt; Provider sequences are comma-separated. The failover routine respects strict sandboxing (uses only tenant-owned credentials or offline local models to prevent Admin-funded key leakage).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_rel">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>

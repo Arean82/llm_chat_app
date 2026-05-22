@@ -10,12 +10,14 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt
 from utils.path_utils import get_resource_path
 from saas.config_manager import SaaSConfigManager
+from ui.shared_widgets import set_app_icon
 
 class SaaSSettingsDialogClass(QDialog):
     """Interactive controller governing physical SaaS INI adjustments from GUI."""
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        set_app_icon(self)
         self.config = SaaSConfigManager()
         
         # Dynamically construct layout
@@ -96,6 +98,14 @@ class SaaSSettingsDialogClass(QDialog):
         self.ui.txt_smtp_user.setText(self.config.get_str("SMTP_RELAY", "user", ""))
         self.ui.txt_smtp_pass.setText(self.config.get_str("SMTP_RELAY", "password", ""))
         
+        # Reliability & Rates Block
+        if hasattr(self.ui, 'spn_rpm'):
+            self.ui.spn_rpm.setValue(self.config.get_int("RELIABILITY", "rpm", 60))
+        if hasattr(self.ui, 'chk_failover_enable'):
+            self.ui.chk_failover_enable.setChecked(self.config.get_bool("RELIABILITY", "failover_enable", True))
+        if hasattr(self.ui, 'txt_failover_seq'):
+            self.ui.txt_failover_seq.setText(self.config.get_str("RELIABILITY", "failover_seq", "google,openai,ollama"))
+            
         if hasattr(self.ui, 'btn_refresh_telemetry'):
             self.refresh_telemetry()
         if hasattr(self.ui, 'btn_refresh_tenants'):
@@ -209,6 +219,28 @@ class SaaSSettingsDialogClass(QDialog):
         self.config.set_val("SMTP_RELAY", "port", self.ui.spn_smtp_port.value())
         self.config.set_val("SMTP_RELAY", "user", self.ui.txt_smtp_user.text().strip())
         self.config.set_val("SMTP_RELAY", "password", self.ui.txt_smtp_pass.text().strip())
+        
+        # Save & Validate Reliability Parameters
+        if hasattr(self.ui, 'spn_rpm'):
+            rpm_val = self.ui.spn_rpm.value()
+            if rpm_val <= 0:
+                QMessageBox.warning(self, "Validation Error", "Requests Per Minute (RPM) Limit must be a positive integer.")
+                return
+            self.config.set_val("RELIABILITY", "rpm", rpm_val)
+            
+        if hasattr(self.ui, 'chk_failover_enable'):
+            self.config.set_val("RELIABILITY", "failover_enable", self.ui.chk_failover_enable.isChecked())
+            
+        if hasattr(self.ui, 'txt_failover_seq'):
+            failover_seq_val = self.ui.txt_failover_seq.text().strip()
+            if not failover_seq_val:
+                QMessageBox.warning(self, "Validation Error", "Failover Sequence cannot be empty.")
+                return
+            providers = [p.strip().lower() for p in failover_seq_val.split(",") if p.strip()]
+            if not providers:
+                QMessageBox.warning(self, "Validation Error", "Failover Sequence must contain at least one valid provider.")
+                return
+            self.config.set_val("RELIABILITY", "failover_seq", ",".join(providers))
         
         # Hardware commit
         self.config.save()

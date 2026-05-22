@@ -7,10 +7,12 @@ from PySide6.QtGui import QIcon, QFont, QPixmap
 import sys
 from pathlib import Path
 from utils.storage_config import StorageManager
+from ui.shared_widgets import set_app_icon
 
 class FirstRunDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        set_app_icon(self)
         self.setWindowTitle("LLM Chat App - Welcome Setup")
         self.setFixedSize(500, 420)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)

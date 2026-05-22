@@ -10,12 +10,14 @@ from PySide6.QtGui import QColor
 from PySide6.QtUiTools import QUiLoader
 
 from utils.path_utils import get_resource_path
+from ui.shared_widgets import set_app_icon
 
 class ModelEditDialog(QDialog):
     """Dialog for adding or editing a single model."""
 
     def __init__(self, model_data=None, theme="dark", parent=None):
         super().__init__(parent)
+        set_app_icon(self)
         self.model_data = model_data or {}
         self.is_edit_mode = bool(model_data)
         self.theme = theme

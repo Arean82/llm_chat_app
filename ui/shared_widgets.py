@@ -48,6 +48,34 @@ class ChatDisplay(QTextEdit):
 def set_app_icon(window):
     """Applies the app icon to any window passed to it."""
     from utils.path_utils import get_resource_path
-    icon_path = get_resource_path("resources/app_icon.png")
+    import platform
+    
+    print(f"[Icon Loader] set_app_icon called for: {window}")
+    
+    icon_name = "app_icon.ico" if platform.system() == "Windows" else "app_icon.png"
+    icon_path = get_resource_path(f"resources/{icon_name}")
+    print(f"[Icon Loader] Target icon path: {icon_path} (exists: {icon_path.exists()})")
+    
+    icon = None
     if icon_path.exists():
-        window.setWindowIcon(QIcon(str(icon_path)))
+        icon = QIcon(str(icon_path))
+        print(f"[Icon Loader] Loaded QIcon from {icon_name}. isNull: {icon.isNull()}")
+        
+    # Fallback to PNG if ICO doesn't exist or is null
+    if not icon or icon.isNull():
+        png_path = get_resource_path("resources/app_icon.png")
+        print(f"[Icon Loader] ICO failed or null. Trying fallback PNG: {png_path} (exists: {png_path.exists()})")
+        if png_path.exists():
+            icon = QIcon(str(png_path))
+            print(f"[Icon Loader] Loaded fallback PNG. isNull: {icon.isNull()}")
+            if icon.isNull():
+                print(f"[Icon Loader] Warning: PNG icon is null: {png_path}")
+        else:
+            print(f"[Icon Loader] Warning: PNG icon does not exist: {png_path}")
+            
+    if icon and not icon.isNull():
+        window.setWindowIcon(icon)
+        print(f"[Icon Loader] Successfully called setWindowIcon on {window}")
+    else:
+        print("[Icon Loader] Error: Failed to set any valid application icon.")
+

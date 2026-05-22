@@ -1,7 +1,22 @@
 // workspace.js - Chat streaming and Arena logic
 import { App } from './state.js';
-import { initiateChatStream, fetchModels, fetchAdminUsers, fetchAdminStats, fetchMemoryCollections, generateShareLink } from './api.js';
+import { initiateChatStream, fetchModels, fetchAdminUsers, fetchAdminStats, fetchMemoryCollections, generateShareLink, fetchAdminTelemetry, updateTenantRateLimit, fetchAdminDLQ, retryDLQJob } from './api.js';
 import { getActiveSystemPrompt } from './settings_main.js';
+
+let adminPollerInterval = null;
+
+function checkFailoverWarning(text) {
+    if (text && text.includes("[⚠️ Backup:")) {
+        const match = text.match(/\[⚠️ Backup:\s*([^\]]+)\]/);
+        const backupName = match ? match[1] : "Backup Node";
+        const banner = document.getElementById('failover-warning-banner');
+        const bannerText = document.getElementById('failover-banner-text');
+        if (banner && bannerText) {
+            bannerText.textContent = `Primary provider degraded. Operating on fallback backup node: ${backupName}`;
+            banner.classList.remove('hidden');
+        }
+    }
+}
 
 export function fillPrompt(text) {
     const input = document.getElementById('main-prompt-input');
@@ -241,6 +256,10 @@ export async function dispatchPrompt() {
     input.style.height = 'auto';
     document.getElementById('btn-send-prompt').disabled = true;
 
+    // Reset failover warning banner
+    const banner = document.getElementById('failover-warning-banner');
+    if (banner) banner.classList.add('hidden');
+
     if (App.arenaMode) return await dispatchDualPrompt(text);
 
     App.conversations[App.activeConversationId].push({ role: 'user', content: text });
@@ -294,6 +313,7 @@ export async function dispatchPrompt() {
                         const textDelta = payload.choices[0]?.delta?.content || '';
 
                         assistantAccumulator += textDelta;
+                        checkFailoverWarning(assistantAccumulator);
                         bubbleHandle.textContent = assistantAccumulator;
 
                         App.tallyComp += 1;
@@ -361,6 +381,7 @@ async function dispatchDualPrompt(text) {
                         try {
                             const payload = JSON.parse(cleanLine.substring(6));
                             accum += payload.choices[0]?.delta?.content || '';
+                            checkFailoverWarning(accum);
                             bubbleHandle.textContent = accum;
                             App.tallyComp += 1;
                             if (App.tallyComp % 20 === 0) updateTelemetryDisplay();
@@ -462,11 +483,84 @@ export async function loadMemoryRoster() {
     }
 }
 
+export async function pollAdminTelemetryAndDLQ() {
+    const adminScreen = document.getElementById('admin-screen');
+    if (!adminScreen || adminScreen.classList.contains('hidden')) {
+        if (adminPollerInterval) {
+            clearInterval(adminPollerInterval);
+            adminPollerInterval = null;
+        }
+        return;
+    }
+
+    try {
+        const [telemetryRes, dlqRes] = await Promise.all([
+            fetchAdminTelemetry(App.token),
+            fetchAdminDLQ(App.token)
+        ]);
+
+        if (telemetryRes.success && telemetryRes.metrics) {
+            const m = telemetryRes.metrics;
+            const throughputEl = document.getElementById('telemetry-throughput');
+            const latencyEl = document.getElementById('telemetry-latency');
+            const connectionsEl = document.getElementById('telemetry-connections');
+            const cacheHitEl = document.getElementById('telemetry-cache-hit');
+
+            if (throughputEl) throughputEl.innerHTML = `${m.http_throughput_rpm.toFixed(2)} <span style="font-size: 1rem; font-weight: 400; color: var(--text-dim);">RPM</span>`;
+            if (latencyEl) latencyEl.innerHTML = `${m.average_latency_seconds.toFixed(3)} <span style="font-size: 1rem; font-weight: 400; color: var(--text-dim);">sec</span>`;
+            if (connectionsEl) connectionsEl.textContent = m.active_connections.toString();
+            if (cacheHitEl) cacheHitEl.innerHTML = `${m.cache_hit_ratio_percent.toFixed(1)} <span style="font-size: 1rem; font-weight: 400; color: var(--text-dim);">%</span>`;
+        }
+
+        if (dlqRes.success && dlqRes.dlq) {
+            const dlqTable = document.getElementById('admin-dlq-table');
+            if (dlqTable) {
+                if (dlqRes.dlq.length === 0) {
+                    dlqTable.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="padding:15px; text-align:center; color:var(--text-dim);">
+                                No quarantined jobs inside DLQ container.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    dlqTable.innerHTML = '';
+                    dlqRes.dlq.forEach(entry => {
+                        dlqTable.innerHTML += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 10px; font-family: monospace; font-size: 0.8rem; color: var(--accent-cyan);">${entry.job_id}</td>
+                                <td style="padding: 10px;">${entry.tenant_id}</td>
+                                <td style="padding: 10px;"><span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${entry.task_type}</span></td>
+                                <td style="padding: 10px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${entry.error}\n\n${entry.stack_trace || ''}">
+                                    <code style="color: #e74c3c; font-size: 0.8rem;">${entry.error}</code>
+                                </td>
+                                <td style="padding: 10px; color: var(--text-dim); font-size: 0.8rem;">${entry.timestamp}</td>
+                                <td style="padding: 10px; text-align: right;">
+                                    <button class="btn-retry-dlq btn-new" data-job-id="${entry.job_id}" style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: var(--accent-success); color: black; font-weight: 600; margin: 0;"><i class="fa-solid fa-rotate-left"></i> Retry</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Telemetry/DLQ polling error:", e);
+    }
+}
+
 export async function loadAdminDashboard() {
     const table = document.getElementById('admin-users-table');
     const statsContainer = document.getElementById('admin-stats-container');
 
-    table.innerHTML = '<tr><td colspan="6" style="padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+    if (table) {
+        table.innerHTML = '<tr><td colspan="7" style="padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+    }
+
+    if (adminPollerInterval) {
+        clearInterval(adminPollerInterval);
+        adminPollerInterval = null;
+    }
 
     try {
         const [usersRes, statsRes] = await Promise.all([
@@ -474,12 +568,13 @@ export async function loadAdminDashboard() {
             fetchAdminStats(App.token)
         ]);
 
-        if (usersRes.success) {
+        if (usersRes.success && table) {
             table.innerHTML = '';
             usersRes.users.forEach(u => {
                 const tierClass = u.key_type === 'admin_funded' ? 'admin' : 'byok';
                 const tierLabel = u.key_type === 'admin_funded' ? 'Admin' : 'BYOK';
                 const activeHtml = u.status === 'active' ? '<span style="color:var(--accent-success);">Active</span>' : 'Inactive';
+                const rpmVal = u.requests_per_minute_limit !== undefined ? u.requests_per_minute_limit : 0;
                 table.innerHTML += `
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                         <td style="padding: 10px;">${u.id}</td>
@@ -488,12 +583,54 @@ export async function loadAdminDashboard() {
                         <td style="padding: 10px;"><span class="key-tag ${tierClass}">${tierLabel}</span></td>
                         <td style="padding: 10px;">${activeHtml}</td>
                         <td style="padding: 10px; color:var(--text-dim);">${u.created_at}</td>
+                        <td style="padding: 10px; text-align: right;">
+                            <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                                <input type="number" class="tenant-rpm-input" data-tenant-id="${u.id}" value="${rpmVal}" style="width: 70px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); border-radius: 4px; padding: 4px 8px; font-family: monospace; outline: none; text-align: center;">
+                                <button class="btn-save-rpm btn-new" data-tenant-id="${u.id}" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin: 0;"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
+
+            // Bind click listener for save-rpm via event delegation
+            if (!table.dataset.listenerBound) {
+                table.dataset.listenerBound = 'true';
+                table.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.btn-save-rpm');
+                    if (btn) {
+                        const tenantId = btn.dataset.tenantId;
+                        const row = btn.closest('tr');
+                        const input = row.querySelector('.tenant-rpm-input');
+                        if (input) {
+                            const rpm = parseInt(input.value);
+                            if (isNaN(rpm) || rpm < 0) {
+                                alert("Please enter a valid, non-negative RPM value.");
+                                return;
+                            }
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving';
+                            try {
+                                const res = await updateTenantRateLimit(App.token, tenantId, rpm);
+                                if (res.success) {
+                                    alert(res.message || "Tenant rate limit updated successfully!");
+                                    loadAdminDashboard();
+                                } else {
+                                    alert("Error: " + (res.error || "Failed to update tenant rate limit."));
+                                }
+                            } catch (err) {
+                                alert("Network error updating tenant rate limit: " + err.message);
+                            } finally {
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save';
+                            }
+                        }
+                    }
+                });
+            }
         }
 
-        if (statsRes.success) {
+        if (statsRes.success && statsContainer) {
             const agg = statsRes.stats.aggregate;
             statsContainer.innerHTML = `
                 <div style="display:flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
@@ -506,7 +643,44 @@ export async function loadAdminDashboard() {
                 </div>
             `;
         }
+
+        // Bind click listener for retry-dlq via event delegation
+        const dlqTable = document.getElementById('admin-dlq-table');
+        if (dlqTable && !dlqTable.dataset.listenerBound) {
+            dlqTable.dataset.listenerBound = 'true';
+            dlqTable.addEventListener('click', async (e) => {
+                const btn = e.target.closest('.btn-retry-dlq');
+                if (btn) {
+                    const jobId = btn.dataset.jobId;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Retrying';
+                    try {
+                        const res = await retryDLQJob(App.token, jobId);
+                        if (res.success) {
+                            alert(res.message || `Job enqueued successfully as ${res.new_job_id || 'new task'}.`);
+                            pollAdminTelemetryAndDLQ();
+                        } else {
+                            alert("Error retrying job: " + (res.error || "Internal server error"));
+                        }
+                    } catch (err) {
+                        alert("Network error retrying job: " + err.message);
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Retry';
+                    }
+                }
+            });
+        }
+
+        // Trigger first poll immediately
+        await pollAdminTelemetryAndDLQ();
+
+        // Start interval
+        adminPollerInterval = setInterval(pollAdminTelemetryAndDLQ, 5000);
+
     } catch (e) {
-        table.innerHTML = '<tr><td colspan="6" style="padding:10px; color:var(--accent-error);">Fetch error.</td></tr>';
+        if (table) {
+            table.innerHTML = '<tr><td colspan="7" style="padding:10px; color:var(--accent-error);">Fetch error.</td></tr>';
+        }
     }
 }

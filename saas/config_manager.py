@@ -57,6 +57,9 @@ class SaaSConfigManager:
                     ("SMTP_RELAY", "port"): "587",
                     ("SMTP_RELAY", "user"): "",
                     ("SMTP_RELAY", "password"): "",
+                    ("RELIABILITY", "rpm"): "60",
+                    ("RELIABILITY", "failover_enable"): "true",
+                    ("RELIABILITY", "failover_seq"): "google,openai,ollama",
                     ("GLOBAL_KEYS", "nvidia_api_key"): "",
                     ("GLOBAL_KEYS", "google_api_key"): "",
                     ("GLOBAL_KEYS", "openai_api_key"): ""
@@ -108,6 +111,16 @@ host = smtp.gmail.com
 port = 587
 user = 
 password = 
+
+[RELIABILITY]
+# Requests Per Minute (RPM) Limit for tenants/users
+rpm = 60
+
+# Enable Transparent Auto-Failover (true/false)
+failover_enable = true
+
+# Failover sequence prioritised order (comma-separated)
+failover_seq = google,openai,ollama
 
 [GLOBAL_KEYS]
 # Master host-funded API keys for Admin-Funded user profiles

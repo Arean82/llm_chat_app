@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>800</height>
+    <height>850</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>LLM Chat App</string>
+   <string>LLM Chat App v7.1</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="central_layout">
@@ -32,12 +32,11 @@
     </property>
     <item>
      <widget class="QStackedWidget" name="main_stack">
-      <!-- This empty stack receives dynamically loaded modules in Python -->
+      <!-- This stack receives dynamically loaded modules in Python -->
      </widget>
     </item>
    </layout>
   </widget>
-  <!-- Custom status bar if needed later -->
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>

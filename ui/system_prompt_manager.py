@@ -17,6 +17,7 @@ class InstructionEditorDialog(QDialog):
     """Mini dialog to edit Name and Text of an instruction"""
     def __init__(self, name="", text="", parent=None):
         super().__init__(parent)
+        set_app_icon(self)
         self.setWindowTitle("Edit Instruction")
         self.setMinimumSize(400, 300)
         layout = QVBoxLayout(self)

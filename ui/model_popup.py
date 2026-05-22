@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor
 
 from utils.path_utils import get_resource_path, get_app_settings
 from utils.helpers import strip_markdown
+from ui.shared_widgets import set_app_icon
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtUiTools import QUiLoader
@@ -19,6 +20,7 @@ from PySide6.QtUiTools import QUiLoader
 class ModelPopupClass(QDialog):
     def __init__(self, current_model_id=None, parent=None, force_show_all=False):
         super().__init__(parent)
+        set_app_icon(self)
         
         self.current_model_id = current_model_id
         self.force_show_all = force_show_all
