@@ -11,11 +11,6 @@
     <!-- App Branding Icon -->
     <link rel="icon" type="image/x-icon" href="/app_icon.ico">
 
-    <!-- Modern Typography Stack (Disabled for offline mode) -->
-    <!-- <link rel="preconnect" href="https://fonts.googleapis.com"> -->
-    <!-- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
-    <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"> -->
-    
     <!-- Local Typography Stack -->
     <link rel="stylesheet" href="/static/css/fonts.css?v=800">
     <!-- Dynamic Aesthetic Stylesheet -->
@@ -24,9 +19,6 @@
     <link rel="stylesheet" href="/static/css/settings_hub.css?v=800">
     <link rel="stylesheet" href="/static/css/model_popup.css?v=800">
 
-    <!-- FontAwesome for Premium Iconography (Disabled for offline mode) -->
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
-    
     <!-- FontAwesome Local -->
     <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
 </head>
@@ -219,7 +211,8 @@
                 </nav>
 
                 <div class="sidebar-footer">
-                    <div class="user-badge">
+                    <div class="user-badge hover-text" id="btn-user-badge" style="cursor: pointer;"
+                        title="Open Grid Security & API Vault">
                         <div class="avatar"><i class="fa-solid fa-user"></i></div>
                         <div class="user-info">
                             <div class="username" id="display-username" data-i18n="workspace.guest_pilot">Guest Pilot
@@ -233,7 +226,7 @@
                         </button>
                         <button id="btn-open-settings" data-i18n-title="workspace.settings_tooltip"
                             title="Grid Preferences & Vault" class="btn-footer-icon">
-                            <i class="fa-solid fa-gears"></i>
+                            <i class="fa-solid fa-gear"></i>
                         </button>
                         <button id="btn-signout" data-i18n-title="workspace.signout_tooltip"
                             title="Terminate Active Session" class="btn-logout">
@@ -398,7 +391,7 @@
                 style="width: 95%; max-width: 1000px; padding: 2rem; border-radius: var(--radius-lg); max-height: 90vh; overflow-y: auto; background: var(--bg-dark);">
                 <div class="modal-header"
                     style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
-                    <h3><i class="fa-solid fa-gears"></i> Credential Manager</h3>
+                    <h3><i class="fa-solid fa-gear"></i> Credential Manager</h3>
 
                     <button onclick="document.getElementById('model-manager-modal').style.display='none'"
                         style="background: transparent; border: none; color: #e74c3c; font-size: 2rem; font-weight: bold; cursor: pointer; padding: 0 8px; line-height: 1;"
@@ -484,7 +477,7 @@
                     <div style="display: flex; margin-top: 1.5rem;">
                         <button class="btn-new" onclick="window.fetchModelsAPI()"
                             style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🆓 Fetch Models</button>
-                        <button class="btn-new" onclick="alert('Manual entry is being linked.')"
+                        <button class="btn-new" onclick="window.showAddModelModal()"
                             style="width: auto; padding: 6px 12px; font-size: 0.85rem; margin-left: 10px;">➕ Add
                             Model</button>
                         <div style="flex-grow: 1;"></div>
@@ -550,6 +543,59 @@
                         style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: var(--radius-sm); cursor: pointer;">Cancel</button>
                     <button class="btn-success" onclick="window.saveCustomProvider()"
                         style="width: auto; padding: 8px 16px;">Save Credentials</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADD MODEL MODAL -->
+        <div id="add-model-modal"
+            style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+            <div
+                style="background: var(--bg-dark); border: 1px solid var(--border-glow); border-radius: var(--radius-md); padding: 2rem; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <h3
+                    style="margin-top: 0; margin-bottom: 1.5rem; color: var(--text-bright); border-bottom: 1px solid var(--border-glow); padding-bottom: 10px;">
+                    ➕ Add Model</h3>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Model ID:</label>
+                    <input type="text" id="add-mod-id" placeholder="e.g., meta/llama-3-8b-instruct">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Display Name:</label>
+                    <input type="text" id="add-mod-name" placeholder="e.g., Llama 3 8B">
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Ecosystem:</label>
+                    <input type="text" id="add-mod-provider" placeholder="e.g., nvidia, openai">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Developer:</label>
+                    <input type="text" id="add-mod-dev" placeholder="e.g., Meta">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Description:</label>
+                    <input type="text" id="add-mod-desc" placeholder="Model capabilities...">
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Context Window:</label>
+                    <input type="number" id="add-mod-ctx" value="4096">
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="add-mod-free" checked style="width: auto;">
+                    <label for="add-mod-free" style="margin: 0;">Is Free Tier</label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button onclick="document.getElementById('add-model-modal').style.display='none'"
+                        style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: var(--radius-sm); cursor: pointer;">Cancel</button>
+                    <button class="btn-success" onclick="window.saveAdminModel()"
+                        style="width: auto; padding: 8px 16px;">Save Model</button>
                 </div>
             </div>
         </div>
@@ -672,6 +718,277 @@
         </div>
     </div>
 
+    <!-- 🛠️ SCREEN E: NODE CONFIG MODAL (TABBED) -->
+    <div id="node-config-modal"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-panel modal-content animate-slide-up"
+            style="width: 95%; max-width: 1000px; padding: 2rem; border-radius: var(--radius-lg); max-height: 90vh; overflow-y: auto; background: var(--bg-dark);">
+            <div class="modal-header"
+                style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+                <h3><i class="fa-solid fa-server"></i> Node Config</h3>
+
+                <button id="btn-close-node-config"
+                    style="background: transparent; border: none; color: #e74c3c; font-size: 2rem; font-weight: bold; cursor: pointer; padding: 0 8px; line-height: 1;"
+                    title="Close">&times;</button>
+            </div>
+
+            <!-- Tab Headers -->
+            <div class="settings-tabs">
+                <button id="tab-btn-nc-sys-instruct" class="settings-tab active">
+                    <i class="fa-solid fa-robot"></i> System Instruction Tray
+                </button>
+                <button id="tab-btn-nc-gen-params" class="settings-tab">
+                    <i class="fa-solid fa-sliders"></i> Generation Params
+                </button>
+                <button id="tab-btn-nc-rerank" class="settings-tab">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i> Retrieval Reranking
+                </button>
+                <button id="tab-btn-nc-telemetry" class="settings-tab">
+                    <i class="fa-solid fa-satellite-dish"></i> Telemetry Logging
+                </button>
+                <!-- Admin Only Tabs -->
+                <button id="tab-btn-nc-auth-alerts" class="settings-tab admin-only-tab hidden">
+                    <i class="fa-solid fa-envelope-shield"></i> Auth Alerts
+                </button>
+                <button id="tab-btn-nc-tenants" class="settings-tab admin-only-tab hidden">
+                    <i class="fa-solid fa-users"></i> Tenants
+                </button>
+            </div>
+
+            <!-- Tab 1: System Instruction Tray -->
+            <div id="tab-content-nc-sys-instruct" class="settings-content active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="color: var(--text-dim);">Manage System Prompts. Select the checkbox to set the active
+                        persona.</span>
+                    <input type="text" id="sys-search-input" placeholder="🔍 Search instructions..."
+                        style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-glow); background: rgba(0,0,0,0.3); color: white; width: 200px;">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button id="btn-sys-add" class="btn-new"
+                        style="background: var(--bg-card); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 5px 10px; border-radius: 4px;"><i
+                            class="fa-solid fa-plus"></i> Add</button>
+                    <button id="btn-sys-edit" class="btn-new"
+                        style="background: var(--bg-card); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 5px 10px; border-radius: 4px;"><i
+                            class="fa-solid fa-pen"></i> Edit</button>
+                    <button id="btn-sys-delete" class="btn-new"
+                        style="background: var(--bg-card); border: 1px solid #e74c3c; color: #e74c3c; padding: 5px 10px; border-radius: 4px;"><i
+                            class="fa-solid fa-trash"></i> Delete</button>
+                </div>
+
+                <div
+                    style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-glow); border-radius: 4px; background: var(--bg-dark);">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead style="background: rgba(0,0,0,0.5); position: sticky; top: 0;">
+                            <tr>
+                                <th
+                                    style="padding: 8px; width: 60px; text-align: center; border-bottom: 1px solid var(--border-glow);">
+                                    Active</th>
+                                <th style="padding: 8px; border-bottom: 1px solid var(--border-glow);">Instruction Name
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="nc-sys-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label><b>Preview:</b></label>
+                    <textarea id="nc-sys-preview" rows="4"
+                        style="width: 100%; background: var(--bg-dark); border: 1px solid var(--border-glow); color: var(--text-dim); padding: 10px; border-radius: 4px; margin-top: 5px;"
+                        readonly placeholder="Select an instruction to preview..."></textarea>
+                </div>
+            </div>
+
+            <!-- Instruction Editor Sub-Modal -->
+            <div id="sys-editor-modal"
+                style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; border-radius: var(--radius-lg);">
+                <div
+                    style="background: var(--bg-card); padding: 20px; border: 1px solid var(--border-glow); border-radius: 8px; width: 90%; max-width: 500px;">
+                    <h3 id="sys-editor-title" style="margin-top: 0; margin-bottom: 20px;">Edit Instruction</h3>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Instruction Name:</label>
+                        <input type="text" id="sys-editor-name"
+                            style="width: 100%; padding: 8px; border: 1px solid var(--border-glow); border-radius: 4px; background: var(--bg-dark); color: white;">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px;">Instruction Text:</label>
+                        <textarea id="sys-editor-text" rows="8" placeholder="Enter the detailed instructions here..."
+                            style="width: 100%; padding: 8px; border: 1px solid var(--border-glow); border-radius: 4px; background: var(--bg-dark); color: white; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btn-sys-editor-cancel"
+                            style="padding: 8px 15px; background: transparent; border: 1px solid var(--border-glow); color: white; border-radius: 4px; cursor: pointer;">Cancel</button>
+                        <button id="btn-sys-editor-save"
+                            style="padding: 8px 15px; background: var(--accent-cyan); border: none; color: black; font-weight: bold; border-radius: 4px; cursor: pointer;">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Generation Params -->
+            <div id="tab-content-nc-gen-params" class="settings-content">
+                <div style="margin-bottom: 15px; color: var(--text-dim);">
+                    Adjust advanced AI model parameters.
+                </div>
+
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label for="nc-preset"><i class="fa-solid fa-wand-magic-sparkles"></i> Quick Preset</label>
+                    <select id="nc-preset"
+                        style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        <option value="0">Custom</option>
+                        <option value="1">Precise (Code/Math)</option>
+                        <option value="2">Balanced (Default)</option>
+                        <option value="3">Creative (Storytelling)</option>
+                        <option value="4">Model Default (Cloud Baseline)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="input-group">
+                        <label for="nc-temp">Temperature: <span id="nc-temp-val">0.7</span></label>
+                        <input type="range" id="nc-temp" min="0" max="2" step="0.1" value="0.7" style="width: 100%;">
+                        <small id="nc-temp-desc"
+                            style="color: var(--text-dim); display: block; margin-top: 5px; height: 35px;">🤝
+                            **Balanced**: Standard defaults.</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="nc-max-tokens">Max Tokens</label>
+                        <input type="number" id="nc-max-tokens" value="4096"
+                            style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        <small id="nc-token-desc"
+                            style="color: var(--text-dim); display: block; margin-top: 5px; height: 35px;">📏 Ceiling
+                            for response length.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab 3: Retrieval Reranking -->
+            <div id="tab-content-nc-rerank" class="settings-content">
+                <div style="margin-bottom: 15px; color: var(--text-dim);">
+                    Configure Advanced Retrieval Reranking (Local vs Cloud).
+                </div>
+                <div style="border: 1px solid var(--border-glow); border-radius: 6px; padding: 15px; background: rgba(0,0,0,0.2);">
+                    <div style="font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="nc-rerank-enable"> Enable Retrieval Reranking
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label>Reranker Engine</label>
+                            <select id="nc-rerank-engine" disabled
+                                style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                                <option value="local">Local Mode</option>
+                                <option value="cloud_cohere">Cloud Cohere</option>
+                                <option value="cloud_custom">Custom OpenAPI</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>RAG K-Value (Documents to rerank)</label>
+                            <input type="number" id="nc-rag-k" value="5" min="1" max="20"
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                    </div>
+
+                    <div id="nc-rerank-custom-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="input-group">
+                            <label>Endpoint URL</label>
+                            <input type="text" id="nc-rerank-endpoint" placeholder="https://api..."
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                        <div class="input-group">
+                            <label>Secret API Key</label>
+                            <input type="password" id="nc-rerank-key" placeholder="••••••••"
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab 4: Telemetry Logging -->
+            <div id="tab-content-nc-telemetry" class="settings-content">
+                <div style="margin-bottom: 15px; color: var(--text-dim);">
+                    Configure Personal Telemetry and Logging preferences.
+                </div>
+                <div class="input-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 15px; border: 1px solid var(--border-glow); border-radius: 4px; background: rgba(0,0,0,0.2);">
+                        <input type="checkbox" id="nc-logging-opt"> 
+                        <b>Enable Personal Logging Telemetry</b>
+                    </label>
+                    <small style="color: var(--text-dim); display: block; margin-top: 5px;">When enabled, diagnostic traces will be saved locally.</small>
+                </div>
+            </div>
+
+            <!-- Tab 5: Auth Alerts (Admin Only) -->
+            <div id="tab-content-nc-auth-alerts" class="settings-content">
+                <div style="margin-bottom: 15px; color: var(--accent-cyan);">
+                    System-wide Authentication Alerts (SMTP Relay Config)
+                </div>
+                <div style="border: 1px solid var(--border-glow); border-radius: 6px; padding: 15px; background: rgba(0,0,0,0.2);">
+                    <div style="font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="nc-smtp-enable"> Enable Autonomous SMTP Alerts
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label>SMTP Host</label>
+                            <input type="text" id="nc-smtp-host" placeholder="smtp.gmail.com"
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                        <div class="input-group">
+                            <label>Port</label>
+                            <input type="number" id="nc-smtp-port" value="587"
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="input-group">
+                            <label>SMTP User</label>
+                            <input type="text" id="nc-smtp-user" placeholder="alertbot@domain.com"
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                        <div class="input-group">
+                            <label>SMTP Password</label>
+                            <input type="password" id="nc-smtp-pass" placeholder="••••••••"
+                                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); padding: 8px; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Tenants -->
+            <div id="tab-content-nc-tenants" class="settings-content">
+                <div style="margin-bottom: 15px; color: var(--accent-cyan);">
+                    Active Tenant Management (Admin)
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead style="background: rgba(0,0,0,0.4); position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Username</th>
+                                <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Role</th>
+                                <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nc-tenants-tbody">
+                            <!-- Populated by settings_main.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <button id="btn-nc-apply" class="btn-primary btn-glow-effect" style="padding: 10px 20px;">Apply
+                    Configuration</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Local settings password visibility utility
         function toggleSettingKeyVisibility() {
@@ -693,6 +1010,7 @@
     <script type="module" src="/static/js/workspace.js?v=800"></script>
     <script type="module" src="/static/js/settings_hub.js?v=800"></script>
     <script type="module" src="/static/js/model_popup.js?v=800"></script>
+    <script type="module" src="/static/js/settings_main.js?v=800"></script>
     <script type="module">
         import { initMainApp } from '/static/js/main.js?v=800';
         import { initThemeToggle, toggleTheme } from '/static/js/theme-toggle.js?v=800';
@@ -719,19 +1037,25 @@
         style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
         <div
             style="background: var(--bg-dark); border: 1px solid var(--border-glow); border-radius: var(--radius-md); width: 95%; max-width: 900px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.7);">
-            
-            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-glow); display: flex; justify-content: space-between; align-items: center;">
+
+            <div
+                style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-glow); display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-list"></i> Select Active Model
                 </h3>
             </div>
-            
-            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); font-size: 0.9rem;">
-                    <input type="checkbox" id="pure-model-show-all" onchange="if(window.renderDesktopCloneTable) window.renderDesktopCloneTable()"> Show models from all providers
+
+            <div
+                style="padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <label
+                    style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); font-size: 0.9rem;">
+                    <input type="checkbox" id="pure-model-show-all"
+                        onchange="if(window.renderDesktopCloneTable) window.renderDesktopCloneTable()"> Show models from
+                    all providers
                 </label>
-                
-                <select id="pure-model-capability-filter" onchange="if(window.renderDesktopCloneTable) window.renderDesktopCloneTable()"
+
+                <select id="pure-model-capability-filter"
+                    onchange="if(window.renderDesktopCloneTable) window.renderDesktopCloneTable()"
                     style="background: var(--bg-card); color: var(--text-bright); border: 1px solid var(--border-glow); border-radius: 4px; padding: 4px 8px; font-size: 0.85rem; outline: none;">
                     <option value="0">All Capabilities</option>
                     <option value="1">General Chat</option>
@@ -739,15 +1063,21 @@
                     <option value="3">Multimodal / Vision</option>
                 </select>
             </div>
-            
+
             <div style="flex: 1; overflow-y: auto; padding: 0;">
-                <table id="pure-model-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                <table id="pure-model-table"
+                    style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
                     <thead style="background: rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 10;">
                         <tr>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 60px; text-align: center;">Active</th>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 120px;">Ecosystem</th>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 120px;">Developer</th>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 200px;">Model Name</th>
+                            <th
+                                style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 60px; text-align: center;">
+                                Active</th>
+                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 120px;">
+                                Ecosystem</th>
+                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 120px;">
+                                Developer</th>
+                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow); width: 200px;">Model
+                                Name</th>
                             <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Description</th>
                         </tr>
                     </thead>
@@ -756,14 +1086,17 @@
                     </tbody>
                 </table>
             </div>
-            
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-glow); display: flex; justify-content: flex-end; gap: 10px; background: rgba(0,0,0,0.2);">
+
+            <div
+                style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-glow); display: flex; justify-content: flex-end; gap: 10px; background: rgba(0,0,0,0.2);">
                 <button onclick="document.getElementById('pure-model-selection-modal').style.display='none'"
-                    class="btn-new" style="background: transparent; border: 1px solid var(--text-dim); color: var(--text-dim);">Cancel</button>
+                    class="btn-new"
+                    style="background: transparent; border: 1px solid var(--text-dim); color: var(--text-dim);">Cancel</button>
                 <button id="pure-model-apply-btn" onclick="if(window.applyModelSelection) window.applyModelSelection()"
-                    class="btn-new" style="background: var(--accent-cyan); color: #000; font-weight: 600;" disabled>Apply</button>
+                    class="btn-new" style="background: var(--accent-cyan); color: #000; font-weight: 600;"
+                    disabled>Apply</button>
             </div>
-            
+
         </div>
     </div>
 

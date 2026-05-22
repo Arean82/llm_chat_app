@@ -63,6 +63,12 @@ class TenantDatabaseManager:
                 )
             """)
             
+            # 2.5 Migration: Add settings_blob if missing
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN settings_blob TEXT DEFAULT '{}'")
+            except sqlite3.OperationalError:
+                pass # Column already exists
+            
             # Establish Index to speed up user-token gateway lookups
             conn.execute("CREATE INDEX IF NOT EXISTS idx_user_api_key ON users(api_key);")
             
@@ -205,6 +211,27 @@ class TenantDatabaseManager:
                 if "api_key" in err_msg:
                     return False, "This API Key Passport is already bound to an active tenant space."
                 return False, f"Profile Synchronization Error: {str(e)}"
+
+    def get_user_settings(self, user_id: int) -> dict:
+        """Retrieves the JSON configuration blob for the user."""
+        with self.get_connection() as conn:
+            row = conn.execute("SELECT settings_blob FROM users WHERE id = ?", (user_id,)).fetchone()
+            if row and row['settings_blob']:
+                try:
+                    import json
+                    return json.loads(row['settings_blob'])
+                except:
+                    pass
+            return {}
+
+    def update_user_settings(self, user_id: int, settings: dict):
+        """Persists the JSON configuration blob for the user."""
+        import json
+        settings_str = json.dumps(settings)
+        with self.get_connection() as conn:
+            conn.execute("UPDATE users SET settings_blob = ? WHERE id = ?", (settings_str, user_id))
+            conn.commit()
+            return True
 
     # --- ISOLATION DATA ROUTING ---
 

@@ -1,6 +1,7 @@
 // workspace.js - Chat streaming and Arena logic
 import { App } from './state.js';
 import { initiateChatStream, fetchModels, fetchAdminUsers, fetchAdminStats, fetchMemoryCollections, generateShareLink } from './api.js';
+import { getActiveSystemPrompt } from './settings_main.js';
 
 export function fillPrompt(text) {
     const input = document.getElementById('main-prompt-input');
@@ -260,7 +261,14 @@ export async function dispatchPrompt() {
     updateTelemetryDisplay();
 
     try {
-        const response = await initiateChatStream(App.token, activeModel, App.conversations[App.activeConversationId], useWebSearch);
+        let payloadMessages = [];
+        const activeSysPrompt = await getActiveSystemPrompt();
+        if (activeSysPrompt) {
+            payloadMessages.push({ role: 'system', content: activeSysPrompt });
+        }
+        payloadMessages.push(...App.conversations[App.activeConversationId]);
+
+        const response = await initiateChatStream(App.token, activeModel, payloadMessages, useWebSearch);
         if (!response.ok) {
             const errData = await response.json();
             throw new Error(errData.error || errData.message || "Generation gateway failure.");
@@ -325,7 +333,16 @@ async function dispatchDualPrompt(text) {
     const streamTask = async (modelId, bubbleHandle, targetColId) => {
         try {
             const useWebSearch = document.getElementById('web-search-toggle')?.checked || false;
-            const response = await initiateChatStream(App.token, modelId, [{ role: 'user', content: text }], useWebSearch);
+            
+            // Fetch the active system instruction
+            let messagesPayload = [];
+            const activeSysPrompt = await getActiveSystemPrompt();
+            if (activeSysPrompt) {
+                messagesPayload.push({ role: 'system', content: activeSysPrompt });
+            }
+            messagesPayload.push({ role: 'user', content: text });
+            
+            const response = await initiateChatStream(App.token, modelId, messagesPayload, useWebSearch);
             if (!response.ok) throw new Error("Stream connection failed.");
 
             const reader = response.body.getReader();

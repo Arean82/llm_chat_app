@@ -74,9 +74,19 @@ function setupEventListeners() {
     document.getElementById('btn-send-prompt').addEventListener('click', dispatchPrompt);
     document.getElementById('btn-arena-toggle').addEventListener('click', toggleArenaMode);
     
-    document.getElementById('btn-open-settings').addEventListener('click', openSettingsModal);
-    document.getElementById('btn-close-settings').addEventListener('click', closeSettingsModal);
-    document.getElementById('btn-cancel-settings').addEventListener('click', closeSettingsModal);
+    const btnOpenSettings = document.getElementById('btn-open-settings');
+    if (btnOpenSettings) btnOpenSettings.addEventListener('click', () => {
+        if (window.openNodeConfigModal) window.openNodeConfigModal();
+    });
+    
+    const btnUserBadge = document.getElementById('btn-user-badge');
+    if (btnUserBadge) btnUserBadge.addEventListener('click', openSettingsModal);
+    
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    if (btnCloseSettings) btnCloseSettings.addEventListener('click', closeSettingsModal);
+    
+    const btnCancelSettings = document.getElementById('btn-cancel-settings');
+    if (btnCancelSettings) btnCancelSettings.addEventListener('click', closeSettingsModal);
     
     document.getElementById('main-prompt-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {

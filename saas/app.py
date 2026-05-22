@@ -5,6 +5,7 @@ Orchestrates JWT/Passport gateway auth, dynamic workspace routing,
 economic feature locks on Model Arena, and autonomous SMTP alerts.
 """
 
+from utils import get_resource_path
 import os
 import time
 import json
@@ -127,6 +128,141 @@ def create_saas_app():
             "service": "Multi-Tenant Cloud Node", 
             "timestamp": int(time.time())
         })
+
+    @app.route('/api/admin/system_prompts', methods=['GET', 'POST'])
+    def sync_admin_prompts():
+        """Real-time mirroring of System Prompts between Admin SaaS and Desktop Global Store."""
+        from utils.path_utils import get_resource_path
+        import json
+        prompts_file = get_resource_path("resources/user_prompts.json")
+        
+        if request.method == 'GET':
+            try:
+                if os.path.exists(prompts_file):
+                    with open(prompts_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    return jsonify({"success": True, "data": data})
+                else:
+                    return jsonify({"success": True, "data": []})
+            except Exception as e:
+                return jsonify({"success": False, "error": str(e)}), 500
+                
+        if request.method == 'POST':
+            try:
+                payload = request.get_json() or []
+                with open(prompts_file, 'w', encoding='utf-8') as f:
+                    json.dump(payload, f, indent=4)
+                return jsonify({"success": True, "message": "Synced to Desktop Globally"})
+            except Exception as e:
+                return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/user/settings', methods=['GET', 'POST'])
+    def user_settings():
+        """Secure endpoints for regular SaaS tenants to persist UI configuration blobs."""
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
+            
+        if request.method == 'GET':
+            settings = db.get_user_settings(user['id'])
+            return jsonify({"success": True, "data": settings})
+            
+        if request.method == 'POST':
+            payload = request.get_json() or {}
+            success = db.update_user_settings(user['id'], payload)
+            if success:
+                return jsonify({"success": True, "message": "Settings updated"})
+            return jsonify({"success": False, "error": "Failed to update settings"}), 500
+
+    @app.route('/api/admin/gen_params', methods=['GET', 'POST'])
+    def admin_gen_params():
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            
+        config_file = get_resource_path("resources/config.json")
+        if request.method == 'GET':
+            try:
+                if os.path.exists(config_file):
+                    with open(config_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    return jsonify({"success": True, "data": data})
+                return jsonify({"success": True, "data": {}})
+            except Exception as e:
+                return jsonify({"success": False, "error": str(e)}), 500
+                
+        if request.method == 'POST':
+            try:
+                payload = request.get_json() or {}
+                if os.path.exists(config_file):
+                    with open(config_file, 'r', encoding='utf-8') as f:
+                        current = json.load(f)
+                else:
+                    current = {}
+                current.update(payload)
+                with open(config_file, 'w', encoding='utf-8') as f:
+                    json.dump(current, f, indent=4)
+                return jsonify({"success": True, "message": "Synced to Desktop Globally"})
+            except Exception as e:
+                return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/admin/saas_config', methods=['GET', 'POST'])
+    def admin_saas_config():
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            
+        try:
+            from saas.config_manager import SaaSConfigManager
+            saas_cfg = SaaSConfigManager()
+            
+            if request.method == 'GET':
+                data = {
+                    "smtp_enabled": saas_cfg.get_bool("SMTP_RELAY", "enabled", False),
+                    "smtp_host": saas_cfg.get_str("SMTP_RELAY", "host", "smtp.gmail.com"),
+                    "smtp_port": saas_cfg.get_int("SMTP_RELAY", "port", 587),
+                    "smtp_user": saas_cfg.get_str("SMTP_RELAY", "user", ""),
+                    "smtp_password": saas_cfg.get_str("SMTP_RELAY", "password", "")
+                }
+                return jsonify({"success": True, "data": data})
+                
+            if request.method == 'POST':
+                payload = request.get_json() or {}
+                if "smtp_enabled" in payload: saas_cfg.set_val("SMTP_RELAY", "enabled", payload["smtp_enabled"])
+                if "smtp_host" in payload: saas_cfg.set_val("SMTP_RELAY", "host", payload["smtp_host"])
+                if "smtp_port" in payload: saas_cfg.set_val("SMTP_RELAY", "port", int(payload["smtp_port"]))
+                if "smtp_user" in payload: saas_cfg.set_val("SMTP_RELAY", "user", payload["smtp_user"])
+                if "smtp_password" in payload: saas_cfg.set_val("SMTP_RELAY", "password", payload["smtp_password"])
+                saas_cfg.save()
+                return jsonify({"success": True, "message": "SaaS Config Synced"})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/admin/models', methods=['POST'])
+    def admin_models():
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            
+        try:
+            from logic.model_io import load_all_models, save_models
+            data = request.get_json() or {}
+            if not data.get("id"):
+                return jsonify({"success": False, "error": "Model ID is required."}), 400
+                
+            models = load_all_models()
+            existing_idx = next((i for i, m in enumerate(models) if m.get("id") == data["id"]), None)
+            
+            if existing_idx is not None:
+                models[existing_idx].update(data)
+            else:
+                models.append(data)
+                
+            save_models(models)
+            return jsonify({"success": True, "message": "Model synced to Desktop."})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
 
     # --- USER ONBOARDING & PROFILE GATEWAY ---
 
@@ -313,13 +449,37 @@ def create_saas_app():
                     db.set_tenant_credential(request.tenant['id'], prov.lower(), key.strip())
             return jsonify({"status": "success", "message": "Credentials synchronized."})
 
-    @app.route('/v1/system/providers', methods=['GET'])
+    @app.route('/v1/system/providers', methods=['GET', 'POST'])
     def list_system_providers():
-        """Returns the dynamic list of base providers + custom providers."""
+        """Returns the dynamic list of base providers + custom providers, and allows Admin to add new ones."""
         try:
             from logic.model_io import load_provider_metadata
             from utils.path_utils import get_app_settings
             import json
+            
+            if request.method == 'POST':
+                user = getattr(request, 'tenant', None)
+                if not user or user.get('key_type') != 'admin_funded':
+                    return jsonify({"error": "Forbidden. Operator access only."}), 403
+                    
+                data = request.get_json()
+                if not data or 'sdk' not in data or 'ecosystem' not in data or 'url' not in data:
+                    return jsonify({"error": "Missing required fields."}), 400
+                    
+                settings = get_app_settings()
+                custom_raw = settings.value("custom_providers", "[]")
+                try:
+                    custom_providers = json.loads(custom_raw)
+                except:
+                    custom_providers = []
+                    
+                custom_providers.append({
+                    "sdk": data["sdk"],
+                    "ecosystem": data["ecosystem"],
+                    "url": data["url"]
+                })
+                settings.setValue("custom_providers", json.dumps(custom_providers))
+                return jsonify({"success": True})
             
             metadata = load_provider_metadata()
             raw_providers = metadata.get("providers", [])

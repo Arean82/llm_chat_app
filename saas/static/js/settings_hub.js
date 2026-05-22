@@ -381,6 +381,89 @@ window.onEcoChanged = function() {
 };
 
 window.saveCustomProvider = async function() {
-    alert("Saving custom providers via SaaS interface is being linked. Please use the Desktop app to add custom ecosystem parameters for now. You can input API keys for existing ecosystems using the main table.");
-    document.getElementById('add-provider-modal').style.display = 'none';
+    const sdk = document.getElementById('add-prov-sdk').value;
+    let ecosystem = document.getElementById('add-prov-eco').value;
+    const url = document.getElementById('add-prov-url').value;
+    const key = document.getElementById('add-prov-key').value;
+    
+    if (ecosystem === "Custom...") {
+        ecosystem = document.getElementById('add-prov-custom-eco').value;
+    }
+    
+    if (!ecosystem || !url) {
+        alert("Ecosystem name and URL are required.");
+        return;
+    }
+    
+    try {
+        const payload = { sdk, ecosystem, url };
+        await fetch('/v1/system/providers', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${App.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (key.trim() !== '') {
+            const eco_key = ecosystem.toLowerCase().replace(/ /g, '_');
+            const provId = `${sdk}_${eco_key}`;
+            const keyPayload = {};
+            keyPayload[provId] = key.trim();
+            await saveTenantCredentials(App.token, keyPayload);
+        }
+        
+        document.getElementById('add-provider-modal').style.display = 'none';
+        alert(`Custom Provider ${ecosystem} saved successfully!`);
+        
+        // Reload credentials table
+        await loadSettingsHub();
+    } catch (e) {
+        console.error("Failed to save custom provider", e);
+        alert("Failed to save custom provider. Check console for details.");
+    }
+};
+
+window.showAddModelModal = function() {
+    document.getElementById('add-model-modal').style.display = 'flex';
+};
+
+window.saveAdminModel = async function() {
+    if (!App.user || App.user.key_type !== 'admin_funded') {
+        alert("Only the Admin can modify models globally.");
+        return;
+    }
+    
+    const id = document.getElementById('add-mod-id').value.trim();
+    if (!id) {
+        alert("Model ID is required.");
+        return;
+    }
+    
+    const payload = {
+        id: id,
+        name: document.getElementById('add-mod-name').value.trim() || id,
+        provider: document.getElementById('add-mod-provider').value.trim() || "nvidia",
+        developer: document.getElementById('add-mod-dev').value.trim() || "Custom",
+        description: document.getElementById('add-mod-desc').value.trim(),
+        context_window: parseInt(document.getElementById('add-mod-ctx').value) || 4096,
+        free: document.getElementById('add-mod-free').checked
+    };
+    
+    try {
+        await fetch('/api/admin/models', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${App.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        document.getElementById('add-model-modal').style.display = 'none';
+        alert(`Model ${payload.id} saved successfully!`);
+        
+        // Reload Models
+        if (window.fetchModelsAPI) {
+            window.fetchModelsAPI();
+        }
+    } catch (e) {
+        console.error("Failed to save model", e);
+        alert("Failed to save model. Check console.");
+    }
 };

@@ -534,6 +534,7 @@ flowchart TD
 
 **Technical Notes (6.2):**
 * **Settings Hub 1:1 Parity (6.2.9)**: The SaaS AI Settings Hub has been structurally re-architected to serve as a strict, literal mirror of the desktop `QDialog` application. The layout perfectly translates the XML DOM hierarchy from `credential_manager.ui` into HTML. It features physical folder-tab css logic (bounding boxes with active tab border-masking), exact emojis (`🔐`, `📦`), dynamic developer sub-tabs extracted directly from the backend API payloads, and literal mirrored status badges (`[Free]`/`[Paid]`), completely abandoning conflicting modern web styling.
+* **Credential & Model Manager API Sync (6.2.9 Addendum)**: Implemented `POST /v1/system/providers` for Admin accounts to write custom providers into the shared `config.json` via API. Added `POST /api/admin/models` with an integrated SaaS Web GUI form (`add-model-modal`) to allow Admins to securely serialize and write new model definitions into the physical `resources/models.json` file in real-time, matching Desktop capabilities.
 ### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
 
 | #               | Task                                                                                                             | Status           |
