@@ -39,8 +39,11 @@ class SaaSSettingsDialogClass(QDialog):
         if hasattr(self.ui, 'btn_reset_admin'):
             self.ui.btn_reset_admin.clicked.connect(self.on_reset_admin)
         
-        # Setup dynamic interactive disabling
-        self.ui.chk_enabled.toggled.connect(self.on_enable_toggled)
+        # SaaS Control Buttons
+        if hasattr(self.ui, 'pushButton'):
+            self.ui.pushButton.clicked.connect(self.restart_saas_server)
+        if hasattr(self.ui, 'pushButton_2'):
+            self.ui.pushButton_2.clicked.connect(self.toggle_saas_server)
         
         # Connect new Tenant Management/Telemetry signals if present
         if hasattr(self.ui, 'btn_refresh_telemetry'):
@@ -53,7 +56,6 @@ class SaaSSettingsDialogClass(QDialog):
             self.ui.btn_reset_pass.clicked.connect(self.reset_tenant_password)
         
         self.hydrate_ui()
-        self.on_enable_toggled(self.ui.chk_enabled.isChecked())
         
         # Inject localized warning for reserved Port 5000 conflict safety
         if hasattr(self.ui, 'hint_net'):
@@ -67,7 +69,6 @@ class SaaSSettingsDialogClass(QDialog):
     def hydrate_ui(self):
         """Hydrates inputs using live data retrieved from config.ini memory."""
         # Network Block
-        self.ui.chk_enabled.setChecked(self.config.get_bool("NETWORK", "enabled", True))
         
         host_str = self.config.get_str("NETWORK", "host", "127.0.0.1")
         if host_str == "0.0.0.0":
@@ -109,15 +110,46 @@ class SaaSSettingsDialogClass(QDialog):
                 
             if is_running:
                 self.ui.lbl_status.setText("<span style='color:green; font-weight:bold;'>🟢 RUNNING</span> (Online)")
+                if hasattr(self.ui, 'pushButton'): 
+                    self.ui.pushButton.setEnabled(True)
+                    self.ui.pushButton.setText("RESTART SaaS Node")
+                    self.ui.pushButton.setStyleSheet("background-color: #2563eb; color: white; font-weight: bold; padding: 5px;")
+                if hasattr(self.ui, 'pushButton_2'): 
+                    self.ui.pushButton_2.setText("STOP SaaS Node")
+                    self.ui.pushButton_2.setStyleSheet("background-color: #dc2626; color: white; font-weight: bold; padding: 5px;")
             else:
                 self.ui.lbl_status.setText("<span style='color:red; font-weight:bold;'>🔴 OFFLINE</span> (Stopped)")
+                if hasattr(self.ui, 'pushButton'): 
+                    self.ui.pushButton.setEnabled(False)
+                    self.ui.pushButton.setStyleSheet("background-color: #64748b; color: white; font-weight: bold; padding: 5px;")
+                if hasattr(self.ui, 'pushButton_2'): 
+                    self.ui.pushButton_2.setText("START SaaS Node")
+                    self.ui.pushButton_2.setStyleSheet("background-color: #16a34a; color: white; font-weight: bold; padding: 5px;")
 
-    def on_enable_toggled(self, is_active: bool):
-        """Interactively enables/disables child widgets based on master toggle."""
-        self.ui.cbo_host.setEnabled(is_active)
-        self.ui.spn_port.setEnabled(is_active)
-        self.ui.tabWidget.setTabEnabled(1, is_active) # Disable security configurations
-        self.ui.tabWidget.setTabEnabled(2, is_active) # Disable admin reset if server is offline
+    def toggle_saas_server(self):
+        parent = self.parent()
+        if parent and hasattr(parent, 'saas_server'):
+            if parent.saas_server.running:
+                self.config.set_val("NETWORK", "enabled", False)
+                parent.saas_server.stop()
+            else:
+                self.config.set_val("NETWORK", "enabled", True)
+                parent.saas_server.host = "0.0.0.0" if self.ui.cbo_host.currentIndex() == 1 else "127.0.0.1"
+                parent.saas_server.port = self.ui.spn_port.value()
+                parent.saas_server.start_server()
+            self.config.save()
+        self.hydrate_ui()
+
+    def restart_saas_server(self):
+        parent = self.parent()
+        if parent and hasattr(parent, 'saas_server') and parent.saas_server.running:
+            parent.saas_server.stop()
+            self.config.set_val("NETWORK", "enabled", True)
+            parent.saas_server.host = "0.0.0.0" if self.ui.cbo_host.currentIndex() == 1 else "127.0.0.1"
+            parent.saas_server.port = self.ui.spn_port.value()
+            parent.saas_server.start_server()
+            self.config.save()
+        self.hydrate_ui()
 
     def on_reset_admin(self):
         """Triggers the secure reset sequence for the SaaS Master Admin account."""
@@ -146,7 +178,7 @@ class SaaSSettingsDialogClass(QDialog):
     def on_save(self):
         """Validates user selections and commits changes back to physical flatfile."""
         # Retrieve network targets
-        enabled = self.ui.chk_enabled.isChecked()
+        enabled = self.config.get_bool("NETWORK", "enabled", True)
         host_index = self.ui.cbo_host.currentIndex()
         host_val = "0.0.0.0" if host_index == 1 else "127.0.0.1"
         port_val = self.ui.spn_port.value()

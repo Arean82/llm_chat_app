@@ -17,13 +17,13 @@ export function updateTelemetryDisplay() {
 export function appendBubble(role, text, targetContainerId = 'chat-bubble-stream') {
     const container = document.getElementById(targetContainerId);
     if (!container) return null;
-    
+
     const div = document.createElement('div');
     div.className = `chat-bubble ${role}`;
-    
+
     const meta = document.createElement('div');
     meta.className = 'bubble-meta';
-    
+
     let metaText = role === 'user' ? 'Satellite Feed (User)' : 'Compute Result';
     if (targetContainerId === 'arena-bubbles-left') {
         metaText = role === 'user' ? 'User Probe' : 'Module A Core';
@@ -31,15 +31,15 @@ export function appendBubble(role, text, targetContainerId = 'chat-bubble-stream
         metaText = role === 'user' ? 'User Probe' : 'Module B Core';
     }
     meta.textContent = metaText;
-    
+
     const content = document.createElement('div');
     content.className = 'bubble-content';
     content.textContent = text;
-    
+
     div.appendChild(meta);
     div.appendChild(content);
     container.appendChild(div);
-    
+
     if (targetContainerId.includes('arena')) {
         const column = container.parentElement;
         column.scrollTop = column.scrollHeight;
@@ -47,27 +47,27 @@ export function appendBubble(role, text, targetContainerId = 'chat-bubble-stream
         const frame = document.getElementById('chat-scroll-frame');
         frame.scrollTop = frame.scrollHeight;
     }
-    
+
     return content;
 }
 
 export function renderHistorySidebar() {
     const list = document.getElementById('history-list');
     list.innerHTML = '';
-    
+
     const keys = Object.keys(App.conversations).reverse();
     if (keys.length === 0) {
         list.innerHTML = '<div class="empty-history" data-i18n="workspace.empty_history">No active orbital streams found.</div>';
         return;
     }
-    
+
     keys.forEach(id => {
         const messages = App.conversations[id];
         let preview = "New Isolated Session";
         if (messages.length > 0) {
             preview = messages[0].content.substring(0, 28) + "...";
         }
-        
+
         const div = document.createElement('div');
         div.className = `history-item ${id === App.activeConversationId ? 'active' : ''}`;
         div.innerHTML = `<i class="fa-regular fa-comments"></i> <span>${preview}</span>`;
@@ -79,13 +79,13 @@ export function renderHistorySidebar() {
 export function loadOrbitSession(id) {
     App.activeConversationId = id;
     const messages = App.conversations[id];
-    
+
     const container = document.getElementById('chat-bubble-stream');
     container.innerHTML = '';
-    
+
     document.getElementById('arena-bubbles-left').innerHTML = '';
     document.getElementById('arena-bubbles-right').innerHTML = '';
-    
+
     const welcomeScreen = document.getElementById('chat-welcome-screen');
     if (messages.length === 0) {
         if (App.arenaMode) {
@@ -103,18 +103,18 @@ export function loadOrbitSession(id) {
 export function startNewOrbit() {
     App.activeConversationId = 'conv_' + Date.now();
     App.conversations[App.activeConversationId] = [];
-    
+
     document.getElementById('chat-bubble-stream').innerHTML = '';
     document.getElementById('arena-bubbles-left').innerHTML = '';
     document.getElementById('arena-bubbles-right').innerHTML = '';
-    
+
     const welcomeScreen = document.getElementById('chat-welcome-screen');
     if (App.arenaMode) {
         welcomeScreen.classList.add('hidden');
     } else {
         welcomeScreen.classList.remove('hidden');
     }
-    
+
     renderHistorySidebar();
 }
 
@@ -124,7 +124,7 @@ export async function loadModels() {
         const models = resJson.data || [];
         App.modelsCache = models;
         if (models.length === 0) return;
-        
+
         populateStandardSelector();
         populateArenaSelectors();
     } catch (e) {
@@ -137,14 +137,14 @@ function buildModelGroups(models) {
     models.forEach(m => {
         const rawP = m.owned_by || "unknown";
         let pLabel = rawP.charAt(0).toUpperCase() + rawP.slice(1);
-        
+
         if (rawP === "nvidia") pLabel = "NVIDIA NIM";
         else if (rawP === "openai") pLabel = "Official OpenAI API";
         else if (rawP === "google") pLabel = "Google Gemini Native";
         else if (rawP === "lmstudio") pLabel = "LM Studio (Local Host)";
         else if (rawP === "ollama") pLabel = "Ollama (Local Desktop)";
         else if (rawP === "groq") pLabel = "GroqCloud (LPU Acceleration)";
-        
+
         if (!groups[pLabel]) groups[pLabel] = [];
         groups[pLabel].push(m);
     });
@@ -160,7 +160,7 @@ function renderGroupedSelector(selector, groups) {
         if (!isANative && isBNative) return 1;
         return a.localeCompare(b);
     });
-    
+
     sortedKeys.forEach(lbl => {
         const optGroup = document.createElement('optgroup');
         optGroup.label = lbl;
@@ -186,11 +186,11 @@ export function populateArenaSelectors() {
     const leftSel = document.getElementById('arena-model-left');
     const rightSel = document.getElementById('arena-model-right');
     if (!leftSel || !rightSel || !App.modelsCache) return;
-    
+
     const groups = buildModelGroups(App.modelsCache);
     renderGroupedSelector(leftSel, groups);
     renderGroupedSelector(rightSel, groups);
-    
+
     if (leftSel.options.length > 0) leftSel.selectedIndex = 0;
     if (rightSel.options.length > 1) rightSel.selectedIndex = 1;
     else if (rightSel.options.length > 0) rightSel.selectedIndex = 0;
@@ -201,37 +201,37 @@ export async function dispatchPrompt() {
     const input = document.getElementById('main-prompt-input');
     const text = input.value.trim();
     if (!text) return;
-    
+
     App.isGenerating = true;
     document.getElementById('chat-welcome-screen').classList.add('hidden');
     input.value = '';
     input.style.height = 'auto';
     document.getElementById('btn-send-prompt').disabled = true;
-    
+
     if (App.arenaMode) return await dispatchDualPrompt(text);
-    
+
     App.conversations[App.activeConversationId].push({ role: 'user', content: text });
     appendBubble('user', text);
-    
+
     const bubbleHandle = appendBubble('assistant', 'Initializing dynamic cluster pipeline...');
     bubbleHandle.textContent = '';
-    
+
     const activeModel = document.getElementById('model-selector').value;
     const useWebSearch = document.getElementById('web-search-toggle')?.checked || false;
     App.tallyPrompt += Math.ceil(text.length / 4);
     updateTelemetryDisplay();
-    
+
     try {
         const response = await initiateChatStream(App.token, activeModel, App.conversations[App.activeConversationId], useWebSearch);
         if (!response.ok) {
             const errData = await response.json();
             throw new Error(errData.error || errData.message || "Generation gateway failure.");
         }
-        
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let assistantAccumulator = '';
-        
+
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -246,20 +246,20 @@ export async function dispatchPrompt() {
                         const jsonStr = cleanLine.substring(6);
                         const payload = JSON.parse(jsonStr);
                         const textDelta = payload.choices[0]?.delta?.content || '';
-                        
+
                         assistantAccumulator += textDelta;
                         bubbleHandle.textContent = assistantAccumulator;
-                        
+
                         App.tallyComp += 1;
                         if (App.tallyComp % 10 === 0) updateTelemetryDisplay();
-                        
+
                         const frame = document.getElementById('chat-scroll-frame');
                         frame.scrollTop = frame.scrollHeight;
                     } catch (e) { }
                 }
             }
         }
-        
+
         App.conversations[App.activeConversationId].push({ role: 'assistant', content: assistantAccumulator });
         renderHistorySidebar();
     } catch (err) {
@@ -274,26 +274,26 @@ export async function dispatchPrompt() {
 async function dispatchDualPrompt(text) {
     appendBubble('user', text, 'arena-bubbles-left');
     appendBubble('user', text, 'arena-bubbles-right');
-    
+
     const modelA = document.getElementById('arena-model-left').value;
     const modelB = document.getElementById('arena-model-right').value;
-    
+
     const bubbleHandleA = appendBubble('assistant', '', 'arena-bubbles-left');
     const bubbleHandleB = appendBubble('assistant', '', 'arena-bubbles-right');
-    
+
     App.tallyPrompt += Math.ceil(text.length / 4) * 2;
     updateTelemetryDisplay();
-    
+
     const streamTask = async (modelId, bubbleHandle, targetColId) => {
         try {
             const useWebSearch = document.getElementById('web-search-toggle')?.checked || false;
             const response = await initiateChatStream(App.token, modelId, [{ role: 'user', content: text }], useWebSearch);
             if (!response.ok) throw new Error("Stream connection failed.");
-            
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
             let accum = '';
-            
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -311,7 +311,7 @@ async function dispatchDualPrompt(text) {
                             if (App.tallyComp % 20 === 0) updateTelemetryDisplay();
                             const column = document.getElementById(targetColId).parentElement;
                             column.scrollTop = column.scrollHeight;
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                 }
             }
@@ -320,7 +320,7 @@ async function dispatchDualPrompt(text) {
             bubbleHandle.style.color = 'var(--accent-error)';
         }
     };
-    
+
     await Promise.all([
         streamTask(modelA, bubbleHandleA, 'arena-bubbles-left'),
         streamTask(modelB, bubbleHandleB, 'arena-bubbles-right')
@@ -337,7 +337,7 @@ export function toggleArenaMode() {
     const standardStream = document.getElementById('chat-bubble-stream');
     const arenaGrid = document.getElementById('arena-chat-grid');
     const welcomeScreen = document.getElementById('chat-welcome-screen');
-    
+
     if (App.arenaMode) {
         btn.classList.add('active');
         singlePane.classList.add('hidden');
@@ -410,15 +410,15 @@ export async function loadMemoryRoster() {
 export async function loadAdminDashboard() {
     const table = document.getElementById('admin-users-table');
     const statsContainer = document.getElementById('admin-stats-container');
-    
+
     table.innerHTML = '<tr><td colspan="6" style="padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
-    
+
     try {
         const [usersRes, statsRes] = await Promise.all([
             fetchAdminUsers(App.token),
             fetchAdminStats(App.token)
         ]);
-        
+
         if (usersRes.success) {
             table.innerHTML = '';
             usersRes.users.forEach(u => {
@@ -437,7 +437,7 @@ export async function loadAdminDashboard() {
                 `;
             });
         }
-        
+
         if (statsRes.success) {
             const agg = statsRes.stats.aggregate;
             statsContainer.innerHTML = `

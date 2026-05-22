@@ -1,4 +1,4 @@
-# LLM Chat App (v6.7 Stable Release)
+# LLM Chat App (v7.0 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -254,7 +254,7 @@ The application leverages a fully-isolated, multi-threaded modular chassis desig
 ```mermaid
 graph TD
     %% Client Layer
-    subgraph Clients ["Multi-Interface Clients (Version 6.7)"]
+    subgraph Clients ["Multi-Interface Clients (Version 7.0)"]
         GUI["PySide6 Desktop GUI<br>(Multi-threaded, Async Workers)"]
         CLI["Terminal CLI<br>(Interactive Chat Loop)"]
         Headless["Headless API Server<br>(Port 5000 / OpenAI-Compatible)"]
@@ -273,7 +273,7 @@ graph TD
         SQLiteDriver["LocalSQLiteDriver<br>(Zero-Config Desktop / WAL Mode)"]
         TursoDriver["LibSQLStorageDriver<br>(Turso Cloud Shards / Hranas Edge)"]
         PGDriver["PostgreSQLStorageDriver<br>(Enterprise Cluster / Row Locks)"]
-        
+      
         DriverContract --> SQLiteDriver
         DriverContract --> TursoDriver
         DriverContract --> PGDriver
@@ -284,7 +284,7 @@ graph TD
         SQLiteDB[("Local SQLite Database<br>chat_history.db")]
         TursoDB[("Turso Cloud Database<br>{tenant_id} Partition")]
         PGDB[("PostgreSQL Server Database<br>{tenant_id} Schema")]
-        
+      
         SQLiteDriver -->|High-Perf local WAL| SQLiteDB
         TursoDriver -->|Zero-Locking Writes| TursoDB
         PGDriver -->|MVCC Row-Level Locks| PGDB
@@ -294,7 +294,7 @@ graph TD
     GUI -->|Execute Actions| Core
     CLI -->|Execute Actions| Core
     Headless -->|JWT Tenant Session Requests| Core
-    
+  
     Mgr -->|Orchestrates Storage Operations| DriverContract
 
     %% Styling
@@ -310,14 +310,15 @@ graph TD
 ### 🧱 Three-Tier Modular System Layout:
 
 1. **Multi-Interface Clients Layer**:
+
    * **PySide6 Desktop GUI**: A highly responsive, multi-threaded workspace executing long-running network operations via background worker threads to ensure zero main-loop freezing.
    * **Terminal CLI**: A lightweight, interactive command-line interface equipped with direct streaming, model hot-swapping, and metadata commands.
    * **Headless API Server (SaaS Gateway - Port 5000)**: Serves multiple concurrent registered users, providing secure JWT-signed session authentication and dynamic resource isolation.
-
 2. **Core Orchestration Chassis**:
-   * Anchored by `ConversationManager`, this tier decouples business logic from physical storage layers using an abstract database driver interface (`BaseStorageDriver`), ensuring complete data portability.
 
+   * Anchored by `ConversationManager`, this tier decouples business logic from physical storage layers using an abstract database driver interface (`BaseStorageDriver`), ensuring complete data portability.
 3. **High-Concurrency Pluggable Storage Tier**:
+
    * **libSQL / Turso Edge Shards (Default)**: Leverages lightweight Hranas edge replication and database-per-tenant sharding to support zero-locking remote transactional operations.
    * **PostgreSQL Cluster Engine**: Offers enterprise-grade multi-process concurrency, implementing raw row-level locking and Multi-Version Concurrency Control (MVCC).
    * **Isolated Multi-Tenant Sandbox**: Enforces complete tenant isolation at the database, settings/BYOK credentials, and cryptographic session levels, acting exactly like a separate virtual desktop instance for every user.
@@ -332,7 +333,7 @@ graph TD
 
 ## ⚙️ Configuration & High-Concurrency Data Storage
 
-This application does not use local `.env` files or plaintext config files for sensitive data. 
+This application does not use local `.env` files or plaintext config files for sensitive data.
 
 To eliminate multi-process write-locking timeout crashes across simultaneous **GUI (Desktop)**, **CLI (Terminal)**, and **SaaS API (Port 5000)** connections, **SQLite has been 100% purged** from the primary engine. In its place, the application implements pluggable MVCC/cloud storage:
 
@@ -343,7 +344,7 @@ To eliminate multi-process write-locking timeout crashes across simultaneous **G
 * **Pluggable Storage Chassis**:
   * **Turso / libSQL (Default)**: Executes queries over Hranas transactions with edge-replicated cloud database-per-tenant sharding.
   * **PostgreSQL (Enterprise)**: Connects dynamically to remote/local PG clusters, implementing native row-level locks and MVCC.
-* **Isolated Multi-Tenant Sandboxing**: 
+* **Isolated Multi-Tenant Sandboxing**:
   Supports multiple concurrent registered users working in private "virtual sandboxes" (each acting like a separate virtual desktop app instance). Isolates history, metadata, and BYOK credentials via dynamic tenant sharded DB paths, isolated settings blocks, and JWT-authenticated session tokens.
 
 ---
@@ -560,7 +561,15 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
+### v7.0.0 – Headless SaaS Platform & Cloud Multi-Tenancy Architecture
+
+* **SaaS Gateway Web Portal**: Re-architected engine to natively host a scalable Flask/HTML/JS web dashboard mimicking the desktop GUI perfectly via browser.
+* **1:1 Native Visual Parity**: Mirrored strict QDialog layouts, physical folder-tab structures, Active Provider logics, and dynamic Developer groupings to the web interface.
+* **Pluggable High-Concurrency Backend**: Decoupled SQLite to support fully scalable multi-tenant Postgres and Turso edge deployments for zero-locking database architectures.
+* **Master System Synergy**: The desktop now serves as an administrative host console managing remote tenant lifecycles, global active SDK keys, and telemetry metrics while the local application runs undisturbed.
+
 ### v6.7.0 – Pluggable Two-Stage Reranking Pipeline & Modern Tabbed UI
+
 - 🎛️ **Modern Tabbed Settings UI**: Restructured the generation settings dialog into a premium `QTabWidget` containing "Model Parameters" and "Retrieval Reranking" tabs. Injected customizable stylesheets matching active Dark/Light system preferences.
 - 📐 **Symmetrical Size Normalization**: Constrained the dialog bounding dimensions to a sleek `500x480` profile across all layout and initialization threads to eliminate vertical gaps and visual stretching.
 - 🧠 **Dynamic Two-Stage Reranking Pipeline**: High-precision semantic ranking supporting local BGE Cross-Encoder ONNX execution (with lexical Jaccard fallback), cloud Cohere Rerank v3 API, or custom OpenAPI-compatible endpoints.
@@ -569,6 +578,7 @@ This framework is architected and curated with the vision of building transparen
 - 📡 **Interactive Visual Diagnostics**: Streams step-by-step thinking diagnostics detailing precise pipeline execution steps, scoring engines, boosts, and prunings.
 
 ### v6.6.0 – Multi-Engine Cloud Concurrency & Isolated Multi-Tenant Sandbox
+
 - 🗃️ **Complete Purge of SQLite**: Entirely eliminated local SQLite write-locking bottlenecks and database timeout crashes, guaranteeing zero-locking concurrent operations across GUI, CLI, and Headless sessions.
 - ☁️ **Pluggable Cloud Engines (Turso & PostgreSQL)**: Integrated abstract `BaseStorageDriver` mapping to highly concurrent cloud sharded databases:
   - *Turso / libSQL*: Supports synchronous Hranas edge replication.
@@ -578,6 +588,7 @@ This framework is architected and curated with the vision of building transparen
 - 🏛️ **Live Mermaid Architecture-as-Code**: Replaced static binary diagrams with an interactive, plain-text Mermaid visual graph directly inside repository documentation, ensuring absolute maintainability and consistency.
 
 ### v6.5.0 – Headless Engine, Decoupled Registries, & Display-Safe Auto-Detection
+
 - 🖥️ **Headless CLI Support & Auto-Detection**: Introduced a full-featured headless engine for server-side and terminal-only operations. Features 100% automatic platform, display, SSH terminal, and TTY environment identification.
 - 🛡️ **Display-Safe No-Crash Fallback**: Integrated a safe-guard trap for GUI initialization. If running on headless servers, Remote SSH, or Docker without graphics display libraries, the system automatically catches PySide connection failures and falls back to Headless mode smoothly instead of crashing.
 - 🔗 **Decoupled Unified JSON Registry**: Fully decoupled both the GUI (`ui/credential_manager.py`) and CLI (`headless/auth.py`) provider catalog structures. Both interfaces now dynamically parse and load Platforms and Ecosystems from the centralized `resources/api_providers.json` config, supporting 16 individual SDK groups and 22 ecosystems out-of-the-box.

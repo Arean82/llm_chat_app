@@ -170,7 +170,7 @@ def main():
         import platform
         if platform.system() == "Windows":
             import ctypes
-            myappid = u'arean82.llmchatapp.v6.7'
+            myappid = u'arean82.llmchatapp.v7.0'
             try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except: pass
             
@@ -246,7 +246,7 @@ def main():
     # CLI Command Router
     if "--help" in sys.argv or "-h" in sys.argv:
         print("\n" + "="*50)
-        print(" LLM CHAT APP - Headless Engine v6.7")
+        print(" LLM CHAT APP - Headless Engine v7.0")
         print("="*50)
         print("Usage: python main.py [options]")
         print("\nOptions:")

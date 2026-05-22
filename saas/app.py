@@ -11,7 +11,7 @@ import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, request, jsonify, Response, stream_with_context, render_template
+from flask import Flask, request, jsonify, Response, stream_with_context, render_template, send_from_directory
 
 from saas.tenant_db import TenantDatabaseManager
 from logic.llm_client import LLMClient
@@ -711,6 +711,13 @@ def create_saas_app():
     def srv_index():
         """Main browser portal entry rendering the Single Page Workspace canvas."""
         return render_template('index.html')
+
+    @app.route('/app_icon.ico', methods=['GET'])
+    def srv_favicon():
+        """Serve the application icon directly from the core resources folder."""
+        from utils.path_utils import get_resource_path
+        icon_dir = get_resource_path("resources")
+        return send_from_directory(icon_dir, "app_icon.ico")
 
     return app
 

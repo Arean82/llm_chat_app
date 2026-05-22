@@ -8,7 +8,8 @@ export const App = {
     arenaMode: false,
     tallyPrompt: 0,
     tallyComp: 0,
-    modelsCache: null
+    modelsCache: null,
+    activeModelId: null
 };
 
 export function saveSession(user, token) {
