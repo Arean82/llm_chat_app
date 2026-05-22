@@ -167,6 +167,11 @@ llm_chat_app/
 ├── test_reranker.py                # 🧪 Offline reranking validation script
 ├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
+├── saas/                           # 🌐 Quantum SaaS Web Portal (V7)
+│   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
+│   ├── static/                     # 🎨 Glassmorphism Styles & Assets
+│   └── templates/                  # 📐 Portal UI Blueprints
+│
 ├── extension/                       # 📦 IDE Extensions
 │   ├── vscode-llm-chat-1.0.1.vsix   # VS Code extension
 │   └── jetbrains-llm-chat-1.0.1.zip # JetBrains plugin
@@ -210,13 +215,19 @@ llm_chat_app/
 │   └── system_prompt_manager.py    # 📝 Prompt library management logic
 │
 ├── logic/                          # ⚙️ Core Application Engine
+│   ├── storage_drivers/            # 🗃️ Pluggable Multi-Tenant Database Chassis
+│   │   ├── base_driver.py          # 📄 Abstract Base Class for Driver Operations
+│   │   ├── sqlite_driver.py        # 🗄️ Local Desktop File-based WAL driver
+│   │   ├── libsql_driver.py        # ⚡ Turso Cloud Edge Replication driver
+│   │   └── postgres_driver.py      # 🐘 Enterprise Cluster MVCC driver
 │   ├── llm_client.py               # 🔌 Universal Multi-Ecosystem Orchestrator
 │   ├── api_manager.py              # 📡 Flask lifecycle manager & thread-bridges
 │   ├── api_server.py               # 🌐 Local OpenAI-compatible Gateway (Port 5000)
+│   ├── headless_engine.py          # 🖥️ Non-GUI lifecycle orchestrator
 │   ├── chat_worker.py              # 🧵 Stream processor & context evaluator
 │   ├── rag_manager.py              # 🧬 Offline NumPy TF-IDF instant ingestion matrix
 │   ├── vector_db.py                # 💾 Persistent Qdrant dense semantic retrieval 
-│   ├── conversation_manager.py     # 🗄️ High-perf Transactional SQLite WAL engine
+│   ├── conversation_manager.py     # 🗄️ High-perf Driver Orchestrator & Sharder
 │   ├── model_io.py                 # 🤖 Multi-shard provider catalog Load/Save
 │   ├── tool_manager.py             # 🔍 Dynamic background OS/Web query tools
 │   ├── formatter.py                # 🎨 Pre-rendering Markdown/Codeblock engine
@@ -492,7 +503,7 @@ pyinstaller LLM_Chat_App_combined.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v6.1.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v7.0.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -508,7 +519,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_6.1.0.deb
+sudo dpkg -i llmchatapp_7.0.0.deb
 ```
 
 **2. Create a Portable AppImage:**

@@ -127,6 +127,8 @@ if sys.platform == 'darwin':
         icon='resources/app_icon.icns',
         bundle_identifier='com.arean82.llmchatapp',
         info_plist={
+            'CFBundleShortVersionString': '7.0.0',
+            'CFBundleVersion': '7.0.0',
             'NSPrincipalClass': 'NSApplication',
             'NSAppleScriptEnabled': False,
             'NSHighResolutionCapable': True,
