@@ -1,0 +1,29 @@
+.model-popup-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.model-popup-row:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+.model-popup-row.selected {
+    background: rgba(37, 99, 235, 0.2) !important;
+    border-left: 3px solid var(--accent-blue);
+}
+.btn-ok-model {
+    background: var(--gradient-btn);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    float: right;
+    margin-top: 15px;
+}
+.btn-ok-model:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #555;
+}

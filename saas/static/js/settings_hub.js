@@ -176,7 +176,11 @@ window.filterModels = function() {
         headerLabel.textContent = `Managing ${filter.toUpperCase()}`;
     }
     
-    renderModelDeveloperTabs(filter);
+    if (window.renderModelDeveloperTabs) {
+        window.renderModelDeveloperTabs(filter, systemProviders);
+    } else {
+        renderModelDeveloperTabs(filter);
+    }
 };
 
 window.fetchModelsAPI = function() {

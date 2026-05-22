@@ -178,8 +178,7 @@ function renderGroupedSelector(selector, groups) {
 }
 
 export function populateStandardSelector() {
-    const selector = document.getElementById('model-selector');
-    if (selector && App.modelsCache) renderGroupedSelector(selector, buildModelGroups(App.modelsCache));
+    // Model selector is now managed entirely via the Model Popup and App.activeModelId
 }
 
 export function populateArenaSelectors() {
@@ -216,7 +215,13 @@ export async function dispatchPrompt() {
     const bubbleHandle = appendBubble('assistant', 'Initializing dynamic cluster pipeline...');
     bubbleHandle.textContent = '';
 
-    const activeModel = document.getElementById('model-selector').value;
+    if (!App.activeModelId) {
+        App.isGenerating = false;
+        document.getElementById('btn-send-prompt').disabled = false;
+        alert('Please select a model from the Model Manager first.');
+        return;
+    }
+    const activeModel = App.activeModelId;
     const useWebSearch = document.getElementById('web-search-toggle')?.checked || false;
     App.tallyPrompt += Math.ceil(text.length / 4);
     updateTelemetryDisplay();
