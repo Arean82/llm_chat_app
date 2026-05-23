@@ -1,14 +1,27 @@
 import * as vscode from 'vscode';
 
-const API_URL = 'http://localhost:5000/v1/chat/completions';
-const AUTH_HEADER = 'Bearer llm-local-auth-82c4f3eb0d';
+async function getApiConfig(context: vscode.ExtensionContext): Promise<{ apiUrl: string, authHeader: string }> {
+    const config = vscode.workspace.getConfiguration('llmChat');
+    const baseUrl = config.get<string>('apiUrl') || 'http://localhost:5000';
+    
+    // Check if secure token exists in context.secrets
+    let apiToken = await context.secrets.get('apiToken');
+    if (!apiToken) {
+        apiToken = config.get<string>('apiToken') || 'llm-local-auth-82c4f3eb0d';
+    }
+    
+    return {
+        apiUrl: `${baseUrl.replace(/\/$/, '')}/v1/chat/completions`,
+        authHeader: `Bearer ${apiToken}`
+    };
+}
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('LLM Chat App extension activated');
 
     // 1. Inline suggestions (triggered by typing)
     const inlineProvider: vscode.InlineCompletionItemProvider = {
-        async provideInlineCompletionItems(document, position, context, token) {
+        async provideInlineCompletionItems(document, position, inlineContext, token) {
             const line = document.lineAt(position.line).text;
             const lineText = line.substring(0, position.character);
             
@@ -16,10 +29,15 @@ export function activate(context: vscode.ExtensionContext) {
             if (lineText.length < 3) return;
             
             const prompt = `Complete this code: ${lineText}`;
-            const suggestion = await getInlineSuggestion(prompt);
-            
-            if (suggestion) {
-                return [new vscode.InlineCompletionItem(suggestion)];
+            try {
+                const config = await getApiConfig(context);
+                const suggestion = await getInlineSuggestion(config.apiUrl, config.authHeader, prompt);
+                
+                if (suggestion) {
+                    return [new vscode.InlineCompletionItem(suggestion)];
+                }
+            } catch (e) {
+                // silent error
             }
             return;
         }
@@ -41,7 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
         
-        await sendToAPI(selectedText, 'Fix this code', 'Fix any bugs or issues in this code and explain the fixes:');
+        const config = await getApiConfig(context);
+        await sendToAPI(config.apiUrl, config.authHeader, selectedText, 'Fix this code', 'Fix any bugs or issues in this code and explain the fixes:');
     });
     
     // 2. Code actions - Explain this
@@ -57,7 +76,8 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
         
-        await sendToAPI(selectedText, 'Explain this code', 'Explain this code in simple terms:');
+        const config = await getApiConfig(context);
+        await sendToAPI(config.apiUrl, config.authHeader, selectedText, 'Explain this code', 'Explain this code in simple terms:');
     });
     
     // Register code action provider
@@ -91,7 +111,8 @@ export function activate(context: vscode.ExtensionContext) {
         
         if (userPrompt) {
             terminal.sendText(`echo "🤖 Generating command for: ${userPrompt}"`);
-            await sendToAPI(userPrompt, 'Generate terminal command', 'Generate only the terminal command, no explanation:');
+            const config = await getApiConfig(context);
+            await sendToAPI(config.apiUrl, config.authHeader, userPrompt, 'Generate terminal command', 'Generate only the terminal command, no explanation:');
         }
     });
 
@@ -103,7 +124,8 @@ export function activate(context: vscode.ExtensionContext) {
         });
         
         if (errorMessage) {
-            await sendToAPI(errorMessage, 'Explain this error', 'Explain this error and provide a fix:');
+            const config = await getApiConfig(context);
+            await sendToAPI(config.apiUrl, config.authHeader, errorMessage, 'Explain this error', 'Explain this error and provide a fix:');
         }
     });
     
@@ -113,16 +135,20 @@ export function activate(context: vscode.ExtensionContext) {
             const wordRange = document.getWordRangeAtPosition(position);
             const word = document.getText(wordRange);
             
-            // Check if word is near an error (simplified)
             const diagnostics = vscode.languages.getDiagnostics(document.uri);
             const errorAtPosition = diagnostics.some(d => d.range.contains(position) && d.severity === vscode.DiagnosticSeverity.Error);
             
             if (errorAtPosition) {
                 const errorText = diagnostics.find(d => d.range.contains(position))?.message || word;
-                const suggestion = await getInlineSuggestion(`Explain this error: ${errorText}`);
-                
-                if (suggestion) {
-                    return new vscode.Hover(`**LLM Chat:** ${suggestion}`);
+                try {
+                    const config = await getApiConfig(context);
+                    const suggestion = await getInlineSuggestion(config.apiUrl, config.authHeader, `Explain this error: ${errorText}`);
+                    
+                    if (suggestion) {
+                        return new vscode.Hover(`**LLM Chat:** ${suggestion}`);
+                    }
+                } catch (e) {
+                    // silent hover fail
                 }
             }
             return;
@@ -157,7 +183,8 @@ export function activate(context: vscode.ExtensionContext) {
             changesText += `- ${change.uri.path}\n`;
         }
         
-        await sendToAPI(changesText, 'Generate commit message', 'Generate a concise git commit message for these changes:');
+        const config = await getApiConfig(context);
+        await sendToAPI(config.apiUrl, config.authHeader, changesText, 'Generate commit message', 'Generate a concise git commit message for these changes:');
     });
 
     // 6. Documentation generator (add docstring)
@@ -170,7 +197,8 @@ export function activate(context: vscode.ExtensionContext) {
         const functionMatch = selectedText.match(/def\s+(\w+)\s*\([^)]*\)/);
         
         if (functionMatch) {
-            await sendToAPI(selectedText, 'Generate docstring', 'Generate a Python docstring for this function:');
+            const config = await getApiConfig(context);
+            await sendToAPI(config.apiUrl, config.authHeader, selectedText, 'Generate docstring', 'Generate a Python docstring for this function:');
         } else {
             vscode.window.showErrorMessage('Select a function to generate docstring');
         }
@@ -185,10 +213,86 @@ export function activate(context: vscode.ExtensionContext) {
         const selectedText = editor.document.getText(selection);
         
         if (selectedText) {
-            await sendToAPI(selectedText, 'Generate unit tests', 'Generate unit tests for this code using pytest:');
+            const config = await getApiConfig(context);
+            await sendToAPI(config.apiUrl, config.authHeader, selectedText, 'Generate unit tests', 'Generate unit tests for this code using pytest:');
         } else {
             vscode.window.showErrorMessage('No code selected');
         }
+    });
+
+    // 8. Onboard Workspace / Settings Command
+    const onboardCommand = vscode.commands.registerCommand('llmchat.onboard', () => {
+        const panel = vscode.window.createWebviewPanel(
+            'llmChatOnboard',
+            'Quantum SaaS: Onboard Workspace',
+            vscode.ViewColumn.One,
+            { enableScripts: true }
+        );
+
+        panel.webview.html = getOnboardingHtml();
+
+        panel.webview.onDidReceiveMessage(async (message) => {
+            const { command, serverUrl, email, username, password, apiPassportKey } = message;
+
+            if (command === 'login' || command === 'register') {
+                const targetUrl = serverUrl.replace(/\/$/, '');
+                try {
+                    if (command === 'register') {
+                        // POST /api/register to provision isolated cloud sandbox
+                        const regResponse = await fetch(`${targetUrl}/api/register`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                api_key: apiPassportKey,
+                                username: username || 'Developer',
+                                email: email,
+                                password: password,
+                                key_type: 'byok'
+                            })
+                        });
+
+                        const regData: any = await regResponse.json();
+                        if (!regResponse.ok) {
+                            throw new Error(regData.error || 'Registration failed');
+                        }
+                        vscode.window.showInformationMessage('🎉 Cloud sandbox successfully provisioned!');
+                    }
+
+                    // Authenticate and fetch secure JWT / Tenant access token
+                    const authResponse = await fetch(`${targetUrl}/api/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username_or_email: email,
+                            password: password
+                        })
+                    });
+
+                    const authData: any = await authResponse.json();
+                    if (!authResponse.ok) {
+                        throw new Error(authData.error || 'Authentication handshake failed');
+                    }
+
+                    const secureKey = authData.user?.api_key || authData.user?.passport_token || '';
+                    if (!secureKey) {
+                        throw new Error('SaaS server returned empty API key access token.');
+                    }
+
+                    // Commit configurations and secure vault token
+                    await context.secrets.store('apiToken', secureKey);
+                    
+                    const config = vscode.workspace.getConfiguration('llmChat');
+                    await config.update('apiUrl', targetUrl, vscode.ConfigurationTarget.Global);
+                    await config.update('apiToken', 'vault-secured', vscode.ConfigurationTarget.Global);
+
+                    vscode.window.showInformationMessage(`💻 Workspace connected successfully! Welcome, ${authData.user?.username}.`);
+                    panel.dispose();
+
+                } catch (e: any) {
+                    panel.webview.postMessage({ status: 'error', message: e.message });
+                }
+            }
+        });
     });
 
     // Register all commands
@@ -199,17 +303,18 @@ export function activate(context: vscode.ExtensionContext) {
         generateDocstring,
         generateTests,
         fixCodeAction,
-        explainCodeAction
+        explainCodeAction,
+        onboardCommand
     );
 }
 
-async function getInlineSuggestion(prompt: string): Promise<string | undefined> {
+async function getInlineSuggestion(apiUrl: string, authHeader: string, prompt: string): Promise<string | undefined> {
     try {
-        const response = await fetch(API_URL, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': AUTH_HEADER
+                'Authorization': authHeader
             },
             body: JSON.stringify({
                 messages: [{ role: 'user', content: prompt }],
@@ -228,7 +333,7 @@ async function getInlineSuggestion(prompt: string): Promise<string | undefined> 
     return undefined;
 }
 
-async function sendToAPI(content: string, title: string, systemPrompt?: string): Promise<void> {
+async function sendToAPI(apiUrl: string, authHeader: string, content: string, title: string, systemPrompt?: string): Promise<void> {
     try {
         const messages = [];
         if (systemPrompt) {
@@ -236,11 +341,11 @@ async function sendToAPI(content: string, title: string, systemPrompt?: string):
         }
         messages.push({ role: 'user', content: `${title}:\n\n${content}` });
         
-        const response = await fetch(API_URL, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': AUTH_HEADER
+                'Authorization': authHeader
             },
             body: JSON.stringify({
                 messages: messages,
@@ -320,6 +425,212 @@ function getResponseHtml(content: string, title: string): string {
                     const vscode = acquireVsCodeApi();
                     vscode.postMessage({ command: 'insert', text: document.body.innerText });
                 }
+            </script>
+        </body>
+        </html>
+    `;
+}
+
+function getOnboardingHtml(): string {
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Quantum Onboard</title>
+            <style>
+                body {
+                    background-color: #1e1e1e;
+                    color: #d4d4d4;
+                    font-family: sans-serif;
+                    padding: 2rem;
+                    display: flex;
+                    justify-content: center;
+                }
+                .card {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 8px;
+                    padding: 2rem;
+                    width: 100%;
+                    max-width: 450px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                }
+                h2 {
+                    margin-top: 0;
+                    color: #569cd6;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    padding-bottom: 10px;
+                }
+                .input-group {
+                    margin-bottom: 1.2rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                label {
+                    font-size: 0.9rem;
+                    font-weight: bold;
+                }
+                input {
+                    background: rgba(0,0,0,0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    color: white;
+                    padding: 8px;
+                    border-radius: 4px;
+                    outline: none;
+                }
+                input:focus {
+                    border-color: #569cd6;
+                }
+                .btn {
+                    background: #0e639c;
+                    border: none;
+                    color: white;
+                    padding: 10px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    width: 100%;
+                    margin-top: 10px;
+                }
+                .btn:hover {
+                    background: #1177bb;
+                }
+                .btn-success {
+                    background: #388a34;
+                }
+                .btn-success:hover {
+                    background: #43a047;
+                }
+                .status {
+                    margin-top: 15px;
+                    padding: 10px;
+                    border-radius: 4px;
+                    font-size: 0.9rem;
+                }
+                .error {
+                    background: rgba(244, 67, 54, 0.15);
+                    border: 1px solid #f44336;
+                    color: #f44336;
+                }
+                .tabs {
+                    display: flex;
+                    gap: 10px;
+                    margin-bottom: 1.5rem;
+                }
+                .tab {
+                    flex: 1;
+                    padding: 8px;
+                    text-align: center;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid transparent;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .tab.active {
+                    background: rgba(255,255,255,0.1);
+                    border-color: #569cd6;
+                    color: #569cd6;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>🤖 Quantum Workspace Onboarding</h2>
+                
+                <div class="tabs">
+                    <div id="tab-login" class="tab active" onclick="switchMode('login')">Connect Sign In</div>
+                    <div id="tab-register" class="tab" onclick="switchMode('register')">Register Workspace</div>
+                </div>
+
+                <form id="onboard-form" onsubmit="handleSubmit(event)">
+                    <div class="input-group">
+                        <label>SaaS Server Host URL:</label>
+                        <input type="url" id="serverUrl" value="http://localhost:5000" required>
+                    </div>
+
+                    <div class="input-group" id="group-username" style="display: none;">
+                        <label>Developer Display Name:</label>
+                        <input type="text" id="username" placeholder="CyberPilot">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Email Address:</label>
+                        <input type="email" id="email" placeholder="pilot@quantum.net" required autocomplete="username">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Master Password:</label>
+                        <input type="password" id="password" required autocomplete="current-password">
+                    </div>
+
+                    <div class="input-group" id="group-passport" style="display: none;">
+                        <label>API Key Passport (BYOK Key):</label>
+                        <input type="password" id="apiPassportKey" placeholder="nvapi-xxxxxx / sk-xxxxxx">
+                    </div>
+
+                    <div id="feedback" class="status error" style="display: none;"></div>
+
+                    <button type="submit" id="submit-btn" class="btn">Connect Workspace</button>
+                </form>
+            </div>
+
+            <script>
+                const vscode = acquireVsCodeApi();
+                let mode = 'login';
+
+                function switchMode(newMode) {
+                    mode = newMode;
+                    document.getElementById('tab-login').className = newMode === 'login' ? 'tab active' : 'tab';
+                    document.getElementById('tab-register').className = newMode === 'register' ? 'tab active' : 'tab';
+                    
+                    document.getElementById('group-username').style.display = newMode === 'register' ? 'flex' : 'none';
+                    document.getElementById('group-passport').style.display = newMode === 'register' ? 'flex' : 'none';
+                    
+                    const submitBtn = document.getElementById('submit-btn');
+                    if (newMode === 'login') {
+                        submitBtn.innerText = 'Connect Workspace';
+                        submitBtn.className = 'btn';
+                        document.getElementById('username').required = false;
+                        document.getElementById('apiPassportKey').required = false;
+                    } else {
+                        submitBtn.innerText = 'Register & Provision Workspace';
+                        submitBtn.className = 'btn btn-success';
+                        document.getElementById('username').required = true;
+                        document.getElementById('apiPassportKey').required = true;
+                    }
+                }
+
+                function handleSubmit(e) {
+                    e.preventDefault();
+                    document.getElementById('feedback').style.display = 'none';
+                    
+                    const serverUrl = document.getElementById('serverUrl').value;
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const username = document.getElementById('username').value;
+                    const apiPassportKey = document.getElementById('apiPassportKey').value;
+
+                    vscode.postMessage({
+                        command: mode,
+                        serverUrl,
+                        email,
+                        password,
+                        username,
+                        apiPassportKey
+                    });
+                }
+
+                window.addEventListener('message', event => {
+                    const message = event.data;
+                    if (message.status === 'error') {
+                        const feedback = document.getElementById('feedback');
+                        feedback.innerText = '⚠️ ' + message.message;
+                        feedback.style.display = 'block';
+                    }
+                });
             </script>
         </body>
         </html>

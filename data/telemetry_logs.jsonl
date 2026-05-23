@@ -22,3 +22,6 @@
 {"timestamp": "2026-05-23T17:57:02Z", "tenant_id": "1", "latency_seconds": 0.053, "tokens": 0, "status": "success"}
 {"timestamp": "2026-05-23T17:57:04Z", "tenant_id": "1", "latency_seconds": 0.009, "tokens": 0, "status": "success"}
 {"timestamp": "2026-05-23T17:57:04Z", "tenant_id": "1", "latency_seconds": 0.012, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-23T18:56:56Z", "tenant_id": "anonymous", "latency_seconds": 0.032, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-23T18:56:58Z", "tenant_id": "anonymous", "latency_seconds": 0.019, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-23T18:57:06Z", "tenant_id": "2", "latency_seconds": 5.277, "tokens": 0, "status": "error"}

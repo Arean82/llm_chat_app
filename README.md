@@ -153,6 +153,8 @@ llm_chat_app/
 ├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build
 ├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build
 ├── LLM_Chat_App_combined.spec      # PyInstaller spec - Both builds
+├── build_all_plugins.bat           # 📦 Windows plugins compile & bundler script
+├── build_all_plugins.sh            # 📦 Unix/macOS Bash plugins compile & bundler script
 ├── README.md                       # 📖 Documentation
 ├── LICENSE                         # ⚖️ MIT License
 ├── SECURITY.md                     # 🛡️ Security policy and vulnerability disclosure
@@ -164,17 +166,41 @@ llm_chat_app/
 ├── SAAS_STORAGE_ARCHITECTURE_PLAN.md # 🗃️ SaaS high-concurrency multi-tenant database blueprint
 ├── requirements.txt                # 📦 Python dependencies
 ├── HEADLESS_GUIDE.md               # 🖥️ Headless Mode usage guide
-├── test_reranker.py                # 🧪 Offline reranking validation script
+├── test_reranker.py                # 🧪 Legacy offline reranking validation script
 ├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
 ├── saas/                           # 🌐 Quantum SaaS Web Portal (V7)
 │   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
 │   ├── static/                     # 🎨 Glassmorphism Styles & Assets
-│   └── templates/                  # 📐 Portal UI Blueprints
+│   └── templates/                  # 📐 Modular Portal UI Blueprints (Phase 8 Modularization)
+│       ├── layouts/
+│       │   └── base.html           # 📐 Global HTML base shell (Boilerplate, scripts, layout logic)
+│       ├── partials/
+│       │   ├── auth_screen.html    # 🔐 Pre-flight secure Login/Registration portal gate
+│       │   ├── sidebar.html        # 🧭 Navigation sidebar & orbit session badges
+│       │   ├── header.html         # 📊 Telemetry indicators & active completions selectors
+│       │   ├── chat_pane.html      # 💬 Dynamic scroll viewport & chat welcoming panels
+│       │   ├── memory_screen.html  # 🧠 RAG document index manager
+│       │   └── admin_screen.html   # 👑 Operator console dashboard, DLQ rows & user management
+│       ├── modals/
+│       │   ├── credentials.html    # ⚙️ settings tabbed hub: dynamic custom LLM providers
+│       │   ├── system_health.html  # 🌡️ Observability: worker stats & queue tracking
+│       │   ├── settings.html       # 🔐 security: dynamic master password manager
+│       │   ├── node_config.html    # ⚙️ tabbed advanced tuning, sliders & email alerts
+│       │   └── model_selection.html # 🤖 floating catalog selector modal
+│       └── index.html              # 🧩 Clean coordinate template wrapper (29 lines)
 │
-├── extension/                       # 📦 IDE Extensions
-│   ├── vscode-llm-chat-1.0.1.vsix   # VS Code extension
-│   └── jetbrains-llm-chat-1.0.1.zip # JetBrains plugin
+├── extension/                       # 📦 IDE Extensions (Packaged Binaries)
+│   ├── vscode-llm-chat-2.0.0.vsix   # VS Code extension installer
+│   └── jetbrains-llm-chat-2.0.0.zip # JetBrains plugin installer
+│
+├── vscode-llm-chat/                # 💻 VS Code Extension (TypeScript Source)
+│   ├── extension.ts                # 🔌 Extension activation, secrets & onboarding webview
+│   └── package.json                # 📦 Extension configuration manifest
+│
+├── jetbrains-llm-chat/             # 💻 JetBrains IntelliJ Extension (Kotlin Source)
+│   ├── src/main/kotlin/com/llmchat/ # 📂 Kotlin settings configurable, state & dialog codebase
+│   └── build.gradle.kts            # ⚙️ Gradle build and dependency manifest
 │
 ├── resources/                      # 📦 Static assets & caches
 │   ├── app_icon.png                # 🖼️ Master UI icon (1024x1024)
@@ -247,6 +273,10 @@ llm_chat_app/
 │   ├── engine.py                   # ⚙️ Headless lifecycle orchestrator
 │   ├── models.py                   # 🤖 CLI model selection logic
 │   └── worker.py                   # 🧵 Headless stream processor
+│
+├── scratch/                        # 🧪 Dynamic scratch scripts & verification tools
+│   ├── test_extension_handshake.py # 📡 Dynamic multi-tenant endpoint handshake test
+│   └── test_reranker.py            # 🧠 Rerank validation test
 │
 └── utils/                          # 🛠️ Low-Level System Helpers
     ├── storage_config.py           # 🗃️ Storage Location & portable runtime resolver
@@ -373,12 +403,13 @@ To eliminate multi-process write-locking timeout crashes across simultaneous **G
 | `/v1/models`           | GET    | List model                      |
 | `/v1/chat/completions` | POST   | OpenAI-compatible chat endpoint |
 
-### VS Code Extension
+### VS Code Extension (V2.0.0)
 
-Install `extension/vscode-llm-chat-1.0.1.vsix`:
+Install `extension/vscode-llm-chat-2.0.0.vsix`:
 
 1. VS Code Extensions (Ctrl+Shift+X)
-2. Click "..." → "Install from VSIX"
+2. Click "..." → "Install from VSIX..." and select the file.
+3. Automatically prompts onboarding on load to configure dynamic server URL and secure passport keys.
 
 ### Other IDEs
 

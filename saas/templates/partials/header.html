@@ -1,0 +1,63 @@
+<!-- 💎 DYNAMIC TELEMETRY HEADER -->
+<header class="workspace-header">
+    <div class="telemetry-summary">
+        <div class="telemetry-item">
+            <span class="t-label" data-i18n="workspace.telemetry_engine">Engine State</span>
+            <span class="t-value status-online"><i class="fa-solid fa-circle-dot"></i> <span
+                    data-i18n="workspace.telemetry_active">Active</span></span>
+        </div>
+        <div class="telemetry-item border-split">
+            <span class="t-label" data-i18n="workspace.telemetry_prompt">Prompt Tally</span>
+            <span class="t-value" id="counter-prompt">0</span>
+        </div>
+        <div class="telemetry-item border-split">
+            <span class="t-label" data-i18n="workspace.telemetry_comp">Completion Tally</span>
+            <span class="t-value" id="counter-comp">0</span>
+        </div>
+    </div>
+
+    <div class="model-deployment-selector">
+        <!-- Standard Selection View -->
+        <button id="btn-open-model-manager"
+            onclick="document.getElementById('model-manager-modal').style.display='flex'; window.loadSettingsHub();"
+            class="btn-new"
+            style="margin: 0 8px 0 0; padding: 4px 10px; font-size: 0.85rem; width: auto;"><i
+                class="fa-solid fa-microchip"></i> Credential Manager</button>
+
+        <button id="btn-open-system-health" onclick="window.showSystemHealthModal();"
+            class="btn-new hidden"
+            style="margin: 0 8px 0 0; padding: 4px 10px; font-size: 0.85rem; width: auto; color: var(--accent-cyan); border-color: var(--accent-cyan);"><i
+                class="fa-solid fa-square-poll-vertical"></i> System Health</button>
+
+        <div id="single-model-pane">
+            <button id="btn-open-model-popup"
+                onclick="document.getElementById('pure-model-selection-modal').style.display='flex'; if(window.renderDesktopCloneTable) window.renderDesktopCloneTable();"
+                style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-dim); font-family: monospace; font-size: 0.9rem; margin-left: 10px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                <span id="active-model-label">No model selected</span>
+            </button>
+        </div>
+        <!-- Model Arena Split Controls -->
+        <div id="dual-model-pane" class="hidden">
+            <div class="arena-pickers">
+                <div class="picker-col">
+                    <label for="arena-model-left"><i class="fa-solid fa-circle-left"></i> <span
+                            data-i18n="workspace.arena_model_a">Pilot Model A</span></label>
+                    <select id="arena-model-left"></select>
+                </div>
+                <div class="vs-separator" data-i18n="workspace.arena_vs">VS</div>
+                <div class="picker-col">
+                    <label for="arena-model-right"><span data-i18n="workspace.arena_model_b">Pilot Model
+                            B</span> <i class="fa-solid fa-circle-right"></i></label>
+                    <select id="arena-model-right"></select>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Failover Warning Banner -->
+<div id="failover-warning-banner" class="hidden"
+    style="background: rgba(243, 156, 18, 0.15); border: 1px solid #f39c12; color: #f39c12; padding: 10px 15px; margin: 10px; border-radius: 4px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
+    <i class="fa-solid fa-triangle-exclamation animate-pulse" style="font-size: 1.1rem;"></i>
+    <span id="failover-banner-text">Primary provider degraded. Operating on fallback backup node.</span>
+</div>

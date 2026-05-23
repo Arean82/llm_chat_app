@@ -1,0 +1,139 @@
+<!-- ======================================================= -->
+<!-- 🛡️ SCREEN A: SECURE PASSPORT GATEWAY (AUTH/ONBOARDING) -->
+<!-- ======================================================= -->
+<main id="auth-screen" class="view-container">
+    <div class="glass-panel auth-card animate-fade-in">
+        <header class="auth-header" style="position: relative;">
+            <button class="btn-icon-toggle btn-theme-toggle" style="position: absolute; top: 0; right: 0;"
+                title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+            <div class="app-logo">
+                <i class="fa-solid fa-brain cyber-logo"></i>
+                <h1><span data-i18n="brand.quantum">Quantum</span><span data-i18n="brand.saas">SaaS</span></h1>
+            </div>
+            <p class="subtitle" data-i18n="brand.subtitle">Universal Cloud Inference Gateway</p>
+        </header>
+
+        <!-- Step 1: Pre-Flight Passport Verification -->
+        <section id="passport-validation-step" class="auth-step">
+            <div class="step-indicator"><span data-i18n="auth.step_1">Step 1/2</span> <span
+                    data-i18n="auth.step_1_title">Key-Passport Validation</span></div>
+            <p class="instruction" data-i18n="auth.step_1_instruction">Please enter your private API Key to
+                unlock and provision your multi-tenant sandbox.</p>
+
+            <form id="form-validate-passport" class="cyber-form">
+                <div class="input-group">
+                    <label for="provider-select"><i class="fa-solid fa-server"></i> <span
+                            data-i18n="auth.provider_label">Inference Provider</span></label>
+                    <select id="provider-select" required>
+                        <option value="nvidia" data-i18n="auth.provider_nvidia">NVIDIA NGC Cloud (Recommended)
+                        </option>
+                        <option value="openai" data-i18n="auth.provider_openai">OpenAI Ecosystem</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="passport-key-input"><i class="fa-solid fa-key"></i> <span
+                            data-i18n="auth.key_label">Private API Key</span></label>
+                    <input type="password" id="passport-key-input" data-i18n-placeholder="auth.key_placeholder"
+                        placeholder="nvapi-xxxxxxxx / sk-xxxxxxx" required autocomplete="current-password">
+                    <button type="button" class="btn-icon-toggle"
+                        onclick="togglePasswordVisibility('passport-key-input')">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
+
+                <div id="passport-feedback" class="status-box hidden"></div>
+
+                <button type="submit" class="btn-primary btn-glow-effect" id="btn-run-validation">
+                    <span class="idle-text"><i class="fa-solid fa-satellite-dish"></i> <span
+                            data-i18n="auth.btn_validate_idle">Run Pre-Flight Validation</span></span>
+                    <span class="loading-text hidden"><i class="fa-solid fa-spinner fa-spin"></i> <span
+                            data-i18n="auth.btn_validate_loading">Verifying Handshake...</span></span>
+                </button>
+            </form>
+
+            <div class="auth-switch">
+                <span data-i18n="auth.switch_login">Already possess a passport?</span> <a href="#"
+                    id="link-switch-login" data-i18n="auth.link_login">Sign In Here</a>
+            </div>
+        </section>
+
+        <!-- Step 2: Account Provisioning (Revealed after Validation) -->
+        <section id="account-provision-step" class="auth-step hidden animate-slide-up">
+            <div class="step-indicator success"><i class="fa-solid fa-circle-check"></i> <span
+                    data-i18n="auth.step_2_title">Key Validated! Finalize Profile</span></div>
+            <p class="instruction" data-i18n="auth.step_2_instruction">Set your local credentials to initialize
+                your secure database sandbox.</p>
+
+            <form id="form-register" class="cyber-form">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="reg-username"><i class="fa-solid fa-user-astronaut"></i> <span
+                                data-i18n="auth.display_name_label">Display Name</span></label>
+                        <input type="text" id="reg-username"
+                            data-i18n-placeholder="auth.display_name_placeholder" placeholder="CyberPilot"
+                            required>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-email"><i class="fa-solid fa-envelope"></i> <span
+                                data-i18n="auth.email_label">Email Address</span></label>
+                        <input type="email" id="reg-email" data-i18n-placeholder="auth.email_placeholder"
+                            placeholder="pilot@grid.net" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-password"><i class="fa-solid fa-lock"></i> <span
+                            data-i18n="auth.master_password_label">Master Password</span></label>
+                    <input type="password" id="reg-password"
+                        data-i18n-placeholder="auth.master_password_placeholder"
+                        placeholder="Minimum 8 characters" required minlength="8" autocomplete="new-password">
+                </div>
+
+                <div id="register-feedback" class="status-box hidden"></div>
+
+                <button type="submit" class="btn-success btn-glow-effect" id="btn-complete-registration">
+                    <i class="fa-solid fa-rocket"></i> <span data-i18n="auth.btn_complete_registration">Complete
+                        Profile & Provision Space</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Screen A.2: Standard Secure Login Portal -->
+        <section id="login-portal-step" class="auth-step hidden animate-fade-in">
+            <div class="step-indicator" data-i18n="auth.login_title">System Access Control</div>
+            <p class="instruction" data-i18n="auth.login_instruction">Provide authorization credentials to log
+                into your dedicated workspace.</p>
+
+            <form id="form-login" class="cyber-form">
+                <div class="input-group">
+                    <label for="login-id"><i class="fa-solid fa-user-shield"></i> <span
+                            data-i18n="auth.login_id_label">Username or Email</span></label>
+                    <input type="text" id="login-id" data-i18n-placeholder="auth.login_id_placeholder"
+                        placeholder="Enter your credentials" required autocomplete="username">
+                </div>
+
+                <div class="input-group">
+                    <label for="login-pass"><i class="fa-solid fa-fingerprint"></i> <span
+                            data-i18n="auth.login_pass_label">Secure Password</span></label>
+                    <input type="password" id="login-pass" data-i18n-placeholder="auth.login_pass_placeholder"
+                        placeholder="Enter Master Password" required autocomplete="current-password">
+                </div>
+
+                <div id="login-feedback" class="status-box hidden"></div>
+
+                <button type="submit" class="btn-primary btn-glow-effect" id="btn-run-login">
+                    <span class="idle-text"><i class="fa-solid fa-unlock-keyhole"></i> <span
+                            data-i18n="auth.btn_login_idle">Authorize Entry</span></span>
+                    <span class="loading-text hidden"><i class="fa-solid fa-spinner fa-spin"></i> <span
+                            data-i18n="auth.btn_login_loading">Authenticating...</span></span>
+                </button>
+            </form>
+
+            <div class="auth-switch">
+                <span data-i18n="auth.switch_register">Need to provision a new space?</span> <a href="#"
+                    id="link-switch-register" data-i18n="auth.link_register">Create Workspace</a>
+            </div>
+        </section>
+    </div>
+</main>

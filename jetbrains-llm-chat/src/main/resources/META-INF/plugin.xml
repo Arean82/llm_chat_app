@@ -13,7 +13,13 @@
     
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.llmchat.LLMChatService"/>
+        <applicationService serviceImplementation="com.llmchat.LLMChatSettingsState"/>
         <projectActivity implementation="com.llmchat.LLMChatPlugin"/>
+        <applicationConfigurable
+                instance="com.llmchat.LLMChatConfigurable"
+                id="com.llmchat.LLMChatConfigurable"
+                displayName="LLM Chat App"
+                groupId="tools"/>
     </extensions>
     
     <actions>

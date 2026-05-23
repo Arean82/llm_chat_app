@@ -33,10 +33,12 @@
 
 ---
 
-## 🌐 4. Local-Only Gateway Constraints (Universal API Server)
+## 🌐 4. Dynamic API Gateway & IDE Extension Trust
 
-* **Local Host Locking:** The integrated Flask gateway binds strictly to the `127.0.0.1` loopback interface (localhost). It is structurally incapable of accepting requests over the public internet or local LAN.
-* **Mandatory Auth Key Header:** All incoming IDE extension connections are validated against a persistent, randomized local secret token. Non-authenticating ingresses are rejected instantly with `401 Unauthorized`.
+* **Local Host Locking:** The integrated Flask local gateway binds strictly to the `127.0.0.1` loopback interface (localhost). It is structurally incapable of accepting requests over the public internet or local LAN.
+* **Mandatory Auth Key Header:** All incoming IDE extension connections are validated against dynamic, secure secret tokens. Non-authenticating ingresses are rejected instantly with `401 Unauthorized`.
+* **OS-Level Secrets Vaulting (V2.0.0 IDE Extensions):** The refactored IDE extensions completely eliminate hardcoded developer token keys. Instead, they integrate with native host OS keychains (using `ExtensionContext.secrets` in VS Code and the `PasswordSafe` / `CredentialAttributes` API in JetBrains IntelliJ) to store dynamic tenant Bearer Passports securely encrypted at rest.
+* **SaaS Multi-Tenant Isolation:** Dynamic gateway queries include user-specific tenant passports in the `Authorization: Bearer <token>` header. The SaaS server intercepts these calls to route prompt queries and RAG operations into isolated physical sandboxes, preventing semantic or history cross-contamination between remote accounts.
 
 ---
 

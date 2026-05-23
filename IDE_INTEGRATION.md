@@ -32,11 +32,12 @@
 
 3. Restart VS Code
 
-### Option B: Official LLM Chat Extension (Full Features)
+### Option B: Official LLM Chat Extension (V2.0.0 Multi-Tenant & Onboarding)
 
-1. Download `vscode-llm-chat-1.0.1.vsix` from the `extension/` folder in the project root.
-2. VS Code → Extensions (Ctrl+Shift+X) → `...` → Install from VSIX
-3. Reload VS Code
+1. Download **[vscode-llm-chat-2.0.0.vsix](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/extension/vscode-llm-chat-2.0.0.vsix)** from the `extension/` folder in the project root.
+2. VS Code → Extensions (Ctrl+Shift+X) → `...` → **Install from VSIX...**
+3. On first load, if unconfigured or unreachable, it launches the interactive **Onboarding Gateway** panel. Enter your server URL (e.g. `http://localhost:5000` for offline local, or `http://localhost:8888` for SaaS Multi-Tenant Cloud), log in or register, and the plugin will securely save your Bearer Passport token directly inside VS Code's native OS keychain secrets vault.
+4. You can manually adjust these inside VS Code Preferences under the `llmChat.apiUrl` and `llmChat.apiToken` settings.
 
 **Commands available:**
 
@@ -66,13 +67,14 @@
 - GoLand
 - Android Studio
 
-### Installation
+### Installation & Onboarding (V2.0.0 Multi-Tenant & Onboarding)
 
-1. Download `jetbrains-llm-chat-1.0.1.zip` from the `extension/` folder in the project root.
+1. Download **[jetbrains-llm-chat-2.0.0.zip](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/extension/jetbrains-llm-chat-2.0.0.zip)** from the `extension/` folder in the project root.
 2. **File → Settings → Plugins** (or **Ctrl+Alt+S**)
-3. Click ⚙️ → **Install Plugin from Disk**
-4. Select the `.zip` file
-5. Restart IDE
+3. Click ⚙️ → **Install Plugin from Disk...** and select the `.zip` file.
+4. Restart your IDE.
+5. On project startup, if unconfigured or offline, it opens the interactive **Onboarding Gateway** multi-tab dialog. Enter your SaaS/local server host URL, credentials (or dynamic register payloads), and the plugin will securely save your dynamic tenant Bearer Passport directly in your OS keychain vault via the IntelliJ `PasswordSafe` API.
+6. You can manually check or run connectivity tests anytime inside IDE Preferences under **File | Settings | Tools | LLM Chat**.
 
 ### Features
 

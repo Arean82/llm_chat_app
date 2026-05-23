@@ -1,0 +1,64 @@
+<!-- ⚙️ SCREEN C: SECURE SETTINGS WORKSTATION (MODAL) -->
+<div id="settings-modal" class="modal-overlay hidden animate-fade-in">
+    <div class="glass-panel modal-content animate-slide-up">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-gears"></i> <span data-i18n="settings.modal_title">Grid Security & API
+                    Vault</span></h3>
+            <button id="btn-close-settings" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="modal-body">
+            <form id="form-update-settings" class="cyber-form">
+                <div class="section-title"><i class="fa-solid fa-user-gear"></i> <span
+                        data-i18n="settings.section_profile">Profile Settings</span></div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="set-username"><i class="fa-solid fa-user-astronaut"></i> <span
+                                data-i18n="auth.display_name_label">Display Name</span></label>
+                        <input type="text" id="set-username" data-i18n-placeholder="auth.display_name_placeholder"
+                            placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="set-email"><i class="fa-solid fa-envelope"></i> <span
+                                data-i18n="auth.email_label">Email Address</span></label>
+                        <input type="email" id="set-email" data-i18n-placeholder="auth.email_placeholder"
+                            placeholder="Email" disabled style="opacity:0.6; cursor:not-allowed;">
+                    </div>
+                </div>
+
+                <div class="section-title"><i class="fa-solid fa-key"></i> <span
+                        data-i18n="settings.section_vault">Secure Key Vault</span></div>
+                <div class="input-group">
+                    <label for="set-api-key"><i class="fa-solid fa-shield-halved"></i> <span
+                            data-i18n="settings.vault_label">Private API Passport Key</span></label>
+                    <input type="password" id="set-api-key" data-i18n-placeholder="settings.vault_placeholder"
+                        placeholder="••••••••••••••••" autocomplete="new-password">
+                    <button type="button" class="btn-icon-toggle" onclick="toggleSettingKeyVisibility()">
+                        <i class="fa-regular fa-eye" id="toggle-setting-eye"></i>
+                    </button>
+                    <small class="input-desc" data-i18n="settings.vault_desc">Updates your private physical vault.
+                        Leave blank if you prefer using current passport credentials.</small>
+                </div>
+
+                <div class="section-title"><i class="fa-solid fa-lock"></i> <span
+                        data-i18n="settings.section_password">Password Management</span></div>
+                <div class="input-group">
+                    <label for="set-password"><i class="fa-solid fa-fingerprint"></i> <span
+                            data-i18n="settings.update_password_label">Update Master Password</span></label>
+                    <input type="password" id="set-password"
+                        data-i18n-placeholder="settings.update_password_placeholder"
+                        placeholder="Enter new secure password" minlength="4">
+                </div>
+
+                <div id="settings-feedback" class="status-box hidden"></div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-settings" class="btn-cancel"
+                        data-i18n="settings.btn_cancel">Cancel</button>
+                    <button type="submit" class="btn-primary btn-glow-effect" data-i18n="settings.btn_apply">Apply
+                        Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.application.ApplicationManager
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -16,9 +17,27 @@ class LLMChatService {
     private val logger = Logger.getInstance(LLMChatService::class.java)
     private val client = HttpClient.newHttpClient()
     private val gson = Gson()
-    private val apiUrl = "http://localhost:5000/v1/chat/completions"
     
     fun sendMessage(content: String, title: String, systemPrompt: String? = null): String? {
+        val settings = LLMChatSettingsState.instance
+        val apiToken = LLMChatSettingsState.getApiToken()
+        val isConfigured = apiToken != "llm-local-auth-82c4f3eb0d"
+
+        if (!isConfigured) {
+            var dialogResult = false
+            ApplicationManager.getApplication().invokeAndWait {
+                val dialog = LLMChatOnboardingDialog(null)
+                dialogResult = dialog.showAndGet()
+            }
+            if (!dialogResult) {
+                return null
+            }
+        }
+
+        val baseUrl = settings.apiUrl.trimEnd('/')
+        val completionsUrl = "$baseUrl/v1/chat/completions"
+        val activeToken = LLMChatSettingsState.getApiToken()
+
         return try {
             val messages = mutableListOf<Map<String, String>>()
             systemPrompt?.let {
@@ -33,9 +52,9 @@ class LLMChatService {
             )
             
             val request = HttpRequest.newBuilder()
-                .uri(URI.create(apiUrl))
+                .uri(URI.create(completionsUrl))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer llm-local-auth-82c4f3eb0d")
+                .header("Authorization", "Bearer $activeToken")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(requestBody)))
                 .build()
             
@@ -67,10 +86,13 @@ class LLMChatService {
             Messages.getInformationIcon()
         )
     }
+
     fun checkHealth(): Boolean {
+        val settings = LLMChatSettingsState.instance
+        val baseUrl = settings.apiUrl.trimEnd('/')
         return try {
             val request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:5000/health"))
+                .uri(URI.create("$baseUrl/health"))
                 .GET()
                 .build()
             

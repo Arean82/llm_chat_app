@@ -1,0 +1,57 @@
+<!-- 📦 COMMAND SIDEBAR (Navigation & History) -->
+<aside class="workspace-sidebar">
+    <div class="sidebar-header">
+        <div class="app-logo mini">
+            <img src="/app_icon.ico" alt="App Logo" style="width: 24px; height: 24px; margin-right: 8px;">
+            <h2><span>Quantum</span>SaaS</h2>
+        </div>
+        <button id="btn-new-chat" class="btn-new"><i class="fa-solid fa-plus"></i> <span
+                data-i18n="workspace.new_orbit">New Orbit</span></button>
+        <div class="sidebar-nav" style="margin-top: 1rem; display: flex; gap: 8px;">
+            <button id="nav-chat" class="btn-new" style="margin-top: 0; flex: 1;" title="Chat Console"><i
+                    class="fa-solid fa-message"></i></button>
+            <button id="nav-memory" class="btn-new" style="margin-top: 0; flex: 1;"
+                title="Semantic Memory"><i class="fa-solid fa-database"></i></button>
+            <button id="nav-admin" class="btn-new hidden" style="margin-top: 0; flex: 1;"
+                title="Operator Console"><i class="fa-solid fa-shield-halved"></i></button>
+        </div>
+        <button id="btn-arena-toggle" class="btn-arena" data-i18n-title="workspace.arena_tooltip"
+            title="Initiate Dual-Model Confrontation"><i class="fa-solid fa-bolt-lightning"></i> <span
+                data-i18n="workspace.btn_arena">Model Arena</span></button>
+    </div>
+
+    <nav class="chat-history-container">
+        <div class="section-label" data-i18n="workspace.history_section_label">Physical Sandboxed Streams
+        </div>
+        <div id="history-list" class="history-list">
+            <!-- Dynamically filled by JS -->
+            <div class="empty-history" data-i18n="workspace.empty_history">No active orbital streams found.
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-badge hover-text" id="btn-user-badge" style="cursor: pointer;"
+            title="Open Grid Security & API Vault">
+            <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            <div class="user-info">
+                <div class="username" id="display-username" data-i18n="workspace.guest_pilot">Guest Pilot
+                </div>
+                <div class="key-tag byok" id="display-tier" data-i18n="workspace.byok_tier">BYOK Tier</div>
+            </div>
+        </div>
+        <div class="footer-actions">
+            <button class="btn-footer-icon btn-theme-toggle" title="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <button id="btn-open-settings" data-i18n-title="workspace.settings_tooltip"
+                title="Grid Preferences & Vault" class="btn-footer-icon">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button id="btn-signout" data-i18n-title="workspace.signout_tooltip"
+                title="Terminate Active Session" class="btn-logout">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+    </div>
+</aside>

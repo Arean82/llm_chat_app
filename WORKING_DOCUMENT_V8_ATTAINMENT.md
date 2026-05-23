@@ -1,6 +1,6 @@
-# Working Plan: Attaining v7.0 (Master Progress Log)
+# Working Plan: Attaining v7.1 (Master Progress Log)
 
-This is the tactical manual for evolving the **fixed v6.6 concurrency foundation** into the v7.0 Headless/SaaS architecture.
+This is the tactical manual for evolving the **fixed v6.6 concurrency foundation** into the v7.1 Headless/SaaS architecture.
 
 ---
 
@@ -619,10 +619,12 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 | **8.3.3** | **Metrics Collection**: Track latency, throughput, token usage | ✅ **DONE** |
 | **8.3.4** | **Health Endpoints**: Database/vector/cache health checks | ✅ **DONE** |
 | **8.3.5** | **Alert Rules**: Failure thresholds and notification triggers | ✅ **DONE** |
+| **8.3.6** | **Template Modularization**: Decompose the massive HTML monolith into clean sub-components | ✅ **DONE** |
 
 **Technical Notes (8.3):**
 * **Dynamic Telemetry Poller**: Implemented an automated 5-second polling system matching `/api/admin/telemetry` values to the operator dashboard, built with resource-cleanup protections.
 * **Interactive Controls**: Linked roster dashboard rate limit fields and DLQ retry actions natively to active server hooks (`/api/admin/tenants/<id>/rate-limit` & `/api/admin/dlq/retry`).
+* **Template Modularization**: Structured the 90KB monolithic `index.html` into a highly clean layout extension pattern using Jinja2 includes and extends (`base.html`, `auth_screen.html`, `sidebar.html`, `header.html`, `chat_pane.html`, `credentials.html`, `system_health.html`, `settings.html`, `node_config.html`, `model_selection.html`). Every single DOM element ID mapping remains completely untouched, preserving 100% front-end JavaScript event handling and rendering integrity.
 
 ---
 
@@ -639,6 +641,26 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 **Technical Notes (8.4):**
 * **Circuit-Breaker Controlled Auto-Failover**: Added provider fault detection (tripping after 5 consecutive timeouts) to route streamed query processes seamlessly to local models or sandboxed secondary BYOK instances without billing leakage.
 * **Settings XML Validation & Fix**: Resolved visual `.ui` XML parsing breaks under Qt Creator/Designer inside `ui_designer/saas_settings.ui` (line 461 unexpected double property), cleanly supporting PySide6's `QUiLoader` dynamic parsing with zero workflow or layout modifications.
+
+---
+
+### 8.5 Dynamic IDE Extensions Integration (V2.0.0)
+
+| # | Task | Status |
+|:--|:------|:--------|
+| **8.5.1** | **VS Code Dynamic Config**: Enable dynamic API host preferences and commands | ✅ **DONE** |
+| **8.5.2** | **VS Code Secure Secrets**: Hook `ExtensionContext.secrets` secure vault storage | ✅ **DONE** |
+| **8.5.3** | **VS Code Onboarding Webview**: Interactive Login/Register web interface | ✅ **DONE** |
+| **8.5.4** | **JetBrains Settings Store**: Persist settings state with secure PasswordSafe vault | ✅ **DONE** |
+| **8.5.5** | **JetBrains Options Configurable**: UI settings configurable with live health connection test | ✅ **DONE** |
+| **8.5.6** | **JetBrains Onboarding Dialog**: Multi-tab JDialog with background SwingWorkers | ✅ **DONE** |
+| **8.5.7** | **Integration Handshake script**: Automated `/health` (200), `/api/register` (201), `/api/login` (200), and completions routing validation script | ✅ **DONE** |
+| **8.5.8** | **Unified Cross-Platform Build Tools**: Bundler shell scripts (`build_all_plugins.bat` and `build_all_plugins.sh`) compiling assets, migrating to `extension/` and printing interactive status updates | ✅ **DONE** |
+
+**Technical Notes (8.5):**
+* **V2.0.0 Major Architectural Release**: Re-engineered both extensions to bypass hardcoded constants completely. They now support fully configurable local offline gateways (port 5000) and SaaS cloud multi-tenant gateways (port 8888 or remote domains) with user-isolated sandboxed storage partitions.
+* **Dynamic Onboarding Handshakes**: Created login/register flows securely saving dynamic tenant bearer keys to host OS keychains (Credential Store API/Windows Vault/macOS Keychain). Included dynamic switch-on-success workflows pre-filling login credentials upon successful registration.
+* **Unified Cross-Platform Bundling**: Shipped automated bundler scripts (`.bat` and `.sh`) verifying compile status dynamically at runtime and moving generated artifacts straight to the `/extension` directory. Added Bash ANSI color tracing (Green for success, Red for failure) to ensure native macOS and Linux developer operations.
 
 ---
 

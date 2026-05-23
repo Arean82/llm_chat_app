@@ -1,0 +1,23 @@
+<!-- ======================================================= -->
+<!-- 🛡️ SCREEN E: SEMANTIC MEMORY EXPLORER                   -->
+<!-- ======================================================= -->
+<main id="memory-screen" class="view-container hidden"
+    style="align-items: flex-start; padding: 2rem; overflow-y: auto;">
+    <div class="glass-panel"
+        style="width: 100%; max-width: 1000px; margin: 0 auto; padding: 2rem; border-radius: var(--radius-lg);">
+        <div class="modal-header"
+            style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+            <h3><i class="fa-solid fa-database"></i> Semantic Memory Explorer</h3>
+            <button onclick="window.switchView('workspace-screen')" class="btn-new"
+                style="margin: 0; padding: 6px 12px; width: auto;"><i class="fa-solid fa-arrow-left"></i> Back
+                to Chat</button>
+        </div>
+        <div style="color: var(--text-muted); margin-bottom: 2rem;">Manage vectorized semantic collections tied
+            to your workspace.</div>
+
+        <div id="memory-roster"
+            style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+            <!-- Dynamic Roster Injection -->
+        </div>
+    </div>
+</main>

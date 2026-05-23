@@ -1,6 +1,6 @@
 # Isolated Multi-Tenant SaaS Portal Architecture Plan
 
-This architecture plan governs the design and deployment of the high-concurrency, multi-user SaaS portal served from the headless API Server (Port 5000). It establishes a strict **Virtual Sandbox** model ensuring absolute data, configuration, and session privacy for registered users.
+This architecture plan governs the design and deployment of the high-concurrency, multi-user SaaS portal served from the headless API Server (Port 8888 by default). It establishes a strict **Virtual Sandbox** model ensuring absolute data, configuration, and session privacy for registered users.
 
 ---
 
@@ -9,7 +9,7 @@ Every registered user operates inside an isolated sandbox, acting exactly as if 
 
 ```mermaid
 graph TD
-    UserA["User A (Web Portal)"] -->|JWT: user_a| Gateway["API Server Gateway (Port 5000)"]
+    UserA["User A (Web Portal)"] -->|JWT: user_a| Gateway["SaaS API Gateway (Port 8888)"]
     UserB["User B (Web Portal)"] -->|JWT: user_b| Gateway
     
     Gateway -->|Verify Claims| Router{"Dynamic Routing Layer"}
@@ -46,12 +46,13 @@ graph TD
 
 ---
 
-## 2. SaaS Web Portal Asset Structure
-The portal is served headlessly by the API Server as a stunning, zero-framework web app:
+## 2. SaaS Web Portal Asset Structure (Phase 8 Modularization)
+The portal is served headlessly by the API Server on port 8888 as a stunning modular web application:
 
 | Component | Technology | Visual & Functional Purpose |
 | :--- | :--- | :--- |
-| **Styling** | Vanilla CSS (HSL dark mode) | Modern dark charcoal charcoal backdrops, transparent glassmorphism panels, harmonious emerald/indigo accents, and responsive layout wrappers. |
+| **Modular Templates** | Jinja2 Extends & Includes | Surgical decomposition of the 90KB monolithic `index.html` into independent modules (`layouts/base.html`, `partials/chat_pane.html`, `modals/credentials.html`, etc.) resulting in a clean, 29-line orchestrator shell with zero performance overhead. |
+| **Styling** | Vanilla CSS (HSL dark mode) | Modern dark charcoal backdrops, transparent glassmorphism panels, harmonious emerald/indigo accents, and responsive layout wrappers. |
 | **Logic** | Asynchronous JS (Fetch API) | Executes dynamic API bridging to save configurations, fetch chats, and report database health dynamically without browser page reloads. |
 | **Structure** | Semantic HTML5 | Structured grid dashboards containing the login gate, the BYOK key configurators, and real-time database connection telemetry cards. |
 

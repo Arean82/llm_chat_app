@@ -724,7 +724,7 @@ class MainWindowClass(QMainWindow):
             os.startfile(str(folder))
             QMessageBox.information(
                 self, "VS Code Extension",
-                "The extension folder is now open.\n\nInstall:\n1. VS Code → Extensions → ... → Install from VSIX\n2. Select vscode-llm-chat-1.0.1.vsix"
+                "The extension folder is now open.\n\nInstall:\n1. VS Code → Extensions → ... → Install from VSIX\n2. Select vscode-llm-chat-2.0.0.vsix"
             )
         else:
             QMessageBox.warning(self, "Folder Not Found", "extension folder not found")
@@ -737,7 +737,7 @@ class MainWindowClass(QMainWindow):
             os.startfile(str(folder))
             QMessageBox.information(
                 self, "JetBrains Plugin",
-                "The extension folder is now open.\n\nInstall:\n1. Settings → Plugins → ⚙️ → Install Plugin from Disk\n2. Select jetbrains-llm-chat-1.0.1.zip"
+                "The extension folder is now open.\n\nInstall:\n1. Settings → Plugins → ⚙️ → Install Plugin from Disk\n2. Select jetbrains-llm-chat-2.0.0.zip"
             )
         else:
             QMessageBox.warning(self, "Folder Not Found", "extension folder not found")

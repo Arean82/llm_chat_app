@@ -1,0 +1,137 @@
+<!-- ======================================================= -->
+<!-- 📊 MODAL H: SYSTEM HEALTH & TELEMETRY OBSERVABILITY     -->
+<!-- ======================================================= -->
+<div id="system-health-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="glass-panel modal-content animate-slide-up"
+        style="width: 95%; max-width: 900px; padding: 2rem; border-radius: var(--radius-lg); max-height: 90vh; overflow-y: auto; background: var(--bg-dark);">
+        <div class="modal-header"
+            style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glow); padding-bottom: 15px;">
+            <h3><i class="fa-solid fa-square-poll-vertical" style="color: var(--accent-cyan);"></i> System
+                Health & Telemetry Monitor</h3>
+
+            <button onclick="window.closeSystemHealthModal()"
+                style="background: transparent; border: none; color: #e74c3c; font-size: 2rem; font-weight: bold; cursor: pointer; padding: 0 8px; line-height: 1;"
+                title="Close">&times;</button>
+        </div>
+
+        <!-- Failover Warning Banner -->
+        <div id="modal-health-failover-banner" class="hidden animate-pulse"
+            style="background: rgba(231, 76, 60, 0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 10px 15px; margin: 15px 0; border-radius: 4px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.1rem;"></i>
+            <span>WARNING: Core circuit breaker is TRIPPED / OPEN. Automatic failover active.</span>
+        </div>
+
+        <!-- Telemetry LEDs Section -->
+        <div
+            style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; padding: 1.2rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid var(--border-glow); justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="led-storage"
+                    style="background-color: #ef4444; border-radius: 50%; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px; display: inline-block; transition: background-color 0.3s ease;"></span>
+                <span style="font-weight: 600; color: var(--text-bright); font-size: 0.9rem;">Storage DB</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="led-vector"
+                    style="background-color: #ef4444; border-radius: 50%; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px; display: inline-block; transition: background-color 0.3s ease;"></span>
+                <span style="font-weight: 600; color: var(--text-bright); font-size: 0.9rem;">Vector DB</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="led-cache"
+                    style="background-color: #ef4444; border-radius: 50%; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px; display: inline-block; transition: background-color 0.3s ease;"></span>
+                <span style="font-weight: 600; color: var(--text-bright); font-size: 0.9rem;">Semantic
+                    Cache</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="led-queue"
+                    style="background-color: #ef4444; border-radius: 50%; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px; display: inline-block; transition: background-color 0.3s ease;"></span>
+                <span style="font-weight: 600; color: var(--text-bright); font-size: 0.9rem;">Job Queue</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="led-llm"
+                    style="background-color: #ef4444; border-radius: 50%; min-width: 16px; min-height: 16px; max-width: 16px; max-height: 16px; display: inline-block; transition: background-color 0.3s ease;"></span>
+                <span style="font-weight: 600; color: var(--text-bright); font-size: 0.9rem;">LLM
+                    Endpoint</span>
+            </div>
+        </div>
+
+        <!-- Main Grid Layout: Left Column (Active Workers), Right Column (DLQ Tasks) -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+
+            <!-- Section 1: Active Ingestion & Embedding Worker Threads -->
+            <div class="glass-panel"
+                style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.2);">
+                <h4
+                    style="margin-top:0; margin-bottom: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-microchip"></i> Active Ingestion & Embedding Workers
+                </h4>
+                <div style="overflow-x: auto; max-height: 200px;">
+                    <table
+                        style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr
+                                style="border-bottom: 1px solid var(--border-glow); color: var(--text-dim); background: rgba(255,255,255,0.01);">
+                                <th style="padding: 8px;">Thread Name</th>
+                                <th style="padding: 8px;">Job ID</th>
+                                <th style="padding: 8px;">Task Description</th>
+                                <th style="padding: 8px;">Execution State</th>
+                            </tr>
+                        </thead>
+                        <tbody id="health-active-workers-tbody">
+                            <tr>
+                                <td colspan="4"
+                                    style="padding: 15px; text-align: center; color: var(--text-dim);">No active
+                                    jobs running in worker pool.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: Quarantined Tasks (Dead Letter Queue) -->
+            <div class="glass-panel"
+                style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.2);">
+                <h4
+                    style="margin-top:0; margin-bottom: 1rem; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Quarantined Tasks (Dead Letter Queue)
+                </h4>
+                <div style="overflow-x: auto; max-height: 250px; margin-bottom: 1rem;">
+                    <table
+                        style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr
+                                style="border-bottom: 1px solid var(--border-glow); color: var(--text-dim); background: rgba(231,76,60,0.02);">
+                                <th style="padding: 8px; width: 40px; text-align: center;">Select</th>
+                                <th style="padding: 8px; width: 140px;">Job ID</th>
+                                <th style="padding: 8px; width: 100px;">Task Type</th>
+                                <th style="padding: 8px;">Fault Error Trace</th>
+                                <th style="padding: 8px; width: 140px;">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="health-dlq-tbody">
+                            <tr>
+                                <td colspan="5"
+                                    style="padding: 15px; text-align: center; color: var(--text-dim);">No failed
+                                    jobs found in DLQ container.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button id="btn-modal-health-retry" class="btn-new"
+                        onclick="window.retryModalSelectedDLQJob()"
+                        style="width: auto; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; background: var(--accent-success); color: black;"><i
+                            class="fa-solid fa-rotate-left"></i> Reprocess & Retry Selected Task</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer button box -->
+        <div
+            style="display: flex; justify-content: flex-end; margin-top: 1.5rem; border-top: 1px solid var(--border-glow); padding-top: 15px;">
+            <button class="btn-new" onclick="window.closeSystemHealthModal()"
+                style="width: auto; padding: 8px 16px; font-size: 0.85rem; background: rgba(255,255,255,0.05); color: white;">Close
+                Monitor</button>
+        </div>
+    </div>
+</div>

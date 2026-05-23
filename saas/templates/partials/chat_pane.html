@@ -1,0 +1,62 @@
+<!-- 📜 THE CHAT SCROLL CONTAINER -->
+<div class="chat-viewport" id="chat-scroll-frame">
+    <!-- Empty state instructions -->
+    <div id="chat-welcome-screen" class="chat-intro animate-fade-in">
+        <i class="fa-solid fa-cubes-stacked intro-icon"></i>
+        <h2 data-i18n="workspace.welcome_title">Quantum Virtual Sandbox Provisioned</h2>
+        <p data-i18n="workspace.welcome_desc">Your communications are isolated and mapped strictly into
+            your private server directory. Enter a prompt to mobilize the compute cluster.</p>
+
+        <div class="quick-prompts">
+            <button class="quick-p-btn"
+                onclick="fillPrompt('Explain the architectural implications of multi-tenant isolation.')"
+                data-i18n="workspace.prompt_suggest_1">💡 Explain Multi-Tenancy</button>
+            <button class="quick-p-btn"
+                onclick="fillPrompt('Write a clean Python function processing real-time SSE chunks.')"
+                data-i18n="workspace.prompt_suggest_2">💻 Python SSE Processor</button>
+            <button id="btn-share-orbit" class="quick-p-btn" title="Generate Public Link"><i
+                    class="fa-solid fa-share-nodes"></i> Share</button>
+        </div>
+    </div>
+
+    <!-- Bubbles get generated here (Standard View) -->
+    <div id="chat-bubble-stream" class="bubble-stream"></div>
+
+    <!-- Side-by-side concurrent dual feeds (Arena View) -->
+    <div id="arena-chat-grid" class="arena-grid hidden">
+        <div class="arena-column" id="arena-col-left">
+            <div class="arena-header"><i class="fa-solid fa-bolt-lightning"></i> <span
+                    data-i18n="workspace.arena_col_a">Orbit Module A</span></div>
+            <div id="arena-bubbles-left" class="bubble-stream"></div>
+        </div>
+        <div class="arena-column" id="arena-col-right">
+            <div class="arena-header"><i class="fa-solid fa-fire-flame-curved"></i> <span
+                    data-i18n="workspace.arena_col_b">Orbit Module B</span></div>
+            <div id="arena-bubbles-right" class="bubble-stream"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ⌨️ INTERACTIVE DYNAMIC INPUT BAR -->
+<footer class="workspace-footer">
+    <div class="input-canvas glass-panel">
+        <textarea id="main-prompt-input" rows="1" data-i18n-placeholder="workspace.input_placeholder"
+            placeholder="Enter system query... (Shift+Enter for newline)" autocomplete="off"
+            spellcheck="false"></textarea>
+        <div class="input-actions">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="mode-indicator"><i class="fa-solid fa-bolt"></i> <span
+                        data-i18n="workspace.mode_streaming">Streaming Engine Enabled</span></div>
+                <label
+                    style="display: flex; align-items: center; gap: 5px; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; transition: color 0.2s ease;">
+                    <input type="checkbox" id="web-search-toggle"
+                        style="accent-color: var(--accent-cyan);">
+                    <i class="fa-solid fa-globe"></i> Web Search
+                </label>
+            </div>
+            <button id="btn-send-prompt" class="btn-send-circle" disabled>
+                <i class="fa-solid fa-arrow-up"></i>
+            </button>
+        </div>
+    </div>
+</footer>

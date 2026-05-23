@@ -2,7 +2,7 @@
   "name": "vscode-llm-chat",
   "displayName": "LLM Chat App",
   "description": "Connect VS Code to LLM Chat App",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "engines": {
     "vscode": "^1.116.0"
   },
@@ -61,8 +61,27 @@
       {
         "command": "llmchat.generateTests",
         "title": "LLM Chat: Generate Unit Tests"
+      },
+      {
+        "command": "llmchat.onboard",
+        "title": "LLM Chat: Onboard / Configure API"
       }
     ],
+    "configuration": {
+      "title": "LLM Chat App Settings",
+      "properties": {
+        "llmChat.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:5000",
+          "description": "The base server URL (e.g. http://localhost:5000 or https://saas.quantum.net)"
+        },
+        "llmChat.apiToken": {
+          "type": "string",
+          "default": "llm-local-auth-82c4f3eb0d",
+          "description": "Your API Bearer Token / Passport Key (stored securely in VS Code secrets if configured via onboarding)"
+        }
+      }
+    },
     "menus": {
       "editor/context": [
         {
