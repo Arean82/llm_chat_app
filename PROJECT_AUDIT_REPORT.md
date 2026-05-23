@@ -1,7 +1,7 @@
 # Project Audit Report: LLM Chat App
 
-**Date:** 2026-05-17
-**Status:** ✅ 100% - 54/54 ITEMS REMEDIATED (0 ACTIVE BUGS REMAINING)
+**Date:** 2026-05-23
+**Status:** ✅ 100% - 57/57 ITEMS REMEDIATED (0 ACTIVE BUGS REMAINING)
 
 ## 📊 Audit Summary Table
 
@@ -62,6 +62,8 @@
 | 053 | **Stability**      | `ui/main_window.py`       |  🟠 Med  |   ✅**Resolved**   | Duplicate MainWindow methods override each other, breaking dynamic logging.                        |
 | 054 | **Deployment**     | `requirements.txt`        |  🟠 Med  |   ✅**Resolved**   | Missing remote SQLite/PostgreSQL drivers (`libsql-client`, `pg8000`) for Turso/PG.             |
 | 055 | **Architecture**   | `ui/saas_settings...`     | 🔴 High |   ✅**Resolved**   | Fragmented Desktop SaaS Control Panels bypassing Qt Designer & null-type crashes.                  |
+| 056 | **Stability**      | `main.py` / `shared_widgets.py` |  🟠 Med  |   ✅**Resolved**   | PySide6 Taskbar / Process Icon Grouping Regression (Windows Stabilization).                        |
+| 057 | **Architecture**   | `saas/app.py` / `saas/templates/index.html` | 🔴 High |   ✅**Resolved**   | SaaS Web Portal Telemetry & Observability Porting.                                                 |
 
 ---
 
@@ -547,6 +549,28 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Details:** The storage layer implements drivers and connections to remote SQL environments, supporting both Turso databases (via `libsql-client`) and PostgreSQL clusters (via `pg8000`). However, these external dependencies were completely omitted from the project's dependency manifest, causing launch crashes when selected.
 * **Implementation:** Added a dedicated `# Database Drivers` section to `requirements.txt` containing the required dependencies `libsql-client` and `pg8000` to support remote Turso and PostgreSQL configuration targets. Verified using a comprehensive test sweep covering local SQLite, file-based LibSQL, and mocked PostgreSQL driver transaction protocols.
 
+#### 56. Audit ID 056: PySide6 Taskbar / Process Icon Grouping Regression (Windows Stabilization)
+
+* **Severity:** 🟠 Medium
+* **Status:** ✅ **Resolved**
+* **Location:** [`main.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/main.py), [`ui/shared_widgets.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/shared_widgets.py)
+* **Details:** Launching standalone windows or child dialogs in Windows using the `python.exe` interpreter resulted in generic default wireframe/grid icons on the system taskbar, rather than the branded application icon.
+* **Remediation:**
+  1. **Robust Multi-Resolution Loading:** Updated `set_app_icon` inside `ui/shared_widgets.py` to intelligently detect Windows environments and load the dedicated `resources/app_icon.ico` instead of flat PNG streams. The `.ico` file houses multiple resolutions matching Windows desktop scaling natively.
+  2. **Comprehensive Dialog Branding:** Configured all child windows and dialog popups (including `SystemHealthDialog`, `SaaSSettingsDialogClass`, `FirstRunDialog`, `LogViewerDialog`, `FileViewerDialog`, `ModelPopupClass`, `ModelEditDialog`, `CredentialManagerDialog`, `AddProviderDialog`, `InstructionEditorDialog`) to call `set_app_icon(self)` within their initializers.
+  3. **Critical Process Grouping Timing:** Moved the `SetCurrentProcessExplicitAppUserModelID` call to the absolute top of the `main()` entrypoint inside `main.py` before any GUI imports. Declaring the identity first guarantees that the custom icon is correctly mapped across the entire window pipeline right away.
+
+#### 57. Audit ID 057: SaaS Web Portal Telemetry & Observability Porting
+
+* **Severity:** 🔴 High
+* **Status:** ✅ **Resolved**
+* **Location:** [`saas/app.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/app.py), [`saas/templates/index.html`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/templates/index.html), [`saas/static/js/system_health.js`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/static/js/system_health.js)
+* **Details:** The SaaS Multi-Tenant Web Console lacked the real-time diagnostic indicators and troubleshooting controls available on the desktop administration panel.
+* **Remediation:**
+  1. **Telemetry Endpoint Enrichment:** Upgraded `/api/admin/telemetry` inside `saas/app.py` to dynamically query and append the active LED status dictionary, core circuit breaker state, and active worker processing queues and thread pool mappings from the `JobQueueEngine`.
+  2. **Glassmorphism System Health Modal:** Integrated the `System Health` button (`btn-open-system-health`) inside the header model selector, positioned to the right of the `Credential Manager` button in `saas/templates/index.html`. It reveals strictly for authenticated `admin` operators and loads a modular `#system-health-modal` popup with pure glassmorphic styling.
+  3. **Active Refresher Controller:** Created `saas/static/js/system_health.js` to launch a 2-second polling updater, synchronize status LEDs, render active worker thread tables, enable one-click "Reprocess & Retry" triggers for failed DLQ tasks, and clear all intervals on close to prevent browser memory leaks.
+
 ---
 
-*Final Audit Update Completed on 2026-05-20 (Appended Unresolved CLI Crashes, Duplicate Methods, Missing Drivers, & Lock Hazards).*
+*Final Audit Update Completed on 2026-05-23 (Appended Unresolved CLI Crashes, Duplicate Methods, Missing Drivers, & Lock Hazards, PySide6 Taskbar Regression, and SaaS Web Telemetry Porting).*

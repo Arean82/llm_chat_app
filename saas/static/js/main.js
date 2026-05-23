@@ -266,8 +266,12 @@ function launchWorkspace() {
     
     if (App.user.key_type === 'admin_funded') {
         document.getElementById('nav-admin').classList.remove('hidden');
+        const btnHealth = document.getElementById('btn-open-system-health');
+        if (btnHealth) btnHealth.classList.remove('hidden');
     } else {
         document.getElementById('nav-admin').classList.add('hidden');
+        const btnHealth = document.getElementById('btn-open-system-health');
+        if (btnHealth) btnHealth.classList.add('hidden');
     }
     
     loadModels();

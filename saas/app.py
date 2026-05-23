@@ -680,15 +680,44 @@ def create_saas_app():
 
     @app.route('/api/admin/telemetry', methods=['GET'])
     def admin_telemetry():
-        """Exposes dynamic central telemetry metrics to Screen D."""
+        """Exposes dynamic central telemetry metrics to Screen D and System Health Dialog."""
         user = getattr(request, 'tenant', None)
         if not user or user.get('key_type') != 'admin_funded':
             return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         try:
             from logic.services import ServiceRegistry
+            from logic.queue.job_queue import JobQueueEngine
+            
             telemetry_service = ServiceRegistry.get("telemetry")
             metrics = telemetry_service.get_realtime_metrics()
+            
+            # 1. Inject LED health check statuses
+            metrics["health"] = telemetry_service.run_health_checks()
+            
+            # 2. Inject circuit breaker state
+            circuit_breaker = ServiceRegistry.get("circuit_breaker")
+            metrics["circuit_breaker_state"] = circuit_breaker.state if circuit_breaker else "CLOSED"
+            
+            # 3. Inject active worker jobs
+            try:
+                queue_engine = JobQueueEngine()
+                status = queue_engine.get_queue_status()
+                active_list = status.get("processing_jobs", []) + status.get("queued_jobs", [])
+                
+                serialized_jobs = []
+                for row, job in enumerate(active_list):
+                    serialized_jobs.append({
+                        "name": f"WorkerThread-{row+1}",
+                        "job_id": str(job.get("job_id", "")),
+                        "task_type": f"Ingest: {job.get('task_type', '')}",
+                        "status": str(job.get("status", "")).upper()
+                    })
+                metrics["active_jobs"] = serialized_jobs
+            except Exception as q_ex:
+                metrics["active_jobs"] = []
+                print(f"[Telemetry API] Error gathering queue status: {q_ex}")
+                
             return jsonify({"success": True, "metrics": metrics})
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
