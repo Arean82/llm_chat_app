@@ -885,6 +885,29 @@ def create_saas_app():
         stream = data.get("stream", False)
         web_search_enabled = data.get("web_search", False)
         model_id = data.get("model", "meta/llama-3.1-8b-instruct")
+
+        # --- PHASE 9: L3 SEMANTIC QUERY CACHE GATE ---
+        if user_msg and not web_search_enabled:
+            try:
+                cached_response = db.get_semantic_cache_hit(user_msg, user['id'])
+                if cached_response:
+                    print(f"[Semantic Cache] HIT for query by user {user['id']}")
+                    if stream:
+                        def generate_cache_stream():
+                            yield f"data: {json.dumps({'choices': [{'delta': {'content': cached_response}}]})}\n\n"
+                            yield "data: [DONE]\n\n"
+                        return Response(stream_with_context(generate_cache_stream()), mimetype="text/event-stream")
+                    else:
+                        return jsonify({
+                            "id": f"chatcmpl-cache-{int(time.time())}",
+                            "object": "chat.completion",
+                            "created": int(time.time()),
+                            "model": model_id,
+                            "choices": [{"message": {"role": "assistant", "content": cached_response}}],
+                            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+                        })
+            except Exception as e:
+                print(f"[Semantic Cache] Lookup error: {e}")
         
         if web_search_enabled and user_msg:
             try:
@@ -1021,6 +1044,14 @@ def create_saas_app():
                         # Post-stream tally execution
                         approx_comp_tokens = int(len(response_text) / 4)
                         db.record_usage(user['id'], approx_prompt_tokens, approx_comp_tokens)
+                        
+                        # --- PHASE 9: CACHE MISS WRITE ---
+                        if user_msg and response_text and not web_search_enabled:
+                            try:
+                                db.set_semantic_cache_hit(user_msg, user['id'], response_text)
+                            except Exception as e:
+                                print(f"[Semantic Cache] Write error: {e}")
+                                
                         yield "data: [DONE]\n\n"
                         
                     except Exception as e:
@@ -1046,6 +1077,13 @@ def create_saas_app():
                 # Ledger commit
                 approx_comp_tokens = int(len(text) / 4)
                 db.record_usage(user['id'], approx_prompt_tokens, approx_comp_tokens)
+                
+                # --- PHASE 9: CACHE MISS WRITE ---
+                if user_msg and text and not web_search_enabled:
+                    try:
+                        db.set_semantic_cache_hit(user_msg, user['id'], text)
+                    except Exception as e:
+                        print(f"[Semantic Cache] Write error: {e}")
                 
                 return jsonify({
                     "id": f"chatcmpl-{int(time.time())}",

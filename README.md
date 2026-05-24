@@ -1,4 +1,4 @@
-# LLM Chat App (v7.1 Stable Release)
+# LLM Chat App (v7.2 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -534,7 +534,7 @@ pyinstaller LLM_Chat_App_combined.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v7.1.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v7.2.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -550,7 +550,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_7.1.0.deb
+sudo dpkg -i llmchatapp_7.2.0.deb
 ```
 
 **2. Create a Portable AppImage:**
@@ -603,11 +603,17 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
+### v7.2.0 – Semantic Chunk Cache Warehousing & Performance Scaling
+
+* **L2 Chunk Cache Engine:** Embedded SHA-256 deduplication for dense document vectors preventing repeat local API inference loops during text chunk ingestion.
+* **L3 Semantic Query Cache:** Integrated instantaneous response cache bypassing LLM completions engines for identical multi-tenant workspace user queries.
+* **Migration Indexing Ready:** Expanded caching ledger inside `tenant_db.py` to enforce strict standard SQLite indexes matching PostgreSQL scaling paradigms.
+
 ### v7.1.0 – Windows Taskbar Icon & Wide-String AppUserModelID Stabilization
 
 * **Windows ctypes unicode translation**: Solved a crucial C-level bug where `SetCurrentProcessExplicitAppUserModelID` received garbage ANSI string pointers, successfully forcing wide-string `c_wchar_p` interpretation.
 * **Master App ID Consolidation**: Removed conflicting duplicate calls inside the UI main window shell, centralizing startup registration as a single source of truth.
-* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v7.1`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
+* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v7.2`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
 
 ### v7.0.0 – Headless SaaS Platform & Cloud Multi-Tenancy Architecture
 

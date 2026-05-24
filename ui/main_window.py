@@ -31,7 +31,7 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("LLM Chat App v7.1")
+        self.setWindowTitle("LLM Chat App v7.2")
         
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)

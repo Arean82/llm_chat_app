@@ -405,16 +405,33 @@ class LLMClient:
             print(f"Abstract Batch Generation Exception: {e}")
             return {}
 
-    def generate_embeddings(self, text: str) -> list:
+    def generate_embeddings(self, text: str, user_id: int = 1) -> list:
         """
         Computes semantic vector embeddings utilizing the active API client credentials.
         Adapts dynamically based on chosen vendor (Google GenAI or OpenAI framework).
+        Implements Phase 9 Semantic Chunk Caching.
         """
         if not text or not text.strip():
             return []
             
+        # --- PHASE 9: L2 CHUNK CACHE GATE ---
+        import hashlib
+        chunk_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
+        
+        try:
+            from saas.tenant_db import TenantDatabaseManager
+            db_mgr = TenantDatabaseManager()
+            cached_vector = db_mgr.get_cached_embedding(chunk_hash)
+            if cached_vector:
+                print(f"[Embedding Cache] HIT for chunk {chunk_hash[:8]}... Bypassing API.")
+                return cached_vector
+        except Exception as e:
+            print(f"[Embedding Cache] Lookup failed: {e}")
+            db_mgr = None
+
         provider = self.get_current_provider()
         payload_slice = text[:8000] # Input bounds safety clip
+        vector = []
 
         # 🟢 Google GenAI Embedding Pipeline
         if provider == "google":
@@ -427,11 +444,9 @@ class LLMClient:
                     contents=payload_slice
                 )
                 if result and result.embeddings:
-                    return result.embeddings[0].values
-                return []
+                    vector = result.embeddings[0].values
             except Exception as e:
                 print(f"[Embedding] Google failure: {e}")
-                return []
 
         # 🔵 OpenAI / Nvidia Universal Embedding Pipeline
         else:
@@ -460,7 +475,7 @@ class LLMClient:
                     kwargs["extra_body"] = {"input_type": "query"}
                 
                 resp = self.client.embeddings.create(**kwargs)
-                return resp.data[0].embedding
+                vector = resp.data[0].embedding
             except Exception as e:
                 # Local provider fallback (e.g. trying Ollama common naming schema)
                 try:
@@ -469,10 +484,19 @@ class LLMClient:
                          input=payload_slice,
                          timeout=5.0
                      )
-                     return resp.data[0].embedding
+                     vector = resp.data[0].embedding
                 except:
                      print(f"[Embedding] Generic provider failure: {e}")
-                     return []
+                     
+        # --- PHASE 9: CACHE MISS WRITE ---
+        if vector and db_mgr:
+            try:
+                db_mgr.set_cached_embedding(chunk_hash, user_id, text, vector)
+                print(f"[Embedding Cache] MISS - Indexed chunk {chunk_hash[:8]}...")
+            except Exception as e:
+                print(f"[Embedding Cache] Write failed: {e}")
+
+        return vector
 
     def fetch_custom_openai_models(self, base_url: str, api_key: str, provider_id: str = "openai") -> list:
         """

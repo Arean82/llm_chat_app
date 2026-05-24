@@ -95,6 +95,34 @@ class TenantDatabaseManager:
                     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
+
+            # 5. L2 Chunk Cache (Phase 9)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS chunk_cache (
+                    chunk_hash TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    chunk_text TEXT NOT NULL,
+                    embedding_blob BLOB NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            # 6. L3 Semantic Query Cache (Phase 9)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS semantic_query_cache (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    query_text TEXT NOT NULL,
+                    response_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            
+            # Phase 9 Indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_chunk_cache_user ON chunk_cache(user_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_semantic_cache_lookup ON semantic_query_cache(user_id, query_text);")
             conn.commit()
 
             # 4. SEED DEFAULT SUPER ADMIN (Critical First-Run Bootloader Fix)
@@ -394,4 +422,49 @@ class TenantDatabaseManager:
         with self.get_connection() as conn:
             row = conn.execute("SELECT * FROM shared_orbits WHERE share_hash = ?", (share_hash,)).fetchone()
             return dict(row) if row else None
+
+    # --- PHASE 9: SEMANTIC CACHE WAREHOUSING ---
+
+    def get_cached_embedding(self, chunk_hash: str):
+        with self.get_connection() as conn:
+            row = conn.execute("SELECT embedding_blob FROM chunk_cache WHERE chunk_hash = ?", (chunk_hash,)).fetchone()
+            if row:
+                import json
+                try:
+                    return json.loads(row['embedding_blob'])
+                except Exception:
+                    pass
+            return None
+
+    def set_cached_embedding(self, chunk_hash: str, user_id: int, text: str, vector: list):
+        import json
+        blob = json.dumps(vector)
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO chunk_cache (chunk_hash, user_id, chunk_text, embedding_blob)
+                VALUES (?, ?, ?, ?)
+            """, (chunk_hash, user_id, text, blob))
+            conn.commit()
+
+    def get_semantic_cache_hit(self, query_text: str, user_id: int):
+        with self.get_connection() as conn:
+            row = conn.execute("SELECT response_text FROM semantic_query_cache WHERE user_id = ? AND query_text = ?", (user_id, query_text)).fetchone()
+            if row:
+                return row['response_text']
+            return None
+
+    def set_semantic_cache_hit(self, query_text: str, user_id: int, response_text: str):
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO semantic_query_cache (user_id, query_text, response_text)
+                VALUES (?, ?, ?)
+            """, (user_id, query_text, response_text))
+            conn.commit()
+
+    def clear_tenant_cache(self, user_id: int):
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM chunk_cache WHERE user_id = ?", (user_id,))
+            conn.execute("DELETE FROM semantic_query_cache WHERE user_id = ?", (user_id,))
+            conn.commit()
+            return True
 

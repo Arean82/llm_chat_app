@@ -1,6 +1,6 @@
-# Working Plan: Attaining v7.1 (Master Progress Log)
+# Working Plan: Attaining v7.2 (Master Progress Log)
 
-This is the tactical manual for evolving the **fixed v6.6 concurrency foundation** into the v7.1 Headless/SaaS architecture.
+This is the tactical manual for evolving the **fixed v6.6 concurrency foundation** into the v7.2 Headless/SaaS architecture.
 
 ---
 
