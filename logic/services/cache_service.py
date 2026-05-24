@@ -69,9 +69,9 @@ class CacheService(BaseService):
 
     # --- CRYPTOGRAPHIC PAYLOAD HASHING REGISTRY (9.1.1) ---
 
-    def calculate_payload_hash(self, text_payload: str) -> str:
-        """Generate a SHA-256 hash for a normalized document payload."""
-        normalized = text_payload.strip().encode("utf-8")
+    def calculate_payload_hash(self, tenant_id: str, text_payload: str) -> str:
+        """Generate a SHA-256 hash for a normalized document payload scoped by tenant."""
+        normalized = f"{tenant_id}:{text_payload.strip()}".encode("utf-8")
         return hashlib.sha256(normalized).hexdigest()
 
     def register_content_hash(self, tenant_id: str, content_hash: str, metadata: dict) -> None:

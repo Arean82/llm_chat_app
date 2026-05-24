@@ -62,7 +62,7 @@ class RAGService(BaseService):
         Uses SHA-256 caching checks to skip redundant ingestion (9.1.1).
         """
         cache_service = ServiceRegistry.get("cache")
-        payload_hash = cache_service.calculate_payload_hash(text)
+        payload_hash = cache_service.calculate_payload_hash(tenant_id, text)
         
         # Check cache hash registry first to bypass redundant work
         existing_meta = cache_service.check_content_hash(tenant_id, payload_hash)
@@ -90,10 +90,11 @@ class RAGService(BaseService):
         
         for idx, chunk in enumerate(chunks):
             # Generate stable deterministic placeholder vector based on word counts to guarantee cosine stability
+            import hashlib
             tokens = re.findall(r'\w+', chunk.lower())
             vector = [0.0] * vector_dim
             for t in tokens[:vector_dim]:
-                h_idx = hash(t) % vector_dim
+                h_idx = int(hashlib.md5(t.encode('utf-8')).hexdigest(), 16) % vector_dim
                 vector[h_idx] += 1.0
             
             # Normalize vector
@@ -131,10 +132,11 @@ class RAGService(BaseService):
         # 1. Execute Dense Retrieval
         # Generate stable mock query vector matching the dimension
         vector_dim = 384
+        import hashlib
         tokens = re.findall(r'\w+', query.lower())
         query_vector = [0.0] * vector_dim
         for t in tokens[:vector_dim]:
-            h_idx = hash(t) % vector_dim
+            h_idx = int(hashlib.md5(t.encode('utf-8')).hexdigest(), 16) % vector_dim
             query_vector[h_idx] += 1.0
         v_norm = sum(x**2 for x in query_vector)**0.5
         if v_norm > 0:

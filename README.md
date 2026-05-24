@@ -48,16 +48,17 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🛡️ **Intelligent Error Handling:** Categorizes API errors (timeouts, network drops, rate limits) and shows friendly, actionable messages instead of raw error traces.
 - 🧠 **Adaptive Memory Compression:** Features a high-performance context intercept layer. Detects usage bursts above 85% and seamlessly performs silent, secondary background synthesis to compact legacy history, unlocking infinite conversation depth.
 - 🔄 **Background Model Fetching:** Fetch and test all available ecosystem models in the background. Model Manager closes automatically, progress visible in real-time via the Log menu.
-- 📋 **Real-time Log Viewer:** Track model fetching progress, success/failures, and description generation with color-coded, filterable logs (INFO, WARNING, ERROR, SUCCESS, DEBUG).
+- 📋 **Real-time Log Viewer & Telemetry:** Track model fetching progress, API health, and system throughput with a centralized Telemetry Observability Dashboard.
 - ✨ **AI-Powered Description Generation:** Generate one-sentence descriptions for any model using your choice of working model (Llama 4, Gemma 3, etc.). Descriptions persist across app restarts.
 - 🏷️ **Developer Tabs:** Models are automatically grouped by developer (Google, Meta, NVIDIA, etc.) in the Model Manager for easier browsing.
 - 💰 **Paid Model Support:** Fetch paid models (requires subscription) and merge them with existing free models without losing data.
-- 🚀 **Graceful Resource Management:** Implements **Smart Resource Sync** that detects new EXE versions and updates UI files without destructive wiping. Includes robust cleanup logic to ensure all threads and port 5000 are released on exit.
+- 🚀 **Graceful Resource Management:** Implements **Smart Resource Sync** and completely safe OS-level thread signaling (replacing unsafe termination) to guarantee absolute GUI state stability and memory integrity.
 - 🖥️ **System Tray Support:** Minimize to system tray for background operation. API server continues running while app is in tray.
 - 🌐 **Universal API Server:** Start a local OpenAI-compatible API server from Tools menu. Connect any IDE (VS Code, Eclipse, IntelliJ) to your selected LLM model.
 - 🖥️ **VS Code Extension Support:** Use with Continue extension or build custom extension for advanced features like sending entire files, project folders, and applying AI edits directly.
 - 📦 **Storage Management Center:** Move seamlessly between Portable, Standard, and Custom data paths at runtime with transactional relocation and immediate automatic cycle-boot.
 - 📂 **Zero-Click Data Reveal:** Instant one-click Windows Explorer shortcuts in settings to navigate directly to your active user profiles and databases.
+- 🧠 **Semantic Caching:** High-speed Jaccard Similarity matching for Semantic RAG caching, dramatically reducing token usage on identical semantic queries.
 
 For detailed API documentation, see [API Documentation](API_SERVER.md)
 For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md)
@@ -86,7 +87,7 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 
 📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
 
-- 🌙 / ☀️ **Theme Toggle**: Click the icon in the top bar to switch themes instantly.
+- 🌙 / ☀️ **Theme Toggle**: Click the icon in the top bar to switch themes instantly. The SaaS web portal now defaults to a premium Light Theme.
 - 🏷️ **Model Info Label**: A subtle italic label next to the dropdown populates with the model description so you know its capabilities at a glance.
 - 📋 **Log Menu:** View real-time update logs with filtering by log level. Clear logs when needed.
 - ✨ **Generate Descriptions Button:** In Model Manager, select any working model to automatically generate descriptions for all models missing them.
@@ -294,58 +295,111 @@ The application leverages a fully-isolated, multi-threaded modular chassis desig
 
 ```mermaid
 graph TD
-    %% Client Layer
-    subgraph Clients ["Multi-Interface Clients (Version 7.1)"]
-        GUI["PySide6 Desktop GUI<br>(Multi-threaded, Async Workers)"]
-        CLI["Terminal CLI<br>(Interactive Chat Loop)"]
-        Headless["Headless API Server<br>(Port 5000 / OpenAI-Compatible)"]
+    %% Interface Layer
+    subgraph Interfaces ["Interface Layer"]
+        GUI["PySide6 Desktop GUI<br>Chat, Arena, Settings, SaaS Console"]
+        CLI["Terminal CLI<br>Headless auth, model commands, chat loop"]
+        LocalAPI["Local OpenAI-Compatible API<br>logic/api_server.py :5000"]
+        SaaS["Flask SaaS Portal/API<br>saas/app.py"]
+        IDE["VS Code / JetBrains Extensions<br>Dynamic gateway settings"]
     end
 
-    %% Core Orchestration Layer
-    subgraph Core ["Core Orchestration Chassis"]
-        Mgr["ConversationManager<br>(Context & History Dispatcher)"]
-        Client["LLMClient<br>(Agnostic Model Provider Hub)"]
-        Mgr --> Client
+    %% Runtime Layer
+    subgraph Runtime ["Runtime Orchestration"]
+        MW["MainWindow + UI Workers<br>ChatWorker, model fetchers, vector indexer"]
+        HEngine["HeadlessEngine<br>CLI/API lifecycle"]
+        APIAuth["Bearer / Passport Auth Gates"]
+        Registry["ServiceRegistry<br>shared service lifecycle"]
     end
 
-    %% Storage Drivers
-    subgraph Storage ["Decoupled Storage Tier (100% WAL/MVCC)"]
-        DriverContract["BaseStorageDriver<br>(Abstract Interface)"]
-        SQLiteDriver["LocalSQLiteDriver<br>(Zero-Config Desktop / WAL Mode)"]
-        TursoDriver["LibSQLStorageDriver<br>(Turso Cloud Shards / Hranas Edge)"]
-        PGDriver["PostgreSQLStorageDriver<br>(Enterprise Cluster / Row Locks)"]
-      
-        DriverContract --> SQLiteDriver
-        DriverContract --> TursoDriver
-        DriverContract --> PGDriver
+    %% Services
+    subgraph Services ["Shared Service Layer"]
+        ConvSvc["ConversationService<br>completion, rate limit, telemetry hooks"]
+        AuthSvc["AuthService<br>tenant auth and BYOK credentials"]
+        StorageSvc["StorageService<br>driver selection and tenant sharding"]
+        RAGSvc["RAGService<br>ingestion, hybrid retrieval, reranking"]
+        CacheSvc["CacheService<br>query/cache hash registry"]
+        Telemetry["TelemetryManager<br>metrics and health checks"]
+        Breaker["CircuitBreaker<br>provider failover"]
+        Queue["JobQueueEngine<br>background ingestion + DLQ"]
     end
 
-    %% Multi-Tenant Sandbox Datastores
-    subgraph Datastores ["Dynamic Tenant Sandbox Datastores"]
-        SQLiteDB[("Local SQLite Database<br>chat_history.db")]
-        TursoDB[("Turso Cloud Database<br>{tenant_id} Partition")]
-        PGDB[("PostgreSQL Server Database<br>{tenant_id} Schema")]
-      
-        SQLiteDriver -->|High-Perf local WAL| SQLiteDB
-        TursoDriver -->|Zero-Locking Writes| TursoDB
-        PGDriver -->|MVCC Row-Level Locks| PGDB
+    %% Compatibility/Core Model Layer
+    subgraph ModelCore ["Model and Compatibility Layer"]
+        LegacyMgr["ConversationManager<br>desktop history compatibility"]
+        LLM["LLMClient<br>OpenAI-compatible + Google GenAI router"]
+        Models["Model IO<br>provider metadata + model shards"]
     end
 
-    %% Relations
-    GUI -->|Execute Actions| Core
-    CLI -->|Execute Actions| Core
-    Headless -->|JWT Tenant Session Requests| Core
-  
-    Mgr -->|Orchestrates Storage Operations| DriverContract
+    %% Storage
+    subgraph Storage ["Storage and Memory"]
+        Driver["BaseStorageDriver"]
+        SQLite["LocalSQLiteDriver<br>local fallback / SaaS metadata WAL"]
+        LibSQL["LibSQLStorageDriver<br>Turso/local libSQL"]
+        Postgres["PostgreSQLStorageDriver<br>enterprise MVCC"]
+        TenantDB[("saas_tenants.db<br>users, credentials, telemetry/cache tables")]
+        ChatDB[("tenant chat history<br>chat_history.db or remote shard")]
+        VectorDB[("Qdrant local vector_db<br>tenant collections")]
+    end
 
-    %% Styling
-    style Clients fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
-    style Core fill:#181825,stroke:#f5e0dc,stroke-width:2px,color:#cdd6f4
-    style Storage fill:#11111b,stroke:#a6adc8,stroke-width:2px,color:#cdd6f4
-    style Datastores fill:#0f0f17,stroke:#fab387,stroke-width:2px,color:#cdd6f4
-    style GUI fill:#89b4fa,stroke:#1e66f5,stroke-dasharray: 5 5,color:#11111b
-    style CLI fill:#a6e3a1,stroke:#40a02b,color:#11111b
-    style Headless fill:#cba6f7,stroke:#8839ef,color:#11111b
+    %% Providers
+    subgraph Providers ["Execution Providers"]
+        OpenAI["OpenAI-compatible APIs<br>NVIDIA, OpenAI, Groq, custom"]
+        Google["Google GenAI SDK"]
+        LocalModels["Local runtimes<br>Ollama / LM Studio"]
+    end
+
+    IDE --> LocalAPI
+    IDE --> SaaS
+    GUI --> MW
+    CLI --> HEngine
+    LocalAPI --> APIAuth
+    SaaS --> APIAuth
+    APIAuth --> Registry
+    MW --> LegacyMgr
+    MW --> Registry
+    HEngine --> Registry
+
+    Registry --> ConvSvc
+    Registry --> AuthSvc
+    Registry --> StorageSvc
+    Registry --> RAGSvc
+    Registry --> CacheSvc
+    Registry --> Telemetry
+    Registry --> Breaker
+    Queue --> RAGSvc
+
+    ConvSvc --> LLM
+    ConvSvc --> StorageSvc
+    ConvSvc --> RAGSvc
+    ConvSvc --> Breaker
+    LegacyMgr --> Driver
+    StorageSvc --> Driver
+    RAGSvc --> VectorDB
+    RAGSvc --> CacheSvc
+    AuthSvc --> TenantDB
+
+    Driver --> SQLite
+    Driver --> LibSQL
+    Driver --> Postgres
+    SQLite --> ChatDB
+    LibSQL --> ChatDB
+    Postgres --> ChatDB
+
+    LLM --> Models
+    LLM --> OpenAI
+    LLM --> Google
+    LLM --> LocalModels
+
+    Telemetry --> TenantDB
+    CacheSvc --> TenantDB
+
+    style Interfaces fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
+    style Runtime fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
+    style Services fill:#11111b,stroke:#a6adc8,stroke-width:2px,color:#cdd6f4
+    style ModelCore fill:#0f0f17,stroke:#f9e2af,stroke-width:2px,color:#cdd6f4
+    style Storage fill:#101820,stroke:#94e2d5,stroke-width:2px,color:#cdd6f4
+    style Providers fill:#171421,stroke:#fab387,stroke-width:2px,color:#cdd6f4
 ```
 
 ### 🧱 Three-Tier Modular System Layout:
@@ -354,15 +408,16 @@ graph TD
 
    * **PySide6 Desktop GUI**: A highly responsive, multi-threaded workspace executing long-running network operations via background worker threads to ensure zero main-loop freezing.
    * **Terminal CLI**: A lightweight, interactive command-line interface equipped with direct streaming, model hot-swapping, and metadata commands.
-   * **Headless API Server (SaaS Gateway - Port 5000)**: Serves multiple concurrent registered users, providing secure JWT-signed session authentication and dynamic resource isolation.
+   * **Local API + SaaS Gateway**: Local OpenAI-compatible API traffic uses a bearer gate; SaaS traffic uses passport/BYOK tenant authentication and dynamic resource isolation. IDE extensions can target either gateway.
 2. **Core Orchestration Chassis**:
 
-   * Anchored by `ConversationManager`, this tier decouples business logic from physical storage layers using an abstract database driver interface (`BaseStorageDriver`), ensuring complete data portability.
+   * Anchored by `ServiceRegistry`, `ConversationService`, `AuthService`, `RAGService`, `StorageService`, `CacheService`, `TelemetryManager`, and `CircuitBreaker`. The older `ConversationManager` remains as the desktop history compatibility path and still routes through the same storage-driver family.
 3. **High-Concurrency Pluggable Storage Tier**:
 
    * **libSQL / Turso Edge Shards (Default)**: Leverages lightweight Hranas edge replication and database-per-tenant sharding to support zero-locking remote transactional operations.
    * **PostgreSQL Cluster Engine**: Offers enterprise-grade multi-process concurrency, implementing raw row-level locking and Multi-Version Concurrency Control (MVCC).
-   * **Isolated Multi-Tenant Sandbox**: Enforces complete tenant isolation at the database, settings/BYOK credentials, and cryptographic session levels, acting exactly like a separate virtual desktop instance for every user.
+   * **Local SQLite / metadata fallback**: Preserves zero-config desktop history, SaaS user metadata, and local recovery flows with WAL enabled.
+   * **Isolated Multi-Tenant Sandbox**: Enforces tenant isolation across auth, settings/BYOK credentials, history routing, vector collections, background jobs, and cache tables.
 
 ---
 
@@ -416,7 +471,7 @@ Install `extension/vscode-llm-chat-2.0.0.vsix`:
 Configure any OpenAI-compatible extension with:
 
 - **URL:** `http://localhost:5000/v1`
-- **API Key:** `llm-local-auth-82c4f3eb0d` (Mandatory local token)
+- **API Key:** The dynamically generated token from your active session (viewable in Settings).
 
 ---
 

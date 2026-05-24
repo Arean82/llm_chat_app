@@ -461,7 +461,8 @@ function onRerankEngineChanged(e) {
 // ==========================================
 async function loadAdminData() {
     try {
-        const users = await fetchAdminUsers(App.token);
+        const res = await fetchAdminUsers(App.token);
+        const users = res?.data || [];
         const tbody = document.getElementById('nc-tenants-tbody');
         if(!tbody) return;
         tbody.innerHTML = '';

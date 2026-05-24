@@ -35,6 +35,7 @@ VS Code extension `.vsix` file is available in the `extension/` folder.
 | `/v1/models` | `GET` | Lists available OpenAI-compatible models. |
 | `/v1/chat/completions` | `POST` | Sends a message and receives an AI response. |
 | `/v1/chat/history/<session_id>` | `DELETE` | Clear conversation history for a session |
+| `/v1/system/telemetry` | `GET` | Retrieve live system health and throughput metrics. |
 
 ---
 

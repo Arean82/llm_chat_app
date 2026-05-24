@@ -93,7 +93,7 @@ def create_saas_app():
         Pre-flight validation handshake performing real-time live check 
         against NVIDIA/OpenAI endpoints prior to allowing profile creation.
         """
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         api_key = data.get("api_key", "").strip()
         provider = data.get("provider", "nvidia").lower()
         
@@ -149,7 +149,7 @@ def create_saas_app():
                 
         if request.method == 'POST':
             try:
-                payload = request.get_json() or []
+                payload = request.get_json(silent=True) or []
                 with open(prompts_file, 'w', encoding='utf-8') as f:
                     json.dump(payload, f, indent=4)
                 return jsonify({"success": True, "message": "Synced to Desktop Globally"})
@@ -168,7 +168,7 @@ def create_saas_app():
             return jsonify({"success": True, "data": settings})
             
         if request.method == 'POST':
-            payload = request.get_json() or {}
+            payload = request.get_json(silent=True) or {}
             success = db.update_user_settings(user['id'], payload)
             if success:
                 return jsonify({"success": True, "message": "Settings updated"})
@@ -193,7 +193,7 @@ def create_saas_app():
                 
         if request.method == 'POST':
             try:
-                payload = request.get_json() or {}
+                payload = request.get_json(silent=True) or {}
                 if os.path.exists(config_file):
                     with open(config_file, 'r', encoding='utf-8') as f:
                         current = json.load(f)
@@ -227,7 +227,7 @@ def create_saas_app():
                 return jsonify({"success": True, "data": data})
                 
             if request.method == 'POST':
-                payload = request.get_json() or {}
+                payload = request.get_json(silent=True) or {}
                 if "smtp_enabled" in payload: saas_cfg.set_val("SMTP_RELAY", "enabled", payload["smtp_enabled"])
                 if "smtp_host" in payload: saas_cfg.set_val("SMTP_RELAY", "host", payload["smtp_host"])
                 if "smtp_port" in payload: saas_cfg.set_val("SMTP_RELAY", "port", int(payload["smtp_port"]))
@@ -246,7 +246,7 @@ def create_saas_app():
             
         try:
             from logic.model_io import load_all_models, save_models
-            data = request.get_json() or {}
+            data = request.get_json(silent=True) or {}
             if not data.get("id"):
                 return jsonify({"success": False, "error": "Model ID is required."}), 400
                 
@@ -272,12 +272,13 @@ def create_saas_app():
         Registers validated passport user and provisions isolated filesystem workspace.
         Case 1 & Case 2 flows update profile details here.
         """
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         api_key = data.get("api_key", "").strip()
         username = data.get("username", "").strip()
         email = data.get("email", "").strip()
         password = data.get("password", "").strip()
-        key_type = data.get("key_type", "byok").lower() # "byok" or "admin_funded"
+        # Hard-lock key_type to 'byok' for public registration (Fix Issue 72)
+        key_type = "byok"
         
         if not all([api_key, username, email, password]):
             return jsonify({"success": False, "error": "All fields are mandatory."}), 400
@@ -312,7 +313,7 @@ def create_saas_app():
     @app.route('/api/login', methods=['POST'])
     def login_user():
         """Validates standard login credentials for web workstation entry."""
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         user_input = data.get("username_or_email", "").strip()
         password = data.get("password", "").strip()
         
@@ -334,7 +335,7 @@ def create_saas_app():
             # Fallback manual check if routing intercepted prior to before_request resolution
             return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
             
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         new_username = data.get("username", "").strip()
         new_password = data.get("password", "").strip()
         new_api_key = data.get("api_key", "").strip()
@@ -388,7 +389,7 @@ def create_saas_app():
             tokens = 0
             if request.path == '/v1/chat/completions' and response.status_code == 200:
                 try:
-                    data = request.get_json() or {}
+                    data = request.get_json(silent=True) or {}
                     messages = data.get("messages", [])
                     prompt_chars = sum(len(m.get("content", "")) for m in messages)
                     tokens = int(prompt_chars / 4)
@@ -516,7 +517,7 @@ def create_saas_app():
                 if not user or user.get('key_type') != 'admin_funded':
                     return jsonify({"error": "Forbidden. Operator access only."}), 403
                     
-                data = request.get_json()
+                data = request.get_json(silent=True)
                 if not data or 'sdk' not in data or 'ecosystem' not in data or 'url' not in data:
                     return jsonify({"error": "Missing required fields."}), 400
                     
@@ -729,7 +730,7 @@ def create_saas_app():
         if not user or user.get('key_type') != 'admin_funded':
             return jsonify({"error": "Forbidden. Operator access only."}), 403
             
-        payload = request.get_json() or {}
+        payload = request.get_json(silent=True) or {}
         rpm = payload.get("requests_per_minute_limit")
         if rpm is None:
             return jsonify({"error": "Missing requests_per_minute_limit"}), 400
@@ -773,7 +774,7 @@ def create_saas_app():
         if not user or user.get('key_type') != 'admin_funded':
             return jsonify({"error": "Forbidden. Operator access only."}), 403
             
-        payload = request.get_json() or {}
+        payload = request.get_json(silent=True) or {}
         job_id = payload.get("job_id")
         if not job_id:
             return jsonify({"error": "Missing job_id"}), 400
@@ -818,7 +819,7 @@ def create_saas_app():
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
             
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         conversation_data = data.get("messages")
         
         if not conversation_data:
@@ -862,7 +863,7 @@ def create_saas_app():
         on Model Arena Mode for cost controls on Admin-Funded tiers.
         """
         user = request.tenant
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         
         # 🚀 SECURE FEATURE-GATE LOCK: (V7 economic quota controls)
         is_arena_request = data.get("arena_mode", False) or data.get("is_duel", False)
@@ -889,8 +890,13 @@ def create_saas_app():
         # --- PHASE 9: L3 SEMANTIC QUERY CACHE GATE ---
         if user_msg and not web_search_enabled:
             try:
+                from logic.services import ServiceRegistry
+                cache_svc = ServiceRegistry.get("cache")
+                
                 cached_response = db.get_semantic_cache_hit(user_msg, user['id'])
                 if cached_response:
+                    if cache_svc:
+                        cache_svc.hits += 1
                     print(f"[Semantic Cache] HIT for query by user {user['id']}")
                     if stream:
                         def generate_cache_stream():
@@ -906,6 +912,9 @@ def create_saas_app():
                             "choices": [{"message": {"role": "assistant", "content": cached_response}}],
                             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
                         })
+                else:
+                    if cache_svc:
+                        cache_svc.misses += 1
             except Exception as e:
                 print(f"[Semantic Cache] Lookup error: {e}")
         

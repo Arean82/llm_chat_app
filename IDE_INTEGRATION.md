@@ -87,6 +87,7 @@
 | Generate Unit Tests | Right-click on selection |
 | Generate Commit Message | Git commit dialog |
 | Generate Terminal Command | Tools menu |
+| View Telemetry Health | IDE Status Bar (Hooks into `/v1/system/telemetry`) |
 
 ### Keyboard Shortcuts
 

@@ -15,13 +15,13 @@ export const App = {
 export function saveSession(user, token) {
     App.user = user;
     App.token = token;
-    localStorage.setItem('quantum_user', JSON.stringify(user));
-    localStorage.setItem('quantum_token', token);
+    sessionStorage.setItem('quantum_user', JSON.stringify(user));
+    sessionStorage.setItem('quantum_token', token);
 }
 
 export function loadSession() {
-    const savedUser = localStorage.getItem('quantum_user');
-    const savedToken = localStorage.getItem('quantum_token');
+    const savedUser = sessionStorage.getItem('quantum_user');
+    const savedToken = sessionStorage.getItem('quantum_token');
     if (savedUser && savedToken) {
         try {
             App.user = JSON.parse(savedUser);
@@ -35,8 +35,8 @@ export function loadSession() {
 }
 
 export function clearSession() {
-    localStorage.removeItem('quantum_user');
-    localStorage.removeItem('quantum_token');
+    sessionStorage.removeItem('quantum_user');
+    sessionStorage.removeItem('quantum_token');
     App.user = null;
     App.token = null;
 }

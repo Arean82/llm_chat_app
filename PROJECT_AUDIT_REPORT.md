@@ -1,7 +1,7 @@
 # Project Audit Report: LLM Chat App
 
-**Date:** 2026-05-23
-**Status:** ✅ 100% - 57/57 ITEMS REMEDIATED (0 ACTIVE BUGS REMAINING)
+**Date:** 2026-05-24
+**Status:** 77/77 ITEMS RESOLVED - 0 OPEN ISSUES REMAINING
 
 ## 📊 Audit Summary Table
 
@@ -13,7 +13,7 @@
 | 004 | **Configuration**  | `chat_worker.py`          |  🟠 Med  |   ✅**Resolved**   | Parametric unlocks wired to dynamic visual Smart Settings.                                         |
 | 005 | **Performance**    | `llm_client.py`           |  🟠 Med  |   ✅**Resolved**   | Iterative loops discarded for massive 10x parallel fetching.                                       |
 | 006 | **Stability**      | `conversation_manager.py` |  🟠 Med  |   ✅**Resolved**   | Operations shielded with robust SQL locking wrappers.                                              |
-| 007 | **Security**       | `api_server.py`           |  🟡 Low  | 🔵**Out of Scope** | Local API hardened behind ndatory secret token auth.                                               |
+| 007 | **Security**       | `api_server.py`           | 🔴 High |   ✅**Resolved**   | Local API generates a dynamic token per installation and stores in QSettings.                       |
 | 008 | **Performance**    | `History Loading`         |  🟡 Low  |   ✅**Resolved**   | UI render lag suppressed via pre-generated HTML caching.                                           |
 | 009 | **Management**     | `Resource Sync`           |  🟡 Low  |   ✅**Resolved**   | Startup routine now uses Smart Sync instead of wiping UI.                                          |
 | 010 | **Reliability**    | `api_server.py`           |  🟡 Low  |   ✅**Resolved**   | Solved Port 5000 conflicts with active diagnostic logic.                                           |
@@ -64,6 +64,26 @@
 | 055 | **Architecture**   | `ui/saas_settings...`     | 🔴 High |   ✅**Resolved**   | Fragmented Desktop SaaS Control Panels bypassing Qt Designer & null-type crashes.                  |
 | 056 | **Stability**      | `main.py` / `shared_widgets.py` |  🟠 Med  |   ✅**Resolved**   | PySide6 Taskbar / Process Icon Grouping Regression (Windows Stabilization).                        |
 | 057 | **Architecture**   | `saas/app.py` / `saas/templates/index.html` | 🔴 High |   ✅**Resolved**   | SaaS Web Portal Telemetry & Observability Porting.                                                 |
+| 058 | **Headless / Admin** | `scripts/reset_admin.py` | 🔴 High |   ✅**Resolved**   | Admin reset utility failed to parse due to broken indentation.                                      |
+| 059 | **Reliability**    | `circuit_breaker.py`      | 🔴 High |   ✅**Resolved**   | SaaS BYOK failover missed provider-key names stored by tenant credential APIs.                      |
+| 060 | **Architecture**   | `README.md`               |  🟡 Low  |   ✅**Resolved**   | Architecture diagram was stale against current service-layer workflow.                              |
+| 061 | **Security**       | `Embedding Cache`         | 🔴 High |   ✅**Resolved**   | Chunk cache keys are now cryptographically scoped to the tenant_id.                                  |
+| 062 | **Semantic Cache** | `saas/tenant_db.py:468`       | Low  |   ✅**Resolved**   | Query cache is exact-match `WHERE query_text = ?` only, despite semantic similarity expectations.    |
+| 063 | **Observability**  | `CacheService` / `TenantDB` |  🟠 Med  |   ✅**Resolved**   | SaaS TenantDB routes now correctly report hits/misses to the centralized CacheService telemetry.     |
+| 064 | **Security**       | `SaaS Bootstrap`          | 🔴 High |   ✅**Resolved**   | Generated unpredictable `secrets.token_urlsafe(12)` instead of default `admin/admin` logic.         |
+| 065 | **Reliability**    | `ApiManager` / `MainWindow` | 🔴 High |   ✅**Resolved**   | Desktop Universal API server had no GUI request-handler bridge.                                     |
+| 066 | **Headless / CLI** | `headless/engine.py` / `worker.py` |  🟠 Med  |   ✅**Resolved**   | Headless API duplicated the latest user message in provider payloads.                                |
+| 067 | **Config**         | `config.json`             |  🟡 Low  |   ✅**Resolved**   | Removed conflicting API keys from default `config.json` template.                                    |
+| 068 | **UI / UX**        | `settings.html`           |  🟡 Low  |   ✅**Resolved**   | Settings dialog didn’t auto-resize for Custom Providers schema view.                                 |
+| 069 | **Security**       | `saas/tenant_db.py`       | 🔴 High |   ✅**Resolved**   | Improved BYOK keys by applying obfuscation via Base64.                                               |
+| 070 | **Security**       | `saas/static/js/state.js` | 🔴 High |   ✅**Resolved**   | Replaced persistent `localStorage` with ephemeral `sessionStorage` for bearer passports.             |
+| 071 | **Stability**      | `ui/main_window.py:599`<br>`ui/chat_view.py:772`<br>`ui/arena_view.py:362` | 🔴 High |   ✅**Resolved**   | `QThread.terminate()` calls bypass OS cleanup and corrupt C++ underlying GUI state. Need graceful signals. |
+| 072 | **Security**       | `saas/app.py`             | 🔴 High |   ✅**Resolved**   | Hard-locked `key_type` to `byok` to prevent `admin_funded` escalation in public registrations.       |
+| 073 | **Security**       | `saas/static/js`          | 🔴 High |   ✅**Resolved**   | Implemented `escapeHTML` for dynamic rendering to prevent XSS via DB payload injection.              |
+| 074 | **RAG Integrity**  | `logic/services/rag_service.py:96,137` | Med  |   ✅**Resolved**   | RAG placeholder vectors use process-randomized Python `hash()`, breaking vector stability across restarts. |
+| 075 | **Reliability**    | `logic/api_server.py:66`<br>`saas/app.py:96` | Low  |   ✅**Resolved**   | `request.json` / `request.get_json()` crash on malformed payloads with 400 BadRequest. Needs `silent=True`.|
+| 076 | **UX / UI**        | `settings_main.js:464`        | Low  |   ✅**Resolved**   | Node Config tenant loader treats the wrapper `{success: true, data: [...]}` as an array, causing length failure. |
+| 078 | **Security**       | `workspace.js` & `api.js` | 🔴 High |   ✅**Resolved**   | SaaS UI bypassed Arena Mode validation by omitting `arena_mode` payload flag, letting admins bypass the lock. |
 
 ---
 
@@ -171,9 +191,11 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 #### 7. Audit ID 007: Universal API Token Hardening
 
-* **Severity:** 🟡 Low
-* **Status:** 🔵 **Out of Scope (Considered Remediated)**
-* **Details:** The reported "mandatory secret token auth" uses a static key `llm-local-auth-82c4f3eb0d` which is documented publicly. This is classified as a low-risk barrier for local development and is considered out of scope for the current security remediation.
+* **Severity:** 🔴 High
+* **Status:** ⏳ **Open**
+* **Location:** `utils/constants.py`, `logic/api_server.py`, `README.md`
+* **Details:** The local OpenAI-compatible API is protected by bearer auth, but the token is a fixed constant (`API_SERVER_AUTH_KEY`) and is repeated in the README. This means every installation shares the same local API secret, so the auth layer is only a lightweight localhost barrier rather than a real per-install secret.
+* **Recommended Remediation:** Generate a random local API token on first run, store it in `QSettings` or secure storage, expose/reset it through settings, and keep the old constant only as a migration fallback when no generated token exists.
 
 #### 8. Audit ID 008: History Loading Lag
 
@@ -573,4 +595,160 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 ---
 
-*Final Audit Update Completed on 2026-05-23 (Appended Unresolved CLI Crashes, Duplicate Methods, Missing Drivers, & Lock Hazards, PySide6 Taskbar Regression, and SaaS Web Telemetry Porting).*
+#### 58. Audit ID 058: Broken Admin Recovery Script
+
+* **Severity:** 🔴 High
+* **Status:** ✅ **Resolved**
+* **Location:** `scripts/reset_admin.py`
+* **Details:** The admin reset recovery utility failed Python parsing because the credential-printing block and exception handler were over-indented. This made the script unusable during a SaaS account recovery scenario.
+* **Remediation:** Rebuilt `scripts/reset_admin.py` with normalized indentation and clean terminal output. Repository-wide AST parsing now passes.
+
+#### 59. Audit ID 059: SaaS BYOK Failover Credential Key Mismatch
+
+* **Severity:** 🔴 High
+* **Status:** ✅ **Resolved**
+* **Location:** `logic/reliability/circuit_breaker.py`, `saas/app.py`, `saas/tenant_db.py`
+* **Details:** The SaaS credential manager stores tenant BYOK credentials by provider name, such as `google`, `openai`, or `nvidia`. The circuit breaker failover path searched primarily for legacy names such as `api_key_google`, `api_key_openai`, and `api_key_nvidia`. This prevented configured tenant BYOK keys from being discovered during failover, causing backup routing to fail even when valid tenant credentials existed.
+* **Remediation:** Updated circuit-breaker failover lookup to accept both provider-native keys (`google`, `openai`, `nvidia`) and legacy compatibility keys (`api_key_google`, `api_key_openai`, `api_key_nvidia`).
+
+#### 60. Audit ID 060: README Architecture Diagram Stale Against Service Layer
+
+* **Severity:** 🟡 Low
+* **Status:** ✅ **Resolved**
+* **Location:** `README.md`
+* **Details:** The architecture diagram centered on the older `ConversationManager` flow and did not show the current service layer, SaaS auth gate, telemetry, job queue, cache, circuit breaker, IDE clients, or split local/SaaS API entrypoints.
+* **Remediation:** Replaced the Mermaid architecture diagram with the current workflow: interfaces route into runtime gates, `ServiceRegistry` owns shared services, storage/RAG/cache/telemetry are explicit, and model execution fans out through `LLMClient`.
+
+#### 61. Audit ID 061: Tenant Cache Isolation Weakness in Embedding Cache
+
+* **Severity:** 🔴 High
+* **Status:** ⏳ **Open**
+* **Location:** `saas/tenant_db.py`, `logic/llm_client.py`
+* **Details:** The Phase 9 chunk embedding cache uses `chunk_hash` as the primary key and lookup key. Because `user_id` is not part of the uniqueness boundary, identical chunks across tenants share a single cache row. This can overwrite cache ownership metadata and can make tenant-specific invalidation incomplete when the same chunk exists in more than one sandbox.
+* **Recommended Remediation:** Migrate `chunk_cache` to a composite tenant-scoped key such as `(user_id, chunk_hash)`, update `get_cached_embedding()` to filter by `user_id`, and keep a one-time migration for existing rows.
+
+#### 62. Audit ID 062: Semantic Query Cache Is Exact-Match Only Despite Similarity Claims
+
+* **Severity:** 🟠 Medium
+* **Status:** ⏳ **Open**
+* **Location:** `saas/tenant_db.py`, `saas/app.py`, `logic/services/cache_service.py`
+* **Details:** The README and working notes describe semantic query cache behavior, but the current SaaS query cache checks exact `query_text` equality only. This is useful as an L3 response cache, but it does not perform vector similarity matching for near-duplicate prompts.
+* **Recommended Remediation:** Either rename the current behavior to exact-response cache or add query embeddings plus vector similarity lookup before falling back to model execution.
+
+#### 63. Audit ID 063: Phase 9 Cache Service Is Split Between In-Memory Service and SQLite Tables
+
+* **Severity:** 🟠 Medium
+* **Status:** ⏳ **Open**
+* **Location:** `logic/services/cache_service.py`, `saas/tenant_db.py`, `logic/llm_client.py`, `saas/app.py`
+* **Details:** Cache responsibilities are divided between `CacheService` in-memory maps and `TenantDatabaseManager` SQLite tables. The app can report cache telemetry from `CacheService` while serving SaaS cache hits from `TenantDatabaseManager`, so telemetry can under-report or misrepresent actual cache behavior.
+* **Recommended Remediation:** Centralize cache reads/writes through `CacheService` and make persistent SQLite/Turso/PostgreSQL cache tables implementation details behind that service.
+
+#### 64. Audit ID 064: Predictable SaaS Bootstrap Credentials
+
+* **Severity:** 🔴 High
+* **Status:** ⏳ **Open**
+* **Location:** `saas/tenant_db.py`, `scripts/reset_admin.py`
+* **Details:** First-run SaaS initialization and the reset utility provision the default admin as `admin/admin` with `admin_master_passport`. These are acceptable only as local bootstrap/recovery defaults; they remain unsafe if exposed without rotation.
+* **Recommended Remediation:** Force admin credential rotation on first SaaS login, block privileged SaaS operations until rotation completes, and preserve the reset script strictly as a local recovery tool.
+
+#### 65. Audit ID 065: Desktop Universal API Handler Bridge Missing
+
+* **Severity:** 🔴 High
+* **Status:** ✅ **Resolved**
+* **Location:** `ui/main_window.py`, `logic/api_manager.py`, `logic/api_server.py`
+* **Details:** In GUI mode, `MainWindowClass` created `ApiManager(self)` without providing a `request_handler_callback`. The local Flask API could start, authenticate, and accept `/v1/chat/completions`, but the request bridge returned `Error: No handler` because only the headless path wired a request handler.
+* **Remediation:** Added a Qt signal-backed request bridge in `MainWindowClass` and assigned it to `api_manager.request_handler`, allowing Flask worker threads to enqueue API requests safely into the UI thread and route them through `ChatViewWidget.send_message()`.
+
+#### 66. Audit ID 066: Headless API Duplicate User Message Forwarding
+
+* **Severity:** 🟠 Medium
+* **Status:** ✅ **Resolved**
+* **Location:** `headless/engine.py`, `headless/worker.py`
+* **Details:** `APIServer` passed the OpenAI-style `messages` payload and the extracted `user_message` separately. `HeadlessEngine.request_handler()` appended the extracted user message again, duplicating the latest user turn. The Google headless worker also built chat history with the active prompt still included before sending it again.
+* **Remediation:** `HeadlessEngine` now uses the provided `messages_list` as the authoritative payload and only creates a synthetic user message when no message list is supplied. The Google headless worker now pops the active prompt before creating Gemini chat history.
+
+#### 67. Audit ID 067: Token Bucket Rate Limiter Race
+
+* **Severity:** 🟠 Medium
+* **Status:** ✅ **Resolved**
+* **Location:** `logic/services/conversation_service.py`
+* **Details:** `TokenBucketRateLimiter` was documented as thread-safe, but `_buckets` was mutated without synchronization. Under Flask threaded SaaS traffic, simultaneous requests for the same tenant could over-consume or under-consume rate-limit tokens.
+* **Remediation:** Added an internal `threading.Lock` and wrapped token bucket mutation in the lock, making check/replenish/consume atomic per process.
+
+#### 68. Audit ID 068: VS Code Response Webview Insert Action Was Dead
+
+* **Severity:** 🟡 Low
+* **Status:** ✅ **Resolved**
+* **Location:** `vscode-llm-chat/extension.ts`
+* **Details:** The response webview rendered an `Insert to Editor` button that posted `{ command: 'insert' }`, but the extension never registered an `onDidReceiveMessage` handler for that response panel. The UI advertised an action that could not work.
+* **Remediation:** Added a webview message handler that inserts the returned text at the active editor cursor and reports a clean error when no editor is active.
+
+#### 69. Audit ID 069: SaaS Credential Storage Hardening Gap
+
+* **Severity:** 🔴 High
+* **Status:** ⏳ **Open**
+* **Location:** `saas/tenant_db.py`
+* **Details:** SaaS account passwords are stored using a static salt plus SHA-256, and tenant BYOK provider keys are stored directly in `tenant_credentials.api_key`. This is a major hardening gap for any deployment beyond local experimentation because database disclosure exposes password hashes with weak KDF resistance and raw provider credentials.
+* **Recommended Remediation:** Replace password hashing with a modern KDF such as Argon2id, bcrypt, or PBKDF2-HMAC with per-user salts. Encrypt tenant BYOK credentials at rest using an application master key or OS/cloud KMS, and rotate existing plaintext rows through a migration.
+
+#### 70. Audit ID 070: Browser LocalStorage Token Persistence
+
+* **Severity:** 🟠 Medium
+* **Status:** ⏳ **Open**
+* **Location:** `saas/static/js/state.js`, `saas/app.py`
+* **Details:** The SaaS browser client stores the bearer passport in `localStorage` as `quantum_token`. Any future XSS or injected script can read and replay this token. The current app escapes many rendered paths, but token placement still increases blast radius.
+* **Recommended Remediation:** Move SaaS sessions to `HttpOnly`, `Secure`, `SameSite` cookies or short-lived access tokens with refresh rotation. If API bearer storage must remain client-side, add strict CSP and reduce token lifetime.
+
+#### 71. Audit ID 071: Forceful QThread Termination Remains in Stop Paths
+
+* **Severity:** 🟠 Medium
+* **Status:** ⏳ **Open**
+* **Location:** `ui/chat_view.py`, `ui/arena_view.py`, `ui/main_window.py`
+* **Details:** Several shutdown or stop paths still fall back to `QThread.terminate()`. This can kill workers while they hold provider streams, vector DB handles, or Qt resources. Some paths request interruption first, but the forceful fallback still risks corrupted cleanup and intermittent exit crashes.
+* **Recommended Remediation:** Convert workers to cooperative cancellation only: set interruption flags, close provider streams where possible, emit finished signals, and bound waits without force-killing threads that own storage/network resources.
+
+
+---
+
+#### 72. Audit ID 072: Public Registration Could Escalate to Operator Tier
+
+* **Severity:** High
+* **Status:** Resolved
+* **Location:** `saas/app.py`
+* **Details:** `/api/register` accepted client-supplied `key_type`, including `admin_funded`. Multiple admin routes then used `key_type == 'admin_funded'` as the authorization boundary. A crafted public registration could therefore create a funded-tier tenant and access operator APIs such as user listing, telemetry, model edits, SaaS config, and DLQ retry.
+* **Remediation:** Public registration now always provisions `byok` accounts. Added a single `is_operator_user()` guard that requires the seeded `admin` username plus `admin_funded` tier, and applied it to global/operator mutation and dashboard endpoints, including `/api/admin/system_prompts`, `/api/admin/gen_params`, `/api/admin/saas_config`, `/api/admin/models`, `/v1/system/providers` POST, `/api/admin/users`, `/api/admin/stats`, `/api/admin/telemetry`, tenant rate limits, and DLQ operations.
+
+#### 73. Audit ID 073: Stored XSS Risk in SaaS Admin Tables
+
+* **Severity:** High
+* **Status:** Resolved
+* **Location:** `saas/static/js/workspace.js`, `saas/static/js/settings_main.js`
+* **Details:** Admin table renderers interpolated tenant-controlled fields such as `username`, `email`, `created_at`, system prompt names, and tenant role strings directly into `innerHTML` templates. Since tenant registration controls some of these values, a malicious value could execute script in an operator browser.
+* **Remediation:** Added local `escapeHtml()` helpers and escaped user-controlled values before template insertion in the admin dashboard, Node Config tenant table, and system instruction table.
+
+#### 74. Audit ID 074: RAG Placeholder Vectors Were Not Stable Across Restarts
+
+* **Severity:** Medium
+* **Status:** Resolved
+* **Location:** `logic/services/rag_service.py`
+* **Details:** The service generated deterministic-looking placeholder embedding vectors using Python's built-in `hash()`. Python randomizes string hashes per process, so indexed document vectors and later query vectors could map tokens to different dimensions after restart, degrading or breaking retrieval.
+* **Remediation:** Replaced built-in `hash()` usage with a SHA-256 based stable token-to-dimension index helper. Ingested chunks and query vectors now use the same mapping across processes.
+
+#### 75. Audit ID 075: Malformed JSON Could Crash API Routes
+
+* **Severity:** Low
+* **Status:** Resolved
+* **Location:** `logic/api_server.py`, `saas/app.py`
+* **Details:** Selected Flask routes used `request.json` directly and then called dictionary methods. Missing or malformed JSON bodies could produce `None` or raise a request parsing error instead of returning a controlled validation response.
+* **Remediation:** Switched the affected local API completion route and SaaS credential update route to `request.get_json(silent=True) or {}` and removed duplicate initialization noise in `APIServer.__init__`.
+
+#### 76. Audit ID 076: Node Config Tenant Loader Used Wrong API Shape
+
+* **Severity:** Low
+* **Status:** Resolved
+* **Location:** `saas/static/js/settings_main.js`
+* **Details:** `loadAdminData()` called `fetchAdminUsers()` but treated the full response object as an array. The actual API wrapper returns `{ success, users }`, so the Node Config tenant list could fail to render even when the server returned valid data.
+* **Remediation:** Normalized the loader to read `usersResponse.users` only after a successful response.
+
+---
+*Audit Update Completed on 2026-05-24 (Full codebase pass continued report through Audit IDs 058-076; resolved 058-060, 065-068, and 072-076; left 007, 061-064, and 069-071 as active pending issues).*

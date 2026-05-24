@@ -20,8 +20,8 @@
 ## 🧬 2. Local-First Data & Hybrid RAG Boundaries
 
 * **Offline Vector Space:** The Retrieval-Augmented Generation (RAG) engine performs all dense vector encoding, parsing, and indexing strictly on your local hardware.
-* **Native Vector Matrices:** We leverage specialized **NumPy** algebra and **Qdrant Vector Database** instances pinned strictly to your verified local filesystem. No document data, PDF snippets, or corporate CSV spreadsheets are ever transmitted to external cloud RAG services.
-* **Isolated SQLite Backend:** Chat logs, caches, and histories are stored in a transactional, zero-network SQLite database operating in Write-Ahead Logging (WAL) mode.
+* **Native Vector Matrices:** We leverage specialized **NumPy** algebra and **Qdrant Vector Database** instances pinned strictly to your verified local filesystem. No document data, PDF snippets, or corporate CSV spreadsheets are ever transmitted to external cloud RAG services. Furthermore, all local vectors use deterministic MD5 hashing to guarantee consistency across process restarts.
+* **Isolated SQLite Backend:** Chat logs, caches, and histories are stored in a transactional, zero-network SQLite backend operating in Write-Ahead Logging (WAL) mode. RAG queries leverage Jaccard-similarity semantic caches for high-speed resolution.
 
 ---
 
@@ -29,6 +29,7 @@
 
 * **Decoupled Runtime Process:** The "Run Prototype" engine converts LLM generated code into functioning GUI layouts.
 * **OS Fork Injection:** To prevent memory corruption or thread locking, each sandbox session spawns an isolated, external host `QProcess` thread entirely independent of the main user interface event loop.
+* **Safe Thread Signaling:** All concurrent background workers (e.g., streaming ingestion, vector syncs) utilize safe `requestInterruption()` signaling rather than forceful OS-level termination, guaranteeing absolute C++ state and memory stability.
 * **Manual Triggering:** Code execution is strictly user-initiated via physical mouse interaction on generated anchor tags; arbitrary code block rendering never triggers passive execution.
 
 ---
@@ -37,8 +38,8 @@
 
 * **Local Host Locking:** The integrated Flask local gateway binds strictly to the `127.0.0.1` loopback interface (localhost). It is structurally incapable of accepting requests over the public internet or local LAN.
 * **Mandatory Auth Key Header:** All incoming IDE extension connections are validated against dynamic, secure secret tokens. Non-authenticating ingresses are rejected instantly with `401 Unauthorized`.
-* **OS-Level Secrets Vaulting (V2.0.0 IDE Extensions):** The refactored IDE extensions completely eliminate hardcoded developer token keys. Instead, they integrate with native host OS keychains (using `ExtensionContext.secrets` in VS Code and the `PasswordSafe` / `CredentialAttributes` API in JetBrains IntelliJ) to store dynamic tenant Bearer Passports securely encrypted at rest.
-* **SaaS Multi-Tenant Isolation:** Dynamic gateway queries include user-specific tenant passports in the `Authorization: Bearer <token>` header. The SaaS server intercepts these calls to route prompt queries and RAG operations into isolated physical sandboxes, preventing semantic or history cross-contamination between remote accounts.
+* **OS-Level Secrets Vaulting (V2.0.0+ IDE Extensions):** The IDE extensions completely eliminate hardcoded developer token keys. Instead, they integrate with native host OS keychains (using `ExtensionContext.secrets` in VS Code and the `PasswordSafe` / `CredentialAttributes` API in JetBrains IntelliJ) to store dynamic tenant Bearer Passports securely encrypted at rest.
+* **SaaS Multi-Tenant Isolation:** Dynamic gateway queries include user-specific tenant passports in the `Authorization: Bearer <token>` header. The SaaS server intercepts these calls to route prompt queries and RAG operations into isolated physical sandboxes, preventing semantic or history cross-contamination between remote accounts. Web portals employ ephemeral `sessionStorage` (instead of `localStorage`) to protect against persistent XSS credential theft.
 
 ---
 

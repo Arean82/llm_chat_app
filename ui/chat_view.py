@@ -129,7 +129,6 @@ class ChatViewWidget(QWidget):
         """Safely stops background workers to prevent crashes on exit."""
         worker = self.current_worker
         if worker and worker.isRunning():
-            worker.terminate()
             worker.wait()
         if hasattr(self, 'vector_sync_thread') and self.vector_sync_thread and self.vector_sync_thread.isRunning():
             # Don't terminate vector thread forcefully to avoid DB corruption
@@ -768,8 +767,7 @@ class ChatViewWidget(QWidget):
         if w and w.isRunning():
             w.requestInterruption()
             w.quit()
-            w.wait(3000)
-            if w.isRunning(): w.terminate()
+            w.wait()
             
         self.remove_typing_indicator()
         self.chat_display.append(f"<br><i style='color: {self.theme_manager.get_terminate_color()};'>⏹️ Terminated</i><br>")

@@ -23,7 +23,17 @@ class APIServer:
         self.setup_security()
     
     def setup_security(self):
-        from utils.constants import API_SERVER_AUTH_KEY
+        from utils.path_utils import get_app_settings
+        import uuid
+        
+        settings = get_app_settings()
+        # Get existing key or generate a new one
+        api_key = settings.value("local_api_auth_key", "")
+        if not api_key:
+            api_key = f"llm-local-auth-{uuid.uuid4().hex[:10]}"
+            settings.setValue("local_api_auth_key", api_key)
+            settings.sync()
+            
         @self.app.before_request
         def verify_auth():
             # Exempt health endpoint if needed, or lock everything down
@@ -31,7 +41,10 @@ class APIServer:
                 return None
             
             auth_header = request.headers.get('Authorization')
-            expected = f"Bearer {API_SERVER_AUTH_KEY}"
+            
+            # Fetch the dynamic key
+            current_key = settings.value("local_api_auth_key", "")
+            expected = f"Bearer {current_key}"
             
             if not auth_header or auth_header != expected:
                 return jsonify({"error": "Unauthorized. Invalid local API key."}), 401
@@ -50,7 +63,7 @@ class APIServer:
         
         @self.app.route('/v1/chat/completions', methods=['POST'])
         def chat_completion():
-            data = request.json
+            data = request.get_json(silent=True) or {}
             messages = data.get('messages', [])
             stream = data.get('stream', False)
             temperature = data.get('temperature', 0.7)

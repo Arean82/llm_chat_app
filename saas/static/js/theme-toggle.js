@@ -1,7 +1,7 @@
 // theme-toggle.js - Handles dark/light theme switching
 
 export function initThemeToggle() {
-    const savedTheme = localStorage.getItem('quantum_theme') || 'dark';
+    const savedTheme = localStorage.getItem('quantum_theme') || 'light';
     document.body.className = `theme-${savedTheme}`;
     updateToggleIcons();
 }

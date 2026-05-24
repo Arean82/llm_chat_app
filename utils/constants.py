@@ -15,8 +15,6 @@ DEFAULT_TIMEOUT = 60
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 GOOGLE_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
-# Universal API Server Security
-API_SERVER_AUTH_KEY = "llm-local-auth-82c4f3eb0d"
 
 # Connection settings
 CONNECTION_CHECK_INTERVAL_CONNECTED_MS = 10000

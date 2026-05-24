@@ -362,8 +362,15 @@ async function dispatchDualPrompt(text) {
             }
             messagesPayload.push({ role: 'user', content: text });
             
-            const response = await initiateChatStream(App.token, modelId, messagesPayload, useWebSearch);
-            if (!response.ok) throw new Error("Stream connection failed.");
+            const response = await initiateChatStream(App.token, modelId, messagesPayload, useWebSearch, true);
+            if (!response.ok) {
+                let errStr = "Stream connection failed.";
+                try {
+                    const errData = await response.json();
+                    errStr = errData.error || errData.message || errStr;
+                } catch (e) {}
+                throw new Error(errStr);
+            }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
@@ -524,17 +531,23 @@ export async function pollAdminTelemetryAndDLQ() {
                         </tr>
                     `;
                 } else {
+                    const escapeHTML = (str) => {
+                        if (!str) return '';
+                        return String(str).replace(/[&<>'"]/g, tag => ({
+                            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                        }[tag] || tag));
+                    };
                     dlqTable.innerHTML = '';
                     dlqRes.dlq.forEach(entry => {
                         dlqTable.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 10px; font-family: monospace; font-size: 0.8rem; color: var(--accent-cyan);">${entry.job_id}</td>
-                                <td style="padding: 10px;">${entry.tenant_id}</td>
-                                <td style="padding: 10px;"><span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${entry.task_type}</span></td>
-                                <td style="padding: 10px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${entry.error}\n\n${entry.stack_trace || ''}">
-                                    <code style="color: #e74c3c; font-size: 0.8rem;">${entry.error}</code>
+                                <td style="padding: 10px; font-family: monospace; font-size: 0.8rem; color: var(--accent-cyan);">${escapeHTML(entry.job_id)}</td>
+                                <td style="padding: 10px;">${escapeHTML(entry.tenant_id)}</td>
+                                <td style="padding: 10px;"><span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${escapeHTML(entry.task_type)}</span></td>
+                                <td style="padding: 10px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHTML(entry.error)}\n\n${escapeHTML(entry.stack_trace || '')}">
+                                    <code style="color: #e74c3c; font-size: 0.8rem;">${escapeHTML(entry.error)}</code>
                                 </td>
-                                <td style="padding: 10px; color: var(--text-dim); font-size: 0.8rem;">${entry.timestamp}</td>
+                                <td style="padding: 10px; color: var(--text-dim); font-size: 0.8rem;">${escapeHTML(entry.timestamp)}</td>
                                 <td style="padding: 10px; text-align: right;">
                                     <button class="btn-retry-dlq btn-new" data-job-id="${entry.job_id}" style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: var(--accent-success); color: black; font-weight: 600; margin: 0;"><i class="fa-solid fa-rotate-left"></i> Retry</button>
                                 </td>
@@ -569,6 +582,12 @@ export async function loadAdminDashboard() {
         ]);
 
         if (usersRes.success && table) {
+            const escapeHTML = (str) => {
+                if (!str) return '';
+                return String(str).replace(/[&<>'"]/g, tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[tag] || tag));
+            };
             table.innerHTML = '';
             usersRes.users.forEach(u => {
                 const tierClass = u.key_type === 'admin_funded' ? 'admin' : 'byok';
@@ -577,12 +596,12 @@ export async function loadAdminDashboard() {
                 const rpmVal = u.requests_per_minute_limit !== undefined ? u.requests_per_minute_limit : 0;
                 table.innerHTML += `
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 10px;">${u.id}</td>
-                        <td style="padding: 10px; font-weight:600;">${u.username}</td>
-                        <td style="padding: 10px; color:var(--text-muted);">${u.email}</td>
+                        <td style="padding: 10px;">${escapeHTML(u.id)}</td>
+                        <td style="padding: 10px; font-weight:600;">${escapeHTML(u.username)}</td>
+                        <td style="padding: 10px; color:var(--text-muted);">${escapeHTML(u.email)}</td>
                         <td style="padding: 10px;"><span class="key-tag ${tierClass}">${tierLabel}</span></td>
                         <td style="padding: 10px;">${activeHtml}</td>
-                        <td style="padding: 10px; color:var(--text-dim);">${u.created_at}</td>
+                        <td style="padding: 10px; color:var(--text-dim);">${escapeHTML(u.created_at)}</td>
                         <td style="padding: 10px; text-align: right;">
                             <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
                                 <input type="number" class="tenant-rpm-input" data-tenant-id="${u.id}" value="${rpmVal}" style="width: 70px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow); color: var(--text-bright); border-radius: 4px; padding: 4px 8px; font-family: monospace; outline: none; text-align: center;">

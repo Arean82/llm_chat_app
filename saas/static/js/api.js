@@ -25,7 +25,7 @@ export async function updateProfile(token, username, apiKey, password) {
     return resp.json();
 }
 
-export async function initiateChatStream(token, model, messages, webSearch = false) {
+export async function initiateChatStream(token, model, messages, webSearch = false, arenaMode = false) {
     return fetch('/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -36,7 +36,8 @@ export async function initiateChatStream(token, model, messages, webSearch = fal
             model: model,
             messages: messages,
             stream: true,
-            web_search: webSearch
+            web_search: webSearch,
+            arena_mode: arenaMode
         })
     });
 }

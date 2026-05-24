@@ -128,15 +128,21 @@ class TenantDatabaseManager:
             # 4. SEED DEFAULT SUPER ADMIN (Critical First-Run Bootloader Fix)
             cursor = conn.execute("SELECT COUNT(*) FROM users")
             if cursor.fetchone()[0] == 0:
-                # Dynamically hash the default administrative password
-                admin_hash = TenantDatabaseManager.hash_password("admin")
+                import secrets
+                default_password = secrets.token_urlsafe(12)
+                admin_hash = TenantDatabaseManager.hash_password(default_password)
                 try:
                     conn.execute("""
                         INSERT INTO users (username, email, password_hash, api_key, key_type)
                         VALUES (?, ?, ?, ?, ?)
                     """, ("admin", "admin@quantum-saas.local", admin_hash, "admin_master_passport", "admin_funded"))
                     conn.commit()
-                    print("[SQL Seeder]: Successfully provisioned default Super Admin account (admin/admin).")
+                    print(f"===========================================================")
+                    print(f"[SECURITY NOTIFICATION]: Default Super Admin Provisioned")
+                    print(f"Username: admin")
+                    print(f"Password: {default_password}")
+                    print(f"PLEASE SAVE THIS PASSWORD SECURELY.")
+                    print(f"===========================================================")
                 except Exception as e:
                     print(f"[SQL Warning]: Super Admin provisioning aborted: {e}")
 
@@ -147,6 +153,19 @@ class TenantDatabaseManager:
         """Secure SHA-256 salted password hashing routine."""
         salt = "SaaS_Passport_Salt_v7_"
         return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
+
+    @staticmethod
+    def encrypt_byok(key: str) -> str:
+        import base64
+        return base64.b64encode(key.encode('utf-8')).decode('utf-8')
+        
+    @staticmethod
+    def decrypt_byok(cipher: str) -> str:
+        import base64
+        try:
+            return base64.b64decode(cipher.encode('utf-8')).decode('utf-8')
+        except:
+            return cipher
 
     # --- CORE MULTI-TENANT GATEWAYS ---
 
@@ -330,14 +349,14 @@ class TenantDatabaseManager:
                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT(user_id, provider) DO UPDATE SET
                     api_key=excluded.api_key, updated_at=CURRENT_TIMESTAMP
-                """, (user_id, provider, api_key))
+                """, (user_id, provider, TenantDatabaseManager.encrypt_byok(api_key)))
             conn.commit()
             
     def get_tenant_credentials(self, user_id: int) -> dict:
         """Retrieves all BYOK LLM provider credentials for a specific tenant."""
         with self.get_connection() as conn:
             cursor = conn.execute("SELECT provider, api_key FROM tenant_credentials WHERE user_id = ?", (user_id,))
-            return {row['provider']: row['api_key'] for row in cursor.fetchall()}
+            return {row['provider']: TenantDatabaseManager.decrypt_byok(row['api_key']) for row in cursor.fetchall()}
 
     # --- ADMIN ROUTINES ---
 
@@ -447,11 +466,31 @@ class TenantDatabaseManager:
             conn.commit()
 
     def get_semantic_cache_hit(self, query_text: str, user_id: int):
-        with self.get_connection() as conn:
-            row = conn.execute("SELECT response_text FROM semantic_query_cache WHERE user_id = ? AND query_text = ?", (user_id, query_text)).fetchone()
-            if row:
-                return row['response_text']
+        import re
+        q_tokens = set(re.findall(r'\w+', query_text.lower()))
+        if not q_tokens:
             return None
+            
+        with self.get_connection() as conn:
+            rows = conn.execute("SELECT query_text, response_text FROM semantic_query_cache WHERE user_id = ?", (user_id,)).fetchall()
+            
+            best_match = None
+            highest_sim = 0.0
+            
+            for row in rows:
+                c_text = row['query_text']
+                c_tokens = set(re.findall(r'\w+', c_text.lower()))
+                if not c_tokens: continue
+                
+                union = q_tokens.union(c_tokens)
+                if not union: continue
+                
+                similarity = len(q_tokens.intersection(c_tokens)) / len(union)
+                if similarity > 0.85 and similarity > highest_sim:
+                    highest_sim = similarity
+                    best_match = row['response_text']
+                    
+            return best_match
 
     def set_semantic_cache_hit(self, query_text: str, user_id: int, response_text: str):
         with self.get_connection() as conn:

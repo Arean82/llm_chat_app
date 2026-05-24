@@ -359,8 +359,14 @@ class ArenaViewWidget(QWidget):
              self.chat_a.setStyleSheet(base_styles + "\nQTextEdit { border: 1px solid #ccc; border-radius: 8px; opacity: 0.5; }")
 
     def stop_duel(self):
-        if self.worker_a and self.worker_a.isRunning(): self.worker_a.terminate()
-        if self.worker_b and self.worker_b.isRunning(): self.worker_b.terminate()
+        if self.worker_a and self.worker_a.isRunning(): 
+            self.worker_a.requestInterruption()
+            self.worker_a.quit()
+            self.worker_a.wait()
+        if self.worker_b and self.worker_b.isRunning(): 
+            self.worker_b.requestInterruption()
+            self.worker_b.quit()
+            self.worker_b.wait()
         self.is_generating = False
         self.check_all_finished()
         self.ui.stats_a.setText("Stopped.")

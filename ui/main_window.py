@@ -596,11 +596,13 @@ class MainWindowClass(QMainWindow):
 
         # 2. Graceful Thread Teardown
         if hasattr(self, 'connection_worker'):
-            self.connection_worker.terminate()
+            self.connection_worker.requestInterruption()
+            self.connection_worker.quit()
             self.connection_worker.wait()
         
         if hasattr(self, 'local_detector') and self.local_detector.isRunning():
-            self.local_detector.terminate()
+            self.local_detector.requestInterruption()
+            self.local_detector.quit()
             self.local_detector.wait()
         
         # 3. Stop any active dual workers in arena just in case
@@ -653,14 +655,15 @@ class MainWindowClass(QMainWindow):
             pass
         
         # 1. Stop global window-level workers
-        if hasattr(self, 'connection_worker') and self.connection_worker.isRunning():
-            self.connection_worker.stop()
+        if hasattr(self, 'connection_worker'):
+            self.connection_worker.requestInterruption()
             self.connection_worker.quit()
-            self.connection_worker.wait(2000)
+            self.connection_worker.wait()
             
         if hasattr(self, 'local_detector') and self.local_detector.isRunning():
-            self.local_detector.terminate()
-            self.local_detector.wait(2000)
+            self.local_detector.requestInterruption()
+            self.local_detector.quit()
+            self.local_detector.wait()
             
         # 1.5 Stop background SaaS Server
         if hasattr(self, 'saas_server') and self.saas_server.running:
