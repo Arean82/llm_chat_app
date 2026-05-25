@@ -18,11 +18,13 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 
 ## ✨ Features
 
+- ☁️ **SaaS Multi-Tenant Gateway:** An enterprise-grade web orchestration layer supporting Admin Vault and BYOK (Bring Your Own Key) tiers. Features real-time telemetry, Dead Letter Queues (DLQ), live worker metrics, and physical tenant isolation.
+- ✨ **Premium Glassmorphic UI:** Stunning 4K visual design featuring dynamic glowing gradients, micro-animations, and seamless Dark/Light theme switching for both the Desktop and Web environments.
 - ⚔️ **AI Model Arena:** Brand-new competitive benchmark engine. Run dual LLMs concurrently side-by-side with real-time visual comparison, blind-mode evaluation, and victory elections.
 - 🧬 **Hybrid Vector RAG Memory:** Deep long-term recollections. Synthesizes high-velocity NumPy TF-IDF crawls with industrial-grade, local Qdrant Vector Database storage for persistent semantic retrieval.
 - 🛠️ **Interactive Python Sandbox:** Secure, decoupled execution environment. Spawns fully-isolated processes to automatically compile and execute generated Python and PySide GUI codebases safely on your desktop.
 - ⚡ **Zero-Config Auto-Sweep:** Automated discovery of Ollama and LM Studio servers. A non-blocking, isolated background sweeper intelligently probes local ports to sync offline libraries with zero user configuration.
-- 🤖 **Scalable Architecture (V6):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
+- 🤖 **Scalable Architecture (V7.2):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
 - 🎛️ **Dynamic Capability-Based Filtering:** Intelligently filter models by **General Chat**, **Supports Tools**, **Vision/Multimodal**, **Embeddings**, **Rerankers**, or **Audio/Voice** using a unified, re-ordered UI filter that prioritizes active conversational models first.
 - 📂 **Universal Model Cataloging:** Dynamically auto-classifies and indexes non-chat models from API endpoints during background fetches. The chat selection popup remains cleanly partitioned (strictly showing chat-capable models), while specialized layers (Embeddings, Rerankers, Audio) are cataloged for backend integrations.
 - 🔍 **Pluggable Two-Stage Reranking Pipeline:** Maximizes code context and prompt grounding precision. Pairs candidate retrieval (Top 20) with high-recall cross-encoder rerankers (Local BGE / Cloud Cohere / Custom OpenAPI-compatible endpoints), featuring Hybrid A Structural Code Bias (scoring class/def blocks higher) and Hybrid B Diversity MMR (Maximal Marginal Relevance) overlap pruning.
@@ -293,114 +295,7 @@ llm_chat_app/
 
 The application leverages a fully-isolated, multi-threaded modular chassis designed to support concurrent operations across multiple interfaces without database locking or UI freezing:
 
-```mermaid
-graph TD
-    %% Interface Layer
-    subgraph Interfaces ["Interface Layer"]
-        GUI["PySide6 Desktop GUI<br>Chat, Arena, Settings, SaaS Console"]
-        CLI["Terminal CLI<br>Headless auth, model commands, chat loop"]
-        LocalAPI["Local OpenAI-Compatible API<br>logic/api_server.py :5000"]
-        SaaS["Flask SaaS Portal/API<br>saas/app.py"]
-        IDE["VS Code / JetBrains Extensions<br>Dynamic gateway settings"]
-    end
-
-    %% Runtime Layer
-    subgraph Runtime ["Runtime Orchestration"]
-        MW["MainWindow + UI Workers<br>ChatWorker, model fetchers, vector indexer"]
-        HEngine["HeadlessEngine<br>CLI/API lifecycle"]
-        APIAuth["Bearer / Passport Auth Gates"]
-        Registry["ServiceRegistry<br>shared service lifecycle"]
-    end
-
-    %% Services
-    subgraph Services ["Shared Service Layer"]
-        ConvSvc["ConversationService<br>completion, rate limit, telemetry hooks"]
-        AuthSvc["AuthService<br>tenant auth and BYOK credentials"]
-        StorageSvc["StorageService<br>driver selection and tenant sharding"]
-        RAGSvc["RAGService<br>ingestion, hybrid retrieval, reranking"]
-        CacheSvc["CacheService<br>query/cache hash registry"]
-        Telemetry["TelemetryManager<br>metrics and health checks"]
-        Breaker["CircuitBreaker<br>provider failover"]
-        Queue["JobQueueEngine<br>background ingestion + DLQ"]
-    end
-
-    %% Compatibility/Core Model Layer
-    subgraph ModelCore ["Model and Compatibility Layer"]
-        LegacyMgr["ConversationManager<br>desktop history compatibility"]
-        LLM["LLMClient<br>OpenAI-compatible + Google GenAI router"]
-        Models["Model IO<br>provider metadata + model shards"]
-    end
-
-    %% Storage
-    subgraph Storage ["Storage and Memory"]
-        Driver["BaseStorageDriver"]
-        SQLite["LocalSQLiteDriver<br>local fallback / SaaS metadata WAL"]
-        LibSQL["LibSQLStorageDriver<br>Turso/local libSQL"]
-        Postgres["PostgreSQLStorageDriver<br>enterprise MVCC"]
-        TenantDB[("saas_tenants.db<br>users, credentials, telemetry/cache tables")]
-        ChatDB[("tenant chat history<br>chat_history.db or remote shard")]
-        VectorDB[("Qdrant local vector_db<br>tenant collections")]
-    end
-
-    %% Providers
-    subgraph Providers ["Execution Providers"]
-        OpenAI["OpenAI-compatible APIs<br>NVIDIA, OpenAI, Groq, custom"]
-        Google["Google GenAI SDK"]
-        LocalModels["Local runtimes<br>Ollama / LM Studio"]
-    end
-
-    IDE --> LocalAPI
-    IDE --> SaaS
-    GUI --> MW
-    CLI --> HEngine
-    LocalAPI --> APIAuth
-    SaaS --> APIAuth
-    APIAuth --> Registry
-    MW --> LegacyMgr
-    MW --> Registry
-    HEngine --> Registry
-
-    Registry --> ConvSvc
-    Registry --> AuthSvc
-    Registry --> StorageSvc
-    Registry --> RAGSvc
-    Registry --> CacheSvc
-    Registry --> Telemetry
-    Registry --> Breaker
-    Queue --> RAGSvc
-
-    ConvSvc --> LLM
-    ConvSvc --> StorageSvc
-    ConvSvc --> RAGSvc
-    ConvSvc --> Breaker
-    LegacyMgr --> Driver
-    StorageSvc --> Driver
-    RAGSvc --> VectorDB
-    RAGSvc --> CacheSvc
-    AuthSvc --> TenantDB
-
-    Driver --> SQLite
-    Driver --> LibSQL
-    Driver --> Postgres
-    SQLite --> ChatDB
-    LibSQL --> ChatDB
-    Postgres --> ChatDB
-
-    LLM --> Models
-    LLM --> OpenAI
-    LLM --> Google
-    LLM --> LocalModels
-
-    Telemetry --> TenantDB
-    CacheSvc --> TenantDB
-
-    style Interfaces fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
-    style Runtime fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
-    style Services fill:#11111b,stroke:#a6adc8,stroke-width:2px,color:#cdd6f4
-    style ModelCore fill:#0f0f17,stroke:#f9e2af,stroke-width:2px,color:#cdd6f4
-    style Storage fill:#101820,stroke:#94e2d5,stroke-width:2px,color:#cdd6f4
-    style Providers fill:#171421,stroke:#fab387,stroke-width:2px,color:#cdd6f4
-```
+![Quantum Architecture Diagram](resources/arch_diagram.png)
 
 ### 🧱 Three-Tier Modular System Layout:
 
