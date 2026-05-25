@@ -1,5 +1,6 @@
 # ui/gen_settings_dialog.py
 import os
+import uuid
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QDoubleSpinBox, QSpinBox, QComboBox, QLabel, QPushButton, QCheckBox
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QFile, QSettings, Qt
@@ -161,8 +162,96 @@ class GenSettingsDialog(QDialog):
             self.cancel_btn.clicked.connect(self.reject)
         
         self.setup_rerank_ui(is_dark)
+        self.setup_api_credentials_ui()
         self.load_current_settings()
         
+    def setup_api_credentials_ui(self):
+        from PySide6.QtWidgets import QTextEdit, QPushButton
+        self.api_key_display = self.findChild(QTextEdit, "api_key_display")
+        self.toggle_api_btn = self.findChild(QPushButton, "toggle_api_btn")
+        self.regen_key_btn = self.findChild(QPushButton, "regen_key_btn")
+        
+        if not (self.api_key_display and self.toggle_api_btn and self.regen_key_btn):
+            return
+            
+        settings = get_app_settings()
+        
+        # Load state
+        self.api_enabled = str(settings.value("api_enabled", "true")).lower() == "true"
+        current_key = settings.value("local_api_auth_key", "")
+        if not current_key:
+            current_key = f"llm-local-auth-{uuid.uuid4().hex[:10]}"
+            settings.setValue("local_api_auth_key", current_key)
+            settings.sync()
+            
+        self.api_key_display.setText(current_key)
+        self.update_api_buttons_ui()
+        
+        # Connect signals
+        self.toggle_api_btn.clicked.connect(self.on_toggle_api)
+        self.regen_key_btn.clicked.connect(self.on_regen_key)
+
+    def update_api_buttons_ui(self):
+        if self.api_enabled:
+            self.toggle_api_btn.setText("Disable API")
+            self.toggle_api_btn.setStyleSheet("background-color: #d9534f; color: white; font-weight: bold; border-radius: 4px; padding: 6px;")
+            self.regen_key_btn.setEnabled(True)
+            self.regen_key_btn.setStyleSheet("background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; padding: 6px;")
+        else:
+            self.toggle_api_btn.setText("Enable API")
+            self.toggle_api_btn.setStyleSheet("background-color: #5cb85c; color: white; font-weight: bold; border-radius: 4px; padding: 6px;")
+            self.regen_key_btn.setEnabled(False)
+            self.regen_key_btn.setStyleSheet("background-color: #555555; color: #aaaaaa; font-weight: bold; border-radius: 4px; padding: 6px;")
+
+    def on_toggle_api(self):
+        from PySide6.QtWidgets import QMessageBox
+        action_text = "Disable" if self.api_enabled else "Enable"
+        confirm = QMessageBox.warning(
+            self,
+            f"{action_text} API",
+            f"Are you sure you want to {action_text.lower()} the local API? This takes effect immediately.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if confirm == QMessageBox.No:
+            return
+            
+        self.api_enabled = not self.api_enabled
+        self.update_api_buttons_ui()
+        
+        settings = get_app_settings()
+        settings.setValue("api_enabled", "true" if self.api_enabled else "false")
+        
+        if self.parent() and hasattr(self.parent(), "api_manager"):
+            if not self.api_enabled:
+                self.parent().api_manager.stop_api_server()
+                self.parent().chat_view.add_system_message("🔴 Local API Server has been forcefully disabled.")
+            else:
+                self.parent().api_manager.stop_api_server()
+                self.parent().api_manager.start_api_server()
+                self.parent().chat_view.add_system_message("🌐 Local API Server started with active key.")
+
+    def on_regen_key(self):
+        from PySide6.QtWidgets import QMessageBox
+        confirm = QMessageBox.warning(
+            self,
+            "Regenerate Key",
+            "Are you sure you want to regenerate your API Key? This will instantly destroy your old key, drop all active connections, and restart the server.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if confirm == QMessageBox.No:
+            return
+            
+        new_key = f"llm-local-auth-{uuid.uuid4().hex[:10]}"
+        self.api_key_display.setText(new_key)
+        
+        settings = get_app_settings()
+        settings.setValue("local_api_auth_key", new_key)
+        
+        if self.parent() and hasattr(self.parent(), "api_manager"):
+            self.parent().api_manager.stop_api_server()
+            self.parent().api_manager.start_api_server()
+            self.parent().chat_view.add_system_message("🌐 Local API Server restarted to apply new key.")
+
     def setup_rerank_ui(self, is_dark: bool):
         """Resolves references to Advanced Retrieval Reranking elements loaded from the UI file, and applies dynamic styling."""
         from PySide6.QtWidgets import QGroupBox, QCheckBox, QComboBox, QLineEdit

@@ -53,6 +53,8 @@ class MainWindowClass(QMainWindow):
         
         # Instantiate and auto-start SaaS Server if configured
         self.saas_server = SaaSServer()
+        self.saas_server.api_manager_action.connect(self.handle_saas_api_action)
+        self.settings_manager = SaaSConfigManager()
         
         # Push them into our master stack!
         self.ui.main_stack.addWidget(self.chat_view)
@@ -146,6 +148,7 @@ class MainWindowClass(QMainWindow):
         file_menu = menubar.addMenu("File")
         file_menu.addAction("New Conversation", self.chat_view.start_new_chat, "Ctrl+N")
         file_menu.addAction("Save Conversation", self.chat_view.auto_save_current_chat, "Ctrl+S")
+        file_menu.addSeparator()
         file_menu.addAction("Import Chat (.json)", self.chat_view.load_conversation)
         file_menu.addAction("Export Chat (.json)", self.chat_view.save_conversation)
         file_menu.addSeparator()
@@ -416,7 +419,7 @@ class MainWindowClass(QMainWindow):
     def show_gen_settings(self):
         """Restored from baseline: Opens the Smart Generation Parameters dialog."""
         from ui.gen_settings_dialog import GenSettingsDialog
-        dialog = GenSettingsDialog(None)
+        dialog = GenSettingsDialog(self)
         if dialog.exec():
             self.chat_view.add_system_message("✅ Generation parameters updated.")
 
@@ -433,6 +436,16 @@ class MainWindowClass(QMainWindow):
         from ui.system_health import SystemHealthDialog
         dialog = SystemHealthDialog(parent=self)
         dialog.exec()
+
+    def handle_saas_api_action(self, action: str):
+        """Processes cross-thread actions commanded by the SaaS Admin Interface."""
+        if action == "stop":
+            self.api_manager.stop_api_server()
+            self.chat_view.add_system_message("🔴 Local API Server forcefully disabled via SaaS Admin.")
+        elif action == "restart":
+            self.api_manager.stop_api_server()
+            self.api_manager.start_api_server()
+            self.chat_view.add_system_message("🌐 Local API Server restarted via SaaS Admin.")
 
     def apply_saas_state(self):
         """Evaluates SaaS config and starts/stops the background daemon."""

@@ -6,8 +6,9 @@
 
 ## Prerequisites
 
-1. **LLM Chat App must be running** with API server enabled (Tools → Universal API Server)
-2. ✅ icon indicates server is running on `http://localhost:5000`
+1. **LLM Chat App must be running** with API server enabled (Tools → Universal API Server).
+2. ✅ icon indicates server is running on `http://localhost:5000`.
+3. 🔐 **API Key Management:** You can view, disable, or regenerate your Local API Key using the GUI Settings, the new CLI command `python main.py --api-manager`, or remotely via the SaaS Admin Dashboard (Node Config → Local API Control).
 
 ---
 

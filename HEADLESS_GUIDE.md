@@ -57,7 +57,24 @@ If running headless modes for the first time or after a manual logout, the engin
 
 ---
 
-## 2. Interactive CLI Mode Operations
+## 2. CLI Command Reference
+
+The `main.py` entry point accepts several flags to control the Headless and API environments directly:
+
+| Command | Description |
+| :--- | :--- |
+| `--headless` | Launch the standalone API Server (Port 5000). |
+| `--cli` | Launch the interactive terminal chat session. |
+| `--list-models` | List all models currently in the local manifest. |
+| `--update-models` | Fetch latest models from the active provider. |
+| `--migrate` | Migrate chat history transactionally between databases. |
+| `--reset-admin` | Reset the SaaS admin credentials to default. |
+| `--api-manager` | Manage the Local API Server (Port 5000) settings interactively. |
+| `--help` / `-h` | Show the detailed help message. |
+
+---
+
+## 3. Interactive CLI Mode Operations
 
 When you launch `python main.py --cli`, you enter a fully interactive terminal prompt.
 
@@ -76,7 +93,7 @@ You can control the active engine on-the-fly by typing commands prefixed with a 
 
 ---
 
-## 3. CLI Model Management
+## 4. CLI Model Management
 
 The headless engine includes a modular model manager for terminal-based control.
 
@@ -95,7 +112,24 @@ python main.py --update-models
 
 ---
 
-## 4. IDE Integration (VS Code / JetBrains)
+## 5. Local API Server Management
+
+You can configure the standalone Universal API Server (Port 5000) directly from the command line using the built-in API Manager.
+
+To view the current API status, regenerate your key, or forcefully enable/disable the server:
+```bash
+python main.py --api-manager
+```
+This launches an interactive menu:
+1. **Status Overview:** Displays whether the API is `[ENABLED]` or `[DISABLED]`, and prints your current secure API Key.
+2. **Toggle Control:** Disabling the API will shut down Port 5000 and prevent IDE extensions from connecting. 
+3. **Key Regeneration:** Instantly generates a new secure UUID key for the server.
+
+*Note: Changes made in the CLI update the secure Vault instantly, but require restarting any active `--headless` engine processes to apply network changes.*
+
+---
+
+## 6. IDE Integration (VS Code / JetBrains)
 
 The Headless Engine acts as the primary API provider for our IDE extensions. 
 
@@ -105,7 +139,7 @@ The Headless Engine acts as the primary API provider for our IDE extensions.
 
 ---
 
-## 5. Security & Session Integrity
+## 7. Security & Session Integrity
 
 The application enforces absolute cryptographic session boundaries between the CLI and the GUI:
 
@@ -115,7 +149,7 @@ The application enforces absolute cryptographic session boundaries between the C
 
 ---
 
-## 6. Troubleshooting
+## 8. Troubleshooting
 
 | Issue | Solution |
 | :--- | :--- |

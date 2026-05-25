@@ -154,10 +154,12 @@ flowchart TD
 | #               | Task                                                                               | Status           |
 | :-------------- | :--------------------------------------------------------------------------------- | :--------------- |
 | **1.3.1** | **CLI Implementation**: Integrate interactive terminal chat into `main.py` | ✅**DONE** |
+| **1.3.2** | **Local API CLI Manager**: Implement `--api-manager` to toggle Port 5000 server from terminal | ✅**DONE** |
 
 **Technical Notes (1.3):**
 
 * **CLI Interface**: Integrated full `--cli` mode into `main.py` with a complete interactive chat loop, support for commands like `/list` (model listing) and `/model <id>` (on-the-fly model switching).
+* **Local API CLI Manager**: Implemented `python main.py --api-manager` interactive menu for toggling the `api_enabled` status and regenerating the `local_api_auth_key` dynamically.
 * **Two-Step Dynamic Auth**: Completely restructured the CLI auth gate in `headless/auth.py` to prompt the user to select their platform/SDK group first, and then select the specific ecosystem under that platform, using static endpoints automatically.
 * **Unified Dynamic JSON Registry**: Fully decoupled both the GUI (`ui/credential_manager.py`) and CLI (`headless/auth.py`) provider catalog definitions. Both now load their platforms and ecosystems dynamically on-the-fly from the centralized `resources/api_providers.json` config, supporting 16 individual SDK groups and 22 ecosystems out-of-the-box.
 * **Offline Local Support**: Integrated keyless providers (like Ollama local hosting) to resolve configuration endpoints instantly without forcing the user to supply empty API keys.
@@ -531,9 +533,11 @@ flowchart TD
 | **6.2.7** | **Semantic Memory Explorer (HTML/JS)**: Build RAG collection viewer and manager                    | ✅**DONE** |
 | **6.2.8** | **Public Orbit Sharing Node (HTML/JS)**: Build read-only sharing route and static page             | ✅**DONE** |
 | **6.2.9** | **AI Settings Hub & Key Mirroring**: Tabbed Credential/Model Manager mimicking Desktop with Active Provider logic and `keyring` mirroring for Admins | ✅**DONE** |
+| **6.2.10** | **Local API Control Tab**: Thread-safe Signal integration to restart Port 5000 via SaaS web UI | ✅**DONE** |
 
 **Technical Notes (6.2):**
 * **Settings Hub 1:1 Parity (6.2.9)**: The SaaS AI Settings Hub has been structurally re-architected to serve as a strict, literal mirror of the desktop `QDialog` application. The layout perfectly translates the XML DOM hierarchy from `credential_manager.ui` into HTML. It features physical folder-tab css logic (bounding boxes with active tab border-masking), exact emojis (`🔐`, `📦`), dynamic developer sub-tabs extracted directly from the backend API payloads, and literal mirrored status badges (`[Free]`/`[Paid]`), completely abandoning conflicting modern web styling.
+* **Local API Control Tab (6.2.10)**: Thread-safe integration in SaaS settings allowing admins to toggle and regenerate Local Universal API keys. Uses `api_manager_action` signal to jump across threads from the Flask HTTP runtime safely back into the main PySide6 event loop, preventing segmentation faults when stopping the Port 5000 socket server.
 ### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
 
 | #               | Task                                                                                                             | Status           |

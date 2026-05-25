@@ -508,7 +508,7 @@ export function setupNodeConfigListeners() {
     }
     
     // Tabs
-    ['sys-instruct', 'gen-params', 'rerank', 'telemetry', 'auth-alerts', 'tenants'].forEach(tabId => {
+    ['sys-instruct', 'gen-params', 'rerank', 'telemetry', 'auth-alerts', 'tenants', 'local-api'].forEach(tabId => {
         const tabBtn = document.getElementById(`tab-btn-nc-${tabId}`);
         if (tabBtn) tabBtn.addEventListener('click', () => switchNodeConfigTab(tabId));
     });

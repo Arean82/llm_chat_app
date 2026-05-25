@@ -263,6 +263,7 @@ def main():
         print("  --update-models   Fetch latest models from the active provider")
         print("  --migrate         Migrate chat history transactionally between databases")
         print("  --reset-admin     Reset the SaaS admin credentials to default")
+        print("  --api-manager     Manage the Local API Server (Port 5000) settings interactively")
         print("  --help / -h       Show this detailed help message")
         
         print("\nExamples:")
@@ -297,6 +298,47 @@ def main():
     if "--reset-admin" in sys.argv:
         from scripts.reset_admin import reset_admin
         reset_admin()
+        return
+
+    if "--api-manager" in sys.argv:
+        from utils.path_utils import get_app_settings
+        import uuid
+        settings = get_app_settings()
+        
+        while True:
+            enabled = str(settings.value("api_enabled", "true")).lower() == "true"
+            key = settings.value("local_api_auth_key", "")
+            if not key:
+                key = f"llm-local-auth-{uuid.uuid4().hex[:10]}"
+                settings.setValue("local_api_auth_key", key)
+            
+            print("\n" + "="*50)
+            print(" 🔌 LOCAL API MANAGER (Port 5000)")
+            print("="*50)
+            print(f" Status:  {'[ENABLED]' if enabled else '[DISABLED]'}")
+            print(f" API Key: {key}")
+            print("-" * 50)
+            print(" 1. Toggle API (Enable/Disable)")
+            print(" 2. Regenerate Key")
+            print(" 3. Exit")
+            print("="*50)
+            
+            choice = input("Select an action [1-3]: ").strip()
+            
+            if choice == "1":
+                settings.setValue("api_enabled", "false" if enabled else "true")
+                print(f"\n[*] API Server is now {'DISABLED' if enabled else 'ENABLED'}.")
+                print("[*] (Restart the app or headless engine to apply network changes.)")
+            elif choice == "2":
+                new_key = f"llm-local-auth-{uuid.uuid4().hex[:10]}"
+                settings.setValue("local_api_auth_key", new_key)
+                print(f"\n[*] New Key Generated: {new_key}")
+                print("[*] (Restart the app or headless engine to apply network changes.)")
+            elif choice == "3":
+                break
+            else:
+                print("\n[!] Invalid selection.")
+                
         return
 
     if env_mode == "CLI" or "--cli" in sys.argv:

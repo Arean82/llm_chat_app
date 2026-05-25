@@ -198,7 +198,7 @@ Modify `~/.continue/config.json`:
 * **⚙️ Model Selection:** The API automatically uses whichever model is currently active in the main application UI.
 * **🧠 Model Capabilities:** The `/v1/models` endpoint exposes all cataloged models across multiple dynamic types (`chat`, `embedding`, `reranking`, `audio`). This allows connecting IDE tools or custom pipelines to fetch the exact capability set they require.
 * **⏳ Performance:** Responses are synchronous. The default request timeout is **60 seconds**.
-* **🔑 Auth:** All requests **require** the mandatory local verification token: `llm-local-auth-82c4f3eb0d`. Pass this as the `apiKey` or standard `Authorization: Bearer` header.
+* **🔑 Auth:** All requests **require** the mandatory local verification token (e.g. `llm-local-auth-...`). Pass this as the `apiKey` or standard `Authorization: Bearer` header. You can view, regenerate, or hard-disable your active key by navigating to **Settings → Generation Parameters → API Credentials**. Actions taken in the UI apply instantly via a background live restart mechanism.
 * **🌡️ Temperature Range:** 0.0 (focused/deterministic) to 1.0 (creative/diverse).
 * **📏 Token Limits:** Max tokens per response defaults to 4096, configurable per request.
 * **💾 Session Management:** Use `session_id` to maintain separate conversation contexts.

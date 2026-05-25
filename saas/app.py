@@ -206,6 +206,46 @@ def create_saas_app():
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
 
+    @app.route('/api/admin/local_api', methods=['GET', 'POST'])
+    def admin_local_api():
+        user = getattr(request, 'tenant', None)
+        if not user or user.get('key_type') != 'admin_funded':
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        
+        if request.method == 'GET':
+            enabled = str(settings.value("api_enabled", "true")).lower() == "true"
+            key = settings.value("local_api_auth_key", "")
+            return jsonify({"success": True, "enabled": enabled, "key": key})
+            
+        if request.method == 'POST':
+            payload = request.get_json(silent=True) or {}
+            action = payload.get("action")
+            
+            if action == "toggle":
+                current_enabled = str(settings.value("api_enabled", "true")).lower() == "true"
+                new_enabled = not current_enabled
+                settings.setValue("api_enabled", "true" if new_enabled else "false")
+                
+                instance = getattr(app, "saas_server_instance", None)
+                if instance:
+                    instance.api_manager_action.emit("restart" if new_enabled else "stop")
+                return jsonify({"success": True, "enabled": new_enabled})
+                
+            elif action == "regen":
+                import uuid
+                new_key = f"llm-local-auth-{uuid.uuid4().hex[:10]}"
+                settings.setValue("local_api_auth_key", new_key)
+                
+                instance = getattr(app, "saas_server_instance", None)
+                if instance:
+                    instance.api_manager_action.emit("restart")
+                return jsonify({"success": True, "key": new_key})
+                
+            return jsonify({"success": False, "error": "Unknown action"}), 400
+
     @app.route('/api/admin/saas_config', methods=['GET', 'POST'])
     def admin_saas_config():
         user = getattr(request, 'tenant', None)
@@ -1134,10 +1174,12 @@ class SaaSServer(QThread):
     
     # Optional signals for GUI integration
     status_changed = Signal(bool, str)
+    api_manager_action = Signal(str)
 
     def __init__(self, host: str = '127.0.0.1', port: int = 5000, parent=None):
         super().__init__(parent)
         self.flask_app = create_saas_app()
+        self.flask_app.saas_server_instance = self
         self.host = host
         self.port = port
         self.server = None

@@ -141,7 +141,7 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 5. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
 6. ⏹️ **Stop Generation:** Click the red "Stop" button at any time to halt the response.
 7. 🔽 **System Tray:** Click the X button to choose between exiting completely or minimizing to system tray. Double-click tray icon to restore window.
-8. 🌐 **API Server:** Go to Tools → Universal API Server to start the API. Configure your IDE extension to use `http://localhost:5000/v1`.
+8. 🌐 **API Server:** Go to Tools → Universal API Server to start the API. Configure your IDE extension to use `http://localhost:5000/v1`. You can securely manage your active keys and toggle the server directly via the CLI by running `python main.py --api-manager`.
 
 ---
 
@@ -449,6 +449,7 @@ To eliminate multi-process write-locking timeout crashes across simultaneous **G
 
 - Fully compatible with OpenAI-style API  `/v1/chat/completions` (used by IntelliJ plugin).
 - Start from **Tools → Universal API Server** (✅ = running). Server runs on `http://localhost:5000`
+- **Security & Key Management:** Manage your local API server in **Settings → Generation Parameters → API Credentials**. You can view, regenerate, or hard-disable your key (which securely shuts down the port). Changes in this tab are executed instantly with a live confirmation popup.
 
 ### Endpoints
 
@@ -465,6 +466,15 @@ Install `extension/vscode-llm-chat-2.0.0.vsix`:
 1. VS Code Extensions (Ctrl+Shift+X)
 2. Click "..." → "Install from VSIX..." and select the file.
 3. Automatically prompts onboarding on load to configure dynamic server URL and secure passport keys.
+
+### JetBrains Extension (V2.0.0)
+
+Install `extension/jetbrains-llm-chat-2.0.0.zip`:
+
+1. Open JetBrains IDE (IntelliJ, PyCharm, WebStorm, etc.) and go to Settings → Plugins.
+2. Click the ⚙️ (gear) icon → "Install Plugin from Disk...".
+3. Select the `.zip` file and restart the IDE.
+4. Configure connection via IDE settings to connect to the Universal API Server.
 
 ### Other IDEs
 

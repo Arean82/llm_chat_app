@@ -28,10 +28,13 @@
             </button>
             <!-- Admin Only Tabs -->
             <button id="tab-btn-nc-auth-alerts" class="settings-tab admin-only-tab hidden">
-                <i class="fa-solid fa-envelope-shield"></i> Auth Alerts
+                <i class="fa-solid fa-shield-cat"></i> <span data-i18n="node_config.tab_alerts">Auth Alerts</span>
             </button>
             <button id="tab-btn-nc-tenants" class="settings-tab admin-only-tab hidden">
-                <i class="fa-solid fa-users"></i> Tenants
+                <i class="fa-solid fa-users-gear"></i> <span data-i18n="node_config.tab_tenants">Tenants</span>
+            </button>
+            <button id="tab-btn-nc-local-api" class="settings-tab admin-only-tab hidden">
+                <i class="fa-solid fa-plug-circle-bolt"></i> Local API Control
             </button>
         </div>
 
@@ -247,23 +250,136 @@
 
         <!-- Tab 6: Tenants (Admin Only) -->
         <div id="tab-content-nc-tenants" class="settings-content">
-            <div style="margin-bottom: 15px; color: var(--accent-cyan);">
-                Active Tenant Management (Admin)
-            </div>
-            <div style="overflow-x: auto;">
+            <div class="section-title"><i class="fa-solid fa-users-viewfinder"></i> Active Tenants & Limits</div>
+            <div class="glass-panel" style="padding: 1rem; margin-bottom: 1rem;">
                 <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.9rem;">
-                    <thead style="background: rgba(0,0,0,0.4); position: sticky; top: 0;">
-                        <tr>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Username</th>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Role</th>
-                            <th style="padding: 10px; border-bottom: 1px solid var(--border-glow);">Usage</th>
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 8px;">Tenant ID</th>
+                            <th style="padding: 8px;">Type</th>
+                            <th style="padding: 8px;">Rate Limit (Req/min)</th>
+                            <th style="padding: 8px;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="nc-tenants-tbody">
-                        <!-- Populated by settings_main.js -->
+                    <tbody id="nc-tenants-table-body">
+                        <!-- Populated dynamically via JS -->
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Tab 7: Local API Control (Admin Only) -->
+        <div id="tab-content-nc-local-api" class="settings-content">
+            <div class="section-title"><i class="fa-solid fa-plug-circle-bolt"></i> Local Universal API</div>
+
+            <div class="glass-panel"
+                style="padding: 1rem; border: 1px solid var(--accent); margin-bottom: 15px; border-left: 4px solid var(--danger);">
+                <div style="color: var(--danger); font-weight: bold; margin-bottom: 5px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Security Note
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.85;">
+                    Disabling the API will instantly shut down the local Desktop app's server and close port 5000.
+                    Regenerating the key will destroy the old key and forcefully restart the server to sever active
+                    connections.
+                    <br><br><b>Changes made here take effect instantly.</b> This does not affect the SaaS multi-tenant
+                    gateway on port 8000.
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group" style="flex: 2;">
+                    <label>Current Local API Key (Read-Only)</label>
+                    <input type="text" id="nc-local-api-key" readonly
+                        style="font-family: monospace; background: rgba(0,0,0,0.5); opacity: 0.8;">
+                </div>
+            </div>
+
+            <div class="settings-actions" style="display: flex; gap: 15px; margin-top: 20px;">
+                <button type="button" id="btn-nc-local-api-toggle" class="btn-primary"
+                    style="flex: 1; margin-top: 0; background: var(--accent-error);" onclick="toggleLocalApi()">
+                    Disable API
+                </button>
+                <button type="button" id="btn-nc-local-api-regen" class="btn-primary"
+                    style="flex: 1; margin-top: 0;" onclick="regenLocalApiKey()">
+                    <i class="fa-solid fa-rotate-right"></i> Regenerate Key
+                </button>
+            </div>
+
+            <script>
+                // Load Local API status when the tab is shown
+                document.getElementById('tab-btn-nc-local-api').addEventListener('click', function () {
+                    fetch('/api/admin/local_api', {
+                        headers: { 'Authorization': `Bearer ${sessionStorage.getItem('quantum_token')}` }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('nc-local-api-key').value = data.key;
+                                updateLocalApiButtons(data.enabled);
+                            }
+                        });
+                });
+
+                function updateLocalApiButtons(enabled) {
+                    const toggleBtn = document.getElementById('btn-nc-local-api-toggle');
+                    const regenBtn = document.getElementById('btn-nc-local-api-regen');
+                    if (enabled) {
+                        toggleBtn.textContent = 'Disable API';
+                        toggleBtn.style.background = 'var(--accent-error)';
+                        regenBtn.disabled = false;
+                        regenBtn.style.opacity = '1.0';
+                        regenBtn.style.cursor = 'pointer';
+                    } else {
+                        toggleBtn.textContent = 'Enable API';
+                        toggleBtn.style.background = 'var(--accent-success)';
+                        regenBtn.disabled = true;
+                        regenBtn.style.opacity = '0.3';
+                        regenBtn.style.cursor = 'not-allowed';
+                    }
+                }
+
+                function toggleLocalApi() {
+                    const btn = document.getElementById('btn-nc-local-api-toggle');
+                    const actionName = btn.textContent.includes('Disable') ? 'disable' : 'enable';
+                    if (!confirm(`Are you sure you want to ${actionName} the Local API? This takes effect immediately.`)) return;
+
+                    fetch('/api/admin/local_api', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${sessionStorage.getItem('quantum_token')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ action: 'toggle' })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            updateLocalApiButtons(data.enabled);
+                            showNotification(`Local API is now ${data.enabled ? 'Enabled' : 'Disabled'}.`, 'success');
+                        } else {
+                            showNotification(data.error || 'Failed to toggle API.', 'error');
+                        }
+                    });
+                }
+
+                function regenLocalApiKey() {
+                    if (!confirm('Are you sure you want to regenerate the Local API Key? This will instantly drop all active local connections.')) return;
+
+                    fetch('/api/admin/local_api', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${sessionStorage.getItem('quantum_token')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ action: 'regen' })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            document.getElementById('nc-local-api-key').value = data.key;
+                            showNotification('Local API Key Regenerated & Server Restarted.', 'success');
+                        } else {
+                            showNotification(data.error || 'Failed to regenerate key.', 'error');
+                        }
+                    });
+                }
+            </script>
         </div>
 
         <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
