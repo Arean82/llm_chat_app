@@ -97,12 +97,17 @@ class ArenaViewWidget(QWidget):
         """Checks if multiple ecosystems are configured; shows warning if not."""
         import keyring
         connected_count = 0
-        # Check primary ecosystems
-        if keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"):
-            connected_count += 1
-        if keyring.get_password("LLMChatApp", "api_key_google"):
-            connected_count += 1
-            
+        from logic.model_io import load_provider_metadata
+        metadata = load_provider_metadata()
+        
+        # Check base ecosystems dynamically
+        for p in metadata.get("providers", []):
+            pid = p.get("id")
+            if keyring.get_password("LLMChatApp", f"api_key_{pid}"):
+                connected_count += 1
+            elif pid == "nvidia" and keyring.get_password("LLMChatApp", "api_key"):
+                connected_count += 1
+                
         # If still 0 or 1, check the new Hub's custom providers
         if connected_count < 2:
              from utils.path_utils import get_app_settings
@@ -279,7 +284,16 @@ class ArenaViewWidget(QWidget):
              
              # Priority B: Fallback to standard silos if not in custom Hub
              if not target_url:
-                 target_url = settings.value(f"url_{provider}") or settings.value("base_url")
+                 target_url = settings.value(f"url_{provider}")
+                 if not target_url:
+                     from logic.model_io import load_provider_metadata
+                     metadata = load_provider_metadata()
+                     for p in metadata.get("providers", []):
+                         if normalize(p.get("id")) == p_norm or normalize(p.get("display_name", "")) == p_norm:
+                             target_url = p.get("default_url")
+                             break
+                 if not target_url:
+                     target_url = settings.value("base_url")
              
              if not target_key:
                  target_key = keyring.get_password("LLMChatApp", f"api_key_{provider}")

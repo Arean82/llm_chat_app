@@ -80,35 +80,48 @@ class ModelPopupClass(QDialog):
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
     def populate_models(self):
-        from logic.model_io import load_all_models
+        from logic.model_io import load_all_models, load_provider_metadata
         import keyring
+        import json
         try:
             all_models = load_all_models()
             active_p = get_app_settings().value("active_provider_id", "nvidia")
             show_all = self.ui.show_all_cb.isChecked()
             
-            # Universal Key Check: Only show models if an API key exists for that provider
-            connected_models = []
-            for m in all_models:
-                prov = m.get('provider', 'nvidia').lower()
-                has_key = False
+            metadata = load_provider_metadata()
+            base_providers = {p.get("id"): p for p in metadata.get("providers", [])}
+            
+            def normalize(p):
+                return str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
+
+            def check_has_key(provider):
+                p_id = normalize(provider)
                 
-                if prov == "nvidia":
-                    has_key = bool(keyring.get_password("LLMChatApp", "api_key_nvidia") or 
-                                   keyring.get_password("LLMChatApp", "api_key"))
-                elif prov == "google":
-                    has_key = bool(keyring.get_password("LLMChatApp", "api_key_google"))
-                else:
-                    # Generic check for custom providers (Credential Manager format)
-                    has_key = bool(keyring.get_password("LLMChatApp", f"api_key_openai_{prov}"))
-                
-                if has_key:
-                    connected_models.append(m)
+                mapped_id = p_id
+                for base_id, base_p in base_providers.items():
+                    if normalize(base_p.get("display_name", "")) == p_id or normalize(base_id) == p_id:
+                        mapped_id = base_id
+                        break
+                        
+                if mapped_id in base_providers:
+                    if keyring.get_password("LLMChatApp", f"api_key_{mapped_id}"):
+                        return True
+                    if mapped_id == "nvidia" and keyring.get_password("LLMChatApp", "api_key"):
+                        return True
+                        
+                custom = json.loads(get_app_settings().value("custom_providers", "[]"))
+                for cp in custom:
+                    if normalize(cp['ecosystem']) == p_id:
+                        eco_key = cp['ecosystem'].lower().replace(' ', '_')
+                        return bool(keyring.get_password("LLMChatApp", f"api_key_{cp['sdk']}_{eco_key}"))
+                return False
+
+            connected_models = [m for m in all_models if check_has_key(m.get('provider', 'nvidia'))]
             
             # Final filtering based on Ecosystem and 'Show All' toggle (strictly show chat models only)
             self.models_data = [
                 m for m in connected_models 
-                if (show_all or m.get('provider', 'nvidia') == active_p) and m.get('type', 'chat') == 'chat'
+                if (show_all or normalize(m.get('provider', 'nvidia')) == normalize(active_p)) and m.get('type', 'chat') == 'chat'
             ]
 
             # Dynamic capability filtering

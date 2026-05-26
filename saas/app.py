@@ -5,6 +5,7 @@ Orchestrates JWT/Passport gateway auth, dynamic workspace routing,
 economic feature locks on Model Arena, and autonomous SMTP alerts.
 """
 
+from logic.model_io import load_provider_metadata
 from utils import get_resource_path
 import os
 import time
@@ -496,16 +497,30 @@ def create_saas_app():
         if request.method == 'GET':
             if is_admin:
                 import keyring
-                creds = {
-                    'nvidia': keyring.get_password("LLMChatApp", "api_key_nvidia") or "",
-                    'nvidia_base_url': keyring.get_password("LLMChatApp", "url_nvidia") or "",
-                    'google': keyring.get_password("LLMChatApp", "api_key_google") or "",
-                    'google_base_url': keyring.get_password("LLMChatApp", "url_google") or "",
-                    'anthropic': keyring.get_password("LLMChatApp", "api_key_openai_anthropic") or "",
-                    'anthropic_base_url': keyring.get_password("LLMChatApp", "url_anthropic") or "",
-                    'openai': keyring.get_password("LLMChatApp", "api_key_openai_openai") or "",
-                    'openai_base_url': keyring.get_password("LLMChatApp", "url_openai") or ""
-                }
+                import json
+                from utils.path_utils import get_app_settings
+                from logic.model_io import load_provider_metadata
+                
+                creds = {}
+                try:
+                    metadata = load_provider_metadata()
+                    for p in metadata.get("providers", []):
+                        pid = p.get("id")
+                        if not pid: continue
+                        creds[pid] = keyring.get_password("LLMChatApp", f"api_key_{pid}") or ""
+                        creds[f"{pid}_base_url"] = keyring.get_password("LLMChatApp", f"url_{pid}") or ""
+                        
+                    custom = json.loads(get_app_settings().value("custom_providers", "[]"))
+                    for c in custom:
+                        eco_key = c['ecosystem'].lower().replace(' ', '_')
+                        cid = f"{c['sdk']}_{eco_key}"
+                        creds[cid] = keyring.get_password("LLMChatApp", f"api_key_{cid}") or ""
+                        creds[f"{cid}_base_url"] = keyring.get_password("LLMChatApp", f"url_{cid}") or ""
+                except:
+                    pass
+                    
+                if not creds.get('nvidia'):
+                    creds['nvidia'] = keyring.get_password("LLMChatApp", "api_key") or ""
             else:
                 creds = db.get_tenant_credentials(request.tenant['id'])
                 
@@ -532,7 +547,7 @@ def create_saas_app():
                     if prov.endswith('_base_url'):
                         k_name = f"url_{prov.replace('_base_url', '')}"
                     else:
-                        k_name = "api_key_nvidia" if prov == "nvidia" else "api_key_google" if prov == "google" else f"api_key_openai_{prov}"
+                        k_name = f"api_key_{prov}"
                     
                     if key.strip():
                         keyring.set_password("LLMChatApp", k_name, key.strip())
@@ -629,20 +644,31 @@ def create_saas_app():
                 
                 has_key = False
                 if is_admin:
-                    if "nvidia" in prov:
-                        has_key = bool(keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"))
-                    elif "google" in prov:
-                        has_key = bool(keyring.get_password("LLMChatApp", "api_key_google"))
-                    else:
+                    metadata = load_provider_metadata()
+                    base_providers = {p.get("id"): p for p in metadata.get("providers", [])}
+                    
+                    def normalize(p):
+                        return str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
+
+                    p_id = normalize(prov)
+                    mapped_id = p_id
+                    for base_id, base_p in base_providers.items():
+                        if normalize(base_p.get("display_name", "")) == p_id or normalize(base_id) == p_id:
+                            mapped_id = base_id
+                            break
+                            
+                    if mapped_id in base_providers:
+                        if keyring.get_password("LLMChatApp", f"api_key_{mapped_id}"):
+                            has_key = True
+                        elif mapped_id == "nvidia" and keyring.get_password("LLMChatApp", "api_key"):
+                            has_key = True
+                    
+                    if not has_key:
                         from utils.path_utils import get_app_settings
                         import json
                         custom = json.loads(get_app_settings().value("custom_providers", "[]"))
-                        
-                        def normalize(p):
-                            return str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
-                            
                         for cp in custom:
-                            if normalize(cp['ecosystem']) == normalize(prov):
+                            if normalize(cp['ecosystem']) == p_id:
                                 eco_key = cp['ecosystem'].lower().replace(' ', '_')
                                 if keyring.get_password("LLMChatApp", f"api_key_{cp['sdk']}_{eco_key}"):
                                     has_key = True
@@ -674,25 +700,9 @@ def create_saas_app():
                         }
                     })
                 
-            # Global system safety fallback
-            if not model_data:
-                model_data.append({
-                    "id": "meta/llama-3.1-8b-instruct",
-                    "object": "model",
-                    "created": int(time.time()),
-                    "owned_by": "nvidia"
-                })
-                
             return jsonify({"data": model_data})
         except Exception as e:
-            return jsonify({
-                "data": [{
-                    "id": "meta/llama-3.1-8b-instruct",
-                    "object": "model",
-                    "created": int(time.time()),
-                    "owned_by": "nvidia"
-                }]
-            })
+            return jsonify({"data": []})
 
     # --- ADMIN / OPERATOR APIs ---
     

@@ -89,13 +89,20 @@ class CredentialManagerDialog(QDialog):
         
         table.setRowCount(len(providers))
         for row, p in enumerate(providers):
+            # Fetch Key Early
+            key_id_actual = f"api_key_{p['id']}"
+            key = keyring.get_password("LLMChatApp", key_id_actual)
+            
+            # Fallback for generic slots
+            if not key and p['id'] == "nvidia":
+                key = keyring.get_password("LLMChatApp", "api_key_nvidia")
+                if not key:
+                    key = keyring.get_password("LLMChatApp", "api_key")
+                
+            has_key = bool(key)
+
             # Col 0: Status (Live Switch)
             is_live = (p.get('id') == active_p)
-            
-            # Col 0: Status (Display Only as requested)
-            eco_key = p['ecosystem'].lower().replace(' ', '_')
-            key_id = f"api_key_{p['sdk']}_{eco_key}"
-            has_key = bool(keyring.get_password("LLMChatApp", key_id))
             
             status_widget = QWidget()
             status_layout = QHBoxLayout(status_widget)
@@ -124,15 +131,6 @@ class CredentialManagerDialog(QDialog):
             table.setItem(row, 3, QTableWidgetItem(url))
             
             # Col 4: API Key (Masked)
-            key_id = f"api_key_{p['id']}"
-            key = keyring.get_password("LLMChatApp", key_id)
-            
-            # Fallback for generic slots
-            if not key:
-                key = keyring.get_password("LLMChatApp", "api_key")
-            if not key and p['id'] == "nvidia":
-                key = keyring.get_password("LLMChatApp", "api_key_nvidia")
-            
             key_display = "********" if key else "Missing"
             key_item = QTableWidgetItem(key_display)
             if not key: key_item.setForeground(Qt.red)
@@ -189,17 +187,24 @@ class CredentialManagerDialog(QDialog):
     def populate_ecosystem_filter(self):
         """Populates the filter with 'All' + any ecosystem that has a key."""
         import keyring
+        from logic.model_io import load_provider_metadata
         self.ui.modelEcosystemFilter.blockSignals(True)
         self.ui.modelEcosystemFilter.clear()
         self.ui.modelEcosystemFilter.addItem("🌐 All Ecosystems")
         
-        # This is a bit brute force but ensures we only show "ready" providers
         connected = []
-        # Check base ones
-        if keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"):
-            connected.append("NVIDIA NIM")
-        if keyring.get_password("LLMChatApp", "api_key_google"):
-            connected.append("Google Gemini")
+        
+        # Check base ones dynamically
+        metadata = load_provider_metadata()
+        for p in metadata.get("providers", []):
+            pid = p.get("id")
+            if keyring.get_password("LLMChatApp", f"api_key_{pid}"):
+                connected.append(p.get("display_name", pid))
+                
+        # Fallback check for nvidia
+        if not keyring.get_password("LLMChatApp", "api_key_nvidia") and keyring.get_password("LLMChatApp", "api_key"):
+            if "NVIDIA NIM" not in connected:
+                connected.append("NVIDIA NIM")
             
         # Check custom ones
         import json
@@ -214,35 +219,47 @@ class CredentialManagerDialog(QDialog):
 
     def load_models(self):
         """Load models based on the selected filter with unified normalization and security gating."""
-        from logic.model_io import load_all_models
+        from logic.model_io import load_all_models, load_provider_metadata
         import keyring
         import json
         
         selection = self.ui.modelEcosystemFilter.currentText()
         all_m = load_all_models()
         
+        metadata = load_provider_metadata()
+        base_providers = {p.get("id"): p for p in metadata.get("providers", [])}
+        
+        def normalize(p):
+            p = str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
+            return p
+
         # 1. Security Gate: Filter out models where no API key exists in vault
         def has_key(provider):
             p = str(provider).lower()
-            # Primary ones
-            if "nvidia" in p: 
-                return bool(keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key"))
-            if "google" in p: 
-                return bool(keyring.get_password("LLMChatApp", "api_key_google"))
+            p_id = normalize(p)
             
+            # Since some models use custom strings for provider, we try exact match or check base directly
+            # Often provider is saved as the display name (e.g. "DeepSeek") or ID ("deepseek").
+            # Let's map it back to ID if possible.
+            mapped_id = p_id
+            for base_id, base_p in base_providers.items():
+                if normalize(base_p.get("display_name", "")) == p_id or normalize(base_id) == p_id:
+                    mapped_id = base_id
+                    break
+                    
+            if mapped_id in base_providers:
+                if keyring.get_password("LLMChatApp", f"api_key_{mapped_id}"):
+                    return True
+                if mapped_id == "nvidia" and keyring.get_password("LLMChatApp", "api_key"):
+                    return True
+                    
             # Custom ones
             custom = json.loads(get_app_settings().value("custom_providers", "[]"))
             for cp in custom:
-                if normalize(cp['ecosystem']) == normalize(p):
+                if normalize(cp['ecosystem']) == p_id:
                     eco_key = cp['ecosystem'].lower().replace(' ', '_')
                     return bool(keyring.get_password("LLMChatApp", f"api_key_{cp['sdk']}_{eco_key}"))
             return False
-
-        def normalize(p):
-            p = str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
-            if "nvidia" in p: return "nvidia"
-            if "google" in p: return "google"
-            return p
 
         # Apply Universal Key Filter
         filtered_all = [m for m in all_m if has_key(m.get('provider', 'nvidia'))]
@@ -252,7 +269,23 @@ class CredentialManagerDialog(QDialog):
             self.ui.modelHeaderLabel.setText("Viewing ALL Connected Models")
         else:
             p_id = normalize(selection)
-            self.models = [m for m in filtered_all if normalize(m.get('provider', 'nvidia')) == p_id]
+            target_id = p_id
+            for base_id, base_p in base_providers.items():
+                if normalize(base_p.get("display_name", "")) == p_id or normalize(base_id) == p_id:
+                    target_id = normalize(base_id)
+                    break
+                    
+            self.models = []
+            for m in filtered_all:
+                m_prov = normalize(m.get('provider', 'nvidia'))
+                m_mapped = m_prov
+                for base_id, base_p in base_providers.items():
+                    if normalize(base_p.get("display_name", "")) == m_prov or normalize(base_id) == m_prov:
+                        m_mapped = normalize(base_id)
+                        break
+                if m_mapped == target_id:
+                    self.models.append(m)
+                    
             self.ui.modelHeaderLabel.setText(f"Managing {selection.upper()}")
             
         self.populate_model_tabs()
@@ -332,15 +365,26 @@ class CredentialManagerDialog(QDialog):
         
         import keyring
         import json
+        from logic.model_io import load_provider_metadata
+        
+        metadata = load_provider_metadata()
+        base_providers = metadata.get("providers", [])
+        settings = get_app_settings()
+        
+        def add_target(p_id, display_name, def_url):
+            key = keyring.get_password("LLMChatApp", f"api_key_{p_id}")
+            if not key and p_id == "nvidia":
+                key = keyring.get_password("LLMChatApp", "api_key")
+            if key:
+                url = settings.value(f"url_{p_id}", def_url)
+                targets.append({"name": p_id, "key": key, "url": url})
         
         if selection == "🌐 All Ecosystems":
-            # 1. NVIDIA NIM (Primary)
-            key = keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key")
-            if key:
-                targets.append({"name": "nvidia", "key": key, "url": "https://integrate.api.nvidia.com/v1"})
-            
-            # 2. Custom Providers
-            custom = json.loads(get_app_settings().value("custom_providers", "[]"))
+            for p in base_providers:
+                add_target(p.get("id"), p.get("display_name", p.get("id")), p.get("default_url", ""))
+                
+            # Custom Providers
+            custom = json.loads(settings.value("custom_providers", "[]"))
             for p in custom:
                 eco_key = p['ecosystem'].lower().replace(' ', '_')
                 key = keyring.get_password("LLMChatApp", f"api_key_{p['sdk']}_{eco_key}")
@@ -349,16 +393,21 @@ class CredentialManagerDialog(QDialog):
         else:
             # Scoped Fetch
             p_name = selection
-            if "nvidia" in p_name.lower():
-                key = keyring.get_password("LLMChatApp", "api_key_nvidia") or keyring.get_password("LLMChatApp", "api_key")
-                targets.append({"name": "nvidia", "key": key, "url": "https://integrate.api.nvidia.com/v1"})
-            else:
-                custom = json.loads(get_app_settings().value("custom_providers", "[]"))
+            found = False
+            for p in base_providers:
+                if p.get("display_name", p.get("id")) == p_name:
+                    add_target(p.get("id"), p_name, p.get("default_url", ""))
+                    found = True
+                    break
+                    
+            if not found:
+                custom = json.loads(settings.value("custom_providers", "[]"))
                 for p in custom:
                     if p['ecosystem'] == p_name:
                         eco_key = p['ecosystem'].lower().replace(' ', '_')
                         key = keyring.get_password("LLMChatApp", f"api_key_{p['sdk']}_{eco_key}")
-                        targets.append({"name": p['ecosystem'], "key": key, "url": p['url']})
+                        if key:
+                            targets.append({"name": p['ecosystem'], "key": key, "url": p['url']})
                         break
         
         if not targets:
@@ -377,7 +426,7 @@ class CredentialManagerDialog(QDialog):
         target = self.fetch_queue.pop(0)
         from workers.model_fetch_worker import ModelFetchWorker
         
-        self.worker = ModelFetchWorker(target['key'], target['url'], parent=self)
+        self.worker = ModelFetchWorker(target['key'], target['url'], target['name'], parent=self)
         # Add provider metadata to the models during fetch
         self.current_fetch_provider = target['name'].lower().replace(" ", "")
         

@@ -29,6 +29,7 @@ class LogViewerDialog(QDialog):
         
         # Connect buttons
         self.ui.clearBtn.clicked.connect(self.clear_log)
+        self.ui.clearBtn.setText("Clear Global Logs (remove all logs)")
         self.ui.closeBtn.clicked.connect(self.accept)
         self.ui.CloseBtn.clicked.connect(self.accept)
         
@@ -129,8 +130,8 @@ class LogViewerDialog(QDialog):
         """Clear all logs"""
         reply = QMessageBox.question(
             self,
-            "Clear Log",
-            "Are you sure you want to clear all logs?",
+            "Clear Global Logs",
+            "Are you sure you want to clear all global system logs?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         if reply == QMessageBox.StandardButton.Yes:

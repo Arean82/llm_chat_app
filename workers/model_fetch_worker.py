@@ -10,11 +10,12 @@ class ModelFetchWorker(QThread):
     finished = Signal(list)
     error = Signal(str)
     
-    def __init__(self, api_key: str, base_url: str, parent=None):
+    def __init__(self, api_key: str, base_url: str, provider_name: str = "NVIDIA", parent=None):
         super().__init__(parent)
         from utils.constants import OPENAI_BASE_URL
         self.api_key = api_key
         self.base_url = base_url if base_url else OPENAI_BASE_URL
+        self.provider_name = provider_name
         self.working_count = 0
         self.logger = get_logger()
         # Removed hardcoded futuristic models causing fetch lockout.
@@ -117,7 +118,7 @@ class ModelFetchWorker(QThread):
                 except Exception as e:
                     error_msg = str(e)
                     model_id_lower = model_id.lower()
-                    developer = model_id.split('/')[0] if '/' in model_id else "NVIDIA"
+                    developer = model_id.split('/')[0] if '/' in model_id else self.provider_name.capitalize()
                     model_name = model_id.split('/')[-1] if '/' in model_id else model_id
                     
                     # Classify if this is a specialized non-chat model we want to keep
@@ -159,9 +160,19 @@ class ModelFetchWorker(QThread):
                         self.working_count += 1
                         self.logger.add_log(f"✓ {model_id} - identified as {model_type} model ({self.working_count}/{total})", "SUCCESS")
                     else:
+                        working_models.append({
+                            "id": model_id,
+                            "name": self._format_name(model_id),
+                            "description": f"{model_name} from {developer} - Recovered chat model (untested).",
+                            "developer": developer.capitalize(),
+                            "free": True,
+                            "context_length": getattr(model, 'max_model_len', None),
+                            "type": "chat"
+                        })
+                        self.working_count += 1
                         if len(error_msg) > 100:
                             error_msg = error_msg[:100] + "..."
-                        self.logger.add_log(f"✗ {model_id} - skipped/failed: {error_msg}", "WARNING")
+                        self.logger.add_log(f"⚠ {model_id} - added without test (test failed: {error_msg})", "WARNING")
                     continue
                 
                 # Rate limit safety

@@ -43,6 +43,8 @@ cache/
 update_log.txt
 resources/settings.ini
 config.json
+logs/app.log
+
 
 # OS Specific
 .DS_Store
