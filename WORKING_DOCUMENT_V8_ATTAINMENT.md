@@ -1,6 +1,6 @@
-# Working Plan: Attaining v7.2 (Master Progress Log)
+# Working Plan: Attaining v8.0 (Master Progress Log)
 
-This is the tactical manual for evolving the **fixed v6.6 concurrency foundation** into the v7.2 Headless/SaaS architecture.
+This is the tactical manual for evolving the **v7.2 Headless/SaaS architecture** into the v8.0 ecosystem.
 
 ---
 
@@ -570,7 +570,7 @@ Phase 7 merges the Desktop PySide6 application with the Flask SaaS Web Server, t
 | **7.1.3** | **SaaS Operator Panel**: Add a new Desktop UI tab to Start/Stop the server and view local access IP address    | ✅ DONE                                                 |
 | **7.1.4** | **Cross-Platform Web Search**: Port `web_search` toggle into SaaS HTML UI and harden Desktop crash fallbacks | ✅**DONE**                                        |
 
-### 7.2 Native Desktop Tenant Managemednt
+### 7.2 Native Desktop Tenant Management
 
 | #               | Task                                                                                                                | Status  |
 | :-------------- | :------------------------------------------------------------------------------------------------------------------ | :------ |
@@ -578,6 +578,8 @@ Phase 7 merges the Desktop PySide6 application with the Flask SaaS Web Server, t
 | **7.2.2** | **Tenant Access Controls**: Desktop UI capabilities to kick, ban, or reset web user passwords natively        | ✅ DONE |
 
 ---
+
+
 
 ## 🟢 Phase 8: Runtime Infrastructure & Service Layer [STATUS: COMPLETED]
 
@@ -685,6 +687,24 @@ Phase 9 introduces a tenant-scoped multi-layer cache architecture for document i
 | **9.1.7** | **Cache Invalidation Rules**: Trigger automatic invalidation after document updates, embedding model changes, or tenant configuration changes | ⏳ PENDING |
 | **9.1.8** | **TTL & Cleanup Scheduler**: Remove expired indices, vectors, temporary assets, and orphaned chunks | ⏳ PENDING |
 | **9.1.9** | **Cache Telemetry & Analytics**: Monitor hit ratio, latency reduction, storage growth, and embedding cost savings | ⏳ PENDING |
+
+---
+
+## 🔴 Phase 10: Desktop Native Authentication & Ecosystem Refactoring [STATUS: PLANNING]
+
+The current desktop application utilizes a "Login Dialog" that functions primarily as an API Key/Ecosystem selector, lacking true user authentication. Phase 10 will re-architect this flow to match the SaaS platform, introducing a true **Admin-Only** login gate and converting the old login logic into a dynamic "Ecosystem Selector."
+
+*Constraint*: The Desktop and CLI/Headless modes are strictly reserved for the Master Admin. There are no plans to support non-admin (guest) users natively on the desktop; all standard tenant traffic remains routed through the SaaS Web Gateway.
+
+### 10.1 Desktop Auth & Ecosystem Separation
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **10.1.1** | **Create True Desktop Login**: Design a new `user_login.ui` and `.py` controller requiring a Username and Master Password to launch the app. | [ ] |
+| **10.1.2** | **Rename Legacy Login**: Refactor `login_dialog.ui` and `login_dialog.py` to `ecosystem_selector.ui` / `.py` to accurately reflect its purpose. | [ ] |
+| **10.1.3** | **UX Refactoring (Switch Ecosystem)**: Replace the concept of "Logout" with "Switch Ecosystem" to allow dynamic provider swapping without losing user session state. | [ ] |
+| **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop. | [ ] |
+| **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys. | [ ] |
 
 ---
 
