@@ -7,7 +7,7 @@ import platform
 # 1. SET APP IDENTITY (Windows Taskbar Grouping) - MUST BE SET BEFORE ANY QT GUI CLASS/DLL INITS
 if platform.system() == "Windows":
     import ctypes
-    myappid = 'arean82.llmchatapp.v7.2'
+    myappid = 'arean82.llmchatapp.v7.3'
     try:
         # Explicitly declare argument and return types for wide-string (Unicode) translation
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [ctypes.c_wchar_p]
@@ -253,7 +253,7 @@ def main():
     # CLI Command Router
     if "--help" in sys.argv or "-h" in sys.argv:
         print("\n" + "="*50)
-        print(" LLM CHAT APP - Headless Engine v7.2")
+        print(" LLM CHAT APP - Headless Engine v7.3")
         print("="*50)
         print("Usage: python main.py [options]")
         print("\nOptions:")

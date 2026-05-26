@@ -28,6 +28,13 @@ class ModelManagerDialog(QDialog):
         super().__init__(parent)
         self.theme_manager = theme_manager
 
+        # Initialize or link LLM Client to ensure it is always available
+        if parent and hasattr(parent, 'llm_client'):
+            self.llm_client = parent.llm_client
+        else:
+            from logic.llm_client import LLMClient
+            self.llm_client = LLMClient()
+
         set_app_icon(self) 
         
         # Check if fetch is already running BEFORE initializing UI
@@ -613,7 +620,8 @@ class ModelManagerDialog(QDialog):
         logger.add_log("Starting model fetch from NVIDIA API", "INFO")
 
         # Create and start worker
-        self.fetch_worker = ModelFetchWorker(api_key, base_url, provider_name=active_p, parent=self)
+        self.fetch_worker = ModelFetchWorker(api_key, base_url, provider_name=active_p, parent=None)
+        ModelManagerDialog._fetch_instance = self.fetch_worker
         self.fetch_worker.progress.connect(self._on_fetch_progress)
         self.fetch_worker.finished.connect(self._on_fetch_finished)
         self.fetch_worker.error.connect(self._on_fetch_error)
@@ -767,7 +775,8 @@ class ModelManagerDialog(QDialog):
         # Create and start worker for paid models
         from workers.paid_model_fetch_worker import PaidModelFetchWorker
         # Re-using the system client for auth consistency
-        self.paid_fetch_worker = PaidModelFetchWorker(self.llm_client, parent=self)
+        self.paid_fetch_worker = PaidModelFetchWorker(self.llm_client, parent=None)
+        ModelManagerDialog._fetch_instance = self.paid_fetch_worker
         self.paid_fetch_worker.progress.connect(self._on_paid_fetch_progress)
         self.paid_fetch_worker.finished.connect(self._on_paid_fetch_finished)
         self.paid_fetch_worker.error.connect(self._on_paid_fetch_error)
@@ -998,7 +1007,8 @@ class ModelManagerDialog(QDialog):
 
         # Start worker
         from workers.description_generator import DescriptionGeneratorWorker
-        self.generator_worker = DescriptionGeneratorWorker(api_key, selected_model['id'], models_to_update, parent=self)
+        self.generator_worker = DescriptionGeneratorWorker(api_key, selected_model['id'], models_to_update, parent=None)
+        ModelManagerDialog._fetch_instance = self.generator_worker
         self.generator_worker.progress.connect(self._on_generation_progress)
         self.generator_worker.finished.connect(self._on_generation_finished)
         self.generator_worker.error.connect(self._on_generation_error)

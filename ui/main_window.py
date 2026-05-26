@@ -31,7 +31,7 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("LLM Chat App v7.2")
+        self.setWindowTitle("LLM Chat App v7.3")
         
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)
@@ -395,11 +395,12 @@ class MainWindowClass(QMainWindow):
             )
             return
         # Phase 2: Pass theme_manager for visual synchronization
-        ModelManagerDialog(
+        self.model_manager_dialog = ModelManagerDialog(
             theme=self.theme_manager.current_theme, 
             parent=self, 
             theme_manager=self.theme_manager
-        ).exec()
+        )
+        self.model_manager_dialog.exec()
 
     def show_storage_manager(self):
         """Launch UI to pivot the underlying app data storage directories"""

@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec file for LLM Chat App
 # One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
-# One_dir can be used to specify the output directory for the built application. (v7.2.0 Stable Sync)
+# One_dir can be used to specify the output directory for the built application. (v7.3.0 Stable Sync)
 
 a = Analysis(
     ['main.py'],
@@ -127,8 +127,8 @@ if sys.platform == 'darwin':
         icon='resources/app_icon.icns',
         bundle_identifier='com.arean82.llmchatapp',
         info_plist={
-            'CFBundleShortVersionString': '7.2.0',
-            'CFBundleVersion': '7.2.0',
+            'CFBundleShortVersionString': '7.3.0',
+            'CFBundleVersion': '7.3.0',
             'NSPrincipalClass': 'NSApplication',
             'NSAppleScriptEnabled': False,
             'NSHighResolutionCapable': True,

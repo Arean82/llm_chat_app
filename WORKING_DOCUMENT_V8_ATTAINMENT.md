@@ -1,6 +1,6 @@
 # Working Plan: Attaining v8.0 (Master Progress Log)
 
-This is the tactical manual for evolving the **v7.2 Headless/SaaS architecture** into the v8.0 ecosystem.
+This is the tactical manual for evolving the **v7.3 Headless/SaaS architecture** into the v8.0 ecosystem.
 
 ---
 

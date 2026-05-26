@@ -283,3 +283,11 @@
 {"timestamp": "2026-05-26T11:24:53Z", "tenant_id": "1", "latency_seconds": 0.013, "tokens": 0, "status": "success"}
 {"timestamp": "2026-05-26T11:25:03Z", "tenant_id": "1", "latency_seconds": 0.008, "tokens": 0, "status": "success"}
 {"timestamp": "2026-05-26T11:25:03Z", "tenant_id": "1", "latency_seconds": 0.034, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:48Z", "tenant_id": "anonymous", "latency_seconds": 0.137, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:55Z", "tenant_id": "anonymous", "latency_seconds": 0.059, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:56Z", "tenant_id": "1", "latency_seconds": 0.712, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:59Z", "tenant_id": "1", "latency_seconds": 0.016, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:59Z", "tenant_id": "1", "latency_seconds": 0.009, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:59Z", "tenant_id": "1", "latency_seconds": 0.021, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:27:59Z", "tenant_id": "1", "latency_seconds": 0.017, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T12:28:01Z", "tenant_id": "1", "latency_seconds": 0.006, "tokens": 0, "status": "success"}
