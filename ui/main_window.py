@@ -223,8 +223,11 @@ class MainWindowClass(QMainWindow):
              return
              
         # 3. Restore Credentials ONLY for active session
+        from utils.security_utils import decrypt_data, SESSION_MASTER_PASSWORD
         gk = keyring.get_password("LLMChatApp", "api_key_google")
-        if gk: self.llm_client.set_google_api_key(gk)
+        if gk:
+            gk = decrypt_data(gk, SESSION_MASTER_PASSWORD)
+            self.llm_client.set_google_api_key(gk)
         
         # Fetch targeted localized endpoint
         b_url = settings.value(f"url_{active_p}") or settings.value("base_url")
@@ -237,7 +240,9 @@ class MainWindowClass(QMainWindow):
         if active_p != "google":
              ak = keyring.get_password("LLMChatApp", f"api_key_{active_p}")
                    
-        if ak: self.llm_client.set_api_key(ak)
+        if ak:
+            ak = decrypt_data(ak, SESSION_MASTER_PASSWORD)
+            self.llm_client.set_api_key(ak)
         
         # 4. Restore Last Selected Model & UI States
         mid = str(settings.value("current_model_id", "")).strip()
@@ -286,51 +291,15 @@ class MainWindowClass(QMainWindow):
              self.tray_icon.show()
 
     def handle_auth_button(self):
-        if self.llm_client.is_globally_authenticated(): self.logout()
-        else: self.open_settings()
+        self.open_settings()
 
-    def logout(self):
-        """Clears all session keys and returns to the login gate."""
-        if QMessageBox.question(self, "Logout", "Are you sure you want to log out and clear all API keys?") == QMessageBox.Yes:
-            import keyring
-            from utils.path_utils import get_app_settings
-            settings = get_app_settings()
-            active_p = settings.value("active_provider_id", "")
-            
-            # 1. Clear keys from OS vault (Universal Sweep)
-            # We delete each slot independently to ensure one failure doesn't block the rest
-            slots = [
-                "api_key", 
-                "api_key_google", 
-                "api_key_nvidia",
-                f"api_key_{active_p}",
-                "api_key_openai_nvidia_nim",
-                "api_key_openai_nvidia"
-            ]
-            for slot in slots:
-                try: keyring.delete_password("LLMChatApp", slot)
-                except: pass
-            
-            # 2. Reset Client and Local State
-            self.llm_client.clear_keys()
-            settings.remove("active_provider_id")
-            settings.remove("current_model_id")
-            settings.sync()
-            
-            # 3. Reload and force return to Login Gate
-            self.load_settings()
-            self.chat_view.set_chat_enabled(False)
-            
-            # 4. Hide main window and prompt for new credentials instead of abruptly closing
-            self.hide()
-            if self.open_settings():
-                self.showMaximized()
-            else:
-                QApplication.quit()
+    def switch_ecosystem(self):
+        """Spawns the Ecosystem selector to swap dynamic AI providers cleanly."""
+        self.open_settings()
 
     def open_settings(self):
-        from ui.login_dialog import LoginDialogClass
-        dlg = LoginDialogClass(parent=self)
+        from ui.ecosystem_selector import EcosystemSelectorClass
+        dlg = EcosystemSelectorClass(parent=self)
         # Only reload if the user actually clicked Save/Login
         if dlg.exec():
             self.load_settings()

@@ -21,10 +21,6 @@ VSCODE_STATUS="${RED}❌ FAILED TO COMPILE OR PACKAGE${NC}"
 VSCODE_LOCATION="N/A"
 VSCODE_INSTALL="Please check the build output log above for details."
 
-JETBRAINS_STATUS="${RED}❌ FAILED TO COMPILE OR PACKAGE${NC}"
-JETBRAINS_LOCATION="N/A"
-JETBRAINS_INSTALL="Please check the build output log above for details."
-
 # ----------------------------------------------------
 # SECTION 1: VS Code Extension Package
 # ----------------------------------------------------

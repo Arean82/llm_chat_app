@@ -1,1 +1,22 @@
-{}
+{
+    "jetbrains-llm-chat-1.0.1.zip": {
+        "is_visible": false,
+        "name": "Jetbrains",
+        "description": "No description available."
+    },
+    "jetbrains-llm-chat-2.0.0.zip": {
+        "is_visible": false,
+        "name": "Jetbrains",
+        "description": "# JetBrains LLM Chat v2.0.0\n\n**Elevate your development workflow with a seamless, AI-driven integration designed specifically for the JetBrains ecosystem.**\n\n`jetbrains-llm-chat-2.0.0.zip` delivers a premium, glassmorphic UI that blends natively with your IDE theme, providing a sophisticated interface for high-edge intelligence without compromising system performance.\n\n### 🚀 Key Features\n*   **Inline Autocomplete:** Context-aware code suggestions that integrate directly into your editor flow.\n*   **Dynamic Model Tuning:** Real-time editing of temperature, Top-P, and token limits via a sleek control panel.\n*   **Workspace Syncing:** Intelligent indexing of your local project structure for hyper-accurate, codebase-specific responses.\n*   **Security-First Architecture:** Zero data leakage; all prompts are routed through your private infrastructure.\n\n### 🛠 Installation\n1.  Open your JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.).\n2.  Navigate to `Settings` $\\rightarrow$ `Plugins`.\n3.  Click the **⚙️ Gear Icon** and select **\"Install Plugin from Disk...\"**.\n4.  Select `jetbrains-llm-chat-2.0.0.zip` and restart your IDE.\n\n### 🔌 Connection Setup\nThe extension is engineered to interface with a local **Universal API server** to ensure maximum privacy and low latency.\n\n1.  Ensure your local LLM server is active.\n2.  Navigate to `Settings` $\\rightarrow$ `Tools` $\\rightarrow$ `LLM Chat`.\n3.  Set the **API Endpoint** to: `http://localhost:5000`\n4.  Click **Test Connection** to verify the handshake.\n\n---\n*Designed for developers who demand precision, privacy, and aesthetic excellence.*"
+    },
+    "vscode-llm-chat-1.0.1.vsix": {
+        "is_visible": false,
+        "name": "Vscode",
+        "description": "No description available."
+    },
+    "vscode-llm-chat-2.0.0.vsix": {
+        "is_visible": false,
+        "name": "Vscode",
+        "description": "# LLM Chat 2.0.0\n\n![Version](https://img.shields.io/badge/version-2.0.0-blue) ![Platform](https://img.shields.io/badge/platform-vscode-blueviolet) ![Security](https://img.shields.io/badge/security-local--api-green)\n\n**LLM Chat** is a high-performance AI orchestration layer for Visual Studio Code. It bridges your workspace with local intelligence through a premium, glassmorphic interface designed for minimal cognitive load and maximum developer velocity.\n\n## 🚀 Core Features\n\n*   **Contextual Autocomplete:** Real-time, inline code suggestions that adapt to your project's architectural patterns.\n*   **Dynamic Parameter Tuning:** Precision control over Temperature, Top-P, and Max Tokens via a sleek, integrated UI.\n*   **Workspace Syncing:** Intelligent indexing of your local directory to provide the LLM with full project awareness.\n*   **Glassmorphic UI:** A modern, translucent design language that blends seamlessly with VS Code's native themes.\n\n## 🛠 Installation\n\n1.  Download the extension package: `vscode-llm-chat-2.0.0.vsix`.\n2.  Open **Visual Studio Code**.\n3.  Navigate to the **Extensions** view (`Ctrl+Shift+X`).\n4.  Click the **three-dot menu** (⋯) in the top right corner of the Extensions pane.\n5.  Select **Install from VSIX...** and choose the downloaded file.\n6.  Restart VS Code to initialize the environment.\n\n## 🔌 Connection & Security\n\nTo ensure total data sovereignty, LLM Chat connects exclusively to a local backend.\n\n1.  Launch your **Universal API Server** on your local machine.\n2.  Ensure the server is listening on **Port 5000**.\n3.  The extension will automatically handshake with `http://localhost:5000`.\n4.  **Security Note:** All prompts and codebase indices remain on your local hardware; no data is transmitted to external clouds.\n\n---\n*Optimized for privacy. Engineered for performance.*"
+    }
+}

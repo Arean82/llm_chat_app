@@ -41,22 +41,6 @@ class SaaSSettingsDialogClass(QDialog):
         if hasattr(self.ui, 'btn_reset_admin'):
             self.ui.btn_reset_admin.clicked.connect(self.on_reset_admin)
             
-        # Initialize IDE Extensions Tab UI bindings and data (loaded natively from .ui file)
-        self.setup_extensions_tab()
-            
-        # Restore Geometry
-        from utils.path_utils import get_app_settings
-        settings = get_app_settings()
-        geom = settings.value("geometry_saas_settings")
-        if geom:
-            self.restoreGeometry(geom)
-
-    def closeEvent(self, event):
-        from utils.path_utils import get_app_settings
-        settings = get_app_settings()
-        settings.setValue("geometry_saas_settings", self.saveGeometry())
-        super().closeEvent(event)
-        
         # SaaS Control Buttons
         if hasattr(self.ui, 'pushButton'):
             self.ui.pushButton.clicked.connect(self.restart_saas_server)
@@ -72,9 +56,17 @@ class SaaSSettingsDialogClass(QDialog):
             self.ui.btn_toggle_ban.clicked.connect(self.toggle_ban_status)
         if hasattr(self.ui, 'btn_reset_pass'):
             self.ui.btn_reset_pass.clicked.connect(self.reset_tenant_password)
-        
-        self.hydrate_ui()
-        
+            
+        # Initialize IDE Extensions Tab UI bindings and data (loaded natively from .ui file)
+        self.setup_extensions_tab()
+            
+        # Restore Geometry
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        geom = settings.value("geometry_saas_settings")
+        if geom:
+            self.restoreGeometry(geom)
+            
         # Inject localized warning for reserved Port 5000 conflict safety
         if hasattr(self.ui, 'hint_net'):
             self.ui.hint_net.setText(
@@ -83,6 +75,22 @@ class SaaSSettingsDialogClass(QDialog):
                 '<p style="color:#e81123; font-size:11px;"><b>🚨 NOTICE:</b> Port 5000 is strictly reserved for the local IDE Extension API.</p>'
                 '</body></html>'
             )
+            
+        # Hydrate all values initially
+        self.hydrate_ui()
+
+    def closeEvent(self, event):
+        # Safely terminate any running AI generation thread before closing to avoid QThread destruction crashes
+        if hasattr(self, 'ai_desc_worker') and self.ai_desc_worker and self.ai_desc_worker.isRunning():
+            print("[SaaSSettingsDialog] Closing: Terminating running background AI description thread...")
+            self.ai_desc_worker.disconnect()
+            self.ai_desc_worker.terminate()
+            self.ai_desc_worker.wait() # wait for clean thread exit
+            
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        settings.setValue("geometry_saas_settings", self.saveGeometry())
+        super().closeEvent(event)
 
     def hydrate_ui(self):
         """Hydrates inputs using live data retrieved from config.ini memory."""
@@ -470,35 +478,62 @@ class SaaSSettingsDialogClass(QDialog):
             finished = Signal(str, str)
             error = Signal(str)
 
-            def __init__(self, filename, parent_dialog):
+            def __init__(self, filename, parent_dialog, model_id=None):
                 super().__init__(None) # Decoupled parent
                 self.filename = filename
                 self.parent_dialog = parent_dialog
+                self.model_id = model_id
 
             def run(self):
+                print("[DynamicDescWorker] Background QThread run() started...")
                 try:
                     llm_client = LLMClient()
                     # Hook active provider configurations
                     from utils.path_utils import get_app_settings
+                    from utils.security_utils import decrypt_data, SESSION_MASTER_PASSWORD
                     import keyring
+                    
                     active_p = get_app_settings().value("active_provider_id", "nvidia")
+                    print(f"[DynamicDescWorker] Resolved active provider: {active_p}")
+                    
                     api_key = keyring.get_password("LLMChatApp", f"api_key_{active_p}") or keyring.get_password("LLMChatApp", "api_key")
                     base_url = get_app_settings().value(f"url_{active_p}") or get_app_settings().value("base_url", "https://integrate.api.nvidia.com/v1")
+                    print(f"[DynamicDescWorker] Loaded keyring key: {'FOUND' if api_key else 'MISSING'}, base_url: {base_url}")
                     
                     if not api_key:
+                        print("[DynamicDescWorker] Error: API key missing.")
                         self.error.emit("Ecosystem API Key is missing. Set your provider key first.")
                         return
 
-                    llm_client.set_api_key(api_key)
-                    llm_client.set_base_url(base_url)
+                    # Zero-Trust local decrypt cycle
+                    print(f"[DynamicDescWorker] Decrypting keyring API key using session password...")
+                    api_key = decrypt_data(api_key, SESSION_MASTER_PASSWORD)
+                    print(f"[DynamicDescWorker] Decrypted key length: {len(api_key) if api_key else 0}")
 
-                    # Fetch active model
-                    from utils.path_utils import get_app_settings
-                    from logic.model_io import load_all_models
-                    model_id = get_app_settings().value("current_model_id")
+                    # Dynamic Multi-Provider Routing Setup
+                    if str(active_p).lower() == "google":
+                        llm_client.set_google_api_key(api_key)
+                        print("[DynamicDescWorker] Configured Google client.")
+                    else:
+                        llm_client.set_api_key(api_key)
+                        llm_client.set_base_url(base_url)
+                        print("[DynamicDescWorker] Configured OpenAI client.")
+
+                    # Enforce live selected model from parent/chat directly with zero hardcoded fallbacks
+                    model_id = self.model_id
                     if not model_id:
-                        active_models = [m for m in load_all_models() if m.get('provider', 'nvidia') == active_p and m.get('free', True)]
-                        model_id = active_models[0]["id"] if active_models else "meta/llama-3.1-8b-instruct"
+                        from utils.path_utils import get_app_settings
+                        model_id = get_app_settings().value("current_model_id")
+                    
+                    print(f"[DynamicDescWorker] Resolved model ID for generation: {model_id}")
+                    if not model_id:
+                        print("[DynamicDescWorker] Error: No model selected.")
+                        raise ValueError(
+                            "No active model is currently selected in your chat window.\n\n"
+                            "Please select an active provider model (e.g. Gemini, NVIDIA NIM) in the main chat view "
+                            "before generating plugin documentation."
+                        )
+                    
                     llm_client.set_model(model_id)
 
                     platform = "vscode" if self.filename.endswith('.vsix') else "jetbrains"
@@ -511,19 +546,29 @@ class SaaSSettingsDialogClass(QDialog):
                         f"Keep it under 300 words. Do not use generic placeholders. Focus on premium glassmorphic UI synergy and security."
                     )
 
+                    print(f"[DynamicDescWorker] Sending completion generation request to LLM client ({model_id})...")
                     full_text = llm_client._run_completion_internal(
                         "You are an expert technical writer.",
                         prompt,
                         1024,
                         0.3
                     )
+                    print("[DynamicDescWorker] Completion request successful! Response received.")
 
                     self.finished.emit(self.filename, full_text.strip())
                 except Exception as e:
+                    print(f"[DynamicDescWorker] Thread run encountered exception: {e}")
+                    import traceback
+                    traceback.print_exc()
                     self.error.emit(str(e))
 
+        # Retrieve active model ID selected in the user's active session/chat
+        model_id = None
+        if self.parent() and hasattr(self.parent(), "llm_client") and self.parent().llm_client:
+            model_id = self.parent().llm_client.current_model
+
         # Store thread globally to avoid instant garbage collection
-        self.ai_desc_worker = DynamicDescWorker(ext["filename"], self)
+        self.ai_desc_worker = DynamicDescWorker(ext["filename"], self, model_id=model_id)
         self.ai_desc_worker.finished.connect(self._on_ai_desc_complete)
         self.ai_desc_worker.error.connect(self._on_ai_desc_error)
         self.ai_desc_worker.start()

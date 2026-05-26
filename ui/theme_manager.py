@@ -116,9 +116,9 @@ class ThemeManager:
     def refresh_auth_button_style(self):
         """Broadcasts auth button style update to all dynamic UI layers."""
         has_key = self.window.llm_client.is_globally_authenticated()
-        txt = "🚪 Logout" if has_key else "🔓 Login"
-        bg = "#d32f2f" if has_key else "#0078d4"
-        hv = "#b71c1c" if has_key else "#106ebe"
+        txt = "🔄 Switch Ecosystem" if has_key else "🔌 Select Ecosystem"
+        bg = "#6366f1" if has_key else "#0078d4"
+        hv = "#4f46e5" if has_key else "#106ebe"
         
         style = f"QPushButton {{ background-color: {bg}; border: none; border-radius: 5px; padding: 8px 20px; color: white; font-weight: bold; }} QPushButton:hover {{ background-color: {hv}; }}"
         

@@ -16,7 +16,7 @@ The platform supports a BYOK architecture. This means you can plug your own dire
 2. Select your desired ecosystem.
 3. Paste your key and click Save.
 
-Your key is immediately encrypted using Base64 encryption schemas before being stored in the database. When you run queries, the system decrypts your key exclusively for the duration of that isolated web request.
+Your key is immediately encrypted using secure zero-trust symmetric PBKDF2 ciphers derived dynamically from your master login password. Raw keys are never written to disk in plaintext, and the system decrypts your credentials in transient memory exclusively for the duration of that isolated web request.
 
 ## 3. Connecting Client Applications
 

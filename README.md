@@ -137,13 +137,14 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
    ```bash
    python main.py   
    ```
-2. 📸 **First Launch:** A secure login popup will prompt you for your preferred API key (`nvapi-...`).
-3. 🤖 **Select Model:** A popup will let you choose your desired AI model.
-4. 💬 **Start Chatting:** Type your message. Press `Enter` to send, or `Shift+Enter` for a new line.
-5. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
-6. ⏹️ **Stop Generation:** Click the red "Stop" button at any time to halt the response.
-7. 🔽 **System Tray:** Click the X button to choose between exiting completely or minimizing to system tray. Double-click tray icon to restore window.
-8. 🌐 **API Server:** Go to Tools → Universal API Server to start the API. Configure your IDE extension to use `http://localhost:5000/v1`. You can securely manage your active keys and toggle the server directly via the CLI by running `python main.py --api-manager`.
+2. 🔑 **Secure Authentication Gate:** On startup, you will be greeted by the **Quantum Admin Login Gateway**. Sign in with your Super Admin credentials (`admin` / `admin` by default). Your credentials are validated against the partitioned database layer.
+3. 📸 **Dynamic Ecosystem Configuration:** If no ecosystem is active, the **Switch Ecosystem** dialog appears. Enter your API Key or select keyless local providers. Your keys are immediately encrypted using zero-trust PBKDF2 ciphers derived from your master password and securely stored in your OS keychain.
+4. 🤖 **Select Model:** Click the chat model selector in the main window to choose from your active providers.
+5. 💬 **Start Chatting:** Type your message. Press `Enter` to send, or `Shift+Enter` for a new line.
+6. 📎 **Upload Files:** Click the attachment button to upload code/text for the AI to review.
+7. ⏹️ **Stop Generation:** Click the red "Stop" button at any time to halt the response.
+8. 🔽 **System Tray:** Click the X button to choose between exiting completely or minimizing to system tray. Double-click tray icon to restore window.
+9. 🌐 **API Server:** Go to Tools → Universal API Server to start the API. Configure your IDE extension to use `http://localhost:5000/v1`. You can securely manage your active keys and toggle the server directly via the CLI by running `python main.py --api-manager`.
 
 ---
 

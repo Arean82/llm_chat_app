@@ -504,19 +504,27 @@ def main():
             print("[+] Shutdown complete.")
     else:
         # --- GUI EXECUTION PATH ---
+        from ui.user_login import UserLoginClass
+        login_dlg = UserLoginClass()
+        from ui.shared_widgets import set_app_icon
+        set_app_icon(login_dlg)
+        
+        if not login_dlg.exec():
+            print("[*] Admin login cancelled. Exiting.")
+            sys.exit(0)
+            
         from logic.llm_client import LLMClient
         client = LLMClient()
         client.hydrate()
         
-        # Session Check: Only show gate if NOT authenticated
+        # Ecosystem Check: If no provider is configured yet, show EcosystemSelector
         if not client.is_globally_authenticated():
-            from ui.login_dialog import LoginDialogClass
-            login_dlg = LoginDialogClass()
-            from ui.shared_widgets import set_app_icon
-            set_app_icon(login_dlg)
+            from ui.ecosystem_selector import EcosystemSelectorClass
+            selector_dlg = EcosystemSelectorClass()
+            set_app_icon(selector_dlg)
             
-            if not login_dlg.exec():
-                print("[*] Login cancelled. Exiting.")
+            if not selector_dlg.exec():
+                print("[*] Ecosystem selection cancelled. Exiting.")
                 sys.exit(0)
             
         # INITIALIZE MAIN WINDOW

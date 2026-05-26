@@ -699,7 +699,7 @@ Phase 9 introduces a tenant-scoped multi-layer cache architecture for document i
 
 ---
 
-## 🔴 Phase 10: Desktop Native Authentication & Ecosystem Refactoring [STATUS: PLANNING]
+## 🔴 Phase 10: Desktop Native Authentication & Ecosystem Refactoring [STATUS: IN PROGRESS]
 
 The current desktop application utilizes a "Login Dialog" that functions primarily as an API Key/Ecosystem selector, lacking true user authentication. Phase 10 will re-architect this flow to match the SaaS platform, introducing a true **Admin-Only** login gate and converting the old login logic into a dynamic "Ecosystem Selector."
 
@@ -707,13 +707,24 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 ### 10.1 Desktop Auth & Ecosystem Separation
 
-| #                | Task                                                                                                                                                                       | Status |
-| :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----- |
-| **10.1.1** | **Create True Desktop Login**: Design a new `user_login.ui` and `.py` controller requiring a Username and Master Password to launch the app.                     | [ ]    |
-| **10.1.2** | **Rename Legacy Login**: Refactor `login_dialog.ui` and `login_dialog.py` to `ecosystem_selector.ui` / `.py` to accurately reflect its purpose.              | [ ]    |
-| **10.1.3** | **UX Refactoring (Switch Ecosystem)**: Replace the concept of "Logout" with "Switch Ecosystem" to allow dynamic provider swapping without losing user session state. | [ ]    |
-| **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop.                             | [ ]    |
-| **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys.         | [ ]    |
+| #                | Task                                                                                                                                                                       | Status           |
+| :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **10.1.1** | **Create True Desktop Login**: Design a new `user_login.ui` and `.py` controller requiring a Username and Master Password to launch the app.                     | ✅**DONE** |
+| **10.1.2** | **Rename Legacy Login**: Refactor `login_dialog.ui` and `login_dialog.py` to `ecosystem_selector.ui` / `.py` to accurately reflect its purpose.              | ✅**DONE** |
+| **10.1.3** | **UX Refactoring (Switch Ecosystem)**: Replace the concept of "Logout" with "Switch Ecosystem" to allow dynamic provider swapping without losing user session state. | ✅**DONE** |
+| **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop.                             | ✅**DONE** |
+| **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys.         | ✅**DONE** |
+| **10.1.6** | **Dynamic capability descriptions**: Build intelligent dynamic descriptions in fetch worker to strip placeholders and clean static database files.                         | ✅**DONE** |
+| **10.1.7** | **Hot-Swappable Description Generator**: Bind active chat model and global client to generate descriptions dynamically without user input prompts.                       | ✅**DONE** |
+
+**Technical Notes (10.1):**
+
+* **Transient Cryptographic Key Derivation**: Introduced [security_utils.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/utils/security_utils.py) using PBKDF2-HMAC-SHA256 key derivation to dynamically build a symmetric 256-bit encryption key from the user's master login password. Raw API credentials in the OS keyring are encrypted as Base64 ciphers, decryptable only while `SESSION_MASTER_PASSWORD` is loaded in transient system memory.
+* **Gated Desktop Auth Gate**: Gated GUI boots behind [user_login.ui](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui_designer/user_login.ui) and [user_login.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/user_login.py). Strictly restricts entry to the SaaS Super Admin (`admin` username). Integrates a premium vector-drawn **pure white eyelashes eye toggle button** inside the password field using `QPainterPath` vectors.
+* **Transparent Keyring Binding**: Re-routed `hydrate()` in [llm_client.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/llm_client.py) to transparently decrypt keyring credentials on-the-fly using the cached session master password derived key.
+* **Intelligent capability descriptions**: Removed hardcoded `"Recovered chat model (untested)."` fallbacks from [model_fetch_worker.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/model_fetch_worker.py). It now scans model identifiers for keywords (`code`, `math`, `vision`, `instruct`) to generate high-quality capability descriptions dynamically. Added a cleanup utility [clean_descriptions.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/scratch/clean_descriptions.py) to immediately refresh existing static model databases in place.
+* **Hot-Swappable Description Generator**: Refactored the description generator inside [model_manager.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/model_manager.py) and [description_generator.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/description_generator.py). It completely bypasses manual model selection popups and routes completions directly through the parent `llm_client` using the active main tab selection, dynamically supporting Google Gemini and OpenAI-compatible pipelines.
+
 
 ### 10.2 SaaS Tenant Enterprise SQL Migration Flow (Modular Driver Architecture)
 

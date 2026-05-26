@@ -956,9 +956,8 @@ class ModelManagerDialog(QDialog):
         print(f"✅ Saved {len(models)} models to {models_file}")
 
     def generate_descriptions(self):
-        """Generate descriptions for models using a selected model"""
+        """Generate descriptions for models using the active chat model selected in main tab"""
         from workers.update_logger import get_logger
-        from PySide6.QtWidgets import QInputDialog
 
         # Find models without descriptions
         models_to_update = []
@@ -971,43 +970,32 @@ class ModelManagerDialog(QDialog):
             QMessageBox.information(self, "No Models", "All models already have descriptions.")
             return
 
-        # Get list of models that can be used for generation (chat models)
-        available_generators = [m for m in self.models if m.get('free', True)]
-        generator_names = [m.get('name', m['id']) for m in available_generators]
-
-        # Select model to use for generation
-        selected_name, ok = QInputDialog.getItem(
-            self,
-            "Select Generator Model",
-            f"Choose a model to generate descriptions for {len(models_to_update)} models:",
-            generator_names,
-            0,
-            False
-        )
-
-        if not ok or not selected_name:
+        # Resolve selected model in the main tab from the llm client
+        selected_model_id = self.llm_client.current_model
+        if not selected_model_id:
+            QMessageBox.warning(
+                self, 
+                "No Active Model Selected", 
+                "Please select an active model in the main Chat tab first to generate descriptions."
+            )
             return
 
-        # Find selected model
-        selected_model = next((m for m in available_generators if m.get('name', m['id']) == selected_name), None)
-        if not selected_model:
-            return
-
-        # Get API key
-        settings = get_app_settings()
-        api_key = settings.value("api_key", "")
-
-        if not api_key:
-            QMessageBox.warning(self, "API Key Required", "Please set your API key first.")
+        # Validate that the active model has valid credentials
+        if not self.llm_client.is_globally_authenticated():
+            QMessageBox.warning(
+                self, 
+                "Authentication Required", 
+                "Your active model requires authentication. Please set your API key first in Settings."
+            )
             return
 
         # Close dialog and run in background
         ModelManagerDialog._fetch_in_progress = True
         self.accept()
 
-        # Start worker
+        # Start description generator worker with active model & global llm client
         from workers.description_generator import DescriptionGeneratorWorker
-        self.generator_worker = DescriptionGeneratorWorker(api_key, selected_model['id'], models_to_update, parent=None)
+        self.generator_worker = DescriptionGeneratorWorker(self.llm_client, selected_model_id, models_to_update, parent=None)
         ModelManagerDialog._fetch_instance = self.generator_worker
         self.generator_worker.progress.connect(self._on_generation_progress)
         self.generator_worker.finished.connect(self._on_generation_finished)

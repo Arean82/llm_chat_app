@@ -13,12 +13,17 @@ python main.py
 ```
 *(You can also use the packaged desktop shortcut if provided by your administrator).*
 
-### The API Management Gate
-Upon your first launch, you will be greeted by the **API Key Setup Screen**. 
-1. Select your desired ecosystem (e.g., `OpenAI Compatible`, `Google Gemini`, or `Local Offline Providers`).
+### 🔑 The Secure Admin Login Gate
+Upon launching the client, you will be greeted by the **Quantum Admin Login Gateway**:
+1. Log in with your Super Admin credentials (`admin` / `admin` by default). Your credentials are secure and validated against the partitioned database.
+2. The login screen features a high-fidelity vector eyelash eye toggle button directly inside the password field to securely show or hide your typed password.
+
+### 📸 The Ecosystem Selector Dialog
+Once authenticated, if no active ecosystem has been configured yet, the **Switch Ecosystem** dialog appears:
+1. Select your active AI provider ecosystem (e.g., Google Gemini, NVIDIA NIM, OpenAI, or Local Offline).
 2. Enter your private API Key.
-   - *Note: If you are using local models via Ollama or LM Studio, no key is required. The system will automatically detect and bind to your offline endpoints.*
-3. Your key is securely encrypted and stored natively in your Operating System's credentials vault.
+   - *Note: If you are using local models via Ollama or LM Studio, no key is required. The sweeper will automatically detect and bind your offline endpoints.*
+3. Click Save. Your keys are immediately encrypted using zero-trust symmetric PBKDF2 ciphers derived dynamically from your master login password. Raw keys are never written to disk and exist only in transient system memory during runtime sessions.
 
 ---
 

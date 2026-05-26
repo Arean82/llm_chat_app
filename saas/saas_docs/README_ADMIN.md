@@ -13,7 +13,11 @@ When `tenant_db.py` is initialized for the first time on a fresh database (`data
 - **Password**: Auto-generated via `secrets.token_urlsafe(12)`. Printed to the console strictly *once* upon the very first initialization.
 
 > [!WARNING]
-> If you lose the admin password, you can run the reset script via the `TenantDatabaseManager.reset_admin_account()` hook to safely forcefully override it back to `admin`.
+> If you need to recover or reset the super admin password to `admin`, run the universal reset script from your project root:
+> ```bash
+> python scripts/reset_admin.py
+> ```
+> This script automatically updates the password securely across all dynamic backend databases (Turso, PostgreSQL, MySQL) and synchronizes configurations natively.
 
 ## 2. Multi-Tenancy Architecture
 
