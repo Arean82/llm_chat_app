@@ -177,6 +177,8 @@ class MainWindowClass(QMainWindow):
         settings_menu.addSeparator()
         settings_menu.addAction("🗄️ Storage Manager", self.show_storage_manager)
         settings_menu.addAction("📂 Open Data Folder", self.open_storage_location)
+        settings_menu.addSeparator()
+        settings_menu.addAction("🔄 Database Relocator (Migration Companion)", self.launch_migration_companion)
 
         # Log menu
         log_menu = menubar.addMenu("Log")
@@ -392,6 +394,53 @@ class MainWindowClass(QMainWindow):
         dialog = GenSettingsDialog(self)
         if dialog.exec():
             self.chat_view.add_system_message("✅ Generation parameters updated.")
+
+    def launch_migration_companion(self):
+        """
+        Phase 10.3: Launches the standalone Migration Companion as a detached subprocess
+        and gracefully exits the main application to release database locks.
+        """
+        reply = QMessageBox.question(
+            self,
+            "Launch Migration Companion",
+            "This will close the LLM Chat App to release all database locks, "
+            "then launch the standalone Migration Companion utility.\n\n"
+            "⚠️ All unsaved conversations will be auto-saved before closing.\n\n"
+            "Continue?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        # Auto-save active conversation before shutdown
+        try:
+            self.chat_view.auto_save_current_chat()
+        except Exception:
+            pass
+
+        import subprocess
+        if getattr(sys, 'frozen', False):
+            # Frozen environment (Production .exe)
+            exe_dir = os.path.dirname(sys.executable)
+            companion_name = "Migration Companion.exe" if sys.platform == "win32" else "Migration Companion"
+            companion_bin = os.path.join(exe_dir, companion_name)
+            if not os.path.exists(companion_bin):
+                QMessageBox.critical(
+                    self, "Not Found",
+                    f"Migration Companion executable not found at:\n{companion_bin}\n\n"
+                    "Ensure it was compiled alongside the main application."
+                )
+                return
+            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
+            subprocess.Popen([companion_bin], creationflags=creation_flags)
+        else:
+            # Loose script environment (Development)
+            companion_script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "operator_tools", "migration_companion.py")
+            subprocess.Popen([sys.executable, companion_script])
+
+        # Gracefully terminate main app to release Turso/libSQL handles
+        print("[Migration Companion] Companion launched. Shutting down main application...")
+        QApplication.instance().quit()
 
     def show_saas_settings(self):
         """Phase 7: Opens the SaaS architecture configuration dialog."""

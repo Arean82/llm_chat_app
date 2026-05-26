@@ -156,7 +156,7 @@ llm_chat_app/
 ├── main.py                         # 🚀 Entry point
 ├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build
 ├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build
-├── LLM_Chat_App_combined.spec      # PyInstaller spec - Both builds
+├── LLM_Chat_App_combined.spec      # PyInstaller spec - Triple-binary build (App + Migration Companion + Reset Admin)
 ├── build_all_plugins.bat           # 📦 Windows plugins compile & bundler script
 ├── build_all_plugins.sh            # 📦 Unix/macOS Bash plugins compile & bundler script
 ├── README.md                       # 📖 Documentation
@@ -173,8 +173,19 @@ llm_chat_app/
 ├── test_reranker.py                # 🧪 Legacy offline reranking validation script
 ├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
+├── operator_tools/                 # 🔧 Isolated Operator Admin Portfolio (Phase 10.3)
+│   ├── migration_companion.py      # 🔄 Standalone DB Relocator (GUI + CLI/Headless)
+│   └── reset_admin.py              # 🔐 Universal Master Password Reset (CLI/Daemon)
+│
 ├── saas/                           # 🌐 Quantum SaaS Web Portal (V7)
 │   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
+│   ├── config.ini                  # ⚙️ SaaS configuration (driver selection, network, SMTP)
+│   ├── tenant_db.py                # 🗄️ Factory Switchboard (Turso/Postgres/MySQL routing)
+│   ├── tenant_drivers/             # 🔌 Pluggable Multi-Backend Tenant Database Drivers
+│   │   ├── base_tenant_driver.py   # 📄 Abstract Base Class (22 abstract methods)
+│   │   ├── turso_tenant_driver.py  # ⚡ Turso/libSQL WAL driver (default)
+│   │   ├── postgres_tenant_driver.py # 🐘 PostgreSQL psycopg2 enterprise driver
+│   │   └── mysql_tenant_driver.py  # 🐬 MySQL/MariaDB pymysql driver
 │   ├── static/                     # 🎨 Glassmorphism Styles & Assets
 │   └── templates/                  # 📐 Modular Portal UI Blueprints (Phase 8 Modularization)
 │       ├── layouts/

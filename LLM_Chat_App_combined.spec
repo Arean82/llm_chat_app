@@ -1,11 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec file for LLM Chat App
-# One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
-# One_dir can be used to specify the output directory for the built application.
-# One_file can be used to create a single executable file, but it may increase the build time and the size of the executable.   
-# Gives Both OneDIr and OneFile Build (v7.3.0 Stable Sync)
+# Triple-Binary Build: LLM Chat App + Migration Companion + Reset Admin (v7.3.0 Phase 10.3)
+# Produces both OneDir and OneFile builds for the primary app,
+# plus standalone executables for the operator admin portfolio.
 
-a = Analysis(
+# ═══════════════════════════════════════════════════════════════════
+#  1. PRIMARY APP: LLM Chat App
+# ═══════════════════════════════════════════════════════════════════
+
+a_main = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
@@ -94,14 +97,14 @@ a = Analysis(
     noarchive=False
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=None)
+pyz_main = PYZ(a_main.pure, a_main.zipped_data, cipher=None)
 
 exe_onefile = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
+    pyz_main,
+    a_main.scripts,
+    a_main.binaries,
+    a_main.zipfiles,
+    a_main.datas,
     name='LLM_Chat_one_file/LLM Chat App',
     debug=False,
     strip=False,
@@ -112,8 +115,8 @@ exe_onefile = EXE(
 )
 
 exe_onedir = EXE(
-    pyz,
-    a.scripts,
+    pyz_main,
+    a_main.scripts,
     [],
     exclude_binaries=True,
     name='LLM Chat App',
@@ -125,17 +128,144 @@ exe_onedir = EXE(
     version='file_version_info.txt',
 )
 
+
+# ═══════════════════════════════════════════════════════════════════
+#  2. OPERATOR TOOL: Migration Companion
+# ═══════════════════════════════════════════════════════════════════
+
+a_companion = Analysis(
+    ['operator_tools/migration_companion.py'],
+    pathex=['.'],
+    binaries=[],
+    datas=[
+        ('resources/app_icon.ico', 'resources'),
+        ('saas/config.ini', 'saas'),
+    ],
+    hiddenimports=[
+        'PySide6.QtCore',
+        'PySide6.QtWidgets',
+        'PySide6.QtGui',
+        'sqlite3',
+        'pysqlite2',
+        'configparser',
+        'argparse',
+        'hashlib',
+        'json',
+        'pathlib',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[
+        'PyQt5',
+        'PyQt6',
+        'tkinter',
+        '_tkinter',
+        'matplotlib',
+        'scipy',
+        'IPython',
+        'jupyter',
+        'notebook',
+    ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=None,
+    noarchive=False
+)
+
+pyz_companion = PYZ(a_companion.pure, a_companion.zipped_data, cipher=None)
+
+exe_companion = EXE(
+    pyz_companion,
+    a_companion.scripts,
+    a_companion.binaries,
+    a_companion.zipfiles,
+    a_companion.datas,
+    name='Migration Companion',
+    debug=False,
+    strip=False,
+    upx=True,
+    console=True,  # Console for headless/CLI fallback support
+    icon='resources/app_icon.ico',
+)
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  3. OPERATOR TOOL: Reset Admin
+# ═══════════════════════════════════════════════════════════════════
+
+a_reset = Analysis(
+    ['operator_tools/reset_admin.py'],
+    pathex=['.'],
+    binaries=[],
+    datas=[
+        ('saas/config.ini', 'saas'),
+    ],
+    hiddenimports=[
+        'sqlite3',
+        'pysqlite2',
+        'configparser',
+        'hashlib',
+        'pathlib',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[
+        'PyQt5',
+        'PyQt6',
+        'PySide6',
+        'tkinter',
+        '_tkinter',
+        'matplotlib',
+        'scipy',
+        'IPython',
+        'jupyter',
+        'notebook',
+    ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=None,
+    noarchive=False
+)
+
+pyz_reset = PYZ(a_reset.pure, a_reset.zipped_data, cipher=None)
+
+exe_reset = EXE(
+    pyz_reset,
+    a_reset.scripts,
+    a_reset.binaries,
+    a_reset.zipfiles,
+    a_reset.datas,
+    name='Reset Admin',
+    debug=False,
+    strip=False,
+    upx=True,
+    console=True,  # Pure CLI tool — always console
+)
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  COLLECT: OneDir build (includes all three executables)
+# ═══════════════════════════════════════════════════════════════════
+
 coll = COLLECT(
     exe_onedir,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
+    a_main.binaries,
+    a_main.zipfiles,
+    a_main.datas,
+    exe_companion,
+    exe_reset,
     strip=False,
     upx=True,
     name='LLM_Chat_dir'
 )
 
-# macOS specific bundle configuration
+
+# ═══════════════════════════════════════════════════════════════════
+#  macOS Bundle Configuration
+# ═══════════════════════════════════════════════════════════════════
+
 import sys
 if sys.platform == 'darwin':
     app = BUNDLE(

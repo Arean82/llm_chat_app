@@ -13,11 +13,16 @@ When `tenant_db.py` is initialized for the first time on a fresh database (`data
 - **Password**: Auto-generated via `secrets.token_urlsafe(12)`. Printed to the console strictly *once* upon the very first initialization.
 
 > [!WARNING]
-> If you need to recover or reset the super admin password to `admin`, run the universal reset script from your project root:
+> If you need to recover or reset the super admin password to `admin`, run the universal reset utility from your project root:
 > ```bash
-> python scripts/reset_admin.py
+> # Development (loose script)
+> python operator_tools/reset_admin.py
+>
+> # Production (standalone executable)
+> ./reset_admin.exe          # Windows
+> ./Reset\ Admin             # macOS/Linux
 > ```
-> This script automatically updates the password securely across all dynamic backend databases (Turso, PostgreSQL, MySQL) and synchronizes configurations natively.
+> This utility automatically updates the password securely across all dynamic backend databases (Turso, PostgreSQL, MySQL) and synchronizes configurations natively. The legacy `scripts/reset_admin.py` is deprecated and redirects to this canonical version.
 
 ## 2. Multi-Tenancy Architecture
 

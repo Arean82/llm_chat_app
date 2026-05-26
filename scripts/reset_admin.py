@@ -1,43 +1,23 @@
 # scripts/reset_admin.py
-# Universal Master Password Reset Sequence for SaaS, Desktop GUI, and CLI Headless Gates
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  ⚠️  DEPRECATED — This script has been relocated.               ║
+# ║                                                                  ║
+# ║  The canonical Master Password Reset utility is now located at:  ║
+# ║    operator_tools/reset_admin.py                                 ║
+# ║                                                                  ║
+# ║  This file is retained only as a redirect stub.                  ║
+# ║  In production builds, use: reset_admin.exe                      ║
+# ╚══════════════════════════════════════════════════════════════════╝
 
 import sys
 import os
 
-# Ensure the root directory is in the Python path to import modules properly
+# Redirect to the canonical operator_tools version
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from saas.tenant_db import TenantDatabaseManager
+print("⚠️  scripts/reset_admin.py is DEPRECATED.")
+print("    Redirecting to operator_tools/reset_admin.py...\n")
 
-def reset_admin():
-    print("======================================================================")
-    print(" 🚀 UNIVERSAL MASTER PASSWORD RESET SEQUENCE")
-    print("======================================================================")
-    print("Detecting active database driver from 'saas/config.ini'...")
-    
-    try:
-        db = TenantDatabaseManager()
-        db.reset_admin_account()
-        
-        print("\n✅ Successfully synchronized default Master Credentials across ALL ecosystems!")
-        print("This applies universally to:")
-        print("  1. Native Desktop GUI Admin Gateway")
-        print("  2. SaaS Web Dashboard Portal")
-        print("  3. Headless/CLI Node Service API endpoints")
-        print("----------------------------------------------------------------------")
-        print("  Default Master Profile:")
-        print("  Username: admin")
-        print("  Email:    admin@quantum-saas.local")
-        print("  Password: admin")
-        print("  API Key:  admin_master_passport")
-        print("----------------------------------------------------------------------")
-        print("\nNote: Stored API keys in your local OS Keyring will be safely secured")
-        print("with the master password ('admin') upon your next GUI desktop launch.")
-        print("======================================================================\n")
-        
-    except Exception as e:
-        print(f"❌ Critical: Universal admin reset failed: {e}")
-
-if __name__ == "__main__":
-    reset_admin()
+from operator_tools.reset_admin import reset_admin
+reset_admin()

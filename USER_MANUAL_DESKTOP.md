@@ -75,3 +75,28 @@ You can use the desktop application to route AI intelligence directly into your 
 1. Point your IDE's custom endpoint setting to: `http://localhost:5000/v1`
 2. Use the Local API Key provided in your desktop app's Settings menu.
 3. The IDE can now leverage your desktop's memory, context, and model configurations securely!
+
+---
+
+## 5. Operator Admin Tools
+
+The following standalone utilities are exclusively reserved for the hosting administrator. They are **not distributed** with the public client bundle.
+
+### 🔄 Migration Companion (Database Relocator)
+Safely migrate your SaaS tenant database from Turso/libSQL to PostgreSQL or MySQL.
+
+- **From the Desktop App**: Navigate to **Settings → Database Relocator (Migration Companion)**. This will auto-save your chat, close the main app to release database locks, and launch the companion utility.
+- **CLI/Headless Mode**: For remote servers, run:
+  ```bash
+  python operator_tools/migration_companion.py --headless
+  ```
+- **Production EXE**: Use `Migration Companion.exe` (or `Migration Companion.exe --headless` for terminal mode).
+
+### 🔐 Master Password Reset
+If you lose your Super Admin password, reset it to `admin` using:
+```bash
+python operator_tools/reset_admin.py
+```
+Or in production: `Reset Admin.exe`
+
+> **Note**: The legacy `scripts/reset_admin.py` is deprecated and automatically redirects to the canonical `operator_tools/reset_admin.py`.

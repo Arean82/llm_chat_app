@@ -27,8 +27,8 @@ try:
         (_root / "data").mkdir(exist_ok=True)
         shutil.move(str(_root / "saas_tenants.db"), str(_root / "data/saas_tenants.db"))
     if (_root / "reset_admin.py").exists():
-        (_root / "scripts").mkdir(exist_ok=True)
-        shutil.move(str(_root / "reset_admin.py"), str(_root / "scripts/reset_admin.py"))
+        (_root / "operator_tools").mkdir(exist_ok=True)
+        shutil.move(str(_root / "reset_admin.py"), str(_root / "operator_tools/reset_admin.py"))
     if (_root / "test_reranker.py").exists():
         (_root / "scratch").mkdir(exist_ok=True)
         shutil.move(str(_root / "test_reranker.py"), str(_root / "scratch/test_reranker.py"))

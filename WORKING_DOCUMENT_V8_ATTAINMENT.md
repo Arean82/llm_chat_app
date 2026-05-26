@@ -751,20 +751,26 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 * **Factory Switchboard** (`saas/tenant_db.py`): Singleton `TenantDatabaseManager` reads `[TENANT_DB]` from `config.ini`. All method calls are delegated to the active driver via `__getattr__`. Zero downstream code changes needed — every caller (workers, SaaS app, CLI) keeps using `TenantDatabaseManager()` exactly as before.
 * **Config** (`saas/config.ini`): New `[TENANT_DB]` section with `driver = turso` default. PG and MySQL connection params are commented out and ready to uncomment.
 
-### 10.3 Standalone Migration Companion App (Two Apps Acting as One)
+### 10.3 Standalone Migration Companion App & Operator Admin Portfolio
+
+To provide administrative security and prevent end-user tampering in production, all maintenance, data relocation, and credential recovery scripts are strictly isolated inside a private `operator_tools/` folder. The PyInstaller specification compiles three distinct binaries: `LLM Chat App.exe` (public client), `Migration Companion.exe` (private relocator), and `reset_admin.exe` (private password manager).
 
 | #                | Task                                                                                                                                                                                                                   | Status     |
 | :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
-| **10.3.1** | **Maintenance Shell Utility**: Create `scripts/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models.                                                   | ⏳ PENDING |
-| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately.                                            | ⏳ PENDING |
-| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches.                                                                                                        | ⏳ PENDING |
-| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums.                                                                                             | ⏳ PENDING |
-| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully.                                                                                      | ⏳ PENDING |
-| **10.3.6** | **Dual PyInstaller Executable Spec**: Configure `.spec` files (`LLM_Chat_App_onefile.spec`) to build two separate bundled executables (`LLM Chat App.exe` and `Migration Companion.exe`) simultaneously. | ⏳ PENDING |
+| **10.3.1** | **Maintenance Shell Utility**: Create `operator_tools/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models.                                            | ✅**DONE** |
+| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately.                                            | ✅**DONE** |
+| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches.                                                                                                        | ✅**DONE** |
+| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums.                                                                                             | ✅**DONE** |
+| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully.                                                                                      | ✅**DONE** |
+| **10.3.6** | **Triple PyInstaller Executable Spec**: Configure `.spec` files (`LLM_Chat_App_combined.spec`) to build three separate isolated binaries (`LLM Chat App.exe`, `Migration Companion.exe`, `reset_admin.exe`).   | ✅**DONE** |
 
 **Technical Notes (Phase 10.3):**
 
-* **Dual PyInstaller Executable Bundling**: By defining multiple `Analysis`, `PYZ`, and `EXE` blocks inside the `.spec` files (e.g., `LLM_Chat_App_onefile.spec`), the build system will output both compiled executables in a single build pass under the `dist/` directory.
+* **Isolated Operator Portfolio**: Administrative scripts are moved out of public source scopes into the dedicated `operator_tools/` folder. The production hosting administrator retains `reset_admin.exe` and `Migration Companion.exe` exclusively, distributing only the client chat bundle.
+* **Triple PyInstaller Executable Bundling**: By defining three distinct `Analysis`, `PYZ`, and `EXE` blocks inside `LLM_Chat_App_combined.spec`, PyInstaller compiles the entire operator suite simultaneously into the `dist/` directory.
+* **Service-Friendly Pathing (Windows Services / systemd)**:
+  - **The Problem**: Services running under the OS service manager are triggered with a default CWD pointing to system directories (e.g. `C:\Windows\System32`), causing relative path lookups to crash.
+  - **The Solution**: All drivers, configurations, and scripts strictly avoid CWD-dependent statements (`os.getcwd()`). They dynamically calculate the absolute workspace folder containing the frozen binary (`Path(sys.executable).parent`) or loose script (`Path(__file__).parent.parent.resolve()`), guaranteeing flawless execution when mounted as a service.
 * **Polymorphic Execution Modes (GUI vs CLI/Headless)**:
   - **GUI Mode**: If launched normally, a standalone glassmorphic PySide6 dialog runs to display visual progress bars, state indicators, and step logs.
   - **CLI / Headless Mode**: If called with `--headless` or `--cli` (ideal for remote servers/headless SaaS admins), the app bypasses `QApplication` instantiation entirely and executes as a fast terminal-based migration wizard with stdout progress tracking.
@@ -778,11 +784,12 @@ The current desktop application utilizes a "Login Dialog" that functions primari
       subprocess.Popen([companion_bin], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0)
   else:
       # Loose script environment (Development)
-      subprocess.Popen([sys.executable, "scripts/migration_companion.py"])
+      subprocess.Popen([sys.executable, "operator_tools/migration_companion.py"])
   sys.exit(0) # Terminate main app to immediately release Turso / libSQL handles
   ```
 * **Lock-Free Turso Access**: Shutting down the main application ensures no remaining database connection locks are active on the local Turso engine database file, providing a clean, exclusive environment for relocation.
 * **Relocation Architecture Diagram**: Fully mapped inside `resources/migration_companion_arch.mermaid`.
+
 
 ---
 
@@ -808,4 +815,4 @@ To turn the SaaS platform into a fully integrated developer portal, we will cons
 >
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
-*Next Action: Begin implementation of **Phase 10.3** by creating `scripts/migration_companion.py` with dual-mode interface capabilities.*
+*Phase 10.3 Complete: Standalone Migration Companion App (`operator_tools/migration_companion.py`), isolated Admin Reset (`operator_tools/reset_admin.py`), triple PyInstaller spec, and Settings menu subprocess forking all implemented and synchronized.*
