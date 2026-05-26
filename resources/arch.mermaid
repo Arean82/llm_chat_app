@@ -10,7 +10,7 @@ graph TD
 
     %% Runtime Layer
     subgraph Runtime ["Runtime Orchestration"]
-        MW["MainWindow + UI Workers<br>ChatWorker, model fetchers, vector indexer"]
+        MW["MainWindow + UI Workers<br>ChatWorker, model fetchers, vector indexer<br>(Phase 9: Cache-aware via user_id)"]
         HEngine["HeadlessEngine<br>CLI/API lifecycle"]
         APIAuth["Bearer / Passport Auth Gates"]
         Registry["ServiceRegistry<br>shared service lifecycle"]
@@ -44,6 +44,14 @@ graph TD
         TenantDB[("saas_tenants.db<br>users, credentials, telemetry/cache tables")]
         ChatDB[("tenant chat history<br>chat_history.db or remote shard")]
         VectorDB[("Qdrant local vector_db<br>tenant collections")]
+    end
+
+    %% Phase 10.2: Planned Modular Tenant Drivers
+    subgraph TenantDrivers ["Tenant Driver Layer (Phase 10.2 Planned)"]
+        BaseTenant["BaseTenantDriver ABC"]
+        TursoTenant["turso_tenant_driver.py<br>current Turso/libSQL"]
+        PgTenant["postgres_tenant_driver.py<br>psycopg2"]
+        MySQLTenant["mysql_tenant_driver.py<br>pymysql"]
     end
 
     %% Providers
@@ -98,9 +106,19 @@ graph TD
     Telemetry --> TenantDB
     CacheSvc --> TenantDB
 
+    %% Phase 9: Cache wiring
+    MW -->|"Phase 9: chunk_cache + semantic_query_cache"| CacheSvc
+
+    %% Phase 10.2: Planned tenant driver abstraction
+    BaseTenant --> TursoTenant
+    BaseTenant --> PgTenant
+    BaseTenant --> MySQLTenant
+    TursoTenant --> TenantDB
+
     style Interfaces fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
     style Runtime fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
     style Services fill:#11111b,stroke:#a6adc8,stroke-width:2px,color:#cdd6f4
     style ModelCore fill:#0f0f17,stroke:#f9e2af,stroke-width:2px,color:#cdd6f4
     style Storage fill:#101820,stroke:#94e2d5,stroke-width:2px,color:#cdd6f4
     style Providers fill:#171421,stroke:#fab387,stroke-width:2px,color:#cdd6f4
+    style TenantDrivers fill:#1a1a2e,stroke:#e2b714,stroke-dasharray: 5 5,stroke-width:2px,color:#cdd6f4

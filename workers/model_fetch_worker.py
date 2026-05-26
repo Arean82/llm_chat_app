@@ -67,7 +67,25 @@ class ModelFetchWorker(QThread):
                     
                     # Extract model name for better description
                     model_name = model_id.split('/')[-1] if '/' in model_id else model_id
-                    developer = model_id.split('/')[0] if '/' in model_id else "NVIDIA"
+                    model_id_lower = model_id.lower()
+                    if '/' in model_id:
+                        developer = model_id.split('/')[0]
+                    elif "deepseek" in model_id_lower:
+                        developer = "DeepSeek"
+                    elif "nvidia" in model_id_lower:
+                        developer = "NVIDIA"
+                    elif "openai" in model_id_lower or "gpt" in model_id_lower:
+                        developer = "OpenAI"
+                    elif "google" in model_id_lower or "gemini" in model_id_lower:
+                        developer = "Google"
+                    elif "meta" in model_id_lower or "llama" in model_id_lower:
+                        developer = "Meta"
+                    elif "mistral" in model_id_lower or "mixtral" in model_id_lower:
+                        developer = "Mistral"
+                    elif "claude" in model_id_lower or "anthropic" in model_id_lower:
+                        developer = "Anthropic"
+                    else:
+                        developer = self.provider_name.capitalize()
                     
                     desc_response = client.chat.completions.create(
                         model=model_id,
@@ -118,7 +136,24 @@ class ModelFetchWorker(QThread):
                 except Exception as e:
                     error_msg = str(e)
                     model_id_lower = model_id.lower()
-                    developer = model_id.split('/')[0] if '/' in model_id else self.provider_name.capitalize()
+                    if '/' in model_id:
+                        developer = model_id.split('/')[0]
+                    elif "deepseek" in model_id_lower:
+                        developer = "DeepSeek"
+                    elif "nvidia" in model_id_lower:
+                        developer = "NVIDIA"
+                    elif "openai" in model_id_lower or "gpt" in model_id_lower:
+                        developer = "OpenAI"
+                    elif "google" in model_id_lower or "gemini" in model_id_lower:
+                        developer = "Google"
+                    elif "meta" in model_id_lower or "llama" in model_id_lower:
+                        developer = "Meta"
+                    elif "mistral" in model_id_lower or "mixtral" in model_id_lower:
+                        developer = "Mistral"
+                    elif "claude" in model_id_lower or "anthropic" in model_id_lower:
+                        developer = "Anthropic"
+                    else:
+                        developer = self.provider_name.capitalize()
                     model_name = model_id.split('/')[-1] if '/' in model_id else model_id
                     
                     # Classify if this is a specialized non-chat model we want to keep

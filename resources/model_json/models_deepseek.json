@@ -2,8 +2,8 @@
     "models": [
         {
             "context_length": null,
-            "description": "deepseek-v4-flash from NVIDIA - Recovered chat model (untested).",
-            "developer": "Nvidia",
+            "description": "deepseek-v4-flash from DeepSeek - Recovered chat model (untested).",
+            "developer": "DeepSeek",
             "free": true,
             "id": "deepseek-v4-flash",
             "name": "Deepseek V4 Flash",
@@ -12,8 +12,8 @@
         },
         {
             "context_length": null,
-            "description": "deepseek-v4-pro from NVIDIA - Recovered chat model (untested).",
-            "developer": "Nvidia",
+            "description": "deepseek-v4-pro from DeepSeek - Recovered chat model (untested).",
+            "developer": "DeepSeek",
             "free": true,
             "id": "deepseek-v4-pro",
             "name": "Deepseek V4 Pro",

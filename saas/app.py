@@ -1178,8 +1178,8 @@ def create_saas_app():
         if not is_admin and doc_name in admin_docs:
             return jsonify({"success": False, "error": "Unauthorized"}), 403
         try:
-            from utils.path_utils import get_project_root
-            doc_path = get_project_root() / "saas" / "saas_docs" / doc_name
+            from utils.path_utils import get_resource_path
+            doc_path = get_resource_path(os.path.join("saas", "saas_docs", doc_name))
             with open(doc_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             return jsonify({"success": True, "content": content})

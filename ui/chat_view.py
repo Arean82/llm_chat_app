@@ -513,7 +513,7 @@ class ChatViewWidget(QWidget):
              blueprint.append({"role": "user", "content": f"[{entry.get('role', 'user').upper()}]: {safe_c}"})
         blueprint.append({"role": "user", "content": "Execute synthesis."})
 
-        self.compactor_thread = ChatWorker(self.llm_client, blueprint, temperature=0.2, max_tokens=500, parent=self)
+        self.compactor_thread = ChatWorker(self.llm_client, blueprint, temperature=0.2, max_tokens=500, user_id=1, parent=self)
         self.compactor_thread.stream = False
 
         def on_compaction_resolved(text_summary):
@@ -570,6 +570,7 @@ class ChatViewWidget(QWidget):
             max_tokens=a_tokens,
             web_search_query=active_search,
             large_document_text=getattr(self, 'large_document_text', None),
+            user_id=1,
             parent=self
         )
         self.large_document_text = None # Clear after handing off to worker
@@ -966,6 +967,7 @@ class ChatViewWidget(QWidget):
                             assistant_text=assistant_content,
                             conversation_id=self.current_conv_id,
                             model_id=self.model_btn.text(),
+                            user_id=1,
                             parent=self
                         )
                         self.vector_sync_thread.start()

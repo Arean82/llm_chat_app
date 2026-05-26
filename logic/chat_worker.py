@@ -12,7 +12,7 @@ class ChatWorker(QThread):
     finished = Signal()
     metrics_received = Signal(dict)
 
-    def __init__(self, client, messages, temperature=0.7, max_tokens=4096, web_search_query=None, large_document_text=None, parent=None):
+    def __init__(self, client, messages, temperature=0.7, max_tokens=4096, web_search_query=None, large_document_text=None, user_id=None, parent=None):
         super().__init__(parent)
         self.client = client
         self.messages = messages
@@ -20,8 +20,22 @@ class ChatWorker(QThread):
         self.max_tokens = max_tokens
         self.web_search_query = web_search_query
         self.large_document_text = large_document_text
+        self.user_id = user_id
         self.stream = True
         self._is_running = True
+
+    def _emit_final_response(self, text: str):
+        self.response_received.emit(text)
+        # Phase 9: Asynchronously save to semantic cache if applicable
+        if self.user_id and self.messages and self.messages[-1].get("role") == "user":
+            try:
+                from saas.tenant_db import TenantDatabaseManager
+                query_text = str(self.messages[-1].get("content", ""))
+                if query_text:
+                    db = TenantDatabaseManager()
+                    db.set_semantic_cache_hit(query_text, self.user_id, text)
+            except Exception as e:
+                print(f"[Worker] Failed to set semantic cache: {e}")
 
     def _execute_rerank(self, hits, top_k=5):
         try:
@@ -98,6 +112,24 @@ class ChatWorker(QThread):
 
     def run(self):
         try:
+            # Phase 9: Pre-flight Semantic Cache Check
+            if self.user_id and self.messages and self.messages[-1].get("role") == "user":
+                try:
+                    from saas.tenant_db import TenantDatabaseManager
+                    query_text = str(self.messages[-1].get("content", ""))
+                    if query_text:
+                        db = TenantDatabaseManager()
+                        cached_resp = db.get_semantic_cache_hit(query_text, self.user_id)
+                        if cached_resp:
+                            print(f"[Worker] CACHE HIT: Semantic query match found for user {self.user_id}. Bypassing LLM.")
+                            if self.stream:
+                                self.stream_chunk.emit(cached_resp)
+                            # We don't save to cache again because it was a hit
+                            self.response_received.emit(cached_resp)
+                            return
+                except Exception as e:
+                    print(f"[Worker] Cache pre-flight failed: {e}")
+
             # 1. True Qdrant Semantic RAG (Phase 4.1.1 & 4.1.2)
             if self.large_document_text:
                 try:
@@ -260,10 +292,10 @@ class ChatWorker(QThread):
                         break
                     raise e
             if self._is_running:
-                self.response_received.emit(full_response)
+                self._emit_final_response(full_response)
                 self._finalize_metrics(start_time, first_chunk_time, chunk_count)
         else:
-            self.response_received.emit(response.text)
+            self._emit_final_response(response.text)
 
     def _run_openai_loop(self):
         start_time = time.perf_counter()

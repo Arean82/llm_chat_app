@@ -226,7 +226,7 @@ class ArenaViewWidget(QWidget):
         
         # 1. Launch Worker A
         client_a = self.clone_client(self.model_a_id)
-        self.worker_a = ChatWorker(client_a, payload, temperature=a_temp, max_tokens=a_tokens)
+        self.worker_a = ChatWorker(client_a, payload, temperature=a_temp, max_tokens=a_tokens, user_id=1)
         self.ui.stats_a.setText("⚡ Starting Stream A...")
         self.worker_a.stream_chunk.connect(lambda txt: self.on_chunk(self.chat_a, txt))
         self.worker_a.response_received.connect(self._store_response_a)
@@ -236,7 +236,7 @@ class ArenaViewWidget(QWidget):
 
         # 2. Launch Worker B
         client_b = self.clone_client(self.model_b_id)
-        self.worker_b = ChatWorker(client_b, payload, temperature=a_temp, max_tokens=a_tokens)
+        self.worker_b = ChatWorker(client_b, payload, temperature=a_temp, max_tokens=a_tokens, user_id=1)
         self.ui.stats_b.setText("⚡ Starting Stream B...")
         self.worker_b.stream_chunk.connect(lambda txt: self.on_chunk(self.chat_b, txt))
         self.worker_b.response_received.connect(self._store_response_b)

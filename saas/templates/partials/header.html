@@ -25,7 +25,7 @@
                 class="fa-solid fa-microchip"></i> Credential Manager</button>
 
         <button id="btn-open-documents"
-            onclick="document.getElementById('documents-viewer-modal').style.display='flex'; window.loadDocumentsList();"
+            onclick="document.getElementById('documents-viewer-modal').classList.remove('hidden'); window.loadDocumentsList();"
             class="btn-new"
             style="margin: 0 8px 0 0; padding: 4px 10px; font-size: 0.85rem; width: auto;"><i
                 class="fa-solid fa-book"></i> Documents</button>

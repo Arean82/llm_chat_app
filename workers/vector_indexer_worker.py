@@ -12,13 +12,14 @@ class VectorIndexerWorker(QThread):
     """
     completed = Signal(bool)
 
-    def __init__(self, llm_client, user_text: str, assistant_text: str, conversation_id: int, model_id: str, parent=None):
+    def __init__(self, llm_client, user_text: str, assistant_text: str, conversation_id: int, model_id: str, user_id: int, parent=None):
         super().__init__(parent)
         self.llm_client = llm_client
         self.user_text = user_text
         self.assistant_text = assistant_text
         self.conversation_id = conversation_id
         self.model_id = model_id
+        self.user_id = user_id
 
     def run(self):
         if not self.user_text or not self.assistant_text:
@@ -29,13 +30,29 @@ class VectorIndexerWorker(QThread):
             # Construct the combined context frame
             exchange_payload = f"User: {self.user_text.strip()}\nAssistant: {self.assistant_text.strip()}"
             
-            # Compute semantic vector payload (blocks inside this thread, safe from main loop)
-            vector = self.llm_client.generate_embeddings(exchange_payload)
+            # --- PHASE 9: SEMANTIC CHUNK CATCH WAREHOUSING ---
+            import hashlib
+            from saas.tenant_db import TenantDatabaseManager
             
-            if not vector:
-                print("[VectorIndexer] Failed to generate embeddings (empty list returned).")
-                self.completed.emit(False)
-                return
+            chunk_hash = hashlib.sha256(exchange_payload.encode('utf-8')).hexdigest()
+            tenant_db = TenantDatabaseManager()
+            
+            vector = tenant_db.get_cached_embedding(chunk_hash)
+            
+            if vector:
+                print(f"[VectorIndexer] CACHE HIT: Chunk {chunk_hash[:8]} already embedded. Bypassing API.")
+            else:
+                print(f"[VectorIndexer] CACHE MISS: Fetching embeddings for chunk {chunk_hash[:8]}.")
+                # Compute semantic vector payload (blocks inside this thread, safe from main loop)
+                vector = self.llm_client.generate_embeddings(exchange_payload)
+                
+                if not vector:
+                    print("[VectorIndexer] Failed to generate embeddings (empty list returned).")
+                    self.completed.emit(False)
+                    return
+                    
+                # Cache the new vector for future use
+                tenant_db.set_cached_embedding(chunk_hash, self.user_id, exchange_payload, vector)
 
             # Identify provider target
             provider = self.llm_client.get_current_provider()

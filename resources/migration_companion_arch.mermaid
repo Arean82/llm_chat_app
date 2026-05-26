@@ -1,0 +1,44 @@
+flowchart TD
+    %% Styling Classes
+    classDef main fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4;
+    classDef companion fill:#181825,stroke:#f9e2af,stroke-width:2px,color:#cdd6f4;
+    classDef storage fill:#313244,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4;
+    classDef process fill:#11111b,stroke:#fab387,stroke-width:2px,color:#cdd6f4;
+
+    subgraph App1 ["📱 App 1: LLM Chat App (Main GUI/Headless)"]
+        UI["⚙️ Settings Panel Admin Console"]:::main
+        Trigger["🚀 Click 'Relocate Database'"]:::main
+        Spawn["Spawn subprocess: scripts/migration_companion.py"]:::process
+        Close["🚪 Terminate Main App Process<br>(Release Turso/libSQL Lock)"]:::process
+    end
+
+    subgraph App2 ["🛠️ App 2: Standalone Migration Companion"]
+        CompanionUI["🖥️ Companion Dialog / CLI Console"]:::companion
+        ReadConfig["1. Read config.ini target specifications"]:::companion
+        Migrate["2. Relocate schema & records transactionally"]:::companion
+        Verify["3. Verify data integrity (Jaccard & Row count)"]:::companion
+        WriteConfig["4. Update config.ini (Set target driver)"]:::companion
+        Relaunch["5. Spawn subprocess: main.py"]:::process
+        Exit["🚪 Terminate Companion App Process"]:::process
+    end
+
+    subgraph Storage ["🗄️ Database Infrastructure"]
+        Turso["⚡ Turso / libSQL Database (saas_tenants.db)"]:::storage
+        EnterpriseSQL["💾 Target SQL Backend (PostgreSQL / MySQL)"]:::storage
+    end
+
+    UI --> Trigger
+    Trigger --> Spawn
+    Spawn --> Close
+    Close -->|Releases DB Handles| Turso
+    Spawn -.->|Launches| CompanionUI
+    CompanionUI --> ReadConfig
+    ReadConfig -->|Read Source Settings| Turso
+    Migrate -->|Egress Turso/libSQL data| Turso
+    Migrate -->|Ingress transactionally| EnterpriseSQL
+    Verify -->|Audit checksums| Turso
+    Verify -->|Audit checksums| EnterpriseSQL
+    Verify --> WriteConfig
+    WriteConfig --> Relaunch
+    Relaunch --> Exit
+    Relaunch -.->|Restarts| UI

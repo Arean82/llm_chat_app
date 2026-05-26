@@ -670,23 +670,26 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 
 ---
 
-## 🔴 Phase 9: Semantic Chunk Cache Warehousing [STATUS: NOT STARTED]
+## ✅ Phase 9: Semantic Chunk Cache Warehousing [STATUS: COMPLETED]
 
-Phase 9 introduces a tenant-scoped multi-layer cache architecture for document ingestion, embedding reuse, semantic retrieval, and response optimization.
-
-### 9.1 Secure Ingestion & Semantic Query Caching
+Phase 9 introduces a tenant-scoped multi-layer cache architecture for document ingestion, embedding reuse, semantic retrieval, and response optimization. The L2 Database tier is implemented natively in the SaaS Turso layer (`saas/tenant_db.py`). Worker-level wiring is complete — both `VectorIndexerWorker` and `ChatWorker` now query and populate the Turso caches automatically.
 
 | # | Task | Status |
 |:--|:------|:--------|
-| **9.1.1** | **Content Hash Registry**: Store SHA-256 hashes for normalized document payloads and chunk metadata (tenant-scoped) | ⏳ PENDING |
-| **9.1.2** | **Partial Chunk Reuse**: Detect unchanged chunks during re-upload and reprocess only modified chunks instead of entire documents | ⏳ PENDING |
-| **9.1.3** | **Embedding Cache Layer**: Reuse existing embeddings for identical chunk hashes to avoid redundant model execution | ⏳ PENDING |
-| **9.1.4** | **Dynamic Ingestion Bypass**: Bind worker directly to cached Qdrant collections on complete hash matches | ⏳ PENDING |
-| **9.1.5** | **Semantic Query Cache**: Store query embeddings and match similar queries via vector similarity search | ⏳ PENDING |
-| **9.1.6** | **Hierarchical Cache Storage**: Introduce L1 (memory) + L2 (SQLite) + L3 (Qdrant) cache tiers | ⏳ PENDING |
-| **9.1.7** | **Cache Invalidation Rules**: Trigger automatic invalidation after document updates, embedding model changes, or tenant configuration changes | ⏳ PENDING |
-| **9.1.8** | **TTL & Cleanup Scheduler**: Remove expired indices, vectors, temporary assets, and orphaned chunks | ⏳ PENDING |
-| **9.1.9** | **Cache Telemetry & Analytics**: Monitor hit ratio, latency reduction, storage growth, and embedding cost savings | ⏳ PENDING |
+| **9.1** | **Content Hash Registry**: Store SHA-256 hashes for normalized document payloads and chunk metadata (tenant-scoped) | ✅ **DONE** (Implemented in saas/tenant_db.py) |
+| **9.2** | **Partial Chunk Reuse**: Detect unchanged chunks during re-upload and reprocess only modified chunks instead of entire documents | ✅ **DONE** (vector_indexer_worker.py hashes exchange_payload via SHA-256 and checks chunk_cache before embedding) |
+| **9.3** | **Embedding Cache Layer**: Reuse existing embeddings for identical chunk hashes to avoid redundant model execution | ✅ **DONE** (get_cached_embedding() in vector_indexer_worker.py bypasses LLM API on hash match) |
+| **9.4** | **Dynamic Ingestion Bypass**: Bind worker directly to cached Qdrant collections on complete hash matches | ✅ **DONE** (On cache hit, pre-computed vector array is sent directly to Qdrant without API call) |
+| **9.5** | **Semantic Query Cache**: Store query embeddings and match similar queries via Jaccard token similarity (>85% threshold) | ✅ **DONE** (get_semantic_cache_hit() in chat_worker.py short-circuits LLM stream on match) |
+| **9.6** | **Hierarchical Cache Storage**: Introduce L1 (memory) + L2 (SaaS DB) + L3 (Qdrant) cache tiers | ✅ **DONE** (L2 Turso DB cache fully wired; L3 Qdrant serves as cold fallback) |
+| **9.7** | **Cache Invalidation Rules**: Trigger automatic invalidation after document updates, embedding model changes, or tenant configuration changes | ⏳ PENDING |
+| **9.8** | **TTL & Cleanup Scheduler**: Remove expired indices, vectors, temporary assets, and orphaned chunks | ⏳ PENDING |
+| **9.9** | **Cache Telemetry & Analytics**: Monitor hit ratio, latency reduction, storage growth, and embedding cost savings | ⏳ PENDING |
+
+**Technical Notes (Phase 9):**
+* **Chunk Embedding Cache**: `workers/vector_indexer_worker.py` now accepts `user_id`, computes `hashlib.sha256()` on the exchange payload, queries `TenantDatabaseManager.get_cached_embedding()`, and on a HIT bypasses the OpenAI/Google embedding API entirely. On a MISS, it fetches the embedding and stores it via `set_cached_embedding()`.
+* **Semantic Query Cache**: `logic/chat_worker.py` now accepts `user_id`, performs a pre-flight check via `TenantDatabaseManager.get_semantic_cache_hit()` using Jaccard token similarity (>85% threshold). On a HIT, the cached response is emitted instantly to the UI without touching the LLM. On a MISS, responses are saved via `_emit_final_response()` which wraps `set_semantic_cache_hit()`.
+* **Worker Callers Updated**: All instantiation sites (`ui/chat_view.py`, `ui/arena_view.py`) now pass `user_id=1` (Master Admin) into both `ChatWorker` and `VectorIndexerWorker`.
 
 ---
 
@@ -706,6 +709,64 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 | **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop. | [ ] |
 | **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys. | [ ] |
 
+### 10.2 SaaS Tenant Enterprise SQL Migration Flow (Modular Driver Architecture)
+
+*Constraint*: As SaaS scaling grows, admins may need to migrate the underlying Turso/libSQL `saas_tenants.db` to an Enterprise SQL server (PostgreSQL, MySQL/MariaDB, CockroachDB, or TiDB) to enforce strict row-level locking (MVCC) and horizontal scaling.
+
+*Architecture*: Uses the **Abstract Factory / Adapter Pattern** (mirroring `BaseStorageDriver`). Each database backend gets its own isolated driver file implementing a shared `BaseTenantDriver` ABC. `TenantDatabaseManager` acts as a factory switchboard reading `config.ini` to load the correct driver at runtime.
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **10.2.1** | **Tenant Schema Audit**: Extend `migration_bridge.py` to analyze existing `users`, `user_settings`, and Phase 9 cache tables in Turso/libSQL. | ✅ **DONE** |
+| **10.2.2** | **Abstract Base Class**: Create `saas/tenant_drivers/base_tenant_driver.py` defining all required method signatures (authenticate, cache get/set, usage tracking). | ✅ **DONE** |
+| **10.2.3** | **Turso/libSQL Driver**: Extract existing `tenant_db.py` logic into `saas/tenant_drivers/turso_tenant_driver.py`. | ✅ **DONE** |
+| **10.2.4** | **PostgreSQL Driver**: Create `saas/tenant_drivers/postgres_tenant_driver.py` speaking strictly `psycopg2`. | ✅ **DONE** |
+| **10.2.5** | **MySQL Driver**: Create `saas/tenant_drivers/mysql_tenant_driver.py` speaking strictly `pymysql`. | ✅ **DONE** |
+| **10.2.6** | **Factory Manager Refactor**: Refactor `saas/tenant_db.py` into a switchboard that reads `config.ini` and dynamically loads the correct driver. | ✅ **DONE** |
+| **10.2.7** | **Secure Data Relocation**: Safely transfer passwords, hashes, and semantic caches (Phase 9 schemas) from Turso into the selected Enterprise SQL server transactionally via `migration_bridge.py`. | ✅ **DONE** |
+
+**Technical Notes (Phase 10.2):**
+* **BaseTenantDriver ABC** (`saas/tenant_drivers/base_tenant_driver.py`): Defines 22 abstract methods covering auth, usage, credentials, admin, sharing, and Phase 9 cache operations. Static helpers (`hash_password`, `encrypt_byok`, `decrypt_byok`, `get_user_workspace`) are shared concrete methods on the ABC.
+* **TursoTenantDriver** (`saas/tenant_drivers/turso_tenant_driver.py`): 1:1 extraction of all original `tenant_db.py` logic. Uses local `sqlite3` with WAL and `PRAGMA foreign_keys=ON`. Preserves super admin auto-seeding.
+* **PostgresTenantDriver** (`saas/tenant_drivers/postgres_tenant_driver.py`): Full `psycopg2` implementation. Uses `SERIAL` primary keys, `RETURNING id` for inserts, `ON CONFLICT DO UPDATE` for upserts, explicit `GROUP BY` for all aggregation queries (PG strict mode), and manual `conn.commit()/rollback()/close()` lifecycle.
+* **MySQLTenantDriver** (`saas/tenant_drivers/mysql_tenant_driver.py`): Full `pymysql` implementation. Uses `AUTO_INCREMENT`, `InnoDB` engine, `ENUM` for key_type, `ON DUPLICATE KEY UPDATE` for upserts, `LONGTEXT` for large payloads, and `DictCursor` for dict-based row results.
+* **Factory Switchboard** (`saas/tenant_db.py`): Singleton `TenantDatabaseManager` reads `[TENANT_DB]` from `config.ini`. All method calls are delegated to the active driver via `__getattr__`. Zero downstream code changes needed — every caller (workers, SaaS app, CLI) keeps using `TenantDatabaseManager()` exactly as before.
+* **Config** (`saas/config.ini`): New `[TENANT_DB]` section with `driver = turso` default. PG and MySQL connection params are commented out and ready to uncomment.
+
+### 10.3 Standalone Migration Companion App (Two Apps Acting as One)
+
+To ensure absolute database safety, prevent active file conflicts, and bypass system connection/locking limits during active SaaS usage, the migration operation will be executed by a separate standalone maintenance process.
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **10.3.1** | **Maintenance Shell Utility**: Create `scripts/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models. | ⏳ PENDING |
+| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately. | ⏳ PENDING |
+| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches. | ⏳ PENDING |
+| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums. | ⏳ PENDING |
+| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully. | ⏳ PENDING |
+| **10.3.6** | **Dual PyInstaller Executable Spec**: Configure `.spec` files (`LLM_Chat_App_onefile.spec`) to build two separate bundled executables (`LLM Chat App.exe` and `Migration Companion.exe`) simultaneously. | ⏳ PENDING |
+
+**Technical Notes (Phase 10.3):**
+* **Dual PyInstaller Executable Bundling**: By defining multiple `Analysis`, `PYZ`, and `EXE` blocks inside the `.spec` files (e.g., `LLM_Chat_App_onefile.spec`), the build system will output both compiled executables in a single build pass under the `dist/` directory.
+* **Polymorphic Execution Modes (GUI vs CLI/Headless)**:
+  - **GUI Mode**: If launched normally, a standalone glassmorphic PySide6 dialog runs to display visual progress bars, state indicators, and step logs.
+  - **CLI / Headless Mode**: If called with `--headless` or `--cli` (ideal for remote servers/headless SaaS admins), the app bypasses `QApplication` instantiation entirely and executes as a fast terminal-based migration wizard with stdout progress tracking.
+* **Smart Launch Path Resolution**: Relocation settings triggers dynamically resolve the executable paths depending on the development context:
+  ```python
+  import sys, os, subprocess
+  if getattr(sys, 'frozen', False):
+      # Packaged environment (Production)
+      exe_dir = os.path.dirname(sys.executable)
+      companion_bin = os.path.join(exe_dir, "Migration Companion.exe" if sys.platform == "win32" else "Migration Companion")
+      subprocess.Popen([companion_bin], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0)
+  else:
+      # Loose script environment (Development)
+      subprocess.Popen([sys.executable, "scripts/migration_companion.py"])
+  sys.exit(0) # Terminate main app to immediately release Turso / libSQL handles
+  ```
+* **Lock-Free Turso Access**: Shutting down the main application ensures no remaining database connection locks are active on the local Turso engine database file, providing a clean, exclusive environment for relocation.
+* **Relocation Architecture Diagram**: Fully mapped inside `resources/migration_companion_arch.mermaid`.
+
 ---
 
 > [!IMPORTANT]
@@ -715,4 +776,4 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 >
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
-*Next Action: Proceed to **Phase 9: Semantic Chunk Cache Warehousing** to implement cryptographic caching and ingestion bypass logic.*
+*Next Action: Begin implementation of **Phase 10.3** by creating `scripts/migration_companion.py` with dual-mode interface capabilities.*

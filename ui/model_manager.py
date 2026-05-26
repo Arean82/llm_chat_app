@@ -613,7 +613,7 @@ class ModelManagerDialog(QDialog):
         logger.add_log("Starting model fetch from NVIDIA API", "INFO")
 
         # Create and start worker
-        self.fetch_worker = ModelFetchWorker(api_key, base_url, parent=self)
+        self.fetch_worker = ModelFetchWorker(api_key, base_url, provider_name=active_p, parent=self)
         self.fetch_worker.progress.connect(self._on_fetch_progress)
         self.fetch_worker.finished.connect(self._on_fetch_finished)
         self.fetch_worker.error.connect(self._on_fetch_error)
@@ -634,6 +634,10 @@ class ModelManagerDialog(QDialog):
     def _on_fetch_finished(self, working_models):
         """Save results and refresh"""
         from logic.model_io import save_all_models
+        active_p = get_app_settings().value("active_provider_id", "nvidia")
+        for m in working_models:
+            m['provider'] = active_p
+            
         # Re-save ONLY fetched provider list back to their relevant segments securely
         save_all_models(working_models)
         

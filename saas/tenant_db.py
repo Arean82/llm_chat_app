@@ -1,156 +1,125 @@
 # saas/tenant_db.py
 """
-SaaS Multi-Tenant SQLite Persistence Engine (Phase 6)
-Governs robust, isolated multi-user account registration, 
-token quota ledgers, and WAL-compliant read/write concurrency.
+SaaS Multi-Tenant Database Factory Manager (Phase 10.2 Refactor)
+Acts as a switchboard that dynamically loads the correct tenant driver
+based on config.ini settings. Downstream callers never need to change.
+
+Supported backends:
+  - turso   (default) — Turso/libSQL via local sqlite3 with WAL
+  - postgres          — PostgreSQL via psycopg2
+  - mysql             — MySQL/MariaDB/TiDB via pymysql
 """
 
 import os
-import sqlite3
-import datetime
-import hashlib
+import configparser
 from pathlib import Path
-from utils.storage_config import StorageManager
+
+
+def _load_tenant_config() -> dict:
+    """
+    Reads the [TENANT_DB] section from saas/config.ini.
+    Returns a dict with at minimum {'driver': 'turso'}.
+    """
+    config = configparser.ConfigParser()
+    config_path = Path(__file__).parent / "config.ini"
+    if config_path.exists():
+        config.read(str(config_path))
+    
+    result = {
+        "driver": "turso",
+        "db_name": "saas_tenants.db",
+    }
+    
+    if config.has_section("TENANT_DB"):
+        result["driver"] = config.get("TENANT_DB", "driver", fallback="turso").strip().lower()
+        result["db_name"] = config.get("TENANT_DB", "db_name", fallback="saas_tenants.db").strip()
+        # PostgreSQL
+        result["pg_connection_string"] = config.get("TENANT_DB", "pg_connection_string", fallback="").strip()
+        # MySQL
+        result["mysql_host"] = config.get("TENANT_DB", "mysql_host", fallback="127.0.0.1").strip()
+        result["mysql_port"] = config.getint("TENANT_DB", "mysql_port", fallback=3306)
+        result["mysql_user"] = config.get("TENANT_DB", "mysql_user", fallback="root").strip()
+        result["mysql_password"] = config.get("TENANT_DB", "mysql_password", fallback="").strip()
+        result["mysql_database"] = config.get("TENANT_DB", "mysql_database", fallback="saas_tenants").strip()
+    
+    return result
+
 
 class TenantDatabaseManager:
     """
-    Manages multi-tenant isolated SQL metadata, including security credentials,
-    passport-based access gateways, and usage accounting.
+    Factory switchboard for the SaaS tenant database.
+    
+    Reads config.ini [TENANT_DB] section to determine which backend to use.
+    Delegates ALL method calls to the underlying concrete driver instance.
+    
+    Usage (unchanged from before):
+        db = TenantDatabaseManager()
+        user = db.authenticate_by_passport("my_api_key")
     """
-    def __init__(self, db_name="saas_tenants.db"):
-        # Anchor SaaS DB directly inside Storage Root to maintain portability
-        storage_root = StorageManager.get_instance().get_storage_root()
-        self.db_path = storage_root / "data" / db_name
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.init_db()
-
-    def get_connection(self):
-        """Establish atomic connection with robust busy_timeouts for concurrency safety."""
-        conn = sqlite3.connect(str(self.db_path), timeout=30.0)
-        # Enforce WAL Mode for high-occupancy SaaS multi-user concurrency (Audit ID 006 Fix)
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA foreign_keys=ON;")
-        conn.row_factory = sqlite3.Row
-        return conn
-
-    def init_db(self):
-        """Generates normalized relational schemas tracking user sandboxes."""
-        with self.get_connection() as conn:
-            # 1. Core Users Table (Login Passport Key Integration)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    api_key TEXT UNIQUE NOT NULL,
-                    key_type TEXT NOT NULL CHECK (key_type IN ('byok', 'admin_funded')),
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT DEFAULT 'active'
-                )
-            """)
-
-            # 2. Usage Accounting Ledger (Economic Gate Limits)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS user_usage (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    date DATE DEFAULT CURRENT_DATE,
-                    prompt_tokens INTEGER DEFAULT 0,
-                    completion_tokens INTEGER DEFAULT 0,
-                    total_tokens INTEGER DEFAULT 0,
-                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # 2.5 Migration: Add settings_blob if missing
-            try:
-                conn.execute("ALTER TABLE users ADD COLUMN settings_blob TEXT DEFAULT '{}'")
-            except sqlite3.OperationalError:
-                pass # Column already exists
-            
-            # Establish Index to speed up user-token gateway lookups
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_user_api_key ON users(api_key);")
-            
-            # 3. Public Orbit Sharing
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS shared_orbits (
-                    share_hash TEXT PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    conversation_data TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # 4. BYOK Tenant Credentials
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS tenant_credentials (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    provider TEXT NOT NULL,
-                    api_key TEXT NOT NULL,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(user_id, provider),
-                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-
-            # 5. L2 Chunk Cache (Phase 9)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS chunk_cache (
-                    chunk_hash TEXT PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    chunk_text TEXT NOT NULL,
-                    embedding_blob BLOB NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-
-            # 6. L3 Semantic Query Cache (Phase 9)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS semantic_query_cache (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    query_text TEXT NOT NULL,
-                    response_text TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # Phase 9 Indexes
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_chunk_cache_user ON chunk_cache(user_id);")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_semantic_cache_lookup ON semantic_query_cache(user_id, query_text);")
-            conn.commit()
-
-            # 4. SEED DEFAULT SUPER ADMIN (Critical First-Run Bootloader Fix)
-            cursor = conn.execute("SELECT COUNT(*) FROM users")
-            if cursor.fetchone()[0] == 0:
-                import secrets
-                default_password = secrets.token_urlsafe(12)
-                admin_hash = TenantDatabaseManager.hash_password(default_password)
-                try:
-                    conn.execute("""
-                        INSERT INTO users (username, email, password_hash, api_key, key_type)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, ("admin", "admin@quantum-saas.local", admin_hash, "admin_master_passport", "admin_funded"))
-                    conn.commit()
-                    print(f"===========================================================")
-                    print(f"[SECURITY NOTIFICATION]: Default Super Admin Provisioned")
-                    print(f"Username: admin")
-                    print(f"Password: {default_password}")
-                    print(f"PLEASE SAVE THIS PASSWORD SECURELY.")
-                    print(f"===========================================================")
-                except Exception as e:
-                    print(f"[SQL Warning]: Super Admin provisioning aborted: {e}")
-
-    # --- SECURITY & PASSWORD HELPERS ---
-
+    
+    _instance = None
+    _driver = None
+    
+    def __new__(cls, db_name=None):
+        """Singleton pattern — reuse the same driver across all callers."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._driver = cls._create_driver(db_name)
+        return cls._instance
+    
+    @classmethod
+    def _create_driver(cls, db_name_override=None):
+        """Factory method that instantiates the correct driver based on config."""
+        config = _load_tenant_config()
+        driver_type = config["driver"]
+        
+        if driver_type == "postgres":
+            conn_str = config.get("pg_connection_string", "")
+            if not conn_str:
+                raise ValueError("[TENANT_DB] driver=postgres requires pg_connection_string in config.ini")
+            from saas.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
+            print(f"[TenantDB Factory] Loading PostgreSQL driver...")
+            return PostgresTenantDriver(conn_str)
+        
+        elif driver_type == "mysql":
+            from saas.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
+            print(f"[TenantDB Factory] Loading MySQL driver...")
+            return MySQLTenantDriver(
+                host=config.get("mysql_host", "127.0.0.1"),
+                port=config.get("mysql_port", 3306),
+                user=config.get("mysql_user", "root"),
+                password=config.get("mysql_password", ""),
+                database=config.get("mysql_database", "saas_tenants")
+            )
+        
+        else:
+            # Default: Turso/libSQL (backward compatible)
+            from saas.tenant_drivers.turso_tenant_driver import TursoTenantDriver
+            name = db_name_override or config.get("db_name", "saas_tenants.db")
+            return TursoTenantDriver(db_name=name)
+    
+    @classmethod
+    def reset_instance(cls):
+        """Force re-creation of the singleton (useful after config changes or migration)."""
+        cls._instance = None
+        cls._driver = None
+    
+    # --- DELEGATE ALL METHOD CALLS TO THE UNDERLYING DRIVER ---
+    
+    def __getattr__(self, name):
+        """
+        Magic delegation: any method call on TenantDatabaseManager that isn't
+        defined here is forwarded to the underlying concrete driver.
+        This ensures 100% backward compatibility with all existing callers.
+        """
+        return getattr(self._driver, name)
+    
+    # --- STATIC HELPERS (remain on the manager for backward compat) ---
+    
     @staticmethod
     def hash_password(password: str) -> str:
         """Secure SHA-256 salted password hashing routine."""
+        import hashlib
         salt = "SaaS_Passport_Salt_v7_"
         return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
 
@@ -164,139 +133,21 @@ class TenantDatabaseManager:
         import base64
         try:
             return base64.b64decode(cipher.encode('utf-8')).decode('utf-8')
-        except:
+        except Exception:
             return cipher
-
-    # --- CORE MULTI-TENANT GATEWAYS ---
-
-    def register_user(self, api_key: str, username: str, email: str, password: str, key_type: str = "byok"):
-        """
-        Provisions a new user node.
-        Ensures API validation took place prior to updating profile details.
-        """
-        pw_hash = self.hash_password(password)
-        with self.get_connection() as conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    INSERT INTO users (username, email, password_hash, api_key, key_type)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (username, email, pw_hash, api_key.strip(), key_type))
-                conn.commit()
-                return cursor.lastrowid, None
-            except sqlite3.IntegrityError as e:
-                err_msg = str(e).lower()
-                if "username" in err_msg:
-                    return None, "Username already taken."
-                if "email" in err_msg:
-                    return None, "Email already registered."
-                if "api_key" in err_msg:
-                    return None, "This API Key Passport has already been registered."
-                return None, f"Database Error: {str(e)}"
-
-    def authenticate_by_passport(self, api_key: str):
-        """Looks up a user instantly by their API passport."""
-        with self.get_connection() as conn:
-            row = conn.execute("""
-                SELECT id, username, email, api_key, key_type, status FROM users 
-                WHERE api_key = ? AND status = 'active'
-            """, (api_key.strip(),)).fetchone()
-            
-            if row:
-                return dict(row)
-            return None
-
-    def authenticate_by_login(self, username_or_email: str, password_raw: str):
-        """Authenticates via standard web dashboard profile inputs."""
-        pw_hash = self.hash_password(password_raw)
-        with self.get_connection() as conn:
-            row = conn.execute("""
-                SELECT id, username, email, api_key, key_type, status FROM users 
-                WHERE (username = ? OR email = ?) AND password_hash = ? AND status = 'active'
-            """, (username_or_email, username_or_email, pw_hash)).fetchone()
-            
-            if row:
-                res = dict(row)
-                # Explicitly map the API passport token for modern client framework injection
-                res['passport_token'] = res.get('api_key', '')
-                return res
-            return None
-
-    def update_user_profile(self, user_id: int, username: str = None, password_raw: str = None, api_key: str = None):
-        """Updates user credentials safely in the database, supporting dynamic partial overrides."""
-        updates = []
-        params = []
-        
-        if username:
-            updates.append("username = ?")
-            params.append(username.strip())
-            
-        if password_raw:
-            pw_hash = self.hash_password(password_raw)
-            updates.append("password_hash = ?")
-            params.append(pw_hash)
-            
-        if api_key:
-            updates.append("api_key = ?")
-            params.append(api_key.strip())
-            
-        if not updates:
-            return True, "No updates required."
-            
-        params.append(user_id)
-        sql = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
-        
-        with self.get_connection() as conn:
-            try:
-                conn.execute(sql, tuple(params))
-                conn.commit()
-                return True, "Security parameters synced successfully."
-            except sqlite3.IntegrityError as e:
-                err_msg = str(e).lower()
-                if "username" in err_msg:
-                    return False, "This Display Name has already been claimed by another pilot."
-                if "api_key" in err_msg:
-                    return False, "This API Key Passport is already bound to an active tenant space."
-                return False, f"Profile Synchronization Error: {str(e)}"
-
-    def get_user_settings(self, user_id: int) -> dict:
-        """Retrieves the JSON configuration blob for the user."""
-        with self.get_connection() as conn:
-            row = conn.execute("SELECT settings_blob FROM users WHERE id = ?", (user_id,)).fetchone()
-            if row and row['settings_blob']:
-                try:
-                    import json
-                    return json.loads(row['settings_blob'])
-                except:
-                    pass
-            return {}
-
-    def update_user_settings(self, user_id: int, settings: dict):
-        """Persists the JSON configuration blob for the user."""
-        import json
-        settings_str = json.dumps(settings)
-        with self.get_connection() as conn:
-            conn.execute("UPDATE users SET settings_blob = ? WHERE id = ?", (settings_str, user_id))
-            conn.commit()
-            return True
-
-    # --- ISOLATION DATA ROUTING ---
 
     @staticmethod
     def get_user_workspace(user_id: int) -> dict:
         """
         Generates absolute sandboxed storage partitions enforced by user isolation guidelines.
-        Guarantees physical folder isolation preventing semantic cross-contamination.
+        This is filesystem-based and shared across all drivers.
         """
+        from utils.storage_config import StorageManager
         storage_root = StorageManager.get_instance().get_storage_root()
         
-        # Partition A: Chat history isolation
         conversations_dir = storage_root / "conversations" / f"user_{user_id}"
-        
-        # Partition B: Semantic vector isolation
         vector_dir = storage_root / "vector_db" / "collections" / f"user_{user_id}"
         
-        # Provision physically
         conversations_dir.mkdir(parents=True, exist_ok=True)
         vector_dir.mkdir(parents=True, exist_ok=True)
         
@@ -304,206 +155,3 @@ class TenantDatabaseManager:
             "conversations_path": conversations_dir,
             "vector_path": vector_dir
         }
-
-    # --- LEDGER RECORDING ---
-
-    def record_usage(self, user_id: int, prompt_tokens: int, completion_tokens: int):
-        """Logs usage block into the ledger ensuring daily consumption accounting."""
-        total = prompt_tokens + completion_tokens
-        with self.get_connection() as conn:
-            # Attempt update first
-            cursor = conn.execute("""
-                UPDATE user_usage 
-                SET prompt_tokens = prompt_tokens + ?, 
-                    completion_tokens = completion_tokens + ?,
-                    total_tokens = total_tokens + ?
-                WHERE user_id = ? AND date = CURRENT_DATE
-            """, (prompt_tokens, completion_tokens, total, user_id))
-            
-            # If no rows were updated, insert a fresh row for today
-            if cursor.rowcount == 0:
-                conn.execute("""
-                    INSERT INTO user_usage (user_id, prompt_tokens, completion_tokens, total_tokens)
-                    VALUES (?, ?, ?, ?)
-                """, (user_id, prompt_tokens, completion_tokens, total))
-            conn.commit()
-
-    def log_api_usage(self, user_id: int, prompt_tokens: int, completion_tokens: int):
-        """Records token burndown for the active billing cycle."""
-        with self.get_connection() as conn:
-            conn.execute("""
-                INSERT INTO user_usage (user_id, prompt_tokens, completion_tokens, total_tokens)
-                VALUES (?, ?, ?, ?)
-            """, (user_id, prompt_tokens, completion_tokens, prompt_tokens + completion_tokens))
-            conn.commit()
-
-    def set_tenant_credential(self, user_id: int, provider: str, api_key: str):
-        """Securely inserts or updates a BYOK LLM provider credential for a specific tenant."""
-        with self.get_connection() as conn:
-            if not api_key:
-                # If key is empty, delete the credential entry
-                conn.execute("DELETE FROM tenant_credentials WHERE user_id = ? AND provider = ?", (user_id, provider))
-            else:
-                conn.execute("""
-                    INSERT INTO tenant_credentials (user_id, provider, api_key, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(user_id, provider) DO UPDATE SET
-                    api_key=excluded.api_key, updated_at=CURRENT_TIMESTAMP
-                """, (user_id, provider, TenantDatabaseManager.encrypt_byok(api_key)))
-            conn.commit()
-            
-    def get_tenant_credentials(self, user_id: int) -> dict:
-        """Retrieves all BYOK LLM provider credentials for a specific tenant."""
-        with self.get_connection() as conn:
-            cursor = conn.execute("SELECT provider, api_key FROM tenant_credentials WHERE user_id = ?", (user_id,))
-            return {row['provider']: TenantDatabaseManager.decrypt_byok(row['api_key']) for row in cursor.fetchall()}
-
-    # --- ADMIN ROUTINES ---
-
-    def reset_admin_account(self):
-        """Forcefully resets the super admin account to default credentials."""
-        admin_hash = self.hash_password("admin")
-        with self.get_connection() as conn:
-            cursor = conn.execute("SELECT id FROM users WHERE username = 'admin'")
-            row = cursor.fetchone()
-            if row:
-                conn.execute("""
-                    UPDATE users 
-                    SET password_hash = ?, api_key = 'admin_master_passport', email = 'admin@quantum-saas.local', key_type = 'admin_funded', status = 'active'
-                    WHERE username = 'admin'
-                """, (admin_hash,))
-            else:
-                conn.execute("""
-                    INSERT INTO users (username, email, password_hash, api_key, key_type, status)
-                    VALUES ('admin', 'admin@quantum-saas.local', ?, 'admin_master_passport', 'admin_funded', 'active')
-                """, (admin_hash,))
-            conn.commit()
-            return True
-
-    def get_all_tenants(self):
-        """Retrieves a master roster of all provisioned accounts for operator analytics."""
-        with self.get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT u.id, u.username, u.email, u.key_type, u.created_at, u.status,
-                       COALESCE(SUM(uu.total_tokens), 0) as total_tokens
-                FROM users u
-                LEFT JOIN user_usage uu ON u.id = uu.user_id
-                GROUP BY u.id
-                ORDER BY u.id DESC
-            """)
-            return [dict(row) for row in cursor.fetchall()]
-
-    def update_user_status(self, user_id: int, status: str):
-        """Allows operator to instantly ban/kick or reactivate a user's web passport."""
-        with self.get_connection() as conn:
-            conn.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
-            conn.commit()
-            return True
-
-    def get_global_usage(self):
-        """Aggregates all telemetry tokens consumed across the platform."""
-        with self.get_connection() as conn:
-            row = conn.execute("""
-                SELECT 
-                    SUM(prompt_tokens) as total_prompt, 
-                    SUM(completion_tokens) as total_completion 
-                FROM user_usage
-            """).fetchone()
-            
-            # Additional logic to retrieve daily graph over past 7 days
-            daily = conn.execute("""
-                SELECT date, SUM(total_tokens) as daily_total
-                FROM user_usage
-                GROUP BY date
-                ORDER BY date DESC LIMIT 7
-            """).fetchall()
-            
-            return {
-                "aggregate": dict(row) if row else {"total_prompt": 0, "total_completion": 0},
-                "daily_trend": [dict(d) for d in daily]
-            }
-
-    # --- SHARING NODE ---
-
-    def create_share_link(self, user_id: int, conversation_data: str) -> str:
-        """Persists a specific orbital message array into a static accessible share hash."""
-        share_hash = hashlib.sha256((str(user_id) + str(datetime.datetime.now().timestamp())).encode('utf-8')).hexdigest()[:16]
-        with self.get_connection() as conn:
-            conn.execute("""
-                INSERT INTO shared_orbits (share_hash, user_id, conversation_data)
-                VALUES (?, ?, ?)
-            """, (share_hash, user_id, conversation_data))
-            conn.commit()
-            return share_hash
-
-    def get_shared_orbit(self, share_hash: str):
-        """Retrieves read-only conversational logs mapped to a public hash."""
-        with self.get_connection() as conn:
-            row = conn.execute("SELECT * FROM shared_orbits WHERE share_hash = ?", (share_hash,)).fetchone()
-            return dict(row) if row else None
-
-    # --- PHASE 9: SEMANTIC CACHE WAREHOUSING ---
-
-    def get_cached_embedding(self, chunk_hash: str):
-        with self.get_connection() as conn:
-            row = conn.execute("SELECT embedding_blob FROM chunk_cache WHERE chunk_hash = ?", (chunk_hash,)).fetchone()
-            if row:
-                import json
-                try:
-                    return json.loads(row['embedding_blob'])
-                except Exception:
-                    pass
-            return None
-
-    def set_cached_embedding(self, chunk_hash: str, user_id: int, text: str, vector: list):
-        import json
-        blob = json.dumps(vector)
-        with self.get_connection() as conn:
-            conn.execute("""
-                INSERT OR REPLACE INTO chunk_cache (chunk_hash, user_id, chunk_text, embedding_blob)
-                VALUES (?, ?, ?, ?)
-            """, (chunk_hash, user_id, text, blob))
-            conn.commit()
-
-    def get_semantic_cache_hit(self, query_text: str, user_id: int):
-        import re
-        q_tokens = set(re.findall(r'\w+', query_text.lower()))
-        if not q_tokens:
-            return None
-            
-        with self.get_connection() as conn:
-            rows = conn.execute("SELECT query_text, response_text FROM semantic_query_cache WHERE user_id = ?", (user_id,)).fetchall()
-            
-            best_match = None
-            highest_sim = 0.0
-            
-            for row in rows:
-                c_text = row['query_text']
-                c_tokens = set(re.findall(r'\w+', c_text.lower()))
-                if not c_tokens: continue
-                
-                union = q_tokens.union(c_tokens)
-                if not union: continue
-                
-                similarity = len(q_tokens.intersection(c_tokens)) / len(union)
-                if similarity > 0.85 and similarity > highest_sim:
-                    highest_sim = similarity
-                    best_match = row['response_text']
-                    
-            return best_match
-
-    def set_semantic_cache_hit(self, query_text: str, user_id: int, response_text: str):
-        with self.get_connection() as conn:
-            conn.execute("""
-                INSERT INTO semantic_query_cache (user_id, query_text, response_text)
-                VALUES (?, ?, ?)
-            """, (user_id, query_text, response_text))
-            conn.commit()
-
-    def clear_tenant_cache(self, user_id: int):
-        with self.get_connection() as conn:
-            conn.execute("DELETE FROM chunk_cache WHERE user_id = ?", (user_id,))
-            conn.execute("DELETE FROM semantic_query_cache WHERE user_id = ?", (user_id,))
-            conn.commit()
-            return True
-
