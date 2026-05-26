@@ -45,6 +45,19 @@ class LogViewerDialog(QDialog):
         
         # Connect for new logs
         self.logger.new_log.connect(self.on_new_log)
+        
+        # Restore Geometry
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        geom = settings.value("geometry_log_viewer")
+        if geom:
+            self.restoreGeometry(geom)
+
+    def closeEvent(self, event):
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        settings.setValue("geometry_log_viewer", self.saveGeometry())
+        super().closeEvent(event)
     
     def load_logs(self):
         """Load existing logs from file"""

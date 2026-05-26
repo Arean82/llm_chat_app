@@ -40,6 +40,19 @@ class SaaSSettingsDialogClass(QDialog):
         
         if hasattr(self.ui, 'btn_reset_admin'):
             self.ui.btn_reset_admin.clicked.connect(self.on_reset_admin)
+            
+        # Restore Geometry
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        geom = settings.value("geometry_saas_settings")
+        if geom:
+            self.restoreGeometry(geom)
+
+    def closeEvent(self, event):
+        from utils.path_utils import get_app_settings
+        settings = get_app_settings()
+        settings.setValue("geometry_saas_settings", self.saveGeometry())
+        super().closeEvent(event)
         
         # SaaS Control Buttons
         if hasattr(self.ui, 'pushButton'):

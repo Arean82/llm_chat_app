@@ -41,6 +41,17 @@ class CredentialManagerDialog(QDialog):
         self.setup_connections()
         self.load_credentials()
 
+        # Restore Geometry
+        settings = get_app_settings()
+        geom = settings.value("geometry_credential_manager")
+        if geom:
+            self.restoreGeometry(geom)
+
+    def closeEvent(self, event):
+        settings = get_app_settings()
+        settings.setValue("geometry_credential_manager", self.saveGeometry())
+        super().closeEvent(event)
+
     def setup_connections(self):
         self.ui.close_btn.clicked.connect(self.accept)
         self.ui.tabWidget.currentChanged.connect(self.on_tab_changed)

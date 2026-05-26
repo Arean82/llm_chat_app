@@ -53,7 +53,17 @@ class ModelPopupClass(QDialog):
         # Wire buttons
         self.ui.apply_btn.clicked.connect(self.on_apply)
         self.ui.cancel_btn.clicked.connect(self.reject)
-        # Cancel is already wired in the .ui file to reject()
+        
+        # Restore Geometry
+        settings = get_app_settings()
+        geom = settings.value("geometry_model_popup")
+        if geom:
+            self.restoreGeometry(geom)
+
+    def closeEvent(self, event):
+        settings = get_app_settings()
+        settings.setValue("geometry_model_popup", self.saveGeometry())
+        super().closeEvent(event)
 
     def setup_table(self):
         table = self.ui.model_table

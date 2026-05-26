@@ -165,7 +165,7 @@ llm_chat_app/
 ├── IDE_INTEGRATION.md              # 🔌 IDE setup guide
 ├── STRATEGIC_EVOLUTION_REPORT.md   # 📈 Phase 2 evolution blueprint
 ├── PROJECT_AUDIT_REPORT.md         # 🛡️ Master vulnerability remediation ledger
-├── WORKING_DOCUMENT_V7_ATTAINMENT.md # 📓 Tactical manual for v7 Headless/SaaS attainment
+├── WORKING_DOCUMENT_V8_ATTAINMENT.md # 📓 Tactical manual for v8 Headless/SaaS attainment
 ├── SAAS_STORAGE_ARCHITECTURE_PLAN.md # 🗃️ SaaS high-concurrency multi-tenant database blueprint
 ├── requirements.txt                # 📦 Python dependencies
 ├── HEADLESS_GUIDE.md               # 🖥️ Headless Mode usage guide
@@ -563,8 +563,12 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
-### v7.2.0 – Semantic Chunk Cache Warehousing & Performance Scaling
+### v7.2.0 – SaaS Web Documentation, Geometry Persistence & Universal Providers
 
+* **Desktop Geometry Persistence:** All major PySide6 dialogs (Credential Manager, Model Selector, Log Viewer, SaaS Settings) now leverage OS-native `QSettings` to memorize exact window coordinates and dimensions across app restarts.
+* **Universal Provider Architecture:** Stripped hardcoded provider lock-ins (NVIDIA, Meta fallbacks) from the backend API router, enforcing dynamic agnostic compatibility.
+* **SaaS Documentation Suite:** Introduced an isolated SaaS documentation environment (`saas/saas_docs/`) heavily segmented via Role-Based Access Control (Admin vs Tenant constraints).
+* **Web Native Markdown Rendering:** Implemented a lightweight client-side markdown viewer utilizing `marked.js` within the SaaS web portal to render technical documentation seamlessly without external Node.js dependencies.
 * **L2 Chunk Cache Engine:** Embedded SHA-256 deduplication for dense document vectors preventing repeat local API inference loops during text chunk ingestion.
 * **L3 Semantic Query Cache:** Integrated instantaneous response cache bypassing LLM completions engines for identical multi-tenant workspace user queries.
 * **Migration Indexing Ready:** Expanded caching ledger inside `tenant_db.py` to enforce strict standard SQLite indexes matching PostgreSQL scaling paradigms.

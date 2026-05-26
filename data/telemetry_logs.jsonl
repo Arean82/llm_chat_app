@@ -195,3 +195,6 @@
 {"timestamp": "2026-05-25T12:38:24Z", "tenant_id": "1", "latency_seconds": 0.013, "tokens": 0, "status": "success"}
 {"timestamp": "2026-05-25T12:38:25Z", "tenant_id": "1", "latency_seconds": 0.006, "tokens": 0, "status": "success"}
 {"timestamp": "2026-05-25T12:38:32Z", "tenant_id": "1", "latency_seconds": 0.01, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T06:12:38Z", "tenant_id": "anonymous", "latency_seconds": 0.067, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T06:12:44Z", "tenant_id": "anonymous", "latency_seconds": 0.007, "tokens": 0, "status": "success"}
+{"timestamp": "2026-05-26T06:12:44Z", "tenant_id": "1", "latency_seconds": 0.249, "tokens": 0, "status": "success"}

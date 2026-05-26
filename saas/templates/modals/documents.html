@@ -1,0 +1,93 @@
+<!-- Documents Viewer Modal -->
+<div id="documents-viewer-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 900px; height: 80vh; display: flex; flex-direction: column;">
+        
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-book"></i> SaaS Documents</h3>
+            <button class="btn-close" onclick="document.getElementById('documents-viewer-modal').style.display='none';"><i class="fa-solid fa-times"></i></button>
+        </div>
+
+        <div class="modal-body" style="display: flex; flex: 1; overflow: hidden; gap: 20px;">
+            <!-- Document List Sidebar -->
+            <div style="width: 250px; border-right: 1px solid var(--border-glow); display: flex; flex-direction: column; overflow-y: auto; padding-right: 10px;">
+                <h4 style="margin-top: 0; color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Available Documents</h4>
+                <ul id="documents-list-ul" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Populated dynamically via JS -->
+                </ul>
+            </div>
+            
+            <!-- Markdown Render Area -->
+            <div id="document-render-area" style="flex: 1; overflow-y: auto; padding-right: 10px; font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: var(--text-main);">
+                <div style="display: flex; height: 100%; align-items: center; justify-content: center; color: var(--text-dim);">
+                    Select a document to read...
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+    /* Styling for the markdown output */
+    #document-render-area h1, #document-render-area h2, #document-render-area h3 { color: var(--accent-cyan); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+    #document-render-area pre { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border-glow); }
+    #document-render-area code { background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #ff79c6; }
+    #document-render-area a { color: var(--accent-blue); text-decoration: none; }
+    #document-render-area a:hover { text-decoration: underline; }
+    #document-render-area blockquote { border-left: 4px solid var(--accent-cyan); margin: 0; padding-left: 15px; color: var(--text-dim); }
+    
+    .doc-list-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: background 0.2s, border-color 0.2s; border: 1px solid transparent; color: var(--text-main); font-weight: 500;}
+    .doc-list-item:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-cyan); }
+    .doc-list-item.active { background: rgba(var(--accent-cyan-rgb), 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); }
+</style>
+
+<script>
+    window.loadDocumentsList = async function() {
+        const listUl = document.getElementById('documents-list-ul');
+        listUl.innerHTML = '<div style="color: var(--text-dim); font-size: 0.9rem;">Loading...</div>';
+        
+        try {
+            const res = await fetch('/api/documents/list');
+            const data = await res.json();
+            
+            if (data.success && data.documents) {
+                listUl.innerHTML = '';
+                data.documents.forEach(doc => {
+                    const li = document.createElement('li');
+                    li.className = 'doc-list-item';
+                    li.innerHTML = `<i class="fa-regular fa-file-lines" style="margin-right: 8px; opacity: 0.7;"></i> ${doc}`;
+                    li.onclick = () => window.loadDocumentContent(doc, li);
+                    listUl.appendChild(li);
+                });
+            } else {
+                listUl.innerHTML = '<div style="color: #e74c3c; font-size: 0.9rem;">Error loading documents.</div>';
+            }
+        } catch(e) {
+            console.error("Documents Fetch Error:", e);
+        }
+    };
+
+    window.loadDocumentContent = async function(docName, liElement) {
+        // Update active styling
+        document.querySelectorAll('.doc-list-item').forEach(el => el.classList.remove('active'));
+        if (liElement) liElement.classList.add('active');
+
+        const renderArea = document.getElementById('document-render-area');
+        renderArea.innerHTML = '<div style="display: flex; height: 100%; align-items: center; justify-content: center; color: var(--text-dim);"><i class="fa-solid fa-circle-notch fa-spin"></i> Reading...</div>';
+        
+        try {
+            const res = await fetch(`/api/documents/content/${docName}`);
+            const data = await res.json();
+            
+            if (data.success && data.content) {
+                renderArea.innerHTML = marked.parse(data.content);
+            } else {
+                renderArea.innerHTML = `<div style="color: #e74c3c;">Failed to load ${docName}. Unauthorized or Not Found.</div>`;
+            }
+        } catch(e) {
+            console.error("Document Content Error:", e);
+            renderArea.innerHTML = `<div style="color: #e74c3c;">Failed to load document content.</div>`;
+        }
+    };
+</script>

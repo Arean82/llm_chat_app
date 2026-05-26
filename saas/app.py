@@ -1160,6 +1160,32 @@ def create_saas_app():
         except Exception as e:
             return jsonify({"error": "Generation Engine Exception", "message": str(e)}), 500
 
+    @app.route('/api/documents/list', methods=['GET'])
+    def list_documents():
+        user = getattr(request, 'tenant', None)
+        is_admin = user and user.get('key_type') == 'admin_funded'
+        docs = ["README_ADMIN.md", "README_USER.md", "API_SPEC.md", "IDE_INTEGRATION.md", "SECURITY.md"] if is_admin else ["README_USER.md", "API_SPEC.md"]
+        return jsonify({"success": True, "documents": docs})
+
+    @app.route('/api/documents/content/<doc_name>', methods=['GET'])
+    def get_document_content(doc_name):
+        user = getattr(request, 'tenant', None)
+        is_admin = user and user.get('key_type') == 'admin_funded'
+        admin_docs = ["README_ADMIN.md", "IDE_INTEGRATION.md", "SECURITY.md"]
+        user_docs = ["README_USER.md", "API_SPEC.md"]
+        if doc_name not in admin_docs and doc_name not in user_docs:
+            return jsonify({"success": False, "error": "Not Found"}), 404
+        if not is_admin and doc_name in admin_docs:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        try:
+            from utils.path_utils import get_project_root
+            doc_path = get_project_root() / "saas" / "saas_docs" / doc_name
+            with open(doc_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return jsonify({"success": True, "content": content})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
     @app.route('/', methods=['GET'])
     def srv_index():
         """Main browser portal entry rendering the Single Page Workspace canvas."""
