@@ -1186,6 +1186,199 @@ def create_saas_app():
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
 
+    # --- DYNAMIC IDE EXTENSIONS PORTAL ENDPOINTS ---
+
+    @app.route('/api/extensions', methods=['GET'])
+    def list_extensions():
+        """
+        Crawls the extension/ directory, merges with extension/extensions_config.json,
+        and returns the available integrations.
+        """
+        user = getattr(request, 'tenant', None)
+        is_admin = user and user.get('key_type') == 'admin_funded'
+
+        ext_dir = get_resource_path("extension")
+        config_path = get_resource_path(os.path.join("extension", "extensions_config.json"))
+
+        # Load dynamic extensions configuration file safely
+        config_data = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+            except Exception as e:
+                print(f"[Extensions Config] Error reading ledger: {e}")
+
+        # Scan folder for .vsix and .zip files
+        discovered = []
+        if os.path.exists(ext_dir):
+            for file in os.listdir(ext_dir):
+                if file.endswith('.vsix') or file.endswith('.zip'):
+                    file_path = os.path.join(ext_dir, file)
+                    size_bytes = os.path.getsize(file_path)
+                    
+                    # Convert to friendly size
+                    if size_bytes < 1024 * 1024:
+                        size_str = f"{size_bytes / 1024:.1f} KB"
+                    else:
+                        size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
+
+                    platform = "vscode" if file.endswith('.vsix') else "jetbrains"
+                    
+                    # Auto-parse version from standard naming syntax: name-1.0.0.ext
+                    import re
+                    ver_match = re.search(r'-(\d+\.\d+\.\d+)\.', file)
+                    version = ver_match.group(1) if ver_match else "1.0.0"
+
+                    # Look up in config
+                    config_item = config_data.get(file, {})
+                    is_visible = config_item.get("is_visible", False)
+                    description = config_item.get("description", "No description available.")
+                    name = config_item.get("name", file.split('-')[0].replace('_', ' ').title())
+
+                    item_meta = {
+                        "filename": file,
+                        "name": name,
+                        "version": version,
+                        "platform": platform,
+                        "is_visible": is_visible,
+                        "description": description,
+                        "file_size": size_str,
+                        "updated_at": time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(file_path)))
+                    }
+
+                    # Filter visible extensions for normal tenants
+                    if is_admin or is_visible:
+                        discovered.append(item_meta)
+
+        return jsonify({"success": True, "extensions": discovered})
+
+    @app.route('/api/admin/extensions/save', methods=['POST'])
+    def save_extension_meta():
+        """Saves custom name, visibility status, and description edits back to extensions_config.json."""
+        user = getattr(request, 'tenant', None)
+        is_admin = user and user.get('key_type') == 'admin_funded'
+        if not is_admin:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        filename = data.get("filename")
+        if not filename:
+            return jsonify({"success": False, "error": "Missing filename"}), 400
+
+        config_path = get_resource_path(os.path.join("extension", "extensions_config.json"))
+        config_data = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+            except Exception:
+                pass
+
+        if filename not in config_data:
+            config_data[filename] = {}
+
+        config_data[filename]["is_visible"] = bool(data.get("is_visible", False))
+        config_data[filename]["description"] = data.get("description", "")
+        config_data[filename]["name"] = data.get("name", filename.split('-')[0].title())
+
+        try:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, indent=4, ensure_ascii=False)
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/admin/extensions/generate-desc', methods=['POST'])
+    def generate_extension_desc():
+        """Generates dynamic AI Markdown descriptions for extensions."""
+        user = getattr(request, 'tenant', None)
+        is_admin = user and user.get('key_type') == 'admin_funded'
+        if not is_admin:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        filename = data.get("filename")
+        platform = data.get("platform", "vscode")
+        if not filename:
+            return jsonify({"success": False, "error": "Missing filename"}), 400
+
+        prompt = (
+            f"Write a highly professional, beautifully formatted, concise README-style Markdown description "
+            f"for an IDE Extension plugin. The file name is '{filename}' and it is for the '{platform}' ecosystem.\n\n"
+            f"Provide a brief overview of features (like inline autocomplete, model parameters editing, and workspace syncing), "
+            f"step-by-step instructions on how to install it, and connection instructions "
+            f"(explaining how it connects to the local Universal API server on Port 5000).\n\n"
+            f"Keep it under 300 words. Do not use generic placeholders. Focus on premium glassmorphic UI synergy and security."
+        )
+
+        try:
+            # Re-use our centralized LLM client to execute the prompt
+            llm_client = LLMClient()
+            # Feed prompt dynamically using the active configuration keys (NVIDIA / deepseek / OpenAI based on active slot)
+            from utils.path_utils import get_app_settings
+            active_p = get_app_settings().value("active_provider_id", "nvidia")
+            import keyring
+            api_key = keyring.get_password("LLMChatApp", f"api_key_{active_p}") or keyring.get_password("LLMChatApp", "api_key")
+            base_url = get_app_settings().value(f"url_{active_p}") or get_app_settings().value("base_url", "https://integrate.api.nvidia.com/v1")
+            
+            if not api_key:
+                return jsonify({"success": False, "error": "Active provider API key is not configured in desktop vault."}), 400
+
+            llm_client.set_api_key(api_key)
+            llm_client.set_base_url(base_url)
+            
+            # Fetch active model
+            from logic.model_io import load_all_models
+            model_id = get_app_settings().value("current_model_id")
+            if not model_id:
+                active_models = [m for m in load_all_models() if m.get('provider', 'nvidia') == active_p and m.get('free', True)]
+                model_id = active_models[0]["id"] if active_models else "meta/llama-3.1-8b-instruct"
+            llm_client.set_model(model_id)
+
+            # Execute completion
+            full_response = llm_client._run_completion_internal(
+                "You are an expert technical writer.",
+                prompt,
+                1024,
+                0.3
+            )
+                
+            return jsonify({"success": True, "description": full_response.strip()})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/extensions/download/<filename>', methods=['GET'])
+    def download_extension(filename):
+        """Streams the requested extension package securely from the extension/ folder."""
+        # Clean the filename to prevent directory traversal
+        filename = os.path.basename(filename)
+        ext_dir = get_resource_path("extension")
+        file_path = os.path.join(ext_dir, filename)
+
+        if not os.path.exists(file_path):
+            return jsonify({"success": False, "error": "Extension file not found"}), 404
+
+        # Read config to verify visibility if not an admin
+        user = getattr(request, 'tenant', None)
+        is_admin = user and user.get('key_type') == 'admin_funded'
+
+        if not is_admin:
+            config_path = get_resource_path(os.path.join("extension", "extensions_config.json"))
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        config_data = json.load(f)
+                        if not config_data.get(filename, {}).get("is_visible", False):
+                            return jsonify({"success": False, "error": "Unauthorized Access"}), 403
+                except Exception:
+                    return jsonify({"success": False, "error": "Unauthorized Access"}), 403
+            else:
+                return jsonify({"success": False, "error": "Unauthorized Access"}), 403
+
+        # Stream download
+        return send_from_directory(ext_dir, filename, as_attachment=True)
+
     @app.route('/', methods=['GET'])
     def srv_index():
         """Main browser portal entry rendering the Single Page Workspace canvas."""

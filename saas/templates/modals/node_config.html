@@ -36,6 +36,9 @@
             <button id="tab-btn-nc-local-api" class="settings-tab admin-only-tab hidden">
                 <i class="fa-solid fa-plug-circle-bolt"></i> Local API Control
             </button>
+            <button id="tab-btn-nc-extensions" class="settings-tab">
+                <i class="fa-solid fa-plug"></i> IDE Plugins
+            </button>
         </div>
 
         <!-- Tab 1: System Instruction Tray -->
@@ -380,6 +383,26 @@
                     });
                 }
             </script>
+        </div>
+
+        <!-- Tab 8: IDE Plugins -->
+        <div id="tab-content-nc-extensions" class="settings-content" style="padding: 10px 0;">
+            <div style="display: flex; gap: 24px; min-height: 400px; max-height: 55vh; overflow: hidden;">
+                <!-- Left Panel: Available Packages -->
+                <div style="width: 320px; border-right: 1px solid var(--border-glow); display: flex; flex-direction: column; overflow-y: auto; padding-right: 15px; gap: 12px;">
+                    <h4 style="margin-top: 0; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px;">Available Extensions</h4>
+                    <div id="extensions-list-container" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+                
+                <!-- Right Panel: Markdown Changelog / Admin Settings -->
+                <div id="extension-details-panel" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding-right: 10px;">
+                    <div style="display: flex; height: 100%; align-items: center; justify-content: center; color: var(--text-dim); font-size: 1.1rem; flex-direction: column; gap: 10px;">
+                        <i class="fa-solid fa-arrow-left" style="font-size: 1.5rem;"></i> Select an extension package to view details and download
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div style="margin-top: 20px; display: flex; justify-content: flex-end;">

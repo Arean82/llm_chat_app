@@ -41,6 +41,9 @@ class SaaSSettingsDialogClass(QDialog):
         if hasattr(self.ui, 'btn_reset_admin'):
             self.ui.btn_reset_admin.clicked.connect(self.on_reset_admin)
             
+        # Initialize IDE Extensions Tab UI bindings and data (loaded natively from .ui file)
+        self.setup_extensions_tab()
+            
         # Restore Geometry
         from utils.path_utils import get_app_settings
         settings = get_app_settings()
@@ -255,6 +258,34 @@ class SaaSSettingsDialogClass(QDialog):
                 return
             self.config.set_val("RELIABILITY", "failover_seq", ",".join(providers))
         
+        # Save IDE Extensions configurations
+        if hasattr(self, 'extensions_cache'):
+            # Save the currently selected extension row's values to cache before writing
+            row = self.ext_table.currentRow()
+            if row >= 0 and row < len(self.extensions_cache):
+                self.extensions_cache[row]["is_visible"] = self.chk_ext_visible.isChecked()
+                self.extensions_cache[row]["name"] = self.txt_ext_title.text().strip()
+                self.extensions_cache[row]["description"] = self.txt_ext_desc.toPlainText().strip()
+
+            from utils.path_utils import get_resource_path
+            import json, os
+            config_path = get_resource_path(os.path.join("extension", "extensions_config.json"))
+            
+            # Re-group into target extensions config
+            for ext in self.extensions_cache:
+                fn = ext["filename"]
+                if fn not in self.ext_config_data:
+                    self.ext_config_data[fn] = {}
+                self.ext_config_data[fn]["is_visible"] = ext["is_visible"]
+                self.ext_config_data[fn]["name"] = ext["name"]
+                self.ext_config_data[fn]["description"] = ext["description"]
+                
+            try:
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump(self.ext_config_data, f, indent=4, ensure_ascii=False)
+            except Exception as e:
+                print(f"[Extensions Config] Save failed: {e}")
+
         # Hardware commit
         self.config.save()
         self.accept()
@@ -318,3 +349,197 @@ class SaaSSettingsDialogClass(QDialog):
                 QMessageBox.information(self, "Success", f"Password for {username} has been reset.")
             else:
                 QMessageBox.critical(self, "Error", msg)
+
+    def setup_extensions_tab(self):
+        """Prepares bindings and table behaviors for UI-loaded IDE Extension components."""
+        from PySide6.QtWidgets import QHeaderView, QAbstractItemView
+
+        # Map UI components directly from the loaded UI schema
+        self.ext_table = self.ui.ext_table
+        self.editor_frame = self.ui.editor_frame
+        self.chk_ext_visible = self.ui.chk_ext_visible
+        self.txt_ext_title = self.ui.txt_ext_title
+        self.btn_ext_ai = self.ui.btn_ext_ai
+        self.txt_ext_desc = self.ui.txt_ext_desc
+
+        # Configure table behavior
+        self.ext_table.setColumnCount(3)
+        self.ext_table.setHorizontalHeaderLabels(["Filename", "Size", "Status"])
+        self.ext_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ext_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ext_table.verticalHeader().setVisible(False)
+        self.ext_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.ext_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.ext_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        
+        self.ext_table.itemSelectionChanged.connect(self.on_extension_selected)
+        self.btn_ext_ai.clicked.connect(self.on_generate_ai_desc)
+
+        # Load extension files dynamically
+        self.load_extensions_data()
+
+    def load_extensions_data(self):
+        """Crawls local extensions and populates the table."""
+        from PySide6.QtWidgets import QTableWidgetItem
+        from utils.path_utils import get_resource_path
+        import json, os, time, re
+
+        self.ext_table.setRowCount(0)
+        self.extensions_cache = []
+
+        ext_dir = get_resource_path("extension")
+        config_path = get_resource_path(os.path.join("extension", "extensions_config.json"))
+
+        # Load extensions config file
+        self.ext_config_data = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    self.ext_config_data = json.load(f)
+            except Exception:
+                pass
+
+        if not os.path.exists(ext_dir):
+            return
+
+        row = 0
+        for file in os.listdir(ext_dir):
+            if file.endswith('.vsix') or file.endswith('.zip'):
+                file_path = os.path.join(ext_dir, file)
+                size_bytes = os.path.getsize(file_path)
+                
+                # Size calculation
+                if size_bytes < 1024 * 1024:
+                    size_str = f"{size_bytes / 1024:.1f} KB"
+                else:
+                    size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
+
+                config_item = self.ext_config_data.get(file, {})
+                is_visible = config_item.get("is_visible", False)
+                description = config_item.get("description", "No description available.")
+                name = config_item.get("name", file.split('-')[0].replace('_', ' ').title())
+
+                item_meta = {
+                    "filename": file,
+                    "name": name,
+                    "is_visible": is_visible,
+                    "description": description,
+                    "file_size": size_str
+                }
+
+                self.extensions_cache.append(item_meta)
+
+                self.ext_table.insertRow(row)
+                self.ext_table.setItem(row, 0, QTableWidgetItem(file))
+                self.ext_table.setItem(row, 1, QTableWidgetItem(size_str))
+                self.ext_table.setItem(row, 2, QTableWidgetItem("Visible" if is_visible else "Private"))
+                row += 1
+
+        if row > 0:
+            self.ext_table.selectRow(0)
+
+    def on_extension_selected(self):
+        """Hydrates the editor form fields with the selected extension's values."""
+        row = self.ext_table.currentRow()
+        if row < 0 or row >= len(self.extensions_cache):
+            self.editor_frame.setEnabled(False)
+            return
+
+        self.editor_frame.setEnabled(True)
+        ext = self.extensions_cache[row]
+        self.chk_ext_visible.setChecked(ext["is_visible"])
+        self.txt_ext_title.setText(ext["name"])
+        self.txt_ext_desc.setPlainText(ext["description"])
+
+    def on_generate_ai_desc(self):
+        """Asynchronously drafts a professional plugin README utilizing the active system LLM."""
+        row = self.ext_table.currentRow()
+        if row < 0 or row >= len(self.extensions_cache):
+            return
+
+        ext = self.extensions_cache[row]
+        
+        self.btn_ext_ai.setText("Writing...")
+        self.btn_ext_ai.setEnabled(False)
+
+        # Quick worker QThread connection to query LLM Client natively
+        from logic.llm_client import LLMClient
+        from PySide6.QtCore import QThread, Signal
+
+        class DynamicDescWorker(QThread):
+            finished = Signal(str, str)
+            error = Signal(str)
+
+            def __init__(self, filename, parent_dialog):
+                super().__init__(None) # Decoupled parent
+                self.filename = filename
+                self.parent_dialog = parent_dialog
+
+            def run(self):
+                try:
+                    llm_client = LLMClient()
+                    # Hook active provider configurations
+                    from utils.path_utils import get_app_settings
+                    import keyring
+                    active_p = get_app_settings().value("active_provider_id", "nvidia")
+                    api_key = keyring.get_password("LLMChatApp", f"api_key_{active_p}") or keyring.get_password("LLMChatApp", "api_key")
+                    base_url = get_app_settings().value(f"url_{active_p}") or get_app_settings().value("base_url", "https://integrate.api.nvidia.com/v1")
+                    
+                    if not api_key:
+                        self.error.emit("Ecosystem API Key is missing. Set your provider key first.")
+                        return
+
+                    llm_client.set_api_key(api_key)
+                    llm_client.set_base_url(base_url)
+
+                    # Fetch active model
+                    from utils.path_utils import get_app_settings
+                    from logic.model_io import load_all_models
+                    model_id = get_app_settings().value("current_model_id")
+                    if not model_id:
+                        active_models = [m for m in load_all_models() if m.get('provider', 'nvidia') == active_p and m.get('free', True)]
+                        model_id = active_models[0]["id"] if active_models else "meta/llama-3.1-8b-instruct"
+                    llm_client.set_model(model_id)
+
+                    platform = "vscode" if self.filename.endswith('.vsix') else "jetbrains"
+                    prompt = (
+                        f"Write a highly professional, beautifully formatted, concise README-style Markdown description "
+                        f"for an IDE Extension plugin. The file name is '{self.filename}' and it is for the '{platform}' ecosystem.\n\n"
+                        f"Provide a brief overview of features (like inline autocomplete, model parameters editing, and workspace syncing), "
+                        f"step-by-step instructions on how to install it, and connection instructions "
+                        f"(explaining how it connects to the local Universal API server on Port 5000).\n\n"
+                        f"Keep it under 300 words. Do not use generic placeholders. Focus on premium glassmorphic UI synergy and security."
+                    )
+
+                    full_text = llm_client._run_completion_internal(
+                        "You are an expert technical writer.",
+                        prompt,
+                        1024,
+                        0.3
+                    )
+
+                    self.finished.emit(self.filename, full_text.strip())
+                except Exception as e:
+                    self.error.emit(str(e))
+
+        # Store thread globally to avoid instant garbage collection
+        self.ai_desc_worker = DynamicDescWorker(ext["filename"], self)
+        self.ai_desc_worker.finished.connect(self._on_ai_desc_complete)
+        self.ai_desc_worker.error.connect(self._on_ai_desc_error)
+        self.ai_desc_worker.start()
+
+    def _on_ai_desc_complete(self, filename, text):
+        self.btn_ext_ai.setText("🧠 AI Generate")
+        self.btn_ext_ai.setEnabled(True)
+        self.txt_ext_desc.setPlainText(text)
+        
+        # Save to local table cache
+        row = self.ext_table.currentRow()
+        if row >= 0 and row < len(self.extensions_cache):
+            self.extensions_cache[row]["description"] = text
+
+    def _on_ai_desc_error(self, err_msg):
+        self.btn_ext_ai.setText("🧠 AI Generate")
+        self.btn_ext_ai.setEnabled(True)
+        from PySide6.QtWidgets import QMessageBox
+        QMessageBox.critical(self, "AI Draft Failed", f"Could not generate description:\n\n{err_msg}")

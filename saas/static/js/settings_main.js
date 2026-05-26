@@ -343,6 +343,10 @@ export function switchNodeConfigTab(tabId) {
     
     document.getElementById(`tab-btn-nc-${tabId}`).classList.add('active');
     document.getElementById(`tab-content-nc-${tabId}`).classList.add('active');
+
+    if (tabId === 'extensions' && window.loadExtensionsHub) {
+        window.loadExtensionsHub();
+    }
 }
 
 export async function openNodeConfigModal() {
@@ -508,7 +512,7 @@ export function setupNodeConfigListeners() {
     }
     
     // Tabs
-    ['sys-instruct', 'gen-params', 'rerank', 'telemetry', 'auth-alerts', 'tenants', 'local-api'].forEach(tabId => {
+    ['sys-instruct', 'gen-params', 'rerank', 'telemetry', 'auth-alerts', 'tenants', 'local-api', 'extensions'].forEach(tabId => {
         const tabBtn = document.getElementById(`tab-btn-nc-${tabId}`);
         if (tabBtn) tabBtn.addEventListener('click', () => switchNodeConfigTab(tabId));
     });

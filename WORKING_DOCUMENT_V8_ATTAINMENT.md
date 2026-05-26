@@ -151,9 +151,9 @@ flowchart TD
 
 ### 1.3 CLI Mode (Direct Interaction)
 
-| #               | Task                                                                               | Status           |
-| :-------------- | :--------------------------------------------------------------------------------- | :--------------- |
-| **1.3.1** | **CLI Implementation**: Integrate interactive terminal chat into `main.py` | ✅**DONE** |
+| #               | Task                                                                                                  | Status           |
+| :-------------- | :---------------------------------------------------------------------------------------------------- | :--------------- |
+| **1.3.1** | **CLI Implementation**: Integrate interactive terminal chat into `main.py`                    | ✅**DONE** |
 | **1.3.2** | **Local API CLI Manager**: Implement `--api-manager` to toggle Port 5000 server from terminal | ✅**DONE** |
 
 **Technical Notes (1.3):**
@@ -522,22 +522,24 @@ flowchart TD
 
 ### 6.2 Premium SaaS Administrative Portal (HTML, JS, CSS)
 
-| #               | Task                                                                                                     | Status           |
-| :-------------- | :------------------------------------------------------------------------------------------------------- | :--------------- |
-| **6.2.1** | **Modern UI Style System (CSS)**: Define HSL curated colors, glassmorphic tokens, and typography   | ✅**DONE** |
-| **6.2.2** | **Secure Gateway UI (HTML/CSS)**: Design the interactive passport login gate page                  | ✅**DONE** |
-| **6.2.3** | **Chat Workspace Dashboard (HTML/CSS)**: Build the chat console, arena split, and telemetry header | ✅**DONE** |
-| **6.2.4** | **Settings Vault Modal (HTML/CSS)**: Create the profile/key rotation overlay dialog                | ✅**DONE** |
-| **6.2.5** | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests and SSE stream reader      | ✅**DONE** |
-| **6.2.6** | **Operator Command Console (HTML/JS)**: Build the admin stats grid and user roster                 | ✅**DONE** |
-| **6.2.7** | **Semantic Memory Explorer (HTML/JS)**: Build RAG collection viewer and manager                    | ✅**DONE** |
-| **6.2.8** | **Public Orbit Sharing Node (HTML/JS)**: Build read-only sharing route and static page             | ✅**DONE** |
-| **6.2.9** | **AI Settings Hub & Key Mirroring**: Tabbed Credential/Model Manager mimicking Desktop with Active Provider logic and `keyring` mirroring for Admins | ✅**DONE** |
-| **6.2.10** | **Local API Control Tab**: Thread-safe Signal integration to restart Port 5000 via SaaS web UI | ✅**DONE** |
+| #                | Task                                                                                                                                                         | Status           |
+| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **6.2.1**  | **Modern UI Style System (CSS)**: Define HSL curated colors, glassmorphic tokens, and typography                                                       | ✅**DONE** |
+| **6.2.2**  | **Secure Gateway UI (HTML/CSS)**: Design the interactive passport login gate page                                                                      | ✅**DONE** |
+| **6.2.3**  | **Chat Workspace Dashboard (HTML/CSS)**: Build the chat console, arena split, and telemetry header                                                     | ✅**DONE** |
+| **6.2.4**  | **Settings Vault Modal (HTML/CSS)**: Create the profile/key rotation overlay dialog                                                                    | ✅**DONE** |
+| **6.2.5**  | **Asynchronous API Linker (JS)**: Integrate dynamic AJAX Fetch requests and SSE stream reader                                                          | ✅**DONE** |
+| **6.2.6**  | **Operator Command Console (HTML/JS)**: Build the admin stats grid and user roster                                                                     | ✅**DONE** |
+| **6.2.7**  | **Semantic Memory Explorer (HTML/JS)**: Build RAG collection viewer and manager                                                                        | ✅**DONE** |
+| **6.2.8**  | **Public Orbit Sharing Node (HTML/JS)**: Build read-only sharing route and static page                                                                 | ✅**DONE** |
+| **6.2.9**  | **AI Settings Hub & Key Mirroring**: Tabbed Credential/Model Manager mimicking Desktop with Active Provider logic and `keyring` mirroring for Admins | ✅**DONE** |
+| **6.2.10** | **Local API Control Tab**: Thread-safe Signal integration to restart Port 5000 via SaaS web UI                                                         | ✅**DONE** |
 
 **Technical Notes (6.2):**
+
 * **Settings Hub 1:1 Parity (6.2.9)**: The SaaS AI Settings Hub has been structurally re-architected to serve as a strict, literal mirror of the desktop `QDialog` application. The layout perfectly translates the XML DOM hierarchy from `credential_manager.ui` into HTML. It features physical folder-tab css logic (bounding boxes with active tab border-masking), exact emojis (`🔐`, `📦`), dynamic developer sub-tabs extracted directly from the backend API payloads, and literal mirrored status badges (`[Free]`/`[Paid]`), completely abandoning conflicting modern web styling.
 * **Local API Control Tab (6.2.10)**: Thread-safe integration in SaaS settings allowing admins to toggle and regenerate Local Universal API keys. Uses `api_manager_action` signal to jump across threads from the Flask HTTP runtime safely back into the main PySide6 event loop, preventing segmentation faults when stopping the Port 5000 socket server.
+
 ### 6.3 PostgreSQL Scaling, Pooling & Concurrency Controls
 
 | #               | Task                                                                                                             | Status           |
@@ -579,38 +581,38 @@ Phase 7 merges the Desktop PySide6 application with the Flask SaaS Web Server, t
 
 ---
 
-
-
 ## 🟢 Phase 8: Runtime Infrastructure & Service Layer [STATUS: COMPLETED]
 
 Phase 8 establishes operational reliability, service boundaries, background execution, and observability required for production-scale SaaS deployments.
 
 ### 8.1 Core Service Architecture
 
-| # | Task | Status |
-|:--|:------|:--------|
-| **8.1.1** | **ConversationService**: Move conversation orchestration out of UI/workers | ✅ **DONE** |
-| **8.1.2** | **RAGService**: Centralize retrieval, reranking, GraphRAG and ingestion pipelines | ✅ **DONE** |
-| **8.1.3** | **StorageService**: Unified driver orchestration and migration control | ✅ **DONE** |
-| **8.1.4** | **AuthService**: Central JWT/session lifecycle manager | ✅ **DONE** |
-| **8.1.5** | **CacheService**: Central semantic and chunk cache manager | ✅ **DONE** |
+| #               | Task                                                                                    | Status           |
+| :-------------- | :-------------------------------------------------------------------------------------- | :--------------- |
+| **8.1.1** | **ConversationService**: Move conversation orchestration out of UI/workers        | ✅**DONE** |
+| **8.1.2** | **RAGService**: Centralize retrieval, reranking, GraphRAG and ingestion pipelines | ✅**DONE** |
+| **8.1.3** | **StorageService**: Unified driver orchestration and migration control            | ✅**DONE** |
+| **8.1.4** | **AuthService**: Central JWT/session lifecycle manager                            | ✅**DONE** |
+| **8.1.5** | **CacheService**: Central semantic and chunk cache manager                        | ✅**DONE** |
 
 **Technical Notes (8.1):**
+
 * **Decoupled Service Boundaries**: Shifted core generation and embedding flows away from visual controllers into high-level, lifecycle-managed service singletons (`AuthService`, `ConversationService`, `RAGService`, `StorageService`, `CacheService`) implementing a robust `BaseService` structure.
 
 ---
 
 ### 8.2 Background Job Execution Layer
 
-| # | Task | Status |
-|:--|:------|:--------|
-| **8.2.1** | **Job Queue Engine**: Introduce Redis/Celery or internal async queue | ✅ **DONE** |
-| **8.2.2** | **Worker Pool Manager**: Background execution for embedding and indexing jobs | ✅ **DONE** |
-| **8.2.3** | **Retry Policies**: Add exponential retry and failure recovery | ✅ **DONE** |
-| **8.2.4** | **Dead Letter Queue**: Store failed ingestion tasks | ✅ **DONE** |
-| **8.2.5** | **Rate Limiter**: Per-user and per-tenant request limits | ✅ **DONE** |
+| #               | Task                                                                                | Status           |
+| :-------------- | :---------------------------------------------------------------------------------- | :--------------- |
+| **8.2.1** | **Job Queue Engine**: Introduce Redis/Celery or internal async queue          | ✅**DONE** |
+| **8.2.2** | **Worker Pool Manager**: Background execution for embedding and indexing jobs | ✅**DONE** |
+| **8.2.3** | **Retry Policies**: Add exponential retry and failure recovery                | ✅**DONE** |
+| **8.2.4** | **Dead Letter Queue**: Store failed ingestion tasks                           | ✅**DONE** |
+| **8.2.5** | **Rate Limiter**: Per-user and per-tenant request limits                      | ✅**DONE** |
 
 **Technical Notes (8.2):**
+
 * **Job Engine & DLQ**: Created `JobQueueEngine` for managing asynchronous ingestion and model index updates. Successfully built dynamic Dead Letter Queue (`data/dlq.json`) storing call traces.
 * **Token Bucket Rate Limiting**: Added thread-safe token bucket counters evaluating per-tenant Requests Per Minute (RPM) limits during requests.
 
@@ -618,16 +620,17 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 
 ### 8.3 Observability & Monitoring
 
-| # | Task | Status |
-|:--|:------|:--------|
-| **8.3.1** | **Structured Logging**: JSON logging across workers and APIs | ✅ **DONE** |
-| **8.3.2** | **OpenTelemetry Tracing**: Trace request → retrieval → generation flow | ✅ **DONE** |
-| **8.3.3** | **Metrics Collection**: Track latency, throughput, token usage | ✅ **DONE** |
-| **8.3.4** | **Health Endpoints**: Database/vector/cache health checks | ✅ **DONE** |
-| **8.3.5** | **Alert Rules**: Failure thresholds and notification triggers | ✅ **DONE** |
-| **8.3.6** | **Template Modularization**: Decompose the massive HTML monolith into clean sub-components | ✅ **DONE** |
+| #               | Task                                                                                             | Status           |
+| :-------------- | :----------------------------------------------------------------------------------------------- | :--------------- |
+| **8.3.1** | **Structured Logging**: JSON logging across workers and APIs                               | ✅**DONE** |
+| **8.3.2** | **OpenTelemetry Tracing**: Trace request → retrieval → generation flow                   | ✅**DONE** |
+| **8.3.3** | **Metrics Collection**: Track latency, throughput, token usage                             | ✅**DONE** |
+| **8.3.4** | **Health Endpoints**: Database/vector/cache health checks                                  | ✅**DONE** |
+| **8.3.5** | **Alert Rules**: Failure thresholds and notification triggers                              | ✅**DONE** |
+| **8.3.6** | **Template Modularization**: Decompose the massive HTML monolith into clean sub-components | ✅**DONE** |
 
 **Technical Notes (8.3):**
+
 * **Dynamic Telemetry Poller**: Implemented an automated 5-second polling system matching `/api/admin/telemetry` values to the operator dashboard, built with resource-cleanup protections.
 * **Interactive Controls**: Linked roster dashboard rate limit fields and DLQ retry actions natively to active server hooks (`/api/admin/tenants/<id>/rate-limit` & `/api/admin/dlq/retry`).
 * **Template Modularization**: Structured the 90KB monolithic `index.html` into a highly clean layout extension pattern using Jinja2 includes and extends (`base.html`, `auth_screen.html`, `sidebar.html`, `header.html`, `chat_pane.html`, `credentials.html`, `system_health.html`, `settings.html`, `node_config.html`, `model_selection.html`). Every single DOM element ID mapping remains completely untouched, preserving 100% front-end JavaScript event handling and rendering integrity.
@@ -636,15 +639,16 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 
 ### 8.4 Reliability Controls
 
-| # | Task | Status |
-|:--|:------|:--------|
-| **8.4.1** | **Circuit Breakers**: Prevent cascading failures on external providers | ✅ **DONE** |
-| **8.4.2** | **Backpressure Control**: Queue overload protection | ✅ **DONE** |
-| **8.4.3** | **Request Timeout Rules**: Global timeout enforcement | ✅ **DONE** |
-| **8.4.4** | **Graceful Degradation**: Local fallbacks during service failures | ✅ **DONE** |
-| **8.4.5** | **Provider Failover Chain**: Auto-switch between providers if unavailable | ✅ **DONE** |
+| #               | Task                                                                            | Status           |
+| :-------------- | :------------------------------------------------------------------------------ | :--------------- |
+| **8.4.1** | **Circuit Breakers**: Prevent cascading failures on external providers    | ✅**DONE** |
+| **8.4.2** | **Backpressure Control**: Queue overload protection                       | ✅**DONE** |
+| **8.4.3** | **Request Timeout Rules**: Global timeout enforcement                     | ✅**DONE** |
+| **8.4.4** | **Graceful Degradation**: Local fallbacks during service failures         | ✅**DONE** |
+| **8.4.5** | **Provider Failover Chain**: Auto-switch between providers if unavailable | ✅**DONE** |
 
 **Technical Notes (8.4):**
+
 * **Circuit-Breaker Controlled Auto-Failover**: Added provider fault detection (tripping after 5 consecutive timeouts) to route streamed query processes seamlessly to local models or sandboxed secondary BYOK instances without billing leakage.
 * **Settings XML Validation & Fix**: Resolved visual `.ui` XML parsing breaks under Qt Creator/Designer inside `ui_designer/saas_settings.ui` (line 461 unexpected double property), cleanly supporting PySide6's `QUiLoader` dynamic parsing with zero workflow or layout modifications.
 
@@ -652,18 +656,19 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 
 ### 8.5 Dynamic IDE Extensions Integration (V2.0.0)
 
-| # | Task | Status |
-|:--|:------|:--------|
-| **8.5.1** | **VS Code Dynamic Config**: Enable dynamic API host preferences and commands | ✅ **DONE** |
-| **8.5.2** | **VS Code Secure Secrets**: Hook `ExtensionContext.secrets` secure vault storage | ✅ **DONE** |
-| **8.5.3** | **VS Code Onboarding Webview**: Interactive Login/Register web interface | ✅ **DONE** |
-| **8.5.4** | **JetBrains Settings Store**: Persist settings state with secure PasswordSafe vault | ✅ **DONE** |
-| **8.5.5** | **JetBrains Options Configurable**: UI settings configurable with live health connection test | ✅ **DONE** |
-| **8.5.6** | **JetBrains Onboarding Dialog**: Multi-tab JDialog with background SwingWorkers | ✅ **DONE** |
-| **8.5.7** | **Integration Handshake script**: Automated `/health` (200), `/api/register` (201), `/api/login` (200), and completions routing validation script | ✅ **DONE** |
-| **8.5.8** | **Unified Cross-Platform Build Tools**: Bundler shell scripts (`build_all_plugins.bat` and `build_all_plugins.sh`) compiling assets, migrating to `extension/` and printing interactive status updates | ✅ **DONE** |
+| #               | Task                                                                                                                                                                                                               | Status           |
+| :-------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **8.5.1** | **VS Code Dynamic Config**: Enable dynamic API host preferences and commands                                                                                                                                 | ✅**DONE** |
+| **8.5.2** | **VS Code Secure Secrets**: Hook `ExtensionContext.secrets` secure vault storage                                                                                                                           | ✅**DONE** |
+| **8.5.3** | **VS Code Onboarding Webview**: Interactive Login/Register web interface                                                                                                                                     | ✅**DONE** |
+| **8.5.4** | **JetBrains Settings Store**: Persist settings state with secure PasswordSafe vault                                                                                                                          | ✅**DONE** |
+| **8.5.5** | **JetBrains Options Configurable**: UI settings configurable with live health connection test                                                                                                                | ✅**DONE** |
+| **8.5.6** | **JetBrains Onboarding Dialog**: Multi-tab JDialog with background SwingWorkers                                                                                                                              | ✅**DONE** |
+| **8.5.7** | **Integration Handshake script**: Automated `/health` (200), `/api/register` (201), `/api/login` (200), and completions routing validation script                                                      | ✅**DONE** |
+| **8.5.8** | **Unified Cross-Platform Build Tools**: Bundler shell scripts (`build_all_plugins.bat` and `build_all_plugins.sh`) compiling assets, migrating to `extension/` and printing interactive status updates | ✅**DONE** |
 
 **Technical Notes (8.5):**
+
 * **V2.0.0 Major Architectural Release**: Re-engineered both extensions to bypass hardcoded constants completely. They now support fully configurable local offline gateways (port 5000) and SaaS cloud multi-tenant gateways (port 8888 or remote domains) with user-isolated sandboxed storage partitions.
 * **Dynamic Onboarding Handshakes**: Created login/register flows securely saving dynamic tenant bearer keys to host OS keychains (Credential Store API/Windows Vault/macOS Keychain). Included dynamic switch-on-success workflows pre-filling login credentials upon successful registration.
 * **Unified Cross-Platform Bundling**: Shipped automated bundler scripts (`.bat` and `.sh`) verifying compile status dynamically at runtime and moving generated artifacts straight to the `/extension` directory. Added Bash ANSI color tracing (Green for success, Red for failure) to ensure native macOS and Linux developer operations.
@@ -674,19 +679,20 @@ Phase 8 establishes operational reliability, service boundaries, background exec
 
 Phase 9 introduces a tenant-scoped multi-layer cache architecture for document ingestion, embedding reuse, semantic retrieval, and response optimization. The L2 Database tier is implemented natively in the SaaS Turso layer (`saas/tenant_db.py`). Worker-level wiring is complete — both `VectorIndexerWorker` and `ChatWorker` now query and populate the Turso caches automatically.
 
-| # | Task | Status |
-|:--|:------|:--------|
-| **9.1** | **Content Hash Registry**: Store SHA-256 hashes for normalized document payloads and chunk metadata (tenant-scoped) | ✅ **DONE** (Implemented in saas/tenant_db.py) |
-| **9.2** | **Partial Chunk Reuse**: Detect unchanged chunks during re-upload and reprocess only modified chunks instead of entire documents | ✅ **DONE** (vector_indexer_worker.py hashes exchange_payload via SHA-256 and checks chunk_cache before embedding) |
-| **9.3** | **Embedding Cache Layer**: Reuse existing embeddings for identical chunk hashes to avoid redundant model execution | ✅ **DONE** (get_cached_embedding() in vector_indexer_worker.py bypasses LLM API on hash match) |
-| **9.4** | **Dynamic Ingestion Bypass**: Bind worker directly to cached Qdrant collections on complete hash matches | ✅ **DONE** (On cache hit, pre-computed vector array is sent directly to Qdrant without API call) |
-| **9.5** | **Semantic Query Cache**: Store query embeddings and match similar queries via Jaccard token similarity (>85% threshold) | ✅ **DONE** (get_semantic_cache_hit() in chat_worker.py short-circuits LLM stream on match) |
-| **9.6** | **Hierarchical Cache Storage**: Introduce L1 (memory) + L2 (SaaS DB) + L3 (Qdrant) cache tiers | ✅ **DONE** (L2 Turso DB cache fully wired; L3 Qdrant serves as cold fallback) |
-| **9.7** | **Cache Invalidation Rules**: Trigger automatic invalidation after document updates, embedding model changes, or tenant configuration changes | ⏳ PENDING |
-| **9.8** | **TTL & Cleanup Scheduler**: Remove expired indices, vectors, temporary assets, and orphaned chunks | ⏳ PENDING |
-| **9.9** | **Cache Telemetry & Analytics**: Monitor hit ratio, latency reduction, storage growth, and embedding cost savings | ⏳ PENDING |
+| #             | Task                                                                                                                                                | Status                                                                                                                  |
+| :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| **9.1** | **Content Hash Registry**: Store SHA-256 hashes for normalized document payloads and chunk metadata (tenant-scoped)                           | ✅**DONE** (Implemented in saas/tenant_db.py)                                                                     |
+| **9.2** | **Partial Chunk Reuse**: Detect unchanged chunks during re-upload and reprocess only modified chunks instead of entire documents              | ✅**DONE** (vector_indexer_worker.py hashes exchange_payload via SHA-256 and checks chunk_cache before embedding) |
+| **9.3** | **Embedding Cache Layer**: Reuse existing embeddings for identical chunk hashes to avoid redundant model execution                            | ✅**DONE** (get_cached_embedding() in vector_indexer_worker.py bypasses LLM API on hash match)                    |
+| **9.4** | **Dynamic Ingestion Bypass**: Bind worker directly to cached Qdrant collections on complete hash matches                                      | ✅**DONE** (On cache hit, pre-computed vector array is sent directly to Qdrant without API call)                  |
+| **9.5** | **Semantic Query Cache**: Store query embeddings and match similar queries via Jaccard token similarity (>85% threshold)                      | ✅**DONE** (get_semantic_cache_hit() in chat_worker.py short-circuits LLM stream on match)                        |
+| **9.6** | **Hierarchical Cache Storage**: Introduce L1 (memory) + L2 (SaaS DB) + L3 (Qdrant) cache tiers                                                | ✅**DONE** (L2 Turso DB cache fully wired; L3 Qdrant serves as cold fallback)                                     |
+| **9.7** | **Cache Invalidation Rules**: Trigger automatic invalidation after document updates, embedding model changes, or tenant configuration changes | ⏳ PENDING                                                                                                              |
+| **9.8** | **TTL & Cleanup Scheduler**: Remove expired indices, vectors, temporary assets, and orphaned chunks                                           | ⏳ PENDING                                                                                                              |
+| **9.9** | **Cache Telemetry & Analytics**: Monitor hit ratio, latency reduction, storage growth, and embedding cost savings                             | ⏳ PENDING                                                                                                              |
 
 **Technical Notes (Phase 9):**
+
 * **Chunk Embedding Cache**: `workers/vector_indexer_worker.py` now accepts `user_id`, computes `hashlib.sha256()` on the exchange payload, queries `TenantDatabaseManager.get_cached_embedding()`, and on a HIT bypasses the OpenAI/Google embedding API entirely. On a MISS, it fetches the embedding and stores it via `set_cached_embedding()`.
 * **Semantic Query Cache**: `logic/chat_worker.py` now accepts `user_id`, performs a pre-flight check via `TenantDatabaseManager.get_semantic_cache_hit()` using Jaccard token similarity (>85% threshold). On a HIT, the cached response is emitted instantly to the UI without touching the LLM. On a MISS, responses are saved via `_emit_final_response()` which wraps `set_semantic_cache_hit()`.
 * **Worker Callers Updated**: All instantiation sites (`ui/chat_view.py`, `ui/arena_view.py`) now pass `user_id=1` (Master Admin) into both `ChatWorker` and `VectorIndexerWorker`.
@@ -701,13 +707,13 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 ### 10.1 Desktop Auth & Ecosystem Separation
 
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **10.1.1** | **Create True Desktop Login**: Design a new `user_login.ui` and `.py` controller requiring a Username and Master Password to launch the app. | [ ] |
-| **10.1.2** | **Rename Legacy Login**: Refactor `login_dialog.ui` and `login_dialog.py` to `ecosystem_selector.ui` / `.py` to accurately reflect its purpose. | [ ] |
-| **10.1.3** | **UX Refactoring (Switch Ecosystem)**: Replace the concept of "Logout" with "Switch Ecosystem" to allow dynamic provider swapping without losing user session state. | [ ] |
-| **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop. | [ ] |
-| **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys. | [ ] |
+| #                | Task                                                                                                                                                                       | Status |
+| :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----- |
+| **10.1.1** | **Create True Desktop Login**: Design a new `user_login.ui` and `.py` controller requiring a Username and Master Password to launch the app.                     | [ ]    |
+| **10.1.2** | **Rename Legacy Login**: Refactor `login_dialog.ui` and `login_dialog.py` to `ecosystem_selector.ui` / `.py` to accurately reflect its purpose.              | [ ]    |
+| **10.1.3** | **UX Refactoring (Switch Ecosystem)**: Replace the concept of "Logout" with "Switch Ecosystem" to allow dynamic provider swapping without losing user session state. | [ ]    |
+| **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop.                             | [ ]    |
+| **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys.         | [ ]    |
 
 ### 10.2 SaaS Tenant Enterprise SQL Migration Flow (Modular Driver Architecture)
 
@@ -715,17 +721,18 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 *Architecture*: Uses the **Abstract Factory / Adapter Pattern** (mirroring `BaseStorageDriver`). Each database backend gets its own isolated driver file implementing a shared `BaseTenantDriver` ABC. `TenantDatabaseManager` acts as a factory switchboard reading `config.ini` to load the correct driver at runtime.
 
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **10.2.1** | **Tenant Schema Audit**: Extend `migration_bridge.py` to analyze existing `users`, `user_settings`, and Phase 9 cache tables in Turso/libSQL. | ✅ **DONE** |
-| **10.2.2** | **Abstract Base Class**: Create `saas/tenant_drivers/base_tenant_driver.py` defining all required method signatures (authenticate, cache get/set, usage tracking). | ✅ **DONE** |
-| **10.2.3** | **Turso/libSQL Driver**: Extract existing `tenant_db.py` logic into `saas/tenant_drivers/turso_tenant_driver.py`. | ✅ **DONE** |
-| **10.2.4** | **PostgreSQL Driver**: Create `saas/tenant_drivers/postgres_tenant_driver.py` speaking strictly `psycopg2`. | ✅ **DONE** |
-| **10.2.5** | **MySQL Driver**: Create `saas/tenant_drivers/mysql_tenant_driver.py` speaking strictly `pymysql`. | ✅ **DONE** |
-| **10.2.6** | **Factory Manager Refactor**: Refactor `saas/tenant_db.py` into a switchboard that reads `config.ini` and dynamically loads the correct driver. | ✅ **DONE** |
-| **10.2.7** | **Secure Data Relocation**: Safely transfer passwords, hashes, and semantic caches (Phase 9 schemas) from Turso into the selected Enterprise SQL server transactionally via `migration_bridge.py`. | ✅ **DONE** |
+| #                | Task                                                                                                                                                                                                       | Status           |
+| :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **10.2.1** | **Tenant Schema Audit**: Extend `migration_bridge.py` to analyze existing `users`, `user_settings`, and Phase 9 cache tables in Turso/libSQL.                                                  | ✅**DONE** |
+| **10.2.2** | **Abstract Base Class**: Create `saas/tenant_drivers/base_tenant_driver.py` defining all required method signatures (authenticate, cache get/set, usage tracking).                                 | ✅**DONE** |
+| **10.2.3** | **Turso/libSQL Driver**: Extract existing `tenant_db.py` logic into `saas/tenant_drivers/turso_tenant_driver.py`.                                                                                | ✅**DONE** |
+| **10.2.4** | **PostgreSQL Driver**: Create `saas/tenant_drivers/postgres_tenant_driver.py` speaking strictly `psycopg2`.                                                                                      | ✅**DONE** |
+| **10.2.5** | **MySQL Driver**: Create `saas/tenant_drivers/mysql_tenant_driver.py` speaking strictly `pymysql`.                                                                                               | ✅**DONE** |
+| **10.2.6** | **Factory Manager Refactor**: Refactor `saas/tenant_db.py` into a switchboard that reads `config.ini` and dynamically loads the correct driver.                                                  | ✅**DONE** |
+| **10.2.7** | **Secure Data Relocation**: Safely transfer passwords, hashes, and semantic caches (Phase 9 schemas) from Turso into the selected Enterprise SQL server transactionally via `migration_bridge.py`. | ✅**DONE** |
 
 **Technical Notes (Phase 10.2):**
+
 * **BaseTenantDriver ABC** (`saas/tenant_drivers/base_tenant_driver.py`): Defines 22 abstract methods covering auth, usage, credentials, admin, sharing, and Phase 9 cache operations. Static helpers (`hash_password`, `encrypt_byok`, `decrypt_byok`, `get_user_workspace`) are shared concrete methods on the ABC.
 * **TursoTenantDriver** (`saas/tenant_drivers/turso_tenant_driver.py`): 1:1 extraction of all original `tenant_db.py` logic. Uses local `sqlite3` with WAL and `PRAGMA foreign_keys=ON`. Preserves super admin auto-seeding.
 * **PostgresTenantDriver** (`saas/tenant_drivers/postgres_tenant_driver.py`): Full `psycopg2` implementation. Uses `SERIAL` primary keys, `RETURNING id` for inserts, `ON CONFLICT DO UPDATE` for upserts, explicit `GROUP BY` for all aggregation queries (PG strict mode), and manual `conn.commit()/rollback()/close()` lifecycle.
@@ -735,18 +742,17 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 ### 10.3 Standalone Migration Companion App (Two Apps Acting as One)
 
-To ensure absolute database safety, prevent active file conflicts, and bypass system connection/locking limits during active SaaS usage, the migration operation will be executed by a separate standalone maintenance process.
-
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **10.3.1** | **Maintenance Shell Utility**: Create `scripts/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models. | ⏳ PENDING |
-| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately. | ⏳ PENDING |
-| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches. | ⏳ PENDING |
-| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums. | ⏳ PENDING |
-| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully. | ⏳ PENDING |
+| #                | Task                                                                                                                                                                                                                   | Status     |
+| :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| **10.3.1** | **Maintenance Shell Utility**: Create `scripts/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models.                                                   | ⏳ PENDING |
+| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately.                                            | ⏳ PENDING |
+| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches.                                                                                                        | ⏳ PENDING |
+| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums.                                                                                             | ⏳ PENDING |
+| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully.                                                                                      | ⏳ PENDING |
 | **10.3.6** | **Dual PyInstaller Executable Spec**: Configure `.spec` files (`LLM_Chat_App_onefile.spec`) to build two separate bundled executables (`LLM Chat App.exe` and `Migration Companion.exe`) simultaneously. | ⏳ PENDING |
 
 **Technical Notes (Phase 10.3):**
+
 * **Dual PyInstaller Executable Bundling**: By defining multiple `Analysis`, `PYZ`, and `EXE` blocks inside the `.spec` files (e.g., `LLM_Chat_App_onefile.spec`), the build system will output both compiled executables in a single build pass under the `dist/` directory.
 * **Polymorphic Execution Modes (GUI vs CLI/Headless)**:
   - **GUI Mode**: If launched normally, a standalone glassmorphic PySide6 dialog runs to display visual progress bars, state indicators, and step logs.
@@ -766,6 +772,21 @@ To ensure absolute database safety, prevent active file conflicts, and bypass sy
   ```
 * **Lock-Free Turso Access**: Shutting down the main application ensures no remaining database connection locks are active on the local Turso engine database file, providing a clean, exclusive environment for relocation.
 * **Relocation Architecture Diagram**: Fully mapped inside `resources/migration_companion_arch.mermaid`.
+
+---
+
+### 10.4: Dynamic IDE Extensions Distribution Hub
+
+To turn the SaaS platform into a fully integrated developer portal, we will construct a synchronized distribution system for our VS Code (`.vsix`) and JetBrains (`.zip`) client integrations. The system will bridge the local desktop administration shell with the cloud-facing web portal.
+
+| #                | Task                                                                                                                                                                                                                                 | Status     |
+| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| **10.4.1** | **Shared Dynamic Config Ledger**: Create `extension/extensions_config.json` to serialize file sizes, visibility, custom descriptions, and timestamps.                                                                        | ✅**DONE** |
+| **10.4.2** | **Flask Crawlers & Routing**: Add secure download endpoints (`/api/extensions/download/<file>`) and REST APIs in `saas/app.py` for indexing and admin modifications.                                                       | ✅**DONE** |
+| **10.4.3** | **SaaS Web Portal Extensions UI**: Construct a beautiful glassmorphic downloads layout (`modals/extensions.html`) with blue/violet themed OS platform badges and Markdown rendering via `marked.js`.                       | ✅**DONE** |
+| **10.4.4** | **Desktop Extension Manager UI**: Design `ui_designer/extension_manager.ui` (or integrate a fresh tab in SaaS Settings) featuring an editable table, visibility checkboxes, and Markdown preview widgets.                    | ✅**DONE** |
+| **10.4.5** | **AI-Powered Description Generator**: Connect the active desktop and web `LLMClient` to a dedicated prompt block that parses file basenames and dynamically generates professional changelogs and installation instructions. | ✅**DONE** |
+| **10.4.6** | **Security Validation Gate**: Enforce JWT / Passport authentication on all administrative endpoints to block unauthorized users from changing extension metadata or accessing hidden plugins.                                  | ✅**DONE** |
 
 ---
 
