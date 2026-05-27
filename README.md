@@ -123,6 +123,10 @@ The application ships with isolated, administrative Operator Tools that execute 
 
 ### Installation
 
+> **Note for macOS / Apple Silicon Users:** It is highly recommended to run `pip install pyside6` manually before installing the full requirements, as Apple Silicon occasionally struggles with Qt bindings depending on your Python environment.
+> 
+> **Note for ARM / Cloud IaaS Deployments:** If deploying headless to an Oracle Cloud VM (aarch64) or Raspberry Pi, please refer to **Section 8** of the [`HEADLESS_GUIDE.md`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/HEADLESS_GUIDE.md) for critical OS-level dependencies required before running pip, and how to safely run Qdrant.
+
 1. **Clone the repository:**
 
    ```bash

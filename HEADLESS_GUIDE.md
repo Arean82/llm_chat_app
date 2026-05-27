@@ -149,7 +149,34 @@ The application enforces absolute cryptographic session boundaries between the C
 
 ---
 
-## 8. Troubleshooting
+## 8. ARM & Cloud IaaS Deployment Guide (Oracle / Raspberry Pi)
+
+If deploying the Headless Engine to an `aarch64` / ARM Linux environment (like Oracle Cloud Ampere or Raspberry Pi), you must install specific OS-level dependencies *before* running `pip install -r requirements.txt`.
+
+### 1. OS-Level Requirements
+ARM environments often lack pre-built PyPI wheels for PySide6 and need an active Secret Service for the Keyring vault. Install these native packages to prevent compilation crashes:
+```bash
+sudo apt update
+sudo apt install -y python3-pyside6.qtcore python3-pyside6.qtwidgets \
+                    build-essential python3-dev \
+                    libsecret-1-0 dbus-x11 gnome-keyring
+```
+*(By installing PySide6 natively via apt, pip will skip attempting to compile Qt6 from C++ source, saving hours of downtime).*
+
+### 2. Qdrant Docker Engine
+The embedded Python Qdrant server utilizes Rust bindings that often fail to compile on ARM Linux. It is highly recommended to run the official Qdrant Docker container instead:
+```bash
+sudo docker run -d -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant
+```
+Then, link the application to the container using the environment variable:
+```bash
+export QDRANT_URL="http://localhost:6333"
+python main.py --headless
+```
+
+---
+
+## 9. Troubleshooting
 
 | Issue | Solution |
 | :--- | :--- |
