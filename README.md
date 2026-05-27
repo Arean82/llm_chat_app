@@ -1,4 +1,4 @@
-# LLM Chat App (v7.4 Stable Release)
+# LLM Chat App (v8.0 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -24,7 +24,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🧬 **Hybrid Vector RAG Memory:** Deep long-term recollections. Synthesizes high-velocity NumPy TF-IDF crawls with industrial-grade, local Qdrant Vector Database storage for persistent semantic retrieval.
 - 🛠️ **Interactive Python Sandbox:** Secure, decoupled execution environment. Spawns fully-isolated processes to automatically compile and execute generated Python and PySide GUI codebases safely on your desktop.
 - ⚡ **Zero-Config Auto-Sweep:** Automated discovery of Ollama and LM Studio servers. A non-blocking, isolated background sweeper intelligently probes local ports to sync offline libraries with zero user configuration.
-- 🤖 **Scalable Architecture (V7.4):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
+- 🤖 **Scalable Architecture (V8.0):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
 - 🎛️ **Dynamic Capability-Based Filtering:** Intelligently filter models by **General Chat**, **Supports Tools**, **Vision/Multimodal**, **Embeddings**, **Rerankers**, or **Audio/Voice** using a unified, re-ordered UI filter that prioritizes active conversational models first.
 - 📂 **Universal Model Cataloging:** Dynamically auto-classifies and indexes non-chat models from API endpoints during background fetches. The chat selection popup remains cleanly partitioned (strictly showing chat-capable models), while specialized layers (Embeddings, Rerankers, Audio) are cataloged for backend integrations.
 - 🔍 **Pluggable Two-Stage Reranking Pipeline:** Maximizes code context and prompt grounding precision. Pairs candidate retrieval (Top 20) with high-recall cross-encoder rerankers (Local BGE / Cloud Cohere / Custom OpenAPI-compatible endpoints), featuring Hybrid A Structural Code Bias (scoring class/def blocks higher) and Hybrid B Diversity MMR (Maximal Marginal Relevance) overlap pruning.
@@ -536,7 +536,7 @@ pyinstaller LLM_Chat_App_mac_full.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v7.4.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v8.0.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -552,7 +552,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_7.4.0.deb
+sudo dpkg -i llmchatapp_8.0.0.deb
 ```
 
 **2. Create a Portable AppImage:**
@@ -605,7 +605,7 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
-### v7.4.0 – Standalone Migration Companion App & Operator Admin Portfolio
+### v8.0.0 – Standalone Migration Companion App & Operator Admin Portfolio
 
 * **Standalone Migration Companion**: Created `operator_tools/migration_companion.py` — a dual-mode (PySide6 GUI + Headless CLI) database relocator for safely migrating SaaS tenant data between Turso/libSQL and PostgreSQL/MySQL clusters.
 * **Glassmorphic Migration Wizard**: GUI mode features a GitHub-dark themed wizard with real-time progress bars, step indicators, and scrolling log consoles powered by background `QThread` workers.
@@ -629,7 +629,7 @@ This framework is architected and curated with the vision of building transparen
 
 * **Windows ctypes unicode translation**: Solved a crucial C-level bug where `SetCurrentProcessExplicitAppUserModelID` received garbage ANSI string pointers, successfully forcing wide-string `c_wchar_p` interpretation.
 * **Master App ID Consolidation**: Removed conflicting duplicate calls inside the UI main window shell, centralizing startup registration as a single source of truth.
-* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v7.4`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
+* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v8.0`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
 
 ### v7.0.0 – Headless SaaS Platform & Cloud Multi-Tenancy Architecture
 

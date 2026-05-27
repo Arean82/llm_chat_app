@@ -2,7 +2,7 @@
 # This file contains constant values used throughout the LLM Chat App.
 
 APP_NAME = "LLM Chat App"
-APP_VERSION = "7.4.0"
+APP_VERSION = "8.0.0"
 APP_AUTHOR = "Arean Narrayan"
 
 

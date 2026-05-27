@@ -34,9 +34,14 @@ class VectorDatabase:
             self.db_dir = base_dir / "vector_db"
             self.db_dir.mkdir(parents=True, exist_ok=True)
             
-            # Instantiate purely localized File-based mode
-            self.client = QdrantClient(path=str(self.db_dir))
-            print(f"[VectorDB] Initialized successfully at {self.db_dir}")
+            # Instantiate Qdrant (Docker/Cloud vs Local File)
+            qdrant_url = os.environ.get("QDRANT_URL")
+            if qdrant_url:
+                self.client = QdrantClient(url=qdrant_url)
+                print(f"[VectorDB] Initialized successfully using remote engine at {qdrant_url}")
+            else:
+                self.client = QdrantClient(path=str(self.db_dir))
+                print(f"[VectorDB] Initialized successfully at {self.db_dir}")
         except Exception as e:
             print(f"[VectorDB] Initialization Error: {e}")
             self.client = None
