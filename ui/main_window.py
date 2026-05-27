@@ -31,7 +31,7 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("LLM Chat App v7.3")
+        self.setWindowTitle("LLM Chat App v7.4")
         
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)
@@ -175,7 +175,6 @@ class MainWindowClass(QMainWindow):
         settings_menu.addAction("⚙️ Generation Parameters", self.show_gen_settings)
         settings_menu.addAction("📡 SaaS Gateway Configuration", self.show_saas_settings)
         settings_menu.addSeparator()
-        settings_menu.addAction("🗄️ Storage Manager", self.show_storage_manager)
         settings_menu.addAction("📂 Open Data Folder", self.open_storage_location)
         settings_menu.addSeparator()
         settings_menu.addAction("🔄 Database Relocator (Migration Companion)", self.launch_migration_companion)
@@ -373,11 +372,6 @@ class MainWindowClass(QMainWindow):
         )
         self.model_manager_dialog.exec()
 
-    def show_storage_manager(self):
-        """Launch UI to pivot the underlying app data storage directories"""
-        from ui.storage_manager_dialog import StorageManagerDialog
-        dialog = StorageManagerDialog(theme=self.theme_manager.current_theme, parent=self)
-        dialog.exec()
 
     def open_storage_location(self):
         """Direct OS trigger to pop open active filesystem database root"""

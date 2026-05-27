@@ -1,4 +1,4 @@
-# LLM Chat App (v7.3 Stable Release)
+# LLM Chat App (v7.4 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -24,7 +24,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🧬 **Hybrid Vector RAG Memory:** Deep long-term recollections. Synthesizes high-velocity NumPy TF-IDF crawls with industrial-grade, local Qdrant Vector Database storage for persistent semantic retrieval.
 - 🛠️ **Interactive Python Sandbox:** Secure, decoupled execution environment. Spawns fully-isolated processes to automatically compile and execute generated Python and PySide GUI codebases safely on your desktop.
 - ⚡ **Zero-Config Auto-Sweep:** Automated discovery of Ollama and LM Studio servers. A non-blocking, isolated background sweeper intelligently probes local ports to sync offline libraries with zero user configuration.
-- 🤖 **Scalable Architecture (V7.3):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
+- 🤖 **Scalable Architecture (V7.4):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
 - 🎛️ **Dynamic Capability-Based Filtering:** Intelligently filter models by **General Chat**, **Supports Tools**, **Vision/Multimodal**, **Embeddings**, **Rerankers**, or **Audio/Voice** using a unified, re-ordered UI filter that prioritizes active conversational models first.
 - 📂 **Universal Model Cataloging:** Dynamically auto-classifies and indexes non-chat models from API endpoints during background fetches. The chat selection popup remains cleanly partitioned (strictly showing chat-capable models), while specialized layers (Embeddings, Rerankers, Audio) are cataloged for backend integrations.
 - 🔍 **Pluggable Two-Stage Reranking Pipeline:** Maximizes code context and prompt grounding precision. Pairs candidate retrieval (Top 20) with high-recall cross-encoder rerankers (Local BGE / Cloud Cohere / Custom OpenAPI-compatible endpoints), featuring Hybrid A Structural Code Bias (scoring class/def blocks higher) and Hybrid B Diversity MMR (Maximal Marginal Relevance) overlap pruning.
@@ -154,11 +154,15 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 llm_chat_app/
 │
 ├── main.py                         # 🚀 Entry point
-├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build
-├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build
-├── LLM_Chat_App_combined.spec      # PyInstaller spec - Triple-binary build (App + Migration Companion + Reset Admin)
+├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build (App only)
+├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build (App only)
+├── LLM_Chat_App_onedir_full.spec   # PyInstaller spec - One-dir build (App + Operator Tools)
+├── LLM_Chat_App_onefile_full.spec  # PyInstaller spec - One-file build (App + Operator Tools)
+├── build_deb.sh                    # 📦 Linux DEB compile & bundler script
+├── build_appimage.sh               # 📦 Linux AppImage compile & bundler script
+├── build_mac.sh                    # 📦 macOS PKG installer compile script
 ├── build_all_plugins.bat           # 📦 Windows plugins compile & bundler script
-├── build_all_plugins.sh            # 📦 Unix/macOS Bash plugins compile & bundler script
+├── build_all_plugins.sh            # 📦 Unix plugins compile & bundler script
 ├── README.md                       # 📖 Documentation
 ├── LICENSE                         # ⚖️ MIT License
 ├── SECURITY.md                     # 🛡️ Security policy and vulnerability disclosure
@@ -174,8 +178,16 @@ llm_chat_app/
 ├── vector_db/                      # 💾 Persistent Qdrant dense semantic retrieval (Local DB)
 │
 ├── operator_tools/                 # 🔧 Isolated Operator Admin Portfolio (Phase 10.3)
-│   ├── migration_companion.py      # 🔄 Standalone DB Relocator (GUI + CLI/Headless)
-│   └── reset_admin.py              # 🔐 Universal Master Password Reset (CLI/Daemon)
+│   ├── admin_reset/                # 🔐 Universal Master Password Reset (MVC Architecture)
+│   │   ├── core/
+│   │   │   └── headless_reset.py   # CLI/Daemon logic engine
+│   │   ├── ui_assets/
+│   │   │   └── reset_admin.ui      # Qt Designer UI layout
+│   │   └── reset_admin.py          # MVC Controller entrypoint
+│   ├── migration/                  # 🔄 Standalone DB Relocator (MVC Architecture)
+│   │   ├── ui_assets/
+│   │   │   └── migration_companion.ui
+│   │   └── migration_companion.py  # GUI + CLI/Headless Controller entrypoint
 │
 ├── saas/                           # 🌐 Quantum SaaS Web Portal (V7)
 │   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
@@ -477,21 +489,20 @@ If you want to build the distributable installers yourself, follow the OS-specif
 Run this from the project root. The project includes three spec files for different build types:
 
 ```bash
-# One-dir build (folder with exe + dependencies)
+# 1. Standard Builds (App Only)
 pyinstaller LLM_Chat_App_onedir.spec
-
-# One-file build (single executable)
 pyinstaller LLM_Chat_App_onefile.spec
 
-# Combined build (creates both One-file and One-dir)
-pyinstaller LLM_Chat_App_combined.spec
+# 2. Full Suite Builds (App + Operator Tools)
+pyinstaller LLM_Chat_App_onedir_full.spec
+pyinstaller LLM_Chat_App_onefile_full.spec
 ```
 
 **Build outputs:**
 
 - One-dir: `dist/LLM_Chat_dir/` (folder containing the executable and all dependencies)
 - One-file: `dist/LLM_Chat_one_file/LLM Chat App.exe` (single executable file)
-- Combined: Both outputs are generated simultaneously
+- Full builds will simultaneously compile `Migration Companion` and `Reset Admin` into `dist/`.
 - On first launch, the executable checks directory permissions. If running from a restricted system folder (like `C:\Program Files`), it automatically creates data resources inside `AppData` to ensure zero-crash operation.
 - If run from a writable folder (USB drive/Desktop), it prompts the user to select between **Portable**, **Standard**, or **Custom** storage paths.
 - Uses **Smart Sync** to safely unpack current UI versions to the active Data Root without wiping user configs.
@@ -506,7 +517,7 @@ pyinstaller LLM_Chat_App_combined.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v7.3.0.exe`
+5. *Output:* `installer_output/LLM_Chat_App_Setup_v7.4.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -522,7 +533,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_7.3.0.deb
+sudo dpkg -i llmchatapp_7.4.0.deb
 ```
 
 **2. Create a Portable AppImage:**
@@ -575,6 +586,16 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
+### v7.4.0 – Standalone Migration Companion App & Operator Admin Portfolio
+
+* **Standalone Migration Companion**: Created `operator_tools/migration_companion.py` — a dual-mode (PySide6 GUI + Headless CLI) database relocator for safely migrating SaaS tenant data between Turso/libSQL and PostgreSQL/MySQL clusters.
+* **Glassmorphic Migration Wizard**: GUI mode features a GitHub-dark themed wizard with real-time progress bars, step indicators, and scrolling log consoles powered by background `QThread` workers.
+* **Jaccard Similarity Integrity Audits**: Post-relocation verification compares row counts across all 6 tenant tables with formatted ASCII summary tables and a computed Jaccard Similarity Index.
+* **Settings Menu Subprocess Forking**: Added `🔄 Database Relocator` to the desktop Settings menu. Triggers auto-save, gracefully shuts down the main app to release database locks, then launches the companion as a detached subprocess.
+* **Isolated Operator Admin Portfolio**: All administrative scripts relocated to `operator_tools/`. The legacy `scripts/reset_admin.py` is deprecated and redirects to the canonical version.
+* **Triple PyInstaller Bundling**: Restructured `LLM_Chat_App_combined.spec` to compile three distinct binaries: `LLM Chat App.exe` (public), `Migration Companion.exe` (private), and `Reset Admin.exe` (private).
+* **Service-Friendly Pathing**: All operator tools use `sys.executable` parent resolution for frozen builds, ensuring correct operation when mounted as Windows Services or systemd daemons.
+
 ### v7.3.0 – Secure Multi-Tenant Data Relocation & Standalone Migration Suite
 
 * **Desktop Geometry Persistence:** All major PySide6 dialogs (Credential Manager, Model Selector, Log Viewer, SaaS Settings) now leverage OS-native `QSettings` to memorize exact window coordinates and dimensions across app restarts.
@@ -589,7 +610,7 @@ This framework is architected and curated with the vision of building transparen
 
 * **Windows ctypes unicode translation**: Solved a crucial C-level bug where `SetCurrentProcessExplicitAppUserModelID` received garbage ANSI string pointers, successfully forcing wide-string `c_wchar_p` interpretation.
 * **Master App ID Consolidation**: Removed conflicting duplicate calls inside the UI main window shell, centralizing startup registration as a single source of truth.
-* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v7.3`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
+* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v7.4`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
 
 ### v7.0.0 – Headless SaaS Platform & Cloud Multi-Tenancy Architecture
 

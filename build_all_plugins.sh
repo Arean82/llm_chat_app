@@ -1,25 +1,20 @@
 #!/bin/bash
-
-# Standard exit on error disabled to ensure we check dynamic status
-set +e
+# build_all_plugins.sh - LLM Chat App IDE Plugins Bundler (V2.0.0 RELEASE)
 
 echo "============================================================"
 echo "🚀 LLM CHAT APP - IDE PLUGINS BUNDLER (V2.0.0 RELEASE)"
 echo "============================================================"
 
-# Resolve Root Directory
-ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-# Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-# Initialize Status Variables
-VSCODE_STATUS="${RED}❌ FAILED TO COMPILE OR PACKAGE${NC}"
+VSCODE_STATUS="❌ FAILED TO COMPILE OR PACKAGE"
 VSCODE_LOCATION="N/A"
 VSCODE_INSTALL="Please check the build output log above for details."
+
+JETBRAINS_STATUS="❌ FAILED TO COMPILE OR PACKAGE"
+JETBRAINS_LOCATION="N/A"
+JETBRAINS_INSTALL="Please check the build output log above for details."
 
 # ----------------------------------------------------
 # SECTION 1: VS Code Extension Package
@@ -41,11 +36,11 @@ npx -y @vscode/vsce package
 
 if [ -f "vscode-llm-chat-2.0.0.vsix" ]; then
     mkdir -p "$ROOT_DIR/extension"
-    mv -f "vscode-llm-chat-2.0.0.vsix" "$ROOT_DIR/extension/"
+    mv "vscode-llm-chat-2.0.0.vsix" "$ROOT_DIR/extension/" > /dev/null 2>&1
 fi
 
 if [ -f "$ROOT_DIR/extension/vscode-llm-chat-2.0.0.vsix" ]; then
-    VSCODE_STATUS="${GREEN}✅ SUCCESSFULLY COMPILED AND BUNDLED${NC}"
+    VSCODE_STATUS="✅ SUCCESSFULLY COMPILED AND BUNDLED"
     VSCODE_LOCATION="extension/vscode-llm-chat-2.0.0.vsix"
     VSCODE_INSTALL="Right-click the VSIX file in VS Code and select 'Install Extension VSIX'"
     echo "[VS Code]: Package copied to extension/vscode-llm-chat-2.0.0.vsix"
@@ -61,16 +56,16 @@ echo "[Step 2/2]: Packaging JetBrains IntelliJ Extension..."
 cd "$ROOT_DIR/jetbrains-llm-chat"
 
 echo "[JetBrains]: Compiling Kotlin and building plugin..."
-chmod +x ./gradlew 2>/dev/null
+chmod +x ./gradlew
 ./gradlew buildPlugin
 
 if [ -f "build/distributions/jetbrains-llm-chat-2.0.0.zip" ]; then
     mkdir -p "$ROOT_DIR/extension"
-    mv -f "build/distributions/jetbrains-llm-chat-2.0.0.zip" "$ROOT_DIR/extension/"
+    mv "build/distributions/jetbrains-llm-chat-2.0.0.zip" "$ROOT_DIR/extension/" > /dev/null 2>&1
 fi
 
 if [ -f "$ROOT_DIR/extension/jetbrains-llm-chat-2.0.0.zip" ]; then
-    JETBRAINS_STATUS="${GREEN}✅ SUCCESSFULLY COMPILED AND BUNDLED${NC}"
+    JETBRAINS_STATUS="✅ SUCCESSFULLY COMPILED AND BUNDLED"
     JETBRAINS_LOCATION="extension/jetbrains-llm-chat-2.0.0.zip"
     JETBRAINS_INSTALL="Open IDE - Settings - Plugins - [Gear Icon] - 'Install Plugin from Disk...' - select the zip file."
     echo "[JetBrains]: Package copied to extension/jetbrains-llm-chat-2.0.0.zip"
@@ -88,15 +83,15 @@ echo "========================================================================"
 echo ""
 echo " [BUILD STATUS SUMMARY - VERSION 2.0.0]:"
 echo ""
-echo -e " 📦 VS Code Extension:"
-echo -e "    Status:    $VSCODE_STATUS"
-echo -e "    Location:  $VSCODE_LOCATION"
-echo -e "    Install:   $VSCODE_INSTALL"
+echo " 📦 VS Code Extension:"
+echo "    Status:    $VSCODE_STATUS"
+echo "    Location:  $VSCODE_LOCATION"
+echo "    Install:   $VSCODE_INSTALL"
 echo ""
-echo -e " 📦 JetBrains IntelliJ Extension:"
-echo -e "    Status:    $JETBRAINS_STATUS"
-echo -e "    Location:  $JETBRAINS_LOCATION"
-echo -e "    Install:   $JETBRAINS_INSTALL"
+echo " 📦 JetBrains IntelliJ Extension:"
+echo "    Status:    $JETBRAINS_STATUS"
+echo "    Location:  $JETBRAINS_LOCATION"
+echo "    Install:   $JETBRAINS_INSTALL"
 echo ""
 echo "========================================================================"
 echo " 🚀 Ready for dynamic multi-tenant cloud and local offline gateways!"

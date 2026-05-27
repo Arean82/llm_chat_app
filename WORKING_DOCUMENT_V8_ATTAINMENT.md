@@ -699,7 +699,7 @@ Phase 9 introduces a tenant-scoped multi-layer cache architecture for document i
 
 ---
 
-## 🔴 Phase 10: Desktop Native Authentication & Ecosystem Refactoring [STATUS: IN PROGRESS]
+## 🟢 Phase 10: Desktop Native Authentication & Ecosystem Refactoring [STATUS: COMPLETED]
 
 The current desktop application utilizes a "Login Dialog" that functions primarily as an API Key/Ecosystem selector, lacking true user authentication. Phase 10 will re-architect this flow to match the SaaS platform, introducing a true **Admin-Only** login gate and converting the old login logic into a dynamic "Ecosystem Selector."
 
@@ -762,12 +762,12 @@ To provide administrative security and prevent end-user tampering in production,
 | **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches.                                                                                                        | ✅**DONE** |
 | **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums.                                                                                             | ✅**DONE** |
 | **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully.                                                                                      | ✅**DONE** |
-| **10.3.6** | **Triple PyInstaller Executable Spec**: Configure `.spec` files (`LLM_Chat_App_combined.spec`) to build three separate isolated binaries (`LLM Chat App.exe`, `Migration Companion.exe`, `reset_admin.exe`).   | ✅**DONE** |
+| **10.3.6** | **Quad PyInstaller Executable Spec**: Configure `.spec` files to build four separate isolated binaries utilizing the `onedir` and `onefile` split architecture, superseding the legacy `combined.spec` approach.   | ✅**DONE** |
 
 **Technical Notes (Phase 10.3):**
 
 * **Isolated Operator Portfolio**: Administrative scripts are moved out of public source scopes into the dedicated `operator_tools/` folder. The production hosting administrator retains `reset_admin.exe` and `Migration Companion.exe` exclusively, distributing only the client chat bundle.
-* **Triple PyInstaller Executable Bundling**: By defining three distinct `Analysis`, `PYZ`, and `EXE` blocks inside `LLM_Chat_App_combined.spec`, PyInstaller compiles the entire operator suite simultaneously into the `dist/` directory.
+* **Quad PyInstaller Executable Bundling**: By defining four distinct `.spec` structures (`LLM_Chat_App_onedir.spec`, `LLM_Chat_App_onefile.spec`, `LLM_Chat_App_onedir_full.spec`, and `LLM_Chat_App_onefile_full.spec`), PyInstaller perfectly segments public clients from private operator tools.
 * **Service-Friendly Pathing (Windows Services / systemd)**:
   - **The Problem**: Services running under the OS service manager are triggered with a default CWD pointing to system directories (e.g. `C:\Windows\System32`), causing relative path lookups to crash.
   - **The Solution**: All drivers, configurations, and scripts strictly avoid CWD-dependent statements (`os.getcwd()`). They dynamically calculate the absolute workspace folder containing the frozen binary (`Path(sys.executable).parent`) or loose script (`Path(__file__).parent.parent.resolve()`), guaranteeing flawless execution when mounted as a service.
@@ -816,3 +816,69 @@ To turn the SaaS platform into a fully integrated developer portal, we will cons
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
 *Phase 10.3 Complete: Standalone Migration Companion App (`operator_tools/migration_companion.py`), isolated Admin Reset (`operator_tools/reset_admin.py`), triple PyInstaller spec, and Settings menu subprocess forking all implemented and synchronized.*
+
+---
+
+## 🔴 Phase 11: Operator Orchestration & Service Decoupling [STATUS: IN PROGRESS]
+
+Phase 11 strips environment-setup logic out of the main desktop client, ensuring the client remains a pure chat application. All data relocation and headless daemon configuration will be moved into the isolated `operator_tools` suite, which will be structurally refactored into dedicated modules with segmented build strategies.
+
+### 11.1 Structural Refactoring & Build Orchestration
+
+| #          | Task                                                                                                                                                                                            | Status     |
+| :--------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| **11.1.1** | **Asset Isolation**: Move the Migration Companion to `operator_tools/migration/migration_companion.py` and the password resetter to `operator_tools/admin_reset/reset_admin.py` to support future modular assets. | ✅**DONE** |
+| **11.1.2** | **Path Adjustments**: Update all relative `sys.path` append commands in the relocated scripts to resolve three-levels up to the project root. Update `main.py` cleanup logic.                 | ✅**DONE** |
+| **11.1.3** | **Segmented Spec Strategy**: Create distinct PyInstaller `.spec` profiles: `onedir`/`onefile` for distributing just the Chat App, and `onedir_full`/`onefile_full` to bundle the Chat App + Reset Admin + Migration Companion. (Supersedes legacy `single.spec`/`full.spec`). | ✅**DONE** |
+| **11.1.4** | **UI XML Externalization**: Strip all hardcoded `PySide6` widget construction code from both scripts. Design strict `.ui` XML layout files to be loaded dynamically via `QUiLoader`.       | ✅**DONE** |
+
+### 11.2 Feature Decoupling (Migration Companion Expansion)
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **11.2.1** | **Internal MVC Structure**: Establish `core/` and `ui_assets/` directories for scalable growth | 📝**PLANNED** |
+| **11.2.2** | **Transplant Storage Manager**: Move local storage logic into `core/local_relocator.py` | ✅**DONE** |
+| **11.2.3** | **Service Setup Wizard**: Create `core/service_installer.py` (Windows Native OS Services) | ✅**DONE** |
+| **11.2.4** | **Unified Dashboard UI**: Refactor `migration_companion.py` into a multi-tab Master Window | ✅**DONE** |
+| **11.2.5** | **Dual-Mode Headless Support**: Ensure all tabs and tools can be executed via `--cli` / `--headless` args | ✅**DONE** |
+| **11.2.6** | **Main App Cleanup**: Eradicate `Storage Manager` buttons from `ui/main_window.py` | ✅**DONE** |
+
+### 11.3 Dynamic SaaS Database Configurator
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **11.3.1** | **UI Expansion**: Add Host, Port, User, Pass, DB inputs to `saas_db.ui` | ✅**DONE** |
+| **11.3.2** | **Dynamic Target Instantiation**: Instantiate SaaS driver directly from UI/CLI inputs, bypassing `config.ini` | ✅**DONE** |
+| **11.3.3** | **Pre-Flight Admin Check**: Verify write-access to `saas/config.ini` on launch | ✅**DONE** |
+| **11.3.4** | **Config Persistence**: Use `configparser` to rewrite `saas/config.ini` upon successful integrity audit | ✅**DONE** |
+
+### 11.4 UI Polish & Cross-Platform Services
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **11.4.1** | **Bi-Directional SaaS UI**: Display active Source database from `config.ini` and unify Postgres/MySQL credentials into a single unified layout. | ✅**DONE** |
+| **11.4.2** | **Cross-Platform Daemonizer**: Upgrade the Service Setup Wizard to support both Linux (`systemd`) and Windows (`sc.exe`), and add custom UI fields for Service Name, Description, and User Group. | ✅**DONE** |
+
+### 11.5 Cross-Platform Enterprise Hardening (Systemd & NSSM)
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **11.5.1** | **UI Hardening Options**: Add inputs for Log Directory, Env File, Windows Service User, and Hardening Toggles. | ✅**DONE** |
+| **11.5.2** | **Linux Systemd Overhaul**: Inject `PrivateTmp`, `ProtectSystem`, `MemoryMax`, and generate `install_service.sh` for user creation. | ✅**DONE** |
+| **11.5.3** | **Windows NSSM Pipeline**: Generate `install_service.ps1` that auto-downloads NSSM, provisions dedicated users, and applies `icacls` locks. | ✅**DONE** |
+| **11.5.4** | **SCM Lifecycle Management**: Configure recovery protocols and signal handling instead of raw `sc.exe`. | ✅**DONE** |
+
+### 11.6 PyInstaller Build Automation Pipeline
+
+| # | Task | Status |
+| :--- | :--- | :--- |
+| **11.6.1** | **Operator Specs**: Create isolated `.spec` files for `migration_companion.py` and `reset_admin.py` utilizing the MVC layout (`core`/`ui_assets`). | ✅**DONE** |
+| **11.6.2** | **Main App Specs**: Create `LLM_Chat_App_onefile.spec` and `LLM_Chat_App_onedir.spec` (Without Operator Tools). | ✅**DONE** |
+| **11.6.3** | **Full Multi-Target Specs**: Create `LLM_Chat_App_onefile_full.spec` and `LLM_Chat_App_onedir_full.spec` to compile Main App + Operator Tools simultaneously. | ✅**DONE** |
+| **11.6.4** | **Automation Scripts**: Write `build_deb.sh`, `build_appimage.sh`, `build_mac.sh`, and `build_all_plugins.sh` to construct precision deployment targets. (Monolithic `clean.sh` and `build.sh` are explicitly SUPERSEDED/DELETED). | ✅**DONE** |
+
+
+
+**Technical Notes (Phase 11):**
+* **Zero Client Pollution**: Moving gigabytes of vector caches or modifying service registries is inherently risky to perform while the main app is running. Doing this from the standalone operator suite guarantees that the main application is cleanly shut down, preventing OS file locks and database corruption.
+* **Separation of Concerns**: End-users receive the `single` build (just `LLM Chat App.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.

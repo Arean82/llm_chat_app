@@ -263,14 +263,14 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
 * **Details:** Fixed legacy `.spec` flaw where `a.binaries` were packed inside both the EXE header and output folder simultaneously, increasing package footprint 2x.
-* **Implementation:** Split targets into absolute discrete channels: `LLM_Chat_dir/` for folder installs and `LLM_Chat_one_file/` for portable binaries, using explicit `exclude_binaries=True` blocks in the onedir constructors.
+* **Implementation:** Split targets into absolute discrete channels: `LLM_Chat_dir/` for folder installs and `LLM_Chat_one_file/` for portable binaries. Implemented the Quad Spec architecture (`onedir`, `onefile`, `onedir_full`, `onefile_full`) which supersedes legacy `combined.spec` to correctly isolate main app from Operator Tools.
 
 #### 17. Audit ID 017: Build Dependency Alignment
 
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
 * **Details:** Cascading output restructure risked breakage across multi-OS installer runners.
-* **Implementation:** Overhauled input source pointers in `build_appimage.sh`, `build_deb.sh`, and `installer_script.iss` to automatically harvest payloads from newly standardized paths.
+* **Implementation:** Overhauled input source pointers in the four canonical build scripts (`build_deb.sh`, `build_appimage.sh`, `build_mac.sh`, `build_all_plugins.sh`) to automatically harvest payloads from newly standardized paths. Explicitly deleted monolithic `clean` and `build` scripts.
 
 #### 18. Audit ID 018: Premium Visual Identity & Asset Pipelines
 

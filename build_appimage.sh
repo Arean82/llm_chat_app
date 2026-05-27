@@ -1,4 +1,6 @@
 #!/bin/bash
+# build_appimage.sh - Build an AppImage for Linux
+
 APPDIR="LLMChatApp.AppDir"
 
 # 1. Create folder structure

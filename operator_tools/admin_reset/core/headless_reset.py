@@ -1,24 +1,20 @@
-# operator_tools/reset_admin.py
-# Universal Master Password Reset Sequence for SaaS, Desktop GUI, and CLI Headless Gates
-# Designed to run securely as a standalone binary (reset_admin.exe) and compatible with system services.
+# operator_tools/admin_reset/core/headless_reset.py
 
 import sys
 import os
 
-# Absolute service-friendly pathing resolution
 if getattr(sys, 'frozen', False):
     root_dir = os.path.dirname(sys.executable)
 else:
-    # operator_tools/reset_admin.py is located under project_root/operator_tools/
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 sys.path.insert(0, root_dir)
 
 from saas.tenant_db import TenantDatabaseManager
 
-def reset_admin():
+def run_headless_reset():
     print("======================================================================")
-    print(" 🚀 UNIVERSAL MASTER PASSWORD RESET SEQUENCE")
+    print(" 🚀 UNIVERSAL MASTER PASSWORD RESET SEQUENCE (CLI MODE)")
     print("======================================================================")
     print(f"Resolving project root directory: {root_dir}")
     print("Detecting active database driver from 'saas/config.ini'...")
@@ -42,9 +38,7 @@ def reset_admin():
         print("\nNote: Stored API keys in your local OS Keyring will be safely secured")
         print("with the master password ('admin') upon your next GUI desktop launch.")
         print("======================================================================\n")
-        
+        return 0
     except Exception as e:
         print(f"❌ Critical: Universal admin reset failed: {e}")
-
-if __name__ == "__main__":
-    reset_admin()
+        return 1

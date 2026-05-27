@@ -1,136 +1,36 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec file for LLM Chat App
-# One can use this file to customize the build process, such as adding data files, hidden imports, etc. 
-# One_dir can be used to specify the output directory for the built application. (v7.3.0 Stable Sync)
 
-a = Analysis(
+block_cipher = None
+
+# Main Application Analysis
+a_main = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        ('resources/', 'resources'),
-        ('ui_designer/', 'ui_designer'),
-        ('extension/', 'extension'),
-        ('headless/', 'headless'),
-        ('README.md', '.'),           
-        ('LICENSE', '.'),        
-        ('API_SERVER.md', '.'),
-        ('IDE_INTEGRATION.md', '.'),
-        ('SECURITY.md', '.'),
-        ('HEADLESS_GUIDE.md', '.'),
-    ],
-    hiddenimports=[
-        'flask',
-        'werkzeug',
-        'werkzeug.serving',
-        'openai',
-        'google',
-        'google.genai',
-        'google.genai.types',
-        'google.generativeai',
-        'google.generativeai.types',
-        'google.ai.generativelanguage',
-        'google.api_core',
-        'pydantic',
-        'httpx',
-        'websockets',
-        'proto',
-        'markdown',
-        'certifi',
-        'urllib3',
-        'charset_normalizer',
-        'PySide6.QtCore',
-        'PySide6.QtWidgets',
-        'PySide6.QtGui',
-        'PySide6.QtUiTools',
-        'sqlite3',
-        'pysqlite2',
-        'queue',
-        'threading',
-        'time',
-        'json',
-        'base64',
-        'socket',
-        'pathlib',
-        're',
-        'datetime',
-        'importlib.metadata',
-        'importlib.resources',
-        'markdown.extensions.extra',
-        'markdown.extensions.fenced_code',
-        'markdown.extensions.codehilite',
-        'logging',
-        'webbrowser',
-        'shutil',
-        'keyring',
-        'numpy',
-        'pandas',
-        'pypdf',
-        'docx2txt',
-        'pptx',
-        'odf',
-        'openpyxl',
-        'qdrant_client',
-    ],
+    datas=[],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[
-        'PyQt5',
-        'PyQt6',
-        'tkinter',
-        '_tkinter',
-        'matplotlib',
-        'scipy',
-        'IPython',
-        'jupyter',
-        'notebook',
-    ],
+    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
-    cipher=None,
-    noarchive=False
+    cipher=block_cipher,
+    noarchive=False,
 )
+pyz_main = PYZ(a_main.pure, a_main.zipped_data, cipher=block_cipher)
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name='LLM Chat App',
-    debug=False,
-    strip=False,
-    upx=True,
-    console=False,
-    icon='resources/app_icon.ico',
-    version='file_version_info.txt',
+# OneDir EXEs
+exe_main = EXE(
+    pyz_main, a_main.scripts, [], exclude_binaries=True,
+    name='LLM_Chat_App', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, console=False, disable_windowed_traceback=False, argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None,
 )
 
 coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
+    exe_main, a_main.binaries, a_main.zipfiles, a_main.datas,
     strip=False,
     upx=True,
-    name='LLM_Chat_dir'
+    upx_exclude=[],
+    name='LLM_Chat_App'
 )
-
-# macOS specific bundle configuration
-import sys
-if sys.platform == 'darwin':
-    app = BUNDLE(
-        coll,
-        name='LLM Chat App.app',
-        icon='resources/app_icon.icns',
-        bundle_identifier='com.arean82.llmchatapp',
-        info_plist={
-            'CFBundleShortVersionString': '7.3.0',
-            'CFBundleVersion': '7.3.0',
-            'NSPrincipalClass': 'NSApplication',
-            'NSAppleScriptEnabled': False,
-            'NSHighResolutionCapable': True,
-        },
-    )
