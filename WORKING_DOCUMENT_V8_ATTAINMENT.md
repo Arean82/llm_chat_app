@@ -171,27 +171,25 @@ flowchart TD
 
 To prepare for cloud scaling without breaking existing desktop functionality, Phase 2 abstracts all SQL database operations. We decouple the active database connection from the core application, wrapping our local SQLite storage in a modular repository interface.
 
-### 2.1 Abstract Storage Repository
+| #              | Task                                                                                         | Status           |
+| :------------- | :------------------------------------------------------------------------------------------- | :--------------- |
+| **2.1**  | **Abstract Storage Interface**: Define `BaseStorageDriver` repository class          | ✅**DONE** |
+| **2.2**  | **Local SQLite Driver**: Refactor current `conversation_manager.py` queries          | ✅**DONE** |
+| **2.3**  | **Dynamic Registry Factory**: Inject driver factory into `ConversationManager`       | ✅**DONE** |
+| **2.4**  | **Local File-per-Tenant Pathing**: Validate localized isolation per user folders       | ✅**DONE** |
+| **2.5**  | **Desktop & CLI Zero-Regression Audit**: Test local GUI and CLI chat stability         | ✅**DONE** |
+| **2.5a** | **UI Chat History Deletion Bugfix**: Prevent redundant auto-saves during chat wipes    | ✅**DONE** |
+| **2.5b** | **UI Logout Flow Refactoring**: Prompt Login Gate during logout instead of closing app | ✅**DONE** |
 
-| #                | Task                                                                                         | Status           |
-| :--------------- | :------------------------------------------------------------------------------------------- | :--------------- |
-| **2.1.1**  | **Abstract Storage Interface**: Define `BaseStorageDriver` repository class          | ✅**DONE** |
-| **2.1.2**  | **Local SQLite Driver**: Refactor current `conversation_manager.py` queries          | ✅**DONE** |
-| **2.1.3**  | **Dynamic Registry Factory**: Inject driver factory into `ConversationManager`       | ✅**DONE** |
-| **2.1.4**  | **Local File-per-Tenant Pathing**: Validate localized isolation per user folders       | ✅**DONE** |
-| **2.1.5**  | **Desktop & CLI Zero-Regression Audit**: Test local GUI and CLI chat stability         | ✅**DONE** |
-| **2.1.5a** | **UI Chat History Deletion Bugfix**: Prevent redundant auto-saves during chat wipes    | ✅**DONE** |
-| **2.1.5b** | **UI Logout Flow Refactoring**: Prompt Login Gate during logout instead of closing app | ✅**DONE** |
+**Technical Notes:**
 
-**Technical Notes (2.1):**
-
-* **Abstract Storage Interface (2.1.1)**: Created `logic/storage_drivers/base_driver.py` implementing `BaseStorageDriver` as an Abstract Base Class. It defines standard, PEP-8 typed, decoupled database-agnostic operation parameters (`init_db`, `save_conversation`, `load_conversation`, `get_all_conversations`, `delete_conversation`, `clear_all`) to ensure consistent signatures across SQLite, Turso, and PG.
-* **Local SQLite Driver (2.1.2)**: Created `logic/storage_drivers/sqlite_driver.py` implementing `LocalSQLiteDriver`. Transplanted all original SQLite logic, table definitions, migration triggers, WAL (Write-Ahead Logging) pragmas, and the `idx_timestamp` index (Audit ID 020) out of `conversation_manager.py`. It accepts a dynamic database file path in its constructor, providing the infrastructure for Phase 2.1.4's Local File-per-Tenant path sharding.
-* **Dynamic Registry Factory (2.1.3)**: Fully refactored `logic/conversation_manager.py` to act as a high-level driver orchestrator. Removed all standard SQLite imports, dynamic raw connections, cursor allocations, and SQL queries. Injected `self.driver` dynamically utilizing `LocalSQLiteDriver(self.db_path)`. Added backward-compatible optional `timestamp` routing to database inserts, allowing the system to execute JSON migrations transactionally via the abstract storage interface.
-* **Local File-per-Tenant Pathing (2.1.4)**: Extended `ConversationManager` to accept an optional `tenant_id` string during instantiation (defaulting to `"default_user"`). Implemented a robust dynamic path routing hook `set_tenant()`. If `"default_user"` is requested, it binds to the legacy path `conversations/chat_history.db` to protect and preserve existing desktop conversations. For partitioned accounts, it shifts the database path dynamically to `conversations/tenants/{tenant_id}/chat_history.db`, sharding data perfectly across isolated filesystem files. Verified that writes to tenant shards do not bleed or map into default scopes, guaranteeing 100% collision-free local filesystem multi-tenancy.
-* **Desktop & CLI Zero-Regression Audit (2.1.5)**: Conducted verification checks to ensure zero-regression on all active interfaces. Validated successful boots and execution paths of both standard desktop GUI layers and background engine components. Successfully executed non-interactive CLI integrations (`python main.py --list-models`) with a verified `Exit Code 0`, validating clean, collision-free database schema loads, dynamic credentials routing, and 100% backward-compatibility for active desktop/offline installations.
-* **UI Chat History Deletion Bugfix (Patch 2.1.5a)**: Resolved a critical memory state logical loop bug in the chat UI. Previously, deleting a chat or clearing all history would remove database records successfully, but the UI reset routine did not clear active screen memory beforehand, triggering a redundant auto-save and scheduling background `VectorIndexerWorker` embedding calls for deleted records. Resolved this by introducing a dedicated, zero-argument-compatible `start_new_chat_without_saving()` method, allowing deletion sequences to cleanly bypass auto-save triggers and flush memory states instantly while maintaining 100% signal connection signature compatibility.
-* **UI Logout Flow Refactoring (Patch 2.1.5b)**: Cleaned up duplicate and conflicting method definitions of `logout()` and `open_settings()` in `ui/main_window.py`. Refactored the logout execution path to hide the main window and invoke the login settings screen dynamically. This prevents the application from closing down abruptly when a user clicks the logout button, allowing them to switch accounts or login again in the same runtime session while retaining the security keyring sweep.
+* **Abstract Storage Interface (2.1)**: Created `logic/storage_drivers/base_driver.py` implementing `BaseStorageDriver` as an Abstract Base Class. It defines standard, PEP-8 typed, decoupled database-agnostic operation parameters (`init_db`, `save_conversation`, `load_conversation`, `get_all_conversations`, `delete_conversation`, `clear_all`) to ensure consistent signatures across SQLite, Turso, and PG.
+* **Local SQLite Driver (2.2)**: Created `logic/storage_drivers/sqlite_driver.py` implementing `LocalSQLiteDriver`. Transplanted all original SQLite logic, table definitions, migration triggers, WAL (Write-Ahead Logging) pragmas, and the `idx_timestamp` index (Audit ID 020) out of `conversation_manager.py`. It accepts a dynamic database file path in its constructor, providing the infrastructure for Phase 2.4's Local File-per-Tenant path sharding.
+* **Dynamic Registry Factory (2.3)**: Fully refactored `logic/conversation_manager.py` to act as a high-level driver orchestrator. Removed all standard SQLite imports, dynamic raw connections, cursor allocations, and SQL queries. Injected `self.driver` dynamically utilizing `LocalSQLiteDriver(self.db_path)`. Added backward-compatible optional `timestamp` routing to database inserts, allowing the system to execute JSON migrations transactionally via the abstract storage interface.
+* **Local File-per-Tenant Pathing (2.4)**: Extended `ConversationManager` to accept an optional `tenant_id` string during instantiation (defaulting to `"default_user"`). Implemented a robust dynamic path routing hook `set_tenant()`. If `"default_user"` is requested, it binds to the legacy path `conversations/chat_history.db` to protect and preserve existing desktop conversations. For partitioned accounts, it shifts the database path dynamically to `conversations/tenants/{tenant_id}/chat_history.db`, sharding data perfectly across isolated filesystem files. Verified that writes to tenant shards do not bleed or map into default scopes, guaranteeing 100% collision-free local filesystem multi-tenancy.
+* **Desktop & CLI Zero-Regression Audit (2.5)**: Conducted verification checks to ensure zero-regression on all active interfaces. Validated successful boots and execution paths of both standard desktop GUI layers and background engine components. Successfully executed non-interactive CLI integrations (`python main.py --list-models`) with a verified `Exit Code 0`, validating clean, collision-free database schema loads, dynamic credentials routing, and 100% backward-compatibility for active desktop/offline installations.
+* **UI Chat History Deletion Bugfix (Patch 2.5a)**: Resolved a critical memory state logical loop bug in the chat UI. Previously, deleting a chat or clearing all history would remove database records successfully, but the UI reset routine did not clear active screen memory beforehand, triggering a redundant auto-save and scheduling background `VectorIndexerWorker` embedding calls for deleted records. Resolved this by introducing a dedicated, zero-argument-compatible `start_new_chat_without_saving()` method, allowing deletion sequences to cleanly bypass auto-save triggers and flush memory states instantly while maintaining 100% signal connection signature compatibility.
+* **UI Logout Flow Refactoring (Patch 2.5b)**: Cleaned up duplicate and conflicting method definitions of `logout()` and `open_settings()` in `ui/main_window.py`. Refactored the logout execution path to hide the main window and invoke the login settings screen dynamically. This prevents the application from closing down abruptly when a user clicks the logout button, allowing them to switch accounts or login again in the same runtime session while retaining the security keyring sweep.
 
 ---
 
@@ -199,19 +197,17 @@ To prepare for cloud scaling without breaking existing desktop functionality, Ph
 
 Once the local storage layer is successfully decoupled and audited, Phase 3 implements high-concurrency remote engine drivers to resolve standard SQLite write-locking limits. This ensures that a user can run the Desktop GUI, Terminal CLI, and SaaS API simultaneously without collisions.
 
-### 3.1 Pluggable Cloud Databases
+| #             | Task                                                                                                                            | Status           |
+| :------------ | :------------------------------------------------------------------------------------------------------------------------------ | :--------------- |
+| **3.1** | **libSQL / Turso Engine**: Fully replace SQLite with the Turso/libSQL engine and execute complete live data migrations    | ✅**DONE** |
+| **3.2** | **PostgreSQL Concurrency Engine**: Connect high-concurrency PG driver (row-level locks & MVCC)                            | ✅**DONE** |
+| **3.3** | **Live Migration Bridge**: Create non-destructive Turso/libSQL ➔ PostgreSQL live database-to-database relocation scripts | ✅**DONE** |
 
-| #               | Task                                                                                                                            | Status           |
-| :-------------- | :------------------------------------------------------------------------------------------------------------------------------ | :--------------- |
-| **3.1.1** | **libSQL / Turso Engine**: Fully replace SQLite with the Turso/libSQL engine and execute complete live data migrations    | ✅**DONE** |
-| **3.1.2** | **PostgreSQL Concurrency Engine**: Connect high-concurrency PG driver (row-level locks & MVCC)                            | ✅**DONE** |
-| **3.1.3** | **Live Migration Bridge**: Create non-destructive Turso/libSQL ➔ PostgreSQL live database-to-database relocation scripts | ✅**DONE** |
+**Technical Notes :**
 
-**Technical Notes (3.1):**
-
-* **libSQL / Turso Driver (3.1.1)**: Successfully integrated the `LibSQLStorageDriver` as the absolute primary, zero-configuration default engine inside `ConversationManager`. By default, if no remote cloud URL is configured, it dynamically maps connection paths to a local libSQL database using the `file:` scheme (offline-first local libSQL execution). This eliminates legacy SQLite as the main active codebase default while ensuring perfect zero-friction local boots and 100% preparation for local replication sync.
-* **PostgreSQL Concurrency Engine (3.1.2)**: Developed [logic/storage_drivers/postgres_driver.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/storage_drivers/postgres_driver.py) implementing `PostgreSQLStorageDriver` over the pure-Python DB-API 2.0 `pg8000` client. Outlines robust tables initialization, indices setups, parameters escaping, and high-concurrency TRUNCATE support. Implemented atomic auto-increment serial ID return using PostgreSQL's native `RETURNING id` clause. Integrated the PG engine dynamically inside `ConversationManager` to automatically route database calls if `"database_type": "postgres"` is configured.
-* **Live Migration Bridge (3.1.3)**: Designed a database-agnostic live data migration utility at [logic/migration_bridge.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/migration_bridge.py). By leveraging the abstract `BaseStorageDriver` methods, it safely extracts all thread headers, timestamps, message arrays, model IDs, and HTML caches from a source engine (e.g. Turso) and transactionally writes them into the newly targeted engine (e.g. PostgreSQL) without destroying the source records. This enables perfect, lossless database migrations when switching backend engines.
+* **libSQL / Turso Driver (3.1)**: Successfully integrated the `LibSQLStorageDriver` as the absolute primary, zero-configuration default engine inside `ConversationManager`. By default, if no remote cloud URL is configured, it dynamically maps connection paths to a local libSQL database using the `file:` scheme (offline-first local libSQL execution). This eliminates legacy SQLite as the main active codebase default while ensuring perfect zero-friction local boots and 100% preparation for local replication sync.
+* **PostgreSQL Concurrency Engine (3.2)**: Developed [logic/storage_drivers/postgres_driver.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/storage_drivers/postgres_driver.py) implementing `PostgreSQLStorageDriver` over the pure-Python DB-API 2.0 `pg8000` client. Outlines robust tables initialization, indices setups, parameters escaping, and high-concurrency TRUNCATE support. Implemented atomic auto-increment serial ID return using PostgreSQL's native `RETURNING id` clause. Integrated the PG engine dynamically inside `ConversationManager` to automatically route database calls if `"database_type": "postgres"` is configured.
+* **Live Migration Bridge (3.3)**: Designed a database-agnostic live data migration utility at [logic/migration_bridge.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/migration_bridge.py). By leveraging the abstract `BaseStorageDriver` methods, it safely extracts all thread headers, timestamps, message arrays, model IDs, and HTML caches from a source engine (e.g. Turso) and transactionally writes them into the newly targeted engine (e.g. PostgreSQL) without destroying the source records. This enables perfect, lossless database migrations when switching backend engines.
 
 > [!TIP]
 > **Turso Engine Configuration Guide**: Since Turso/libSQL is now the native, out-of-the-box default database engine, you do **not** need to configure any database types. Simply set your connection details in your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/config.json) (or define them in your environment):
@@ -257,20 +253,18 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 
 While databases provide high-concurrency storage, Phase 4 implements an intelligent reasoning runtime. By combining semantic Vector Space (RAG) with expansive Large Context Windows, the application dynamically balances absolute detail precision against computational scale.
 
-### 4.1 Pluggable Cognitive Optimizations
+| #             | Task                                                                                                                               | Status           |
+| :------------ | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **4.1** | **Dynamic Context Routing**: Auto-swap between Direct Ingestion (<15k chars) and Qdrant semantic RAG (>15k chars)            | ✅**DONE** |
+| **4.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5  | ✅**DONE** |
+| **4.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%       | ✅**DONE** |
+| **4.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion | ✅**DONE** |
+| **4.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database      | ✅**DONE** |
+| **4.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads          | ✅**DONE** |
+| **4.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)  | ✅**DONE** |
+| **4.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)  | ✅**DONE** |
 
-| #               | Task                                                                                                                               | Status           |
-| :-------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
-| **4.1.1** | **Dynamic Context Routing**: Auto-swap between Direct Ingestion (<15k chars) and Qdrant semantic RAG (>15k chars)            | ✅**DONE** |
-| **4.1.2** | **Two-Stage Reranking Pipeline**: Run high-speed candidate retrieval (Top 20) followed by a Reranker (NVIDIA/BGE) for Top 5  | ✅**DONE** |
-| **4.1.3** | **Prompt Context Caching**: Optimize system headers to keep codebase contexts warm and reduce token costs by up to 90%       | ✅**DONE** |
-| **4.1.4** | **Hybrid Search (BM25 + Dense)**: Pair BM25 exact lexical matching with SPLADE/dense embeddings using Reciprocal Rank Fusion | ✅**DONE** |
-| **4.1.5** | **GraphRAG Code Mapping**: Parse entity relationships (classes, imports, drivers) into a local knowledge graph database      | ✅**DONE** |
-| **4.1.6** | **Context Staging Workspace**: Design a visual tray in the GUI to view, toggle, and pin active file prompt payloads          | ✅**DONE** |
-| **4.1.7** | **Model-Side Tool Calling API**: Migrate to native Function Calling (allowing LLM to run search and read files dynamically)  | ✅**DONE** |
-| **4.1.8** | **Qdrant Metadata Payload Filtering**: Enforce hard filters in Qdrant (tenant_id, conversation_id, timestamps, source_type)  | ✅**DONE** |
-
-### 🌐 System Topology: Agentic Cognitive Flow
+ **🌐 System Topology: Agentic Cognitive Flow**
 
 ```mermaid
 flowchart TD
@@ -303,18 +297,18 @@ flowchart TD
     LargeModel --> Response
 ```
 
-**Technical Notes (4.1):**
+**Technical Notes (4):**
 
-* **Dynamic Context Routing (4.1.1)**: Live in `ui/chat_view.py`'s `send_message()` routine. It calculates incoming payload characters dynamically:
+* **Dynamic Context Routing (4.1)**: Live in `ui/chat_view.py`'s `send_message()` routine. It calculates incoming payload characters dynamically:
   * *Direct Ingestion (Large Context)*: If context is precise (<15k characters), it injects the complete raw file context, giving the LLM 100% full detail.
   * *Vector Ingestion (RAG)*: If context is massive (>15k characters), it triggers Qdrant chunking and semantic embeddings (via `nvidia/nv-embed-v1`), retrieving only the most conceptually relevant chunks to drop into the context window.
-* **Two-Stage Reranking Pipeline (4.1.2)**: Integrates a two-stage filter that fetches the Top 20 most relevant candidates via the hybrid fusion layer, passing them to a pluggable cross-encoder model to select the high-precision Top 5 chunks for context injection.
-* **Prompt Context Caching (4.1.3)**: Intended to target Anthropic / DeepSeek caching protocols, preserving common directories inside the server's cache space to achieve sub-second generation speeds.
-* **Hybrid Search (4.1.4)**: Merges lexical keyword-precision of BM25 (critical for tracing functions/variables like `BaseStorageDriver`) with semantic dense vectors, using Reciprocal Rank Fusion (RRF) to generate a balanced candidate list.
-* **GraphRAG Code Mapping (4.1.5)**: Maps repository structures (inheritance, class hierarchies, imports) into a local knowledge graph database, tracing class relations dynamically to retrieve highly connected dependencies.
-* **Context Staging Workspace (4.1.6)**: Provides a premium visual tray in the GUI to view, check/uncheck, toggle, and pin active file payloads before prompting, with real-time token tracking to prevent prompt overflow.
-* **Model-Side Tool Calling API (4.1.7)**: Migrates from manual client-side prepended context to native dynamic Function Calling schemas, giving the LLM active autonomy to trigger `web_search()` or `read_file()` only when needed.
-* **Qdrant Metadata Payload Filtering (4.1.8)**: Secures and focuses search space. Instead of global vectors scan, Qdrant enforces hard payload query conditions using `tenant_id` (ensuring multi-tenant security), `conversation_id` (limiting scan scope), and `source_type` / `timestamp`.
+* **Two-Stage Reranking Pipeline (4.2)**: Integrates a two-stage filter that fetches the Top 20 most relevant candidates via the hybrid fusion layer, passing them to a pluggable cross-encoder model to select the high-precision Top 5 chunks for context injection.
+* **Prompt Context Caching (4.3)**: Intended to target Anthropic / DeepSeek caching protocols, preserving common directories inside the server's cache space to achieve sub-second generation speeds.
+* **Hybrid Search (4.4)**: Merges lexical keyword-precision of BM25 (critical for tracing functions/variables like `BaseStorageDriver`) with semantic dense vectors, using Reciprocal Rank Fusion (RRF) to generate a balanced candidate list.
+* **GraphRAG Code Mapping (4.5)**: Maps repository structures (inheritance, class hierarchies, imports) into a local knowledge graph database, tracing class relations dynamically to retrieve highly connected dependencies.
+* **Context Staging Workspace (4.6)**: Provides a premium visual tray in the GUI to view, check/uncheck, toggle, and pin active file payloads before prompting, with real-time token tracking to prevent prompt overflow.
+* **Model-Side Tool Calling API (4.7)**: Migrates from manual client-side prepended context to native dynamic Function Calling schemas, giving the LLM active autonomy to trigger `web_search()` or `read_file()` only when needed.
+* **Qdrant Metadata Payload Filtering (4.8)**: Secures and focuses search space. Instead of global vectors scan, Qdrant enforces hard payload query conditions using `tenant_id` (ensuring multi-tenant security), `conversation_id` (limiting scan scope), and `source_type` / `timestamp`.
 
 ## 🟢 Phase 5: Pluggable Two-Stage Reranking (Hybrid A + B Architecture) [STATUS: COMPLETED]
 
@@ -714,8 +708,8 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 | **10.1.3** | **UX Refactoring (Switch Ecosystem)**: Replace the concept of "Logout" with "Switch Ecosystem" to allow dynamic provider swapping without losing user session state. | ✅**DONE** |
 | **10.1.4** | **Master Password Recovery**: Maintain and adapt the `admin_reset.py` script to allow password recovery/reset natively on the desktop.                             | ✅**DONE** |
 | **10.1.5** | **Encrypted Keyring Link**: Bind the new Desktop Login password to decrypt the OS keyring, providing absolute zero-trust local security for stored API keys.         | ✅**DONE** |
-| **10.1.6** | **Dynamic capability descriptions**: Build intelligent dynamic descriptions in fetch worker to strip placeholders and clean static database files.                         | ✅**DONE** |
-| **10.1.7** | **Hot-Swappable Description Generator**: Bind active chat model and global client to generate descriptions dynamically without user input prompts.                       | ✅**DONE** |
+| **10.1.6** | **Dynamic capability descriptions**: Build intelligent dynamic descriptions in fetch worker to strip placeholders and clean static database files.                   | ✅**DONE** |
+| **10.1.7** | **Hot-Swappable Description Generator**: Bind active chat model and global client to generate descriptions dynamically without user input prompts.                   | ✅**DONE** |
 
 **Technical Notes (10.1):**
 
@@ -724,7 +718,6 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 * **Transparent Keyring Binding**: Re-routed `hydrate()` in [llm_client.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/llm_client.py) to transparently decrypt keyring credentials on-the-fly using the cached session master password derived key.
 * **Intelligent capability descriptions**: Removed hardcoded `"Recovered chat model (untested)."` fallbacks from [model_fetch_worker.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/model_fetch_worker.py). It now scans model identifiers for keywords (`code`, `math`, `vision`, `instruct`) to generate high-quality capability descriptions dynamically. Added a cleanup utility [clean_descriptions.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/scratch/clean_descriptions.py) to immediately refresh existing static model databases in place.
 * **Hot-Swappable Description Generator**: Refactored the description generator inside [model_manager.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/model_manager.py) and [description_generator.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/description_generator.py). It completely bypasses manual model selection popups and routes completions directly through the parent `llm_client` using the active main tab selection, dynamically supporting Google Gemini and OpenAI-compatible pipelines.
-
 
 ### 10.2 SaaS Tenant Enterprise SQL Migration Flow (Modular Driver Architecture)
 
@@ -755,14 +748,14 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 To provide administrative security and prevent end-user tampering in production, all maintenance, data relocation, and credential recovery scripts are strictly isolated inside a private `operator_tools/` folder. The PyInstaller specification compiles three distinct binaries: `LLM Chat App.exe` (public client), `Migration Companion.exe` (private relocator), and `reset_admin.exe` (private password manager).
 
-| #                | Task                                                                                                                                                                                                                   | Status     |
-| :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
-| **10.3.1** | **Maintenance Shell Utility**: Create `operator_tools/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models.                                            | ✅**DONE** |
-| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately.                                            | ✅**DONE** |
-| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches.                                                                                                        | ✅**DONE** |
-| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums.                                                                                             | ✅**DONE** |
-| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully.                                                                                      | ✅**DONE** |
-| **10.3.6** | **Quad PyInstaller Executable Spec**: Configure `.spec` files to build four separate isolated binaries utilizing the `onedir` and `onefile` split architecture, superseding the legacy `combined.spec` approach.   | ✅**DONE** |
+| #                | Task                                                                                                                                                                                                                           | Status           |
+| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **10.3.1** | **Maintenance Shell Utility**: Create `operator_tools/migration_companion.py` supporting both a high-fidelity PySide6 wizard GUI and headless CLI execution models.                                                    | ✅**DONE** |
+| **10.3.2** | **App Shell Subprocess Forking**: Code settings trigger in Settings console to launch the companion dialog process and shutdown the primary app instance immediately.                                                    | ✅**DONE** |
+| **10.3.3** | **Transaction Handlers**: Read and migrate schemas, user metadata, credentials, and Phase 9 query caches.                                                                                                                | ✅**DONE** |
+| **10.3.4** | **Jaccard similarity Integrity Verification**: Run automated verification checks comparing raw tables and checksums.                                                                                                     | ✅**DONE** |
+| **10.3.5** | **App Shell Restoration**: Automatically re-launch `main.py` on success and terminate the companion interface gracefully.                                                                                              | ✅**DONE** |
+| **10.3.6** | **Quad PyInstaller Executable Spec**: Configure `.spec` files to build four separate isolated binaries utilizing the `onedir` and `onefile` split architecture, superseding the legacy `combined.spec` approach. | ✅**DONE** |
 
 **Technical Notes (Phase 10.3):**
 
@@ -790,15 +783,14 @@ To provide administrative security and prevent end-user tampering in production,
 * **Lock-Free Turso Access**: Shutting down the main application ensures no remaining database connection locks are active on the local Turso engine database file, providing a clean, exclusive environment for relocation.
 * **Relocation Architecture Diagram**: Fully mapped inside `resources/migration_companion_arch.mermaid`.
 
-
 ---
 
 ### 10.4: Dynamic IDE Extensions Distribution Hub
 
 To turn the SaaS platform into a fully integrated developer portal, we will construct a synchronized distribution system for our VS Code (`.vsix`) and JetBrains (`.zip`) client integrations. The system will bridge the local desktop administration shell with the cloud-facing web portal.
 
-| #                | Task                                                                                                                                                                                                                                 | Status     |
-| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| #                | Task                                                                                                                                                                                                                                 | Status           |
+| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
 | **10.4.1** | **Shared Dynamic Config Ledger**: Create `extension/extensions_config.json` to serialize file sizes, visibility, custom descriptions, and timestamps.                                                                        | ✅**DONE** |
 | **10.4.2** | **Flask Crawlers & Routing**: Add secure download endpoints (`/api/extensions/download/<file>`) and REST APIs in `saas/app.py` for indexing and admin modifications.                                                       | ✅**DONE** |
 | **10.4.3** | **SaaS Web Portal Extensions UI**: Construct a beautiful glassmorphic downloads layout (`modals/extensions.html`) with blue/violet themed OS platform badges and Markdown rendering via `marked.js`.                       | ✅**DONE** |
@@ -819,55 +811,56 @@ To turn the SaaS platform into a fully integrated developer portal, we will cons
 
 ---
 
-## 🔴 Phase 11: Operator Orchestration & Service Decoupling [STATUS: IN PROGRESS]
+## 🟢 Phase 11: Operator Orchestration & Service Decoupling [STATUS: COMPLETED]
 
 Phase 11 strips environment-setup logic out of the main desktop client, ensuring the client remains a pure chat application. All data relocation and headless daemon configuration will be moved into the isolated `operator_tools` suite, which will be structurally refactored into dedicated modules with segmented build strategies.
 
 ### 11.1 Structural Refactoring & Build Orchestration
 
-| #          | Task                                                                                                                                                                                            | Status     |
-| :--------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
-| **11.1.1** | **Asset Isolation**: Move the Migration Companion to `operator_tools/migration/migration_companion.py` and the password resetter to `operator_tools/admin_reset/reset_admin.py` to support future modular assets. | ✅**DONE** |
-| **11.1.2** | **Path Adjustments**: Update all relative `sys.path` append commands in the relocated scripts to resolve three-levels up to the project root. Update `main.py` cleanup logic.                 | ✅**DONE** |
+| #                | Task                                                                                                                                                                                                                                                                                              | Status           |
+| :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------- |
+| **11.1.1** | **Asset Isolation**: Move the Migration Companion to `operator_tools/migration/migration_companion.py` and the password resetter to `operator_tools/admin_reset/reset_admin.py` to support future modular assets.                                                                       | ✅**DONE** |
+| **11.1.2** | **Path Adjustments**: Update all relative `sys.path` append commands in the relocated scripts to resolve three-levels up to the project root. Update `main.py` cleanup logic.                                                                                                           | ✅**DONE** |
 | **11.1.3** | **Segmented Spec Strategy**: Create distinct PyInstaller `.spec` profiles: `onedir`/`onefile` for distributing just the Chat App, and `onedir_full`/`onefile_full` to bundle the Chat App + Reset Admin + Migration Companion. (Supersedes legacy `single.spec`/`full.spec`). | ✅**DONE** |
-| **11.1.4** | **UI XML Externalization**: Strip all hardcoded `PySide6` widget construction code from both scripts. Design strict `.ui` XML layout files to be loaded dynamically via `QUiLoader`.       | ✅**DONE** |
+| **11.1.4** | **UI XML Externalization**: Strip all hardcoded `PySide6` widget construction code from both scripts. Design strict `.ui` XML layout files to be loaded dynamically via `QUiLoader`.                                                                                                  | ✅**DONE** |
 
 ### 11.2 Feature Decoupling (Migration Companion Expansion)
 
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **11.2.1** | **Internal MVC Structure**: Establish `core/` and `ui_assets/` directories for scalable growth | 📝**PLANNED** |
-| **11.2.2** | **Transplant Storage Manager**: Move local storage logic into `core/local_relocator.py` | ✅**DONE** |
-| **11.2.3** | **Service Setup Wizard**: Create `core/service_installer.py` (Windows Native OS Services) | ✅**DONE** |
-| **11.2.4** | **Unified Dashboard UI**: Refactor `migration_companion.py` into a multi-tab Master Window | ✅**DONE** |
+| #                | Task                                                                                                                | Status           |
+| :--------------- | :------------------------------------------------------------------------------------------------------------------ | :--------------- |
+| **11.2.1** | **Internal MVC Structure**: Establish `core/` and `ui_assets/` directories for scalable growth            | ✅**DONE** |
+| **11.2.2** | **Transplant Storage Manager**: Move local storage logic into `core/local_relocator.py`                     | ✅**DONE** |
+| **11.2.3** | **Service Setup Wizard**: Create `core/service_installer.py` (Windows Native OS Services)                   | ✅**DONE** |
+| **11.2.4** | **Unified Dashboard UI**: Refactor `migration_companion.py` into a multi-tab Master Window                  | ✅**DONE** |
 | **11.2.5** | **Dual-Mode Headless Support**: Ensure all tabs and tools can be executed via `--cli` / `--headless` args | ✅**DONE** |
-| **11.2.6** | **Main App Cleanup**: Eradicate `Storage Manager` buttons from `ui/main_window.py` | ✅**DONE** |
+| **11.2.6** | **Main App Cleanup**: Eradicate `Storage Manager` buttons from `ui/main_window.py`                        | ✅**DONE** |
 
 ### 11.3 Dynamic SaaS Database Configurator
 
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **11.3.1** | **UI Expansion**: Add Host, Port, User, Pass, DB inputs to `saas_db.ui` | ✅**DONE** |
+| #                | Task                                                                                                                  | Status           |
+| :--------------- | :-------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **11.3.1** | **UI Expansion**: Add Host, Port, User, Pass, DB inputs to `saas_db.ui`                                       | ✅**DONE** |
 | **11.3.2** | **Dynamic Target Instantiation**: Instantiate SaaS driver directly from UI/CLI inputs, bypassing `config.ini` | ✅**DONE** |
-| **11.3.3** | **Pre-Flight Admin Check**: Verify write-access to `saas/config.ini` on launch | ✅**DONE** |
-| **11.3.4** | **Config Persistence**: Use `configparser` to rewrite `saas/config.ini` upon successful integrity audit | ✅**DONE** |
+| **11.3.3** | **Pre-Flight Admin Check**: Verify write-access to `saas/config.ini` on launch                                | ✅**DONE** |
+| **11.3.4** | **Config Persistence**: Use `configparser` to rewrite `saas/config.ini` upon successful integrity audit     | ✅**DONE** |
 
 ### 11.4 UI Polish & Cross-Platform Services
 
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **11.4.1** | **Bi-Directional SaaS UI**: Display active Source database from `config.ini` and unify Postgres/MySQL credentials into a single unified layout. | ✅**DONE** |
+| #                | Task                                                                                                                                                                                                        | Status           |
+| :--------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **11.4.1** | **Bi-Directional SaaS UI**: Display active Source database from `config.ini` and unify Postgres/MySQL credentials into a single unified layout.                                                     | ✅**DONE** |
 | **11.4.2** | **Cross-Platform Daemonizer**: Upgrade the Service Setup Wizard to support both Linux (`systemd`) and Windows (`sc.exe`), and add custom UI fields for Service Name, Description, and User Group. | ✅**DONE** |
 
 ### 11.5 Cross-Platform Enterprise Hardening (Systemd & NSSM)
 
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **11.5.1** | **UI Hardening Options**: Add inputs for Log Directory, Env File, Windows Service User, and Hardening Toggles. | ✅**DONE** |
-| **11.5.2** | **Linux Systemd Overhaul**: Inject `PrivateTmp`, `ProtectSystem`, `MemoryMax`, and generate `install_service.sh` for user creation. | ✅**DONE** |
+| #                | Task                                                                                                                                                  | Status           |
+| :--------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
+| **11.5.1** | **UI Hardening Options**: Add inputs for Log Directory, Env File, Windows Service User, and Hardening Toggles.                                  | ✅**DONE** |
+| **11.5.2** | **Linux Systemd Overhaul**: Inject `PrivateTmp`, `ProtectSystem`, `MemoryMax`, and generate `install_service.sh` for user creation.     | ✅**DONE** |
 | **11.5.3** | **Windows NSSM Pipeline**: Generate `install_service.ps1` that auto-downloads NSSM, provisions dedicated users, and applies `icacls` locks. | ✅**DONE** |
-| **11.5.4** | **SCM Lifecycle Management**: Configure recovery protocols and signal handling instead of raw `sc.exe`. | ✅**DONE** |
+| **11.5.4** | **SCM Lifecycle Management**: Configure recovery protocols and signal handling instead of raw `sc.exe`.                                       | ✅**DONE** |
 
 **Technical Notes (Phase 11):**
+
 * **Zero Client Pollution**: Moving gigabytes of vector caches or modifying service registries is inherently risky to perform while the main app is running. Doing this from the standalone operator suite guarantees that the main application is cleanly shut down, preventing OS file locks and database corruption.
 * **Separation of Concerns**: End-users receive the `single` build (just `LLM Chat App.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.

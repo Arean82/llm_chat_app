@@ -12,62 +12,10 @@ from saas.tenant_db import TenantDatabaseManager
 import utils.security_utils as security_utils
 
 def create_eye_icon(visible: bool) -> QIcon:
-    from PySide6.QtCore import Qt
-    
-    # 32x32 high-DPI canvas
-    pixmap = QPixmap(32, 32)
-    pixmap.fill(Qt.transparent)
-    
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing)
-    
-    # Set the eye vector outlines to a high-fidelity pure white color
-    color_hex = "#ffffff"
-    pen = QPen(QColor(color_hex), 2.2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-    painter.setPen(pen)
-    
     if visible:
-        # 🟢 Premium Open Eye (Bezier Almond Path + Iris + Pupil Catchlight)
-        path = QPainterPath()
-        path.moveTo(4, 16)
-        # Smooth cubic bezier curves for a organic, gorgeous eye shape
-        path.cubicTo(10, 7, 22, 7, 28, 16)  # Top eyelid
-        path.cubicTo(22, 25, 10, 25, 4, 16) # Bottom eyelid
-        painter.drawPath(path)
-        
-        # Outer iris outline
-        painter.drawEllipse(11, 11, 10, 10)
-        
-        # Solid Pupil
-        painter.setBrush(QBrush(QColor(color_hex)))
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(13, 13, 6, 6)
-        
-        # Bright glass catchlight reflection
-        painter.setBrush(QBrush(QColor("#ffffff")))
-        painter.drawEllipse(16, 12, 2.5, 2.5)
+        return QIcon(str(get_resource_path("resources/eye_open.svg")))
     else:
-        # 🔴 Gorgeous Closed/Sleeping Eye with Delicate downward Eyelashes
-        path = QPainterPath()
-        path.moveTo(4, 13)
-        # Curve representing the closed eyelid dipping down gracefully
-        path.cubicTo(10, 22, 22, 22, 28, 13)
-        painter.drawPath(path)
-        
-        # Elegant stylized downward eyelashes
-        # Lash 1 (Left-most)
-        painter.drawLine(9, 18, 7, 22)
-        # Lash 2 (Mid-Left)
-        painter.drawLine(13, 20, 11, 25)
-        # Lash 3 (Center)
-        painter.drawLine(16, 21, 16, 26)
-        # Lash 4 (Mid-Right)
-        painter.drawLine(19, 20, 21, 25)
-        # Lash 5 (Right-most)
-        painter.drawLine(23, 18, 25, 22)
-        
-    painter.end()
-    return QIcon(pixmap)
+        return QIcon(str(get_resource_path("resources/eye_closed.svg")))
 
 class UserLoginClass(QDialog):
     def __init__(self, parent=None):

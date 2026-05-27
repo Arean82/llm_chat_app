@@ -48,7 +48,7 @@ Package: $APP_NAME
 Version: $VERSION
 Section: utils
 Priority: optional
-Architecture: amd64
+Architecture: $(dpkg --print-architecture)
 Maintainer: Arean Narrayan
 Description: LLM Chat Application
  Universal multi-ecosystem desktop client with universal API server support.

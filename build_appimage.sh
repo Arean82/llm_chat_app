@@ -24,8 +24,15 @@ EOF
 cp resources/app_icon_linux.png "$APPDIR/usr/share/icons/hicolor/512x512/apps/app_icon.png"
 ln -s "$APPDIR/usr/share/icons/hicolor/512x512/apps/app_icon.png" "$APPDIR/app_icon.png"
 
-# 5. Download AppImage tool and build
-wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+# 5. Detect Architecture and Download AppImage tool
+ARCH=$(uname -m)
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+    APPIMAGE_URL="https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage"
+else
+    APPIMAGE_URL="https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+fi
+
+wget -O appimagetool "$APPIMAGE_URL"
 chmod +x appimagetool
 ./appimagetool "$APPDIR/"
 
