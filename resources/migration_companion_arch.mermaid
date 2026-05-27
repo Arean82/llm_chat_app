@@ -7,38 +7,55 @@ flowchart TD
 
     subgraph App1 ["📱 App 1: LLM Chat App (Main GUI/Headless)"]
         UI["⚙️ Settings Panel Admin Console"]:::main
-        Trigger["🚀 Click 'Relocate Database'"]:::main
-        Spawn["Spawn subprocess: scripts/migration_companion.py"]:::process
-        Close["🚪 Terminate Main App Process<br>(Release Turso/libSQL Lock)"]:::process
+        Trigger["🚀 Click 'Operator Tools Dashboard'"]:::main
+        Spawn["Spawn subprocess:<br>operator_tools/migration/migration_companion.py"]:::process
+        Close["🚪 Terminate Main App Process<br>(Release Database Locks)"]:::process
     end
 
-    subgraph App2 ["🛠️ App 2: Standalone Migration Companion"]
-        CompanionUI["🖥️ Companion Dialog / CLI Console"]:::companion
-        ReadConfig["1. Read config.ini target specifications"]:::companion
-        Migrate["2. Relocate schema & records transactionally"]:::companion
-        Verify["3. Verify data integrity (Jaccard & Row count)"]:::companion
-        WriteConfig["4. Update config.ini (Set target driver)"]:::companion
-        Relaunch["5. Spawn subprocess: main.py"]:::process
+    subgraph App2 ["🛠️ App 2: Unified Operator Tools Dashboard (MVC)"]
+        CompanionUI["🖥️ Master Multi-Tab Dialog / CLI Console"]:::companion
+        
+        %% Tab 1
+        SaaSMigrate["Tab 1: SaaS DB Relocator<br>Relocate schema, Jaccard verify, update config.ini"]:::companion
+        
+        %% Tab 2
+        LocalReloc["Tab 2: Local Storage Relocator (core/local_relocator.py)<br>Transactional OS Path Wizard"]:::companion
+        
+        %% Tab 3
+        SvcInstall["Tab 3: Service Setup Wizard (core/service_installer.py)<br>Install as Native OS Daemons"]:::companion
+
+        Relaunch["Spawn subprocess: main.py"]:::process
         Exit["🚪 Terminate Companion App Process"]:::process
     end
 
-    subgraph Storage ["🗄️ Database Infrastructure"]
-        Turso["⚡ Turso / libSQL Database (saas_tenants.db)"]:::storage
+    subgraph Infrastructure ["🗄️ System & Database Infrastructure"]
+        Turso["⚡ Turso / libSQL (saas_tenants.db)"]:::storage
         EnterpriseSQL["💾 Target SQL Backend (PostgreSQL / MySQL)"]:::storage
+        FileSystem["📁 OS Local File System / Drives"]:::storage
+        OSService["⚙️ Native OS Service Manager (systemd/Windows)"]:::storage
     end
 
     UI --> Trigger
     Trigger --> Spawn
     Spawn --> Close
     Close -->|Releases DB Handles| Turso
+    Close -->|Releases DB Handles| FileSystem
     Spawn -.->|Launches| CompanionUI
-    CompanionUI --> ReadConfig
-    ReadConfig -->|Read Source Settings| Turso
-    Migrate -->|Egress Turso/libSQL data| Turso
-    Migrate -->|Ingress transactionally| EnterpriseSQL
-    Verify -->|Audit checksums| Turso
-    Verify -->|Audit checksums| EnterpriseSQL
-    Verify --> WriteConfig
-    WriteConfig --> Relaunch
+    
+    CompanionUI --> SaaSMigrate
+    CompanionUI --> LocalReloc
+    CompanionUI --> SvcInstall
+    
+    SaaSMigrate -->|Reads/Egresses| Turso
+    SaaSMigrate -->|Ingresses/Audits| EnterpriseSQL
+    
+    LocalReloc -->|Transactional Pathing| FileSystem
+    
+    SvcInstall -->|Installs Daemons| OSService
+
+    SaaSMigrate --> Relaunch
+    LocalReloc --> Relaunch
+    SvcInstall --> Relaunch
+
     Relaunch --> Exit
     Relaunch -.->|Restarts| UI

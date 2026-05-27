@@ -71,21 +71,36 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 
 ### 📸 Visual Overview
 
-|           The AI Model Arena Benchmarking Suite           |
-| :-------------------------------------------------------: |
-| ![The AI Model Arena](resources/screenshots/Arena_Mode.png) |
-
 |              Main Application Chassis              |                 Seamless Workstation Initialization                 |
 | :-------------------------------------------------: | :------------------------------------------------------------------: |
 | ![Main Window](resources/screenshots/Main_Window.png) | ![Initial Setup](resources/screenshots/Initial_Data_Setup_Preview.png) |
 
-|              Modular Catalog Model Manager              |          Dynamic Log Telemetry Dashboard          |
-| :-----------------------------------------------------: | :-----------------------------------------------: |
-| ![Model Manager](resources/screenshots/Model_Manager.png) | ![Log Viewer](resources/screenshots/Log_Viewer.png) |
+|           The AI Model Arena Benchmarking Suite           |                Dynamic Log Telemetry Dashboard          |
+| :-------------------------------------------------------: | :-----------------------------------------------: |
+| ![The AI Model Arena](resources/screenshots/Arena_Mode.png) | ![Log Viewer](resources/screenshots/Log_Viewer.png) |
+
+|              Modular Catalog Model Manager              |                System Prompt Manager                |
+| :-----------------------------------------------------: | :-------------------------------------------------: |
+| ![Model Manager](resources/screenshots/Model_Manager.png) | ![System Prompts](resources/screenshots/System_Prompt_Manager.png) |
 
 |                Segmented Keyring Authentication Vault                |                Custom Private Endpoint Integration                |
 | :-------------------------------------------------------------------: | :----------------------------------------------------------------: |
 | ![Multi-Provider Configuration](resources/screenshots/Login_Dialog.png) | ![Add Custom Host](resources/screenshots/Custom_Provider_Dialog.png) |
+
+|                Smart Generation Parameters                 |
+| :--------------------------------------------------------: |
+| ![Gen Settings](resources/screenshots/Gen_Settings.png)     |
+
+### 🛠️ Operator Tools (Enterprise Utilities)
+
+The application ships with isolated, administrative Operator Tools that execute completely outside the main process to ensure safety and bypass UI locks.
+
+|           Migration Companion Dashboard           |           Admin Reset Console           |
+| :-----------------------------------------------: | :-------------------------------------: |
+| ![Migration Companion](operator_tools/migration/Migration_Companion.png) | ![Reset Admin](operator_tools/admin_reset/Reset_Admin.png) |
+
+- **Migration Companion**: An automated database and configuration relocator tool. It safely migrates Turso SQL credentials, Local SQLite blobs, Qdrant Vector Data, and user profiles across environments (Local to SaaS, or SaaS to Local).
+- **Admin Reset Utility**: A specialized recovery tool designed to purge corrupted registries, wipe compromised API keys, and re-provision default Admin/Tenant databases without touching user chat history.
 
 📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
 
@@ -156,8 +171,10 @@ llm_chat_app/
 ├── main.py                         # 🚀 Entry point
 ├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build (App only)
 ├── LLM_Chat_App_onefile.spec       # PyInstaller spec - One-file build (App only)
+├── LLM_Chat_App_mac.spec           # PyInstaller spec - macOS .app bundle (App only)
 ├── LLM_Chat_App_onedir_full.spec   # PyInstaller spec - One-dir build (App + Operator Tools)
 ├── LLM_Chat_App_onefile_full.spec  # PyInstaller spec - One-file build (App + Operator Tools)
+├── LLM_Chat_App_mac_full.spec      # PyInstaller spec - macOS .app bundle (App + Operator Tools)
 ├── build_deb.sh                    # 📦 Linux DEB compile & bundler script
 ├── build_appimage.sh               # 📦 Linux AppImage compile & bundler script
 ├── build_mac.sh                    # 📦 macOS PKG installer compile script
@@ -492,10 +509,12 @@ Run this from the project root. The project includes three spec files for differ
 # 1. Standard Builds (App Only)
 pyinstaller LLM_Chat_App_onedir.spec
 pyinstaller LLM_Chat_App_onefile.spec
+pyinstaller LLM_Chat_App_mac.spec
 
 # 2. Full Suite Builds (App + Operator Tools)
 pyinstaller LLM_Chat_App_onedir_full.spec
 pyinstaller LLM_Chat_App_onefile_full.spec
+pyinstaller LLM_Chat_App_mac_full.spec
 ```
 
 **Build outputs:**
@@ -552,8 +571,8 @@ Uninstall DEB: `sudo apt remove llmchatapp`
 For macOS (Intel & Apple Silicon M1/M2/M3/M4), use the automated build script:
 
 ```bash
-# Build onedir/bundle first
-pyinstaller LLM_Chat_App_onedir.spec
+# Build mac bundle first
+pyinstaller LLM_Chat_App_mac.spec
 # Run the automation script
 bash build_mac.sh
 ```

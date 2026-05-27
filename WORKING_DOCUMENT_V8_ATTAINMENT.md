@@ -868,17 +868,6 @@ Phase 11 strips environment-setup logic out of the main desktop client, ensuring
 | **11.5.3** | **Windows NSSM Pipeline**: Generate `install_service.ps1` that auto-downloads NSSM, provisions dedicated users, and applies `icacls` locks. | ✅**DONE** |
 | **11.5.4** | **SCM Lifecycle Management**: Configure recovery protocols and signal handling instead of raw `sc.exe`. | ✅**DONE** |
 
-### 11.6 PyInstaller Build Automation Pipeline
-
-| # | Task | Status |
-| :--- | :--- | :--- |
-| **11.6.1** | **Operator Specs**: Create isolated `.spec` files for `migration_companion.py` and `reset_admin.py` utilizing the MVC layout (`core`/`ui_assets`). | ✅**DONE** |
-| **11.6.2** | **Main App Specs**: Create `LLM_Chat_App_onefile.spec` and `LLM_Chat_App_onedir.spec` (Without Operator Tools). | ✅**DONE** |
-| **11.6.3** | **Full Multi-Target Specs**: Create `LLM_Chat_App_onefile_full.spec` and `LLM_Chat_App_onedir_full.spec` to compile Main App + Operator Tools simultaneously. | ✅**DONE** |
-| **11.6.4** | **Automation Scripts**: Write `build_deb.sh`, `build_appimage.sh`, `build_mac.sh`, and `build_all_plugins.sh` to construct precision deployment targets. (Monolithic `clean.sh` and `build.sh` are explicitly SUPERSEDED/DELETED). | ✅**DONE** |
-
-
-
 **Technical Notes (Phase 11):**
 * **Zero Client Pollution**: Moving gigabytes of vector caches or modifying service registries is inherently risky to perform while the main app is running. Doing this from the standalone operator suite guarantees that the main application is cleanly shut down, preventing OS file locks and database corruption.
 * **Separation of Concerns**: End-users receive the `single` build (just `LLM Chat App.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.

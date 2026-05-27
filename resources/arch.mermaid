@@ -16,6 +16,14 @@ graph TD
         Registry["ServiceRegistry<br>shared service lifecycle"]
     end
 
+    %% Operator Tools 
+    subgraph OperatorTools ["Operator Tools (MVC Admin Suite)"]
+        MigCompanion["Migration Companion<br>SaaS DB Relocator"]
+        LocalReloc["Local Relocator<br>Storage Path Manager"]
+        SvcInstall["Service Setup Wizard<br>Native OS Daemons"]
+        ResAdmin["Reset Admin<br>Headless CLI Password Mgr"]
+    end
+
     %% Services
     subgraph Services ["Shared Service Layer"]
         ConvSvc["ConversationService<br>completion, rate limit, telemetry hooks"]
@@ -46,10 +54,10 @@ graph TD
         VectorDB[("Qdrant local vector_db<br>tenant collections")]
     end
 
-    %% Phase 10.2: Planned Modular Tenant Drivers
-    subgraph TenantDrivers ["Tenant Driver Layer (Phase 10.2 Planned)"]
+    %% Phase 10.2: Modular Tenant Drivers
+    subgraph TenantDrivers ["Tenant Driver Layer"]
         BaseTenant["BaseTenantDriver ABC"]
-        TursoTenant["turso_tenant_driver.py<br>current Turso/libSQL"]
+        TursoTenant["turso_tenant_driver.py<br>Turso/libSQL"]
         PgTenant["postgres_tenant_driver.py<br>psycopg2"]
         MySQLTenant["mysql_tenant_driver.py<br>pymysql"]
     end
@@ -71,6 +79,13 @@ graph TD
     MW --> LegacyMgr
     MW --> Registry
     HEngine --> Registry
+
+    %% Operator Wiring
+    MigCompanion --> TenantDB
+    MigCompanion --> Driver
+    LocalReloc --> Driver
+    SvcInstall --> HEngine
+    ResAdmin --> TenantDB
 
     Registry --> ConvSvc
     Registry --> AuthSvc
@@ -109,16 +124,19 @@ graph TD
     %% Phase 9: Cache wiring
     MW -->|"Phase 9: chunk_cache + semantic_query_cache"| CacheSvc
 
-    %% Phase 10.2: Planned tenant driver abstraction
+    %% Phase 10.2: Modular tenant driver abstraction
     BaseTenant --> TursoTenant
     BaseTenant --> PgTenant
     BaseTenant --> MySQLTenant
     TursoTenant --> TenantDB
+    PgTenant --> TenantDB
+    MySQLTenant --> TenantDB
 
     style Interfaces fill:#1e1e2e,stroke:#313244,stroke-width:2px,color:#cdd6f4
     style Runtime fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
+    style OperatorTools fill:#1e1e2e,stroke:#f38ba8,stroke-width:2px,color:#cdd6f4
     style Services fill:#11111b,stroke:#a6adc8,stroke-width:2px,color:#cdd6f4
     style ModelCore fill:#0f0f17,stroke:#f9e2af,stroke-width:2px,color:#cdd6f4
     style Storage fill:#101820,stroke:#94e2d5,stroke-width:2px,color:#cdd6f4
     style Providers fill:#171421,stroke:#fab387,stroke-width:2px,color:#cdd6f4
-    style TenantDrivers fill:#1a1a2e,stroke:#e2b714,stroke-dasharray: 5 5,stroke-width:2px,color:#cdd6f4
+    style TenantDrivers fill:#1a1a2e,stroke:#e2b714,stroke-width:2px,color:#cdd6f4

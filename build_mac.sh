@@ -12,7 +12,7 @@ rm -f "$OUTPUT_PKG"
 
 # Compile first
 echo "Compiling mac app bundle..."
-pyinstaller LLM_Chat_App_onedir.spec --noconfirm
+pyinstaller LLM_Chat_App_mac.spec --noconfirm
 
 if [ ! -d "dist/$BUNDLE_NAME" ]; then
     echo "Error: $BUNDLE_NAME not found in dist/. macOS build failed."
