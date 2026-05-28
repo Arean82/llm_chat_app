@@ -163,6 +163,7 @@ class GenSettingsDialog(QDialog):
         
         self.setup_rerank_ui(is_dark)
         self.setup_api_credentials_ui()
+        self.setup_redis_ui(is_dark)
         self.load_current_settings()
         
     def setup_api_credentials_ui(self):
@@ -359,6 +360,94 @@ class GenSettingsDialog(QDialog):
             self.rerank_endpoint_input.setEnabled(True)
             self.rerank_key_input.setEnabled(True)
         
+    def setup_redis_ui(self, is_dark: bool):
+        """Resolves references to Redis Configuration widgets loaded from the UI file, and applies dynamic styling."""
+        from PySide6.QtWidgets import QGroupBox, QCheckBox, QLineEdit, QSpinBox
+        
+        self.redis_group = self.findChild(QGroupBox, "redis_group")
+        self.redis_enable_cb = self.findChild(QCheckBox, "redis_enable_cb")
+        self.redis_host_input = self.findChild(QLineEdit, "redis_host_input")
+        self.redis_port_input = self.findChild(QSpinBox, "redis_port_input")
+        self.redis_password_input = self.findChild(QLineEdit, "redis_password_input")
+        
+        if not (self.redis_enable_cb and self.redis_host_input and self.redis_port_input and self.redis_password_input):
+            return
+            
+        # Premium CSS styling matching the active dialog theme
+        if is_dark:
+            if self.redis_group:
+                self.redis_group.setStyleSheet("""
+                    QGroupBox {
+                        font-weight: bold;
+                        color: #ffffff;
+                        border: 1px solid #3c3c3c;
+                        border-radius: 6px;
+                        margin-top: 15px;
+                        padding-top: 20px;
+                    }
+                    QGroupBox::title {
+                        subcontrol-origin: margin;
+                        subcontrol-position: top left;
+                        left: 10px;
+                        padding: 0 5px;
+                    }
+                    QCheckBox { color: #ffffff; font-weight: normal; }
+                    QLineEdit, QSpinBox {
+                        background-color: #2d2d2d; 
+                        color: #ffffff; 
+                        border: 1px solid #3c3c3c; 
+                        border-radius: 5px; 
+                        padding: 5px; 
+                    }
+                    QLineEdit:disabled, QSpinBox:disabled {
+                        background-color: #1e1e1e;
+                        color: #777777;
+                        border: 1px solid #252526;
+                    }
+                """)
+        else:
+            if self.redis_group:
+                self.redis_group.setStyleSheet("""
+                    QGroupBox {
+                        font-weight: bold;
+                        color: #333333;
+                        border: 1px solid #cccccc;
+                        border-radius: 6px;
+                        margin-top: 15px;
+                        padding-top: 20px;
+                    }
+                    QGroupBox::title {
+                        subcontrol-origin: margin;
+                        subcontrol-position: top left;
+                        left: 10px;
+                        padding: 0 5px;
+                    }
+                    QCheckBox { color: #333333; font-weight: normal; }
+                    QLineEdit, QSpinBox {
+                        background-color: #f5f5f5; 
+                        border: 1px solid #cccccc; 
+                        border-radius: 5px; 
+                        padding: 5px; 
+                    }
+                    QLineEdit:disabled, QSpinBox:disabled {
+                        background-color: #e1e1e1;
+                        color: #aaaaaa;
+                        border: 1px solid #cccccc;
+                    }
+                """)
+                
+        # Connect signals
+        self.redis_enable_cb.toggled.connect(self.on_redis_enabled_toggled)
+
+    def on_redis_enabled_toggled(self, checked: bool):
+        """Toggles enable states of Redis input widgets."""
+        if hasattr(self, "redis_host_input") and self.redis_host_input:
+            self.redis_host_input.setEnabled(checked)
+        if hasattr(self, "redis_port_input") and self.redis_port_input:
+            self.redis_port_input.setEnabled(checked)
+        if hasattr(self, "redis_password_input") and self.redis_password_input:
+            self.redis_password_input.setEnabled(checked)
+
     def load_current_settings(self):
         settings = get_app_settings()
         
@@ -395,6 +484,21 @@ class GenSettingsDialog(QDialog):
             # Fire initial visibility states
             self.on_rerank_enabled_toggled(rerank_enabled)
             
+        # Hydrate Redis config
+        if hasattr(self, "redis_enable_cb") and self.redis_enable_cb:
+            redis_enabled = str(settings.value("redis_enabled", "false")).lower() == "true"
+            redis_host = str(settings.value("redis_host", "127.0.0.1"))
+            redis_port = int(settings.value("redis_port", 6379))
+            redis_password = str(settings.value("redis_password", ""))
+            
+            self.redis_enable_cb.setChecked(redis_enabled)
+            self.redis_host_input.setText(redis_host)
+            self.redis_port_input.setValue(redis_port)
+            self.redis_password_input.setText(redis_password)
+            
+            # Fire initial visibility states
+            self.on_redis_enabled_toggled(redis_enabled)
+
         # Hydrate logging config
         if hasattr(self, "log_enable_cb") and self.log_enable_cb:
             log_enabled = str(settings.value("logging/enable_log", "false")).lower() == "true"
@@ -518,5 +622,33 @@ class GenSettingsDialog(QDialog):
                 AppLogger.get_instance().reconfigure()
             except ImportError:
                 pass
+            
+        # Commit Redis changes
+        if hasattr(self, "redis_enable_cb") and self.redis_enable_cb:
+            settings.setValue("redis_enabled", "true" if self.redis_enable_cb.isChecked() else "false")
+            settings.setValue("redis_host", self.redis_host_input.text().strip())
+            settings.setValue("redis_port", self.redis_port_input.value())
+            settings.setValue("redis_password", self.redis_password_input.text().strip())
+            
+            # Dynamically apply config to active Redis & Event Bus services
+            try:
+                from logic.services.base_service import ServiceRegistry
+                redis_svc = ServiceRegistry.get("redis")
+                event_bus_svc = ServiceRegistry.get("event_bus")
+                
+                # Graceful shutdown followed by re-initialization with new parameters
+                event_bus_svc.shutdown()
+                redis_svc.shutdown()
+                
+                redis_svc.initialize()
+                event_bus_svc.initialize()
+                
+                # Feedback notice on the chat view if parent exists
+                if self.parent() and hasattr(self.parent(), "chat_view"):
+                    state_msg = "🟢 Redis central connection established." if redis_svc.is_live() else "🟡 Redis operating in offline-mock fallback."
+                    self.parent().chat_view.add_system_message(f"⚙️ Redis settings updated. {state_msg}")
+            except Exception as e:
+                import logging
+                logging.getLogger("QuantumRedisUI").error(f"Failed to dynamically apply new Redis configuration: {str(e)}")
             
         self.accept()

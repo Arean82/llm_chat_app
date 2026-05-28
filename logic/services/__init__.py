@@ -6,6 +6,8 @@ from .rag_service import RAGService
 from .conversation_service import ConversationService
 from logic.reliability.circuit_breaker import CircuitBreaker
 from logic.telemetry.telemetry_manager import TelemetryManager
+from .redis_manager import RedisManager
+from .event_bus import EventBusService
 
 __all__ = [
     "BaseService",
@@ -16,6 +18,9 @@ __all__ = [
     "RAGService",
     "ConversationService",
     "CircuitBreaker",
-    "TelemetryManager"
+    "TelemetryManager",
+    "RedisManager",
+    "EventBusService"
 ]
+
 

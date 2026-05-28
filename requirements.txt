@@ -49,6 +49,8 @@ litellm
 # Database Drivers
 libsql-client
 pg8000
+redis>=5.0.0
+
 
 # Development & Packaging
 pyinstaller>=6.3.0
