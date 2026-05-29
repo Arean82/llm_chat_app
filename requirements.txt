@@ -51,6 +51,9 @@ libsql-client
 pg8000
 redis>=5.0.0
 
+# Networking & Tunneling
+sshtunnel>=0.4.0
+paramiko>=3.0.0
 
 # Development & Packaging
 pyinstaller>=6.3.0

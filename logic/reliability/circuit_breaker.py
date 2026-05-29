@@ -124,13 +124,19 @@ class CircuitBreaker(BaseService):
         """
         logger.info(f"Resolving custom failover routing map for tenant '{tenant_id}'...")
         
-        # Load tenant settings to see provider priorities
+        # Load tenant settings and credentials to see provider priorities and actually owned keys
         auth_service = ServiceRegistry.get("auth")
         user_settings = auth_service.get_user_settings(tenant_id) if hasattr(auth_service, "get_user_settings") else {}
+        tenant_credentials = auth_service.get_tenant_keys(tenant_id) if hasattr(auth_service, "get_tenant_keys") else {}
         
-        # Priority list defined in settings, e.g. "google,openai,ollama"
-        failover_sequence = str(user_settings.get("failover_provider_sequence", "google,ollama")).split(",")
-        failover_sequence = [p.strip().lower() for p in failover_sequence if p.strip()]
+        # Priority list defined in settings, defaulting dynamically based strictly on owned BYOK credentials
+        failover_sequence_str = user_settings.get("failover_provider_sequence", "")
+        if failover_sequence_str:
+            failover_sequence = str(failover_sequence_str).split(",")
+            failover_sequence = [p.strip().lower() for p in failover_sequence if p.strip()]
+        else:
+            # Build sequence dynamically based strictly on keys they actually registered
+            failover_sequence = [p.lower() for p in tenant_credentials.keys()]
 
         for provider in failover_sequence:
             logger.info(f"Checking failover viability for provider: '{provider}'")

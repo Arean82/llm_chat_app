@@ -176,14 +176,17 @@ class ConversationService(BaseService):
         token_stats = self.estimate_tokens(messages)
         completion_tokens = int(len(response_text.split()) * 1.3)
 
-        # Save conversation to Storage
-        storage_service = ServiceRegistry.get("storage")
-        conv_id = options.get("conv_id")
-        title = options.get("title", "New Chat")
-        
-        if storage_service:
+        # Save conversation to Storage via Repository Pattern (6.1.3)
+        try:
+            from logic.repositories.conversation_repository import ConversationRepository
+            repo = ConversationRepository(tenant_id)
+            conv_id = options.get("conv_id")
+            title = options.get("title", "New Chat")
+            
             history = messages + [{"role": "assistant", "content": response_text}]
-            storage_service.save_conversation(tenant_id, history, title=title, conv_id=conv_id, model_id=model_id)
+            repo.save_conversation(history, title=title, conv_id=conv_id, model_id=model_id)
+        except Exception as e:
+            logger.error(f"Failed to save conversation via repository: {e}")
 
         # Log Telemetry
         telemetry = None

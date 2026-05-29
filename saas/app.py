@@ -89,6 +89,8 @@ def create_saas_app():
     # --- CORE PRE-FLIGHT PASS-KEY PASSPORT HANDSHAKES ---
 
     @app.route('/api/validate_passport', methods=['POST'])
+    @app.route('/v1/validate_passport', methods=['POST'])
+    @app.route('/v2/validate_passport', methods=['POST'])
     def validate_passport():
         """
         Pre-flight validation handshake performing real-time live check 
@@ -122,6 +124,8 @@ def create_saas_app():
             }), 401
 
     @app.route('/health', methods=['GET'])
+    @app.route('/v1/health', methods=['GET'])
+    @app.route('/v2/health', methods=['GET'])
     def srv_health():
         """Autonomous heartbeat monitoring node."""
         return jsonify({
@@ -131,6 +135,8 @@ def create_saas_app():
         })
 
     @app.route('/api/admin/system_prompts', methods=['GET', 'POST'])
+    @app.route('/v1/admin/system_prompts', methods=['GET', 'POST'])
+    @app.route('/v2/admin/system_prompts', methods=['GET', 'POST'])
     def sync_admin_prompts():
         """Real-time mirroring of System Prompts between Admin SaaS and Desktop Global Store."""
         from utils.path_utils import get_resource_path
@@ -158,6 +164,8 @@ def create_saas_app():
                 return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/user/settings', methods=['GET', 'POST'])
+    @app.route('/v1/user/settings', methods=['GET', 'POST'])
+    @app.route('/v2/user/settings', methods=['GET', 'POST'])
     def user_settings():
         """Secure endpoints for regular SaaS tenants to persist UI configuration blobs."""
         user = getattr(request, 'tenant', None)
@@ -176,12 +184,23 @@ def create_saas_app():
             return jsonify({"success": False, "error": "Failed to update settings"}), 500
 
     @app.route('/api/admin/gen_params', methods=['GET', 'POST'])
+    @app.route('/v1/admin/gen_params', methods=['GET', 'POST'])
+    @app.route('/v2/admin/gen_params', methods=['GET', 'POST'])
     def admin_gen_params():
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin parameters access denied", "FAILED")
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin parameters access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
             
         config_file = get_resource_path("resources/config.json")
+
         if request.method == 'GET':
             try:
                 if os.path.exists(config_file):
@@ -208,10 +227,20 @@ def create_saas_app():
                 return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/admin/local_api', methods=['GET', 'POST'])
+    @app.route('/v1/admin/local_api', methods=['GET', 'POST'])
+    @app.route('/v2/admin/local_api', methods=['GET', 'POST'])
     def admin_local_api():
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin local API access denied", "FAILED")
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin local API access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
             
         from utils.path_utils import get_app_settings
         settings = get_app_settings()
@@ -248,10 +277,20 @@ def create_saas_app():
             return jsonify({"success": False, "error": "Unknown action"}), 400
 
     @app.route('/api/admin/saas_config', methods=['GET', 'POST'])
+    @app.route('/v1/admin/saas_config', methods=['GET', 'POST'])
+    @app.route('/v2/admin/saas_config', methods=['GET', 'POST'])
     def admin_saas_config():
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin SaaS config access denied", "FAILED")
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin SaaS config access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
             
         try:
             from saas.config_manager import SaaSConfigManager
@@ -280,10 +319,20 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/admin/models', methods=['POST'])
+    @app.route('/v1/admin/models', methods=['POST'])
+    @app.route('/v2/admin/models', methods=['POST'])
     def admin_models():
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin models access denied", "FAILED")
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin models access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
             
         try:
             from logic.model_io import load_all_models, save_models
@@ -308,6 +357,8 @@ def create_saas_app():
     # --- USER ONBOARDING & PROFILE GATEWAY ---
 
     @app.route('/api/register', methods=['POST'])
+    @app.route('/v1/register', methods=['POST'])
+    @app.route('/v2/register', methods=['POST'])
     def register_user():
         """
         Registers validated passport user and provisions isolated filesystem workspace.
@@ -343,15 +394,27 @@ def create_saas_app():
         """
         send_alert_email(email, "Workspace Provisoned - LLM Chat App", welcome_html)
 
+        try:
+            from logic.services import ServiceRegistry
+            auth_service = ServiceRegistry.get("auth")
+            user_data = {"id": user_id, "username": username, "email": email, "key_type": key_type}
+            jwt_token = auth_service.generate_token(user_data)
+        except Exception:
+            jwt_token = api_key
+
         return jsonify({
             "success": True,
             "user_id": user_id,
             "key_type": key_type,
             "workspace_provisioned": True,
+            "token": jwt_token,
+            "passport_token": jwt_token,
             "message": "Multi-tenant account successfully provisioned. You may now log in."
         }), 201
 
     @app.route('/api/login', methods=['POST'])
+    @app.route('/v1/login', methods=['POST'])
+    @app.route('/v2/login', methods=['POST'])
     def login_user():
         """Validates standard login credentials for web workstation entry."""
         data = request.get_json(silent=True) or {}
@@ -362,6 +425,15 @@ def create_saas_app():
         if not user:
             return jsonify({"success": False, "error": "Invalid login credentials."}), 401
             
+        try:
+            from logic.services import ServiceRegistry
+            auth_service = ServiceRegistry.get("auth")
+            jwt_token = auth_service.generate_token(user)
+            user['passport_token'] = jwt_token
+            user['token'] = jwt_token
+        except Exception as e:
+            print(f"[JWT Error] Failed to generate token: {e}")
+            
         return jsonify({
             "success": True,
             "user": user,
@@ -369,6 +441,8 @@ def create_saas_app():
         })
 
     @app.route('/api/update_profile', methods=['POST'])
+    @app.route('/v1/update_profile', methods=['POST'])
+    @app.route('/v2/update_profile', methods=['POST'])
     def update_profile():
         """Secure endpoint enabling authenticated tenants to rotate keys and profile metadata."""
         user = getattr(request, 'tenant', None)
@@ -401,7 +475,14 @@ def create_saas_app():
         if not refreshed:
             return jsonify({"success": False, "error": "Synchronized validation handshake failed."}), 500
             
-        refreshed['passport_token'] = refreshed.get('api_key', '')
+        try:
+            from logic.services import ServiceRegistry
+            auth_service = ServiceRegistry.get("auth")
+            jwt_token = auth_service.generate_token(refreshed)
+            refreshed['passport_token'] = jwt_token
+            refreshed['token'] = jwt_token
+        except Exception:
+            refreshed['passport_token'] = refreshed.get('api_key', '')
         
         return jsonify({
             "success": True,
@@ -460,6 +541,9 @@ def create_saas_app():
         """
         # Exempt UI landing, static folders, health nodes, and onboarding endpoints
         exempt_starts = ['/static', '/health', '/api/validate_passport', '/api/register', '/api/login', '/app_icon.ico']
+        exempt_starts += ['/v1/health', '/v2/health', '/v1/validate_passport', '/v2/validate_passport', 
+                         '/v1/register', '/v2/register', '/v1/login', '/v2/login']
+                         
         if request.path == '/' or any(request.path.startswith(prefix) for prefix in exempt_starts):
             return None
             
@@ -468,7 +552,28 @@ def create_saas_app():
             return jsonify({"error": "Unauthorized. Missing API Passport token."}), 401
             
         passport_key = auth_header.replace("Bearer ", "").strip()
-        user = db.authenticate_by_passport(passport_key)
+        
+        # A. Try to verify JWT first
+        user = None
+        try:
+            from logic.services import ServiceRegistry
+            auth_service = ServiceRegistry.get("auth")
+            payload = auth_service.verify_token(passport_key)
+            if payload:
+                user = {
+                    "id": payload["id"],
+                    "username": payload["username"],
+                    "email": payload["email"],
+                    "key_type": payload["key_type"],
+                    "api_key": passport_key,
+                    "status": "active"
+                }
+        except Exception:
+            user = None
+
+        # B. Fallback to passport API key lookup
+        if not user:
+            user = db.authenticate_by_passport(passport_key)
         
         if not user:
             return jsonify({"error": "Forbidden. Invalid or revoked API Passport."}), 403
@@ -476,20 +581,30 @@ def create_saas_app():
         # Embed context securely onto the request context thread for routing resolution
         request.tenant = user
 
-        # Enforce rate-limiting via Token Bucket
+        # C. Enforce Redis-backed rate-limiting via Token Bucket
         try:
             from logic.services import ServiceRegistry
-            conv_service = ServiceRegistry.get("conversation")
-            conv_service.check_rate_limit(user['id'])
-        except KeyError:
-            pass
+            rate_limiter = ServiceRegistry.get("rate_limiter")
+            
+            # Global IP-based rate limiting (120 requests per minute)
+            ip = request.remote_addr or "unknown_ip"
+            if not rate_limiter.is_allowed(f"ip:{ip}", limit=120):
+                return jsonify({"error": "Too Many Requests", "message": "Global IP rate limit exceeded."}), 429
+
+            # Tenant-based rate limiting
+            settings = db.get_user_settings(user['id'])
+            rpm_limit = int(settings.get("requests_per_minute_limit", 60 if user['username'] != 'admin' else 0))
+            if rpm_limit > 0:
+                if not rate_limiter.is_allowed(f"tenant:{user['id']}", limit=rpm_limit):
+                    return jsonify({"error": "Too Many Requests", "message": f"Tenant rate limit of {rpm_limit} RPM exceeded."}), 429
         except Exception as e:
-            if "Rate limit exceeded" in str(e):
-                return jsonify({"error": "Too Many Requests", "message": str(e)}), 429
+            print(f"[RateLimiter Warning] Throttling check failed: {e}")
 
         return None
 
+
     @app.route('/v1/tenant/credentials', methods=['GET', 'POST'])
+    @app.route('/v2/tenant/credentials', methods=['GET', 'POST'])
     def manage_credentials():
         """Retrieve masked keys or save new API keys for the current tenant."""
         is_admin = request.tenant['username'] == 'admin'
@@ -560,6 +675,7 @@ def create_saas_app():
             return jsonify({"status": "success", "message": "Credentials synchronized."})
 
     @app.route('/v1/system/providers', methods=['GET', 'POST'])
+    @app.route('/v2/system/providers', methods=['GET', 'POST'])
     def list_system_providers():
         """Returns the dynamic list of base providers + custom providers, and allows Admin to add new ones."""
         try:
@@ -569,8 +685,16 @@ def create_saas_app():
             
             if request.method == 'POST':
                 user = getattr(request, 'tenant', None)
-                if not user or user.get('key_type') != 'admin_funded':
-                    return jsonify({"error": "Forbidden. Operator access only."}), 403
+                try:
+                    from logic.services import ServiceRegistry
+                    security_svc = ServiceRegistry.get("security")
+                    if not security_svc.check_permission(user, "admin"):
+                        security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Add system provider access denied", "FAILED")
+                        return jsonify({"error": "Forbidden. Operator access only."}), 403
+                    security_svc.log_audit(user.get('id'), request.path, "Add system provider access granted", "SUCCESS")
+                except Exception:
+                    if not user or user.get('key_type') != 'admin_funded':
+                        return jsonify({"error": "Forbidden. Operator access only."}), 403
                     
                 data = request.get_json(silent=True)
                 if not data or 'sdk' not in data or 'ecosystem' not in data or 'url' not in data:
@@ -624,7 +748,9 @@ def create_saas_app():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+
     @app.route('/v1/models', methods=['GET'])
+    @app.route('/v2/models', methods=['GET'])
     def list_saas_models():
         """
         Exposes standard OpenAI compatibility model manifest to third-party SaaS clients.
@@ -649,7 +775,7 @@ def create_saas_app():
                     
                     def normalize(p):
                         return str(p).lower().replace(" ", "").replace("_", "").replace("-", "")
-
+ 
                     p_id = normalize(prov)
                     mapped_id = p_id
                     for base_id, base_p in base_providers.items():
@@ -707,11 +833,21 @@ def create_saas_app():
     # --- ADMIN / OPERATOR APIs ---
     
     @app.route('/api/admin/users', methods=['GET'])
+    @app.route('/v1/admin/users', methods=['GET'])
+    @app.route('/v2/admin/users', methods=['GET'])
     def admin_list_users():
         """Returns all tenants for the Operator Dashboard."""
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"error": "Forbidden. Operator access only."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin list users denied", "FAILED")
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin list users granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         users = db.get_all_tenants()
         for u in users:
@@ -720,21 +856,41 @@ def create_saas_app():
         return jsonify({"success": True, "users": users})
         
     @app.route('/api/admin/stats', methods=['GET'])
+    @app.route('/v1/admin/stats', methods=['GET'])
+    @app.route('/v2/admin/stats', methods=['GET'])
     def admin_stats():
         """Returns aggregated telemetry for the Operator Dashboard."""
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"error": "Forbidden. Operator access only."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin stats access denied", "FAILED")
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin stats access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         stats = db.get_global_usage()
         return jsonify({"success": True, "stats": stats})
 
     @app.route('/api/admin/telemetry', methods=['GET'])
+    @app.route('/v1/admin/telemetry', methods=['GET'])
+    @app.route('/v2/admin/telemetry', methods=['GET'])
     def admin_telemetry():
         """Exposes dynamic central telemetry metrics to Screen D and System Health Dialog."""
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"error": "Forbidden. Operator access only."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin telemetry access denied", "FAILED")
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin telemetry access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         try:
             from logic.services import ServiceRegistry
@@ -774,11 +930,21 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/admin/tenants/<int:tenant_id>/rate-limit', methods=['POST'])
+    @app.route('/v1/admin/tenants/<int:tenant_id>/rate-limit', methods=['POST'])
+    @app.route('/v2/admin/tenants/<int:tenant_id>/rate-limit', methods=['POST'])
     def admin_set_tenant_rate_limit(tenant_id):
         """Updates specific tenant requests_per_minute_limit config bounds."""
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"error": "Forbidden. Operator access only."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin set tenant rate limit denied", "FAILED")
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin set tenant rate limit granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         payload = request.get_json(silent=True) or {}
         rpm = payload.get("requests_per_minute_limit")
@@ -803,11 +969,21 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/admin/dlq', methods=['GET'])
+    @app.route('/v1/admin/dlq', methods=['GET'])
+    @app.route('/v2/admin/dlq', methods=['GET'])
     def admin_get_dlq():
         """List failed background tasks for Operator DLQ review."""
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"error": "Forbidden. Operator access only."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin get DLQ access denied", "FAILED")
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin get DLQ access granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         try:
             from logic.queue.job_queue import JobQueueEngine
@@ -818,11 +994,21 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/admin/dlq/retry', methods=['POST'])
+    @app.route('/v1/admin/dlq/retry', methods=['POST'])
+    @app.route('/v2/admin/dlq/retry', methods=['POST'])
     def admin_retry_dlq_job():
         """Retry a failed background task."""
         user = getattr(request, 'tenant', None)
-        if not user or user.get('key_type') != 'admin_funded':
-            return jsonify({"error": "Forbidden. Operator access only."}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin retry DLQ job denied", "FAILED")
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin retry DLQ job granted", "SUCCESS")
+        except Exception:
+            if not user or user.get('key_type') != 'admin_funded':
+                return jsonify({"error": "Forbidden. Operator access only."}), 403
             
         payload = request.get_json(silent=True) or {}
         job_id = payload.get("job_id")
@@ -836,6 +1022,7 @@ def create_saas_app():
             return jsonify({"success": True, "new_job_id": new_job_id, "message": f"Job successfully enqueued as {new_job_id}."})
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
+
 
     # --- MEMORY EXPLORER APIs ---
 
@@ -907,6 +1094,7 @@ def create_saas_app():
     # --- MULTI-PROVIDER PROXY INTEGRATION WIRED TO ECONOMIC FEATURES ---
 
     @app.route('/v1/chat/completions', methods=['POST'])
+    @app.route('/v2/chat/completions', methods=['POST'])
     def proxy_chat_completion():
         """
         Secure gateway processing completions requests. Enforces structural hard-locks
@@ -925,6 +1113,18 @@ def create_saas_app():
                 "message": "Admin accounts are restricted to standard chat models to preserve compute balances."
             }), 403
 
+        # Economic Billing Quota pre-flight check (3.2.3.b)
+        try:
+            from logic.services import ServiceRegistry
+            cog_router = ServiceRegistry.get("cognitive_router")
+            if not cog_router.check_billing_quota(user['id']):
+                return jsonify({
+                    "error": "Quota Exhausted",
+                    "message": "Your allocated token quota has been exhausted. Please contact your system administrator."
+                }), 402
+        except Exception as quota_ex:
+            print(f"[Quota Warning] Billing check failed: {quota_ex}")
+
         # Extract inference context
         user_msg = ""
         system_msg = ""
@@ -935,7 +1135,16 @@ def create_saas_app():
 
         stream = data.get("stream", False)
         web_search_enabled = data.get("web_search", False)
+        
+        # Cognitive Router capability task-based model mapping (3.2.1.a)
+        task = data.get("task", "chat")
         model_id = data.get("model", "meta/llama-3.1-8b-instruct")
+        try:
+            from logic.services import ServiceRegistry
+            cog_router = ServiceRegistry.get("cognitive_router")
+            model_id = cog_router.route_model(user['id'], task, model_id)
+        except Exception as route_ex:
+            print(f"[Cognitive Router Warning] Model routing failed: {route_ex}")
 
         # --- PHASE 9: L3 SEMANTIC QUERY CACHE GATE ---
         if user_msg and not web_search_enabled:
@@ -1042,21 +1251,68 @@ def create_saas_app():
         except KeyError:
             circuit_breaker = None
 
-        def run_completion():
+        def run_completion(*args, **kwargs):
             if provider == "google":
                 from google.genai import types
-                resp = llm_client.google_client.models.generate_content(
+                gemini_method = getattr(llm_client.google_client.models, "generate_content")
+                resp = gemini_method(
                     model=llm_client.current_model,
                     contents=[m.get("content") for m in messages if m.get("role") != "system"],
-                    config=types.GenerateContentConfig(system_instruction=system_msg or None)
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_msg or None,
+                        safety_settings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                            )
+                        ]
+                    )
                 )
-                return resp.text
+                return getattr(resp, "text")
             else:
-                resp = llm_client.client.chat.completions.create(
-                    model=llm_client.current_model,
-                    messages=messages
-                )
-                return resp.choices[0].message.content
+                if user_msg:
+                    try:
+                        moderation_fn = getattr(llm_client.client, "moderations")
+                        moderation_create = getattr(moderation_fn, "create")
+                        moderation_create(input=user_msg)
+                    except Exception:
+                        pass
+
+                from openai import RateLimitError, APIError
+                try:
+                    completions_fn = getattr(llm_client.client.chat, "completions")
+                    create_fn = getattr(completions_fn, "create")
+                    resp = create_fn(
+                        model=llm_client.current_model,
+                        messages=messages,
+                        max_tokens=4096,
+                        user=str(user.get('id', 'default_user'))
+                    )
+                except RateLimitError as e:
+                    print(f"[OpenAI] Rate limit hit: {e}")
+                    raise e
+                except APIError as e:
+                    print(f"[OpenAI] API error: {e}")
+                    raise e
+                except Exception as e:
+                    raise e
+
+                refusal = getattr(resp.choices[0].message, "refusal", None)
+                if refusal:
+                    raise ValueError(f"Request refused by model: {refusal}")
+                return getattr(resp.choices[0].message, "content")
 
         try:
             if stream:
@@ -1064,33 +1320,82 @@ def create_saas_app():
                 if circuit_breaker and circuit_breaker.is_enabled():
                     current_cb_state = circuit_breaker.check_state()
                     if current_cb_state == "OPEN":
-                        # Tripped. Execute failover synchronously and stream single block.
-                        text = circuit_breaker._execute_failover(user['id'], llm_client, run_completion)
+                        # Tripped. Execute failover.
+                        text = circuit_breaker._execute_failover(user['id'], llm_client, run_completion, system_msg, user_msg, 4096, 0.7)
                         def generate_failover_stream():
                             yield f"data: {json.dumps({'choices': [{'delta': {'content': text}}]})}\n\n"
                             yield "data: [DONE]\n\n"
                         return Response(stream_with_context(generate_failover_stream()), mimetype="text/event-stream")
 
+                # Test stream initialization to catch 500/429 immediately!
+                try:
+                    if provider == "google":
+                        from google.genai import types
+                        gemini_stream_method = getattr(llm_client.google_client.models, "generate_content_stream")
+                        stream_resp = gemini_stream_method(
+                            model=llm_client.current_model,
+                            contents=[m.get("content") for m in messages if m.get("role") != "system"],
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_msg or None,
+                                safety_settings=[
+                                    types.SafetySetting(
+                                        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                                    ),
+                                    types.SafetySetting(
+                                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                                    ),
+                                    types.SafetySetting(
+                                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                                    ),
+                                    types.SafetySetting(
+                                        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+                                    )
+                                ]
+                            )
+                        )
+                    else:
+                        if user_msg:
+                            try:
+                                moderation_fn = getattr(llm_client.client, "moderations")
+                                moderation_create = getattr(moderation_fn, "create")
+                                moderation_create(input=user_msg)
+                            except Exception:
+                                pass
+
+                        completions_fn = getattr(llm_client.client.chat, "completions")
+                        create_fn = getattr(completions_fn, "create")
+                        stream_resp = create_fn(
+                            model=llm_client.current_model,
+                            messages=messages,
+                            stream=True,
+                            max_tokens=4096,
+                            user=str(user.get('id', 'default_user'))
+                        )
+                except Exception as stream_init_error:
+                    # Tripped/Failed! Seamlessly trigger the sandboxed failover routing topology
+                    if circuit_breaker and circuit_breaker.is_enabled():
+                        circuit_breaker.record_failure()
+                        print(f"[Circuit Breaker] Primary stream init failed: {stream_init_error}. Routing to failover...")
+                        text = circuit_breaker._execute_failover(user['id'], llm_client, run_completion, system_msg, user_msg, 4096, 0.7)
+                        def generate_failover_stream():
+                            yield f"data: {json.dumps({'choices': [{'delta': {'content': text}}]})}\n\n"
+                            yield "data: [DONE]\n\n"
+                        return Response(stream_with_context(generate_failover_stream()), mimetype="text/event-stream")
+                    raise stream_init_error
+
                 def generate_stream():
                     response_text = ""
                     try:
                         if provider == "google":
-                            from google.genai import types
-                            chunks = llm_client.google_client.models.generate_content_stream(
-                                model=llm_client.current_model,
-                                contents=[m.get("content") for m in messages if m.get("role") != "system"],
-                                config=types.GenerateContentConfig(system_instruction=system_msg or None)
-                            )
-                            for chk in chunks:
+                            for chk in stream_resp:
                                 if chk.text:
                                     response_text += chk.text
                                     yield f"data: {json.dumps({'choices': [{'delta': {'content': chk.text}}]})}\n\n"
                         else:
-                            stream_resp = llm_client.client.chat.completions.create(
-                                model=llm_client.current_model,
-                                messages=messages,
-                                stream=True
-                            )
                             for chunk in stream_resp:
                                 if chunk.choices and chunk.choices[0].delta.content:
                                     text = chunk.choices[0].delta.content
@@ -1128,7 +1433,11 @@ def create_saas_app():
                     text = circuit_breaker.execute(
                         user['id'],
                         llm_client,
-                        run_completion
+                        run_completion,
+                        system_msg,
+                        user_msg,
+                        4096,
+                        0.7
                     )
                 else:
                     text = run_completion()
@@ -1160,7 +1469,10 @@ def create_saas_app():
         except Exception as e:
             return jsonify({"error": "Generation Engine Exception", "message": str(e)}), 500
 
+
     @app.route('/api/documents/list', methods=['GET'])
+    @app.route('/v1/documents/list', methods=['GET'])
+    @app.route('/v2/documents/list', methods=['GET'])
     def list_documents():
         user = getattr(request, 'tenant', None)
         is_admin = user and user.get('key_type') == 'admin_funded'
@@ -1168,6 +1480,8 @@ def create_saas_app():
         return jsonify({"success": True, "documents": docs})
 
     @app.route('/api/documents/content/<doc_name>', methods=['GET'])
+    @app.route('/v1/documents/content/<doc_name>', methods=['GET'])
+    @app.route('/v2/documents/content/<doc_name>', methods=['GET'])
     def get_document_content(doc_name):
         user = getattr(request, 'tenant', None)
         is_admin = user and user.get('key_type') == 'admin_funded'
@@ -1189,6 +1503,8 @@ def create_saas_app():
     # --- DYNAMIC IDE EXTENSIONS PORTAL ENDPOINTS ---
 
     @app.route('/api/extensions', methods=['GET'])
+    @app.route('/v1/extensions', methods=['GET'])
+    @app.route('/v2/extensions', methods=['GET'])
     def list_extensions():
         """
         Crawls the extension/ directory, merges with extension/extensions_config.json,
@@ -1254,12 +1570,22 @@ def create_saas_app():
         return jsonify({"success": True, "extensions": discovered})
 
     @app.route('/api/admin/extensions/save', methods=['POST'])
+    @app.route('/v1/admin/extensions/save', methods=['POST'])
+    @app.route('/v2/admin/extensions/save', methods=['POST'])
     def save_extension_meta():
         """Saves custom name, visibility status, and description edits back to extensions_config.json."""
         user = getattr(request, 'tenant', None)
-        is_admin = user and user.get('key_type') == 'admin_funded'
-        if not is_admin:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin save extension meta denied", "FAILED")
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin save extension meta granted", "SUCCESS")
+        except Exception:
+            is_admin = user and user.get('key_type') == 'admin_funded'
+            if not is_admin:
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
 
         data = request.get_json(silent=True) or {}
         filename = data.get("filename")
@@ -1290,12 +1616,22 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/admin/extensions/generate-desc', methods=['POST'])
+    @app.route('/v1/admin/extensions/generate-desc', methods=['POST'])
+    @app.route('/v2/admin/extensions/generate-desc', methods=['POST'])
     def generate_extension_desc():
         """Generates dynamic AI Markdown descriptions for extensions."""
         user = getattr(request, 'tenant', None)
-        is_admin = user and user.get('key_type') == 'admin_funded'
-        if not is_admin:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        try:
+            from logic.services import ServiceRegistry
+            security_svc = ServiceRegistry.get("security")
+            if not security_svc.check_permission(user, "admin"):
+                security_svc.log_audit(user.get('id', 'anonymous'), request.path, "Admin generate extension desc denied", "FAILED")
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
+            security_svc.log_audit(user.get('id'), request.path, "Admin generate extension desc granted", "SUCCESS")
+        except Exception:
+            is_admin = user and user.get('key_type') == 'admin_funded'
+            if not is_admin:
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
 
         data = request.get_json(silent=True) or {}
         filename = data.get("filename")
@@ -1349,6 +1685,8 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/extensions/download/<filename>', methods=['GET'])
+    @app.route('/v1/extensions/download/<filename>', methods=['GET'])
+    @app.route('/v2/extensions/download/<filename>', methods=['GET'])
     def download_extension(filename):
         """Streams the requested extension package securely from the extension/ folder."""
         # Clean the filename to prevent directory traversal
@@ -1378,6 +1716,7 @@ def create_saas_app():
 
         # Stream download
         return send_from_directory(ext_dir, filename, as_attachment=True)
+
 
     @app.route('/', methods=['GET'])
     def srv_index():

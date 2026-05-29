@@ -8,6 +8,14 @@ from logic.reliability.circuit_breaker import CircuitBreaker
 from logic.telemetry.telemetry_manager import TelemetryManager
 from .redis_manager import RedisManager
 from .event_bus import EventBusService
+from .queue_broker import RedisQueueBroker
+from .rate_limiter_service import RateLimiterService
+from .security_service import SecurityService
+from .cognitive_router_service import CognitiveRouterService
+from .short_term_memory import ShortTermMemoryService
+from .embedding_service import EmbeddingService
+
+from logic.telemetry.feature_store import FeatureStore
 
 __all__ = [
     "BaseService",
@@ -20,7 +28,15 @@ __all__ = [
     "CircuitBreaker",
     "TelemetryManager",
     "RedisManager",
-    "EventBusService"
+    "EventBusService",
+    "RedisQueueBroker",
+    "RateLimiterService",
+    "SecurityService",
+    "CognitiveRouterService",
+    "ShortTermMemoryService",
+    "EmbeddingService",
+    "FeatureStore"
 ]
+
 
 

@@ -104,3 +104,21 @@ class BaseStorageDriver(ABC):
         Wipes all conversations from the database tables. Used for global cleanups.
         """
         pass
+
+    # --- Phase 8: JSON Config Purge Interface ---
+
+    @abstractmethod
+    def save_model(self, model_id: str, provider: str, payload: dict) -> None:
+        pass
+
+    @abstractmethod
+    def load_all_models(self) -> List[dict]:
+        pass
+
+    @abstractmethod
+    def set_config(self, key: str, value: dict) -> None:
+        pass
+
+    @abstractmethod
+    def get_config(self, key: str) -> Optional[dict]:
+        pass

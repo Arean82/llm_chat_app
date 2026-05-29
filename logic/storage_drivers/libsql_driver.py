@@ -68,6 +68,21 @@ class LibSQLStorageDriver(BaseStorageDriver):
             except Exception:
                 pass
 
+            # Phase 8: JSON Config Purge
+            client.execute('''
+                CREATE TABLE IF NOT EXISTS models (
+                    id TEXT PRIMARY KEY,
+                    provider TEXT,
+                    payload_json TEXT
+                )
+            ''')
+            client.execute('''
+                CREATE TABLE IF NOT EXISTS system_config (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT
+                )
+            ''')
+
     def save_conversation(self, conversation: list, title: str = "New Conversation", 
                           conv_id: int = None, model_id: str = "", 
                           messages_html: str = None, timestamp: str = None,
@@ -171,3 +186,41 @@ class LibSQLStorageDriver(BaseStorageDriver):
         import libsql_client
         with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
             client.execute('DELETE FROM conversations')
+
+    # --- Phase 8: JSON Config Purge ---
+    def save_model(self, model_id: str, provider: str, payload: dict) -> None:
+        import libsql_client
+        payload_json = json.dumps(payload)
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            client.execute('''
+                INSERT INTO models (id, provider, payload_json) 
+                VALUES (?, ?, ?) 
+                ON CONFLICT(id) DO UPDATE SET provider = excluded.provider, payload_json = excluded.payload_json
+            ''', (model_id, provider, payload_json))
+
+    def load_all_models(self) -> List[dict]:
+        import libsql_client
+        models = []
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            res = client.execute('SELECT payload_json FROM models')
+            for row in res.rows:
+                models.append(json.loads(row[0]))
+        return models
+
+    def set_config(self, key: str, value: dict) -> None:
+        import libsql_client
+        value_json = json.dumps(value)
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            client.execute('''
+                INSERT INTO system_config (key, value_json) 
+                VALUES (?, ?) 
+                ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json
+            ''', (key, value_json))
+
+    def get_config(self, key: str) -> Optional[dict]:
+        import libsql_client
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            res = client.execute('SELECT value_json FROM system_config WHERE key = ?', (key,))
+            if res.rows:
+                return json.loads(res.rows[0][0])
+        return None

@@ -99,6 +99,21 @@ class LocalSQLiteDriver(BaseStorageDriver):
             except sqlite3.OperationalError:
                 pass
 
+            # Phase 8: JSON Config Purge
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS models (
+                    id TEXT PRIMARY KEY,
+                    provider TEXT,
+                    payload_json TEXT
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS system_config (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT
+                )
+            ''')
+
             conn.commit()
         except sqlite3.Error as e:
             print(f"[LocalSQLiteDriver] Database initialization error: {e}")
@@ -231,3 +246,56 @@ class LocalSQLiteDriver(BaseStorageDriver):
             conn.commit()
         except sqlite3.Error as e:
             print(f"[LocalSQLiteDriver] Clear all error: {e}")
+
+    # --- Phase 8: JSON Config Purge ---
+    def save_model(self, model_id: str, provider: str, payload: dict) -> None:
+        payload_json = json.dumps(payload)
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO models (id, provider, payload_json) 
+                VALUES (?, ?, ?) 
+                ON CONFLICT(id) DO UPDATE SET provider=excluded.provider, payload_json=excluded.payload_json
+            ''', (model_id, provider, payload_json))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"[LocalSQLiteDriver] Save model error: {e}")
+
+    def load_all_models(self) -> List[dict]:
+        models = []
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT payload_json FROM models')
+            for row in cursor.fetchall():
+                models.append(json.loads(row[0]))
+        except sqlite3.Error as e:
+            print(f"[LocalSQLiteDriver] Load models error: {e}")
+        return models
+
+    def set_config(self, key: str, value: dict) -> None:
+        value_json = json.dumps(value)
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO system_config (key, value_json) 
+                VALUES (?, ?) 
+                ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json
+            ''', (key, value_json))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"[LocalSQLiteDriver] Set config error: {e}")
+
+    def get_config(self, key: str) -> Optional[dict]:
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT value_json FROM system_config WHERE key = ?', (key,))
+            row = cursor.fetchone()
+            if row:
+                return json.loads(row[0])
+        except sqlite3.Error as e:
+            print(f"[LocalSQLiteDriver] Get config error: {e}")
+        return None

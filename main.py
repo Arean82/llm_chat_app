@@ -41,7 +41,7 @@ from utils.path_utils import get_resource_path
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from PySide6.QtWidgets import QApplication
+# Top-level PySide6 graphical imports removed for strict headless bypass (7.1.1)
 from PySide6.QtCore import QFile, QIODevice
 
 # from ui.main_window import MainWindowClass (Moved to main() for headless safety)

@@ -46,7 +46,34 @@ def migrate_database(source_driver: BaseStorageDriver, dest_driver: BaseStorageD
             migrated_count += 1
             
     if progress_callback:
-        progress_callback(f"Migration completed. Successfully transferred {migrated_count} of {total} threads.")
+        progress_callback("Extracting models from source schema...")
+    
+    models = source_driver.load_all_models()
+    model_count = len(models)
+    if progress_callback:
+        progress_callback(f"Found {model_count} models to migrate.")
+        
+    for model in models:
+        dest_driver.save_model(model.get("id"), model.get("provider", "nvidia"), model)
+        
+    if progress_callback:
+        progress_callback("Extracting system configurations from source schema...")
+        
+    # Since we don't have a get_all_configs in the base driver, we explicitly migrate known Phase 8 keys
+    # Example: user_prompts could be stored as "user_prompts"
+    known_config_keys = ["user_prompts"]
+    config_count = 0
+    for key in known_config_keys:
+        val = source_driver.get_config(key)
+        if val is not None:
+            dest_driver.set_config(key, val)
+            config_count += 1
+            
+    if progress_callback:
+        progress_callback(f"Migrated {config_count} system configurations.")
+
+    if progress_callback:
+        progress_callback(f"Migration completed. Successfully transferred {migrated_count} of {total} threads, {model_count} models, and {config_count} configs.")
         
     return migrated_count
 

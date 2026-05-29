@@ -954,25 +954,22 @@ class ChatViewWidget(QWidget):
 
             if user_content and assistant_content:
                 try:
-                    from workers.vector_indexer_worker import VectorIndexerWorker
+                    from logic.services.base_service import ServiceRegistry
+                    queue_broker = ServiceRegistry.get("queue_broker")
                     
-                    # 🛡️ INVARIANT 7: Enforce strict single-transaction write serialization for local Qdrant DB
-                    if hasattr(self, 'vector_sync_thread') and self.vector_sync_thread and self.vector_sync_thread.isRunning():
-                        print("[Dense RAG Ingest] Safeguard triggered: Parallel write suppressed to protect Qdrant lock serialization.")
-                    else:
-                        # Instantiated thread reference to bypass Python garbage collection
-                        self.vector_sync_thread = VectorIndexerWorker(
-                            llm_client=self.llm_client,
-                            user_text=user_content,
-                            assistant_text=assistant_content,
-                            conversation_id=self.current_conv_id,
-                            model_id=self.model_btn.text(),
-                            user_id=1,
-                            parent=self
-                        )
-                        self.vector_sync_thread.start()
+                    task_payload = {
+                        "task_type": "vector_index",
+                        "user_text": user_content,
+                        "assistant_text": assistant_content,
+                        "conversation_id": self.current_conv_id,
+                        "model_id": self.model_btn.text(),
+                        "user_id": 1
+                    }
+                    
+                    job_id = queue_broker.enqueue("quantum_tasks", task_payload)
+                    print(f"[Dense RAG Ingest] Job enqueued on 'quantum_tasks' queue successfully. Job ID: {job_id}")
                 except Exception as vec_e:
-                    print(f"[Dense RAG Ingest] Thread setup collision: {vec_e}")
+                    print(f"[Dense RAG Ingest] Failed to enqueue indexing job: {vec_e}")
 
         if is_new: self.refresh_history_list()
 

@@ -165,6 +165,21 @@ class PostgreSQLStorageDriver(BaseStorageDriver):
                 cursor.execute('ALTER TABLE conversations ADD COLUMN version INTEGER DEFAULT 1')
             except Exception:
                 conn.rollback()
+                
+            # Phase 8: JSON Config Purge
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS models (
+                    id TEXT PRIMARY KEY,
+                    provider TEXT,
+                    payload_json TEXT
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS system_config (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT
+                )
+            ''')
 
             conn.commit()
         finally:
@@ -299,3 +314,61 @@ class PostgreSQLStorageDriver(BaseStorageDriver):
         finally:
             cursor.close()
             self._return_connection(conn)
+
+    # --- Phase 8: JSON Config Purge ---
+    def save_model(self, model_id: str, provider: str, payload: dict) -> None:
+        payload_json = json.dumps(payload)
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO models (id, provider, payload_json) 
+                VALUES (%s, %s, %s) 
+                ON CONFLICT (id) DO UPDATE SET provider = EXCLUDED.provider, payload_json = EXCLUDED.payload_json
+            ''', (model_id, provider, payload_json))
+            conn.commit()
+        finally:
+            cursor.close()
+            self._return_connection(conn)
+
+    def load_all_models(self) -> List[dict]:
+        models = []
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('SELECT payload_json FROM models')
+            results = cursor.fetchall()
+            for row in results:
+                models.append(json.loads(row[0]))
+        finally:
+            cursor.close()
+            self._return_connection(conn)
+        return models
+
+    def set_config(self, key: str, value: dict) -> None:
+        value_json = json.dumps(value)
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO system_config (key, value_json) 
+                VALUES (%s, %s) 
+                ON CONFLICT (key) DO UPDATE SET value_json = EXCLUDED.value_json
+            ''', (key, value_json))
+            conn.commit()
+        finally:
+            cursor.close()
+            self._return_connection(conn)
+
+    def get_config(self, key: str) -> Optional[dict]:
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('SELECT value_json FROM system_config WHERE key = %s', (key,))
+            res = cursor.fetchone()
+            if res:
+                return json.loads(res[0])
+        finally:
+            cursor.close()
+            self._return_connection(conn)
+        return None
