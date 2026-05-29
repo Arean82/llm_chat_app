@@ -164,8 +164,9 @@ class LLMClient:
         if self.is_local_provider():
             return True  # Local providers (Ollama/LM Studio) don't require keys
         provider = self.get_current_provider()
-        api_key_attr = f"{provider}_api_key"
-        return bool(getattr(self, api_key_attr, None))
+        if provider == "google":
+            return bool(self.google_api_key)
+        return bool(self.api_key)
 
     def is_local_provider(self) -> bool:
         """Determines if the current provider is a local/offline service (No key required)."""

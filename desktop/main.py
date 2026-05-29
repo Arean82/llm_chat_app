@@ -260,7 +260,6 @@ def main():
         print("="*50)
         print("Usage: python main.py [options]")
         print("\nOptions:")
-        print("  --headless        Launch the standalone API Server (Port 5000)")
         print("  --cli             Launch the interactive terminal chat session")
         print("  --list-models     List all models currently in the local manifest")
         print("  --update-models   Fetch latest models from the active provider")
@@ -270,8 +269,7 @@ def main():
         print("  --help / -h       Show this detailed help message")
         
         print("\nExamples:")
-        print("  1. Configure Auth:  python main.py --headless (triggers prompt)")
-        print("  2. Sync Models:     python main.py --update-models")
+        print("  1. Sync Models:     python main.py --update-models")
         print("  3. View manifest:   python main.py --list-models")
         print("  4. CLI Chat:        python main.py --cli")
         print("  5. Relocate DB:     python main.py --migrate")
@@ -474,37 +472,9 @@ def main():
         return
 
     if env_mode == "HEADLESS" or "--headless" in sys.argv:
-        # --- HEADLESS EXECUTION PATH ---
-        from server.logic.llm_client import LLMClient
-        client = LLMClient()
-        client.hydrate()
-        
-        # 1. Initialize Headless Environment (CLI Auth + Manifest Sync)
-        from desktop.headless.engine import HeadlessEngine
-        try:
-            HeadlessEngine.ensure_initialized(client)
-        except Exception as e:
-            print(f"[!] Headless Setup Failed: {e}")
-            return
-
-        # 2. Start API Manager with Headless Handler
-        from server.logic.api_manager import ApiManager
-        api_manager = ApiManager(client, request_handler_callback=HeadlessEngine.request_handler)
-        
-        try:
-            api_manager.start_api_server()
-            print("[+] Headless Engine is live. Listening for IDE requests...")
-            print("[+] Press Ctrl+C to terminate safely.")
-            
-            import time
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("\n[*] Termination signal received.")
-        finally:
-            print("[*] Cleaning up headless services...")
-            api_manager.stop_api_server()
-            print("[+] Shutdown complete.")
+        print("[!] The standalone API server has been moved to 'server/run_server.py'.")
+        print("[!] Please run: python server/run_server.py")
+        sys.exit(1)
     else:
         # --- GUI EXECUTION PATH ---
         from desktop.ui.user_login import UserLoginClass

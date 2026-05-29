@@ -102,7 +102,7 @@ class SaaSSettingsDialogClass(QDialog):
         else:
             self.ui.cbo_host.setCurrentIndex(0)
             
-        self.ui.spn_port.setValue(self.config.get_int("NETWORK", "port", 8000))
+        self.ui.spn_port.setValue(self.config.get_int("NETWORK", "port", 8080))
         # Populate local access URL if present
         if hasattr(self.ui, 'lbl_address'):
             url = self.config.get_str("NETWORK", "local_access_url", "")

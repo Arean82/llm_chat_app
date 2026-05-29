@@ -131,9 +131,7 @@ class PostgresTenantDriver(BaseTenantDriver):
             # SEED DEFAULT SUPER ADMIN
             cur.execute("SELECT COUNT(*) FROM users")
             if cur.fetchone()[0] == 0:
-                import secrets
-                default_password = secrets.token_urlsafe(12)
-                admin_hash = BaseTenantDriver.hash_password(default_password)
+                admin_hash = BaseTenantDriver.hash_password("admin")
                 try:
                     cur.execute("""
                         INSERT INTO users (username, email, password_hash, api_key, key_type)
@@ -143,8 +141,7 @@ class PostgresTenantDriver(BaseTenantDriver):
                     print(f"===========================================================")
                     print(f"[SECURITY NOTIFICATION]: Default Super Admin Provisioned (PostgreSQL)")
                     print(f"Username: admin")
-                    print(f"Password: {default_password}")
-                    print(f"PLEASE SAVE THIS PASSWORD SECURELY.")
+                    print(f"Password: admin")
                     print(f"===========================================================")
                 except Exception as e:
                     conn.rollback()

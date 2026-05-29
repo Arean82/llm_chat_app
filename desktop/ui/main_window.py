@@ -465,7 +465,7 @@ class MainWindowClass(QMainWindow):
         cfg = SaaSConfigManager()
         enabled = cfg.get_bool("NETWORK", "enabled", True)
         host = cfg.get_str("NETWORK", "host", "127.0.0.1")
-        port = cfg.get_int("NETWORK", "port", 8000)
+        port = cfg.get_int("NETWORK", "port", 8080)
         
         if not enabled:
             if self.saas_server.running:

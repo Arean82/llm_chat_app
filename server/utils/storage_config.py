@@ -2,7 +2,7 @@
 import sys
 import os
 from pathlib import Path
-from server.utils.config_loader import JSONSettings
+from server.utils.config_loader import INISettings
 
 class StorageManager:
     _instance = None
@@ -92,14 +92,14 @@ class StorageManager:
             self.is_portable = False
             
     def get_active_settings(self):
-        """Fetch the JSON-based settings manager."""
+        """Fetch the INI-based settings manager."""
         if self._settings: return self._settings
         if self.is_portable or (self.get_exe_dir() / "portable.txt").exists():
-            config_path = self.get_exe_dir() / "resources" / "config.json"
+            config_path = self.get_exe_dir() / "resources" / "config.ini"
         else:
-            config_path = self.get_default_app_data_path() / "config.json"
+            config_path = self.get_default_app_data_path() / "config.ini"
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        self._settings = JSONSettings(config_path)
+        self._settings = INISettings(config_path)
         return self._settings
 
     def get_storage_root(self) -> Path:

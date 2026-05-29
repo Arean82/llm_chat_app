@@ -26,6 +26,9 @@ def create_saas_app():
     """
     Core Factory initializing the unified, multi-tenant API routing ecosystem.
     """
+    from server.utils.logger import AppLogger
+    logger = AppLogger.get_instance("web")
+    logger.info("Initializing SaaS Web Portal...")
     template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
     

@@ -22,13 +22,14 @@ class AppLogger:
     _instance = None
 
     @classmethod
-    def get_instance(cls):
+    def get_instance(cls, component_name="app"):
         if cls._instance is None:
-            cls._instance = AppLogger()
+            cls._instance = AppLogger(component_name)
         return cls._instance
 
-    def __init__(self):
-        self.logger = logging.getLogger("QuantumApp")
+    def __init__(self, component_name="app"):
+        self.component_name = component_name
+        self.logger = logging.getLogger(f"QuantumApp_{component_name}")
         self.logger.propagate = False
         self.formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         
@@ -55,9 +56,9 @@ class AppLogger:
         if enable_log:
             if not self.file_handler:
                 storage_root = StorageManager.get_instance().get_storage_root()
-                log_dir = storage_root / "logs"
+                log_dir = storage_root / "logs" / self.component_name
                 log_dir.mkdir(parents=True, exist_ok=True)
-                log_file = log_dir / "app.log"
+                log_file = log_dir / f"{self.component_name}.log"
                 
                 self.file_handler = logging.FileHandler(str(log_file), encoding='utf-8')
                 self.file_handler.setFormatter(self.formatter)

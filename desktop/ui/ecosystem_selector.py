@@ -16,7 +16,8 @@ from server.utils.path_utils import get_resource_path, get_app_settings
 from desktop.ui.shared_widgets import set_app_icon
 from server.utils.storage_config import StorageManager
 from desktop.ui.custom_provider_dialog import CustomProviderDialogClass
-from server.utils.security_utils import encrypt_data, decrypt_data, SESSION_MASTER_PASSWORD
+from server.utils.security_utils import encrypt_data, decrypt_data
+import server.utils.security_utils as security_utils
 
 class EcosystemSelectorClass(QDialog):
     def __init__(self, parent=None):
@@ -192,7 +193,7 @@ class EcosystemSelectorClass(QDialog):
             
             # Transparently decrypt key from vault link using session master key
             if stored_key:
-                stored_key = decrypt_data(stored_key, SESSION_MASTER_PASSWORD)
+                stored_key = decrypt_data(stored_key, security_utils.SESSION_MASTER_PASSWORD)
                 
             self.key_input.setText(stored_key or "")
         else:
@@ -217,10 +218,11 @@ class EcosystemSelectorClass(QDialog):
         settings.setValue("active_provider_id", p_id)
         settings.setValue(f"url_{p_id}", base_url)
         settings.setValue("base_url", base_url)
+        settings.sync()
         
         if requires_key:
             # Transparently encrypt key using session master password before saving to keyring
-            enc_key = encrypt_data(api_key, SESSION_MASTER_PASSWORD)
+            enc_key = encrypt_data(api_key, security_utils.SESSION_MASTER_PASSWORD)
             
             keyring.set_password("LLMChatApp", f"api_key_{p_id}", enc_key)
             keyring.set_password("LLMChatApp", "api_key", enc_key)
