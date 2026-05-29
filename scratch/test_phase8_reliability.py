@@ -9,8 +9,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import base class first to ensure ServiceRegistry is loaded
-from logic.services.base_service import BaseService, ServiceRegistry
-from logic.reliability.circuit_breaker import CircuitBreaker, CircuitBreakerState
+from server.logic.services.base_service import BaseService, ServiceRegistry
+from server.logic.reliability.circuit_breaker import CircuitBreaker, CircuitBreakerState
 
 class MockClient:
     def __init__(self):

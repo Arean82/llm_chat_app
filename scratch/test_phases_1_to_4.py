@@ -27,7 +27,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.services.base_service import ServiceRegistry
+from server.logic.services.base_service import ServiceRegistry
 
 
 class TestPhase1_RedisAndEventBus(unittest.TestCase):
@@ -229,8 +229,8 @@ class TestPhase4_DistributedMemory(unittest.TestCase):
 
     def test_4_6_compression_engine(self):
         """4.1.3 – Compression Engine: large session is compressed via AsyncWorker."""
-        from workers.async_worker import AsyncWorker
-        from logic.llm_client import get_mock_llm_client
+        from server.workers.async_worker import AsyncWorker
+        from server.logic.llm_client import get_mock_llm_client
 
         worker = AsyncWorker()
         worker.llm_client = get_mock_llm_client()

@@ -22,7 +22,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.services.base_service import ServiceRegistry
+from server.logic.services.base_service import ServiceRegistry
 
 
 # ==================================================================== #
@@ -153,8 +153,8 @@ class TestPhase4_DistributedMemory(unittest.TestCase):
         self.assertTrue(ServiceRegistry.get("embedding").is_initialized)
 
     def test_4_3_compression_engine(self):
-        from workers.async_worker import AsyncWorker
-        from logic.llm_client import get_mock_llm_client
+        from server.workers.async_worker import AsyncWorker
+        from server.logic.llm_client import get_mock_llm_client
         worker = AsyncWorker()
         worker.llm_client = get_mock_llm_client()
         sid = "ph4_comp"
@@ -182,7 +182,7 @@ class TestPhase5_1a_LogicPlanner(unittest.TestCase):
 
     def test_planner_no_llm_fallback(self):
         """Without an LLM client the planner returns a single generic step."""
-        from logic.agents.planner import AgentPlanner
+        from server.logic.agents.planner import AgentPlanner
         planner = AgentPlanner(llm_client=None)
         plan = planner.decompose("Build a REST API")
         self.assertEqual(len(plan), 1)
@@ -191,7 +191,7 @@ class TestPhase5_1a_LogicPlanner(unittest.TestCase):
 
     def test_planner_with_mock_llm(self):
         """With a mock LLM the planner parses the decomposed JSON into steps."""
-        from logic.agents.planner import AgentPlanner, PlanStep
+        from server.logic.agents.planner import AgentPlanner, PlanStep
 
         class MockLLMForPlanner:
             def _run_completion_internal(self, system_msg, user_msg, max_tokens, temperature, force_json=False):
@@ -211,7 +211,7 @@ class TestPhase5_1a_LogicPlanner(unittest.TestCase):
 
     def test_topological_order(self):
         """Execution order respects dependency graph."""
-        from logic.agents.planner import AgentPlanner, PlanStep
+        from server.logic.agents.planner import AgentPlanner, PlanStep
         s0 = PlanStep(step_id="s0", task_type="research")
         s1 = PlanStep(step_id="s1", task_type="code", depends_on=["s0"])
         s2 = PlanStep(step_id="s2", task_type="review", depends_on=["s1"])
@@ -223,7 +223,7 @@ class TestPhase5_1a_LogicPlanner(unittest.TestCase):
 
     def test_serialize_deserialize(self):
         """Plan round-trips through JSON serialization."""
-        from logic.agents.planner import AgentPlanner, PlanStep
+        from server.logic.agents.planner import AgentPlanner, PlanStep
         steps = [
             PlanStep(step_id="a", task_type="code", description="write code"),
             PlanStep(step_id="b", task_type="review", depends_on=["a"]),
@@ -236,7 +236,7 @@ class TestPhase5_1a_LogicPlanner(unittest.TestCase):
         self.assertEqual(restored[1].depends_on, ["a"])
 
     def test_mark_step(self):
-        from logic.agents.planner import AgentPlanner, PlanStep
+        from server.logic.agents.planner import AgentPlanner, PlanStep
         step = PlanStep(task_type="code")
         planner = AgentPlanner()
         planner.mark_step(step, "completed", output="done")
@@ -248,7 +248,7 @@ class TestPhase5_1b_ToolSandbox(unittest.TestCase):
     """5.1.b — Tool Execution Sandbox."""
 
     def setUp(self):
-        from logic.agents.sandbox import ToolExecutionSandbox
+        from server.logic.agents.sandbox import ToolExecutionSandbox
         self.sandbox = ToolExecutionSandbox()
 
     def test_safe_code_execution(self):
@@ -300,7 +300,7 @@ class TestPhase5_1c_AgentStateStore(unittest.TestCase):
         ServiceRegistry.shutdown_all()
 
     def setUp(self):
-        from logic.agents.agent_state_store import AgentStateStore
+        from server.logic.agents.agent_state_store import AgentStateStore
         self.store = AgentStateStore(self.redis_svc)
 
     def test_save_load_state(self):

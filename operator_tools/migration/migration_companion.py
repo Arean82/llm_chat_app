@@ -226,21 +226,21 @@ def _run_saas_tenant_relocation_cli():
     if confirm != 'y': return
     
     try:
-        from saas.tenant_drivers.turso_tenant_driver import TursoTenantDriver
+        from web.tenant_drivers.turso_tenant_driver import TursoTenantDriver
         source = TursoTenantDriver(db_name="saas_tenants.db")
         
         if driver == "postgres":
-            from saas.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
+            from web.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
             target = PostgresTenantDriver(credentials['pgConnStr'])
         elif driver == "mysql":
-            from saas.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
+            from web.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
             target = MySQLTenantDriver(
                 host=credentials['myHost'], port=int(credentials['myPort']),
                 user=credentials['myUser'], password=credentials['myPass'],
                 database=credentials['myDB']
             )
             
-        from logic.migration_bridge import migrate_saas_tenant_database, verify_saas_tenant_integrity
+        from server.logic.migration_bridge import migrate_saas_tenant_database, verify_saas_tenant_integrity
         
         count = migrate_saas_tenant_database(source, target, progress_callback=lambda log: print(f"  {log}"))
         print(f"✅ Relocated {count} tenants successfully.")
@@ -249,10 +249,10 @@ def _run_saas_tenant_relocation_cli():
         source_verify = TursoTenantDriver(db_name="saas_tenants.db")
         
         if driver == "postgres":
-            from saas.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
+            from web.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
             target_verify = PostgresTenantDriver(credentials['pgConnStr'])
         elif driver == "mysql":
-            from saas.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
+            from web.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
             target_verify = MySQLTenantDriver(
                 host=credentials['myHost'], port=int(credentials['myPort']),
                 user=credentials['myUser'], password=credentials['myPass'],
@@ -389,15 +389,15 @@ def run_gui_migration():
         def run(self):
             try:
                 self.log_msg.emit("Connecting to Source (Turso)...")
-                from saas.tenant_drivers.turso_tenant_driver import TursoTenantDriver
+                from web.tenant_drivers.turso_tenant_driver import TursoTenantDriver
                 source = TursoTenantDriver(db_name="saas_tenants.db")
                 
                 self.log_msg.emit("Connecting to Target dynamically...")
                 if self.driver == "postgres":
-                    from saas.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
+                    from web.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
                     target = PostgresTenantDriver(self.credentials['pgConnStr'])
                 elif self.driver == "mysql":
-                    from saas.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
+                    from web.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
                     target = MySQLTenantDriver(
                         host=self.credentials['myHost'], port=int(self.credentials['myPort']),
                         user=self.credentials['myUser'], password=self.credentials['myPass'],
@@ -407,7 +407,7 @@ def run_gui_migration():
                     self.finished.emit(False, "Unsupported target driver.")
                     return
                     
-                from logic.migration_bridge import migrate_saas_tenant_database, verify_saas_tenant_integrity
+                from server.logic.migration_bridge import migrate_saas_tenant_database, verify_saas_tenant_integrity
                 count = migrate_saas_tenant_database(source, target, progress_callback=lambda m: self.log_msg.emit(m))
                 self.prog_upd.emit(70)
                 
@@ -415,10 +415,10 @@ def run_gui_migration():
                 source_verify = TursoTenantDriver(db_name="saas_tenants.db")
                 
                 if self.driver == "postgres":
-                    from saas.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
+                    from web.tenant_drivers.postgres_tenant_driver import PostgresTenantDriver
                     target_verify = PostgresTenantDriver(self.credentials['pgConnStr'])
                 elif self.driver == "mysql":
-                    from saas.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
+                    from web.tenant_drivers.mysql_tenant_driver import MySQLTenantDriver
                     target_verify = MySQLTenantDriver(
                         host=self.credentials['myHost'], port=int(self.credentials['myPort']),
                         user=self.credentials['myUser'], password=self.credentials['myPass'],

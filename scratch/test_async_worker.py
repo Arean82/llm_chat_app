@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("QuantumQueueTest")
 
-from logic.services.base_service import ServiceRegistry
+from server.logic.services.base_service import ServiceRegistry
 
 def test_enqueue_dequeue():
     logger.info("=== TEST 1: Enqueue and Dequeue (FIFO) ===")
@@ -73,7 +73,7 @@ def test_worker_and_dlq_redirection():
     logger.info(f"Enqueued bad task: {job_id}")
     
     # Instantiate the worker in a separate thread so we can push tasks and watch it process
-    from workers.async_worker import AsyncWorker
+    from server.workers.async_worker import AsyncWorker
     worker = AsyncWorker()
     
     # Dynamically monkeypatch the worker's _run_loop to stop after processing/failing the task

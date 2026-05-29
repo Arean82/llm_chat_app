@@ -16,9 +16,9 @@ import string
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.services.short_term_memory import ShortTermMemoryService
-from logic.services.base_service import ServiceRegistry
-from workers.async_worker import AsyncWorker
+from server.logic.services.short_term_memory import ShortTermMemoryService
+from server.logic.services.base_service import ServiceRegistry
+from server.workers.async_worker import AsyncWorker
 
 
 class TestPhase4Memory(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestPhase4Memory(unittest.TestCase):
         # Create an AsyncWorker instance (no need to start the daemon loop)
         cls.worker = AsyncWorker()
         # Hydrate LLM client inside worker (required for summary generation)
-        from logic.llm_client import get_mock_llm_client
+        from server.logic.llm_client import get_mock_llm_client
         cls.worker.llm_client = get_mock_llm_client()
 
     @classmethod

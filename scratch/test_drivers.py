@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 from datetime import datetime
 
-from logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
-from logic.conversation_manager import ConversationManager
+from server.logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
+from server.logic.conversation_manager import ConversationManager
 
 class TestStorageDrivers(unittest.TestCase):
     def setUp(self):
@@ -102,7 +102,7 @@ class TestStorageDrivers(unittest.TestCase):
             print("[LibSQL Test] Skipping LibSQLStorageDriver test. 'libsql-client' package is not installed.")
             return
 
-        from logic.storage_drivers.libsql_driver import LibSQLStorageDriver
+        from server.logic.storage_drivers.libsql_driver import LibSQLStorageDriver
         
         # Use file scheme to test LibSQL driver locally without needing active Cloud Turso DB URL
         driver = LibSQLStorageDriver(url="file:./scratch/test_libsql.db")
@@ -162,7 +162,7 @@ class TestStorageDrivers(unittest.TestCase):
         """Tests PostgreSQLStorageDriver using a mocked connection to verify query compliance."""
         print("\n--- Running PostgreSQLStorageDriver Mock Tests ---")
         from unittest.mock import MagicMock, patch
-        from logic.storage_drivers.postgres_driver import PostgreSQLStorageDriver
+        from server.logic.storage_drivers.postgres_driver import PostgreSQLStorageDriver
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()

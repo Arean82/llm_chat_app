@@ -1,0 +1,226 @@
+# logic/storage_drivers/libsql_driver.py
+import json
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+from server.logic.storage_drivers.base_driver import BaseStorageDriver, ConcurrencyError
+
+class LibSQLStorageDriver(BaseStorageDriver):
+    """
+    Concrete libSQL / Turso cloud storage driver implementing BaseStorageDriver.
+    Connects to Turso cloud database-per-tenant shards over libSQL with edge replication.
+    """
+
+    def __init__(self, url: str, auth_token: str = None):
+        """
+        Initializes the libSQL driver.
+
+        Args:
+            url (str): Connection URL (e.g., libsql://database-name.turso.io).
+            auth_token (str): Optional. Turso database authentication token.
+        """
+        self.url = url
+        self.auth_token = auth_token
+        
+        # Verify package availability dynamically
+        try:
+            import libsql_client
+        except ImportError:
+            raise ImportError(
+                "[LibSQLStorageDriver] 'libsql-client' package is required. "
+                "Please run: pip install libsql-client"
+            )
+            
+        self.init_db()
+
+    def init_db(self) -> None:
+        """
+        Initializes the libSQL database tables and high-speed timestamp indices.
+        Includes migration for the OCC `version` column.
+        """
+        import libsql_client
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            # Create conversations schema
+            client.execute('''
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT,
+                    timestamp TEXT,
+                    model_id TEXT,
+                    messages_json TEXT,
+                    messages_html TEXT,
+                    version INTEGER DEFAULT 1
+                )
+            ''')
+            
+            # Index high-traffic timestamp column to preserve sidebar speed over scale
+            client.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON conversations(timestamp);')
+            
+            # Migration check: Ensure messages_html column exists for older database migrations
+            try:
+                client.execute('ALTER TABLE conversations ADD COLUMN messages_html TEXT')
+            except Exception:
+                pass
+
+            # Migration check: Ensure version column exists for OCC (Phase 6.3.1)
+            try:
+                client.execute('ALTER TABLE conversations ADD COLUMN version INTEGER DEFAULT 1')
+            except Exception:
+                pass
+
+            # Phase 8: JSON Config Purge
+            client.execute('''
+                CREATE TABLE IF NOT EXISTS models (
+                    id TEXT PRIMARY KEY,
+                    provider TEXT,
+                    payload_json TEXT
+                )
+            ''')
+            client.execute('''
+                CREATE TABLE IF NOT EXISTS system_config (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT
+                )
+            ''')
+
+    def save_conversation(self, conversation: list, title: str = "New Conversation", 
+                          conv_id: int = None, model_id: str = "", 
+                          messages_html: str = None, timestamp: str = None,
+                          expected_version: int = None) -> Optional[int]:
+        """
+        Saves or updates a conversation thread in the libSQL/Turso database.
+        Supports Optimistic Concurrency Control (OCC) via the expected_version parameter.
+        """
+        import libsql_client
+        messages_json = json.dumps(conversation)
+        if not timestamp:
+            timestamp = datetime.now().isoformat()
+            
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            if conv_id is not None:
+                if expected_version is not None:
+                    # OCC-protected update: only succeed if stored version matches
+                    res = client.execute('''
+                        UPDATE conversations 
+                        SET title = ?, timestamp = ?, messages_json = ?, messages_html = ?,
+                            version = version + 1
+                        WHERE id = ? AND version = ?
+                    ''', (title, timestamp, messages_json, messages_html, conv_id, expected_version))
+
+                    if res.rows_affected == 0:
+                        raise ConcurrencyError(
+                            f"Concurrency conflict on conversation {conv_id}: "
+                            f"expected version {expected_version} but row was modified by another writer."
+                        )
+                else:
+                    # Standard update (no OCC enforcement) — backwards compatible
+                    client.execute('''
+                        UPDATE conversations 
+                        SET title = ?, timestamp = ?, messages_json = ?, messages_html = ?,
+                            version = version + 1
+                        WHERE id = ?
+                    ''', (title, timestamp, messages_json, messages_html, conv_id))
+            else:
+                # Insert new conversation record and fetch last inserted ID within a single transaction
+                with client.transaction() as tx:
+                    tx.execute('''
+                        INSERT INTO conversations (title, timestamp, model_id, messages_json, messages_html, version)
+                        VALUES (?, ?, ?, ?, ?, 1)
+                    ''', (title, timestamp, model_id, messages_json, messages_html))
+                    
+                    res = tx.execute("SELECT last_insert_rowid()")
+                    if res.rows:
+                        conv_id = int(res.rows[0][0])
+                    tx.commit()
+                    
+        return conv_id
+
+    def load_conversation(self, conv_id: int) -> Optional[dict]:
+        """
+        Loads a single conversation thread from the libSQL database by its ID.
+        Includes the OCC version number for concurrency-safe write-back operations.
+        """
+        import libsql_client
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            res = client.execute(
+                'SELECT title, timestamp, model_id, messages_json, messages_html, version FROM conversations WHERE id = ?', 
+                (conv_id,)
+            )
+            if res.rows:
+                row = res.rows[0]
+                return {
+                    "id": conv_id,
+                    "title": row[0],
+                    "timestamp": row[1],
+                    "model_id": row[2],
+                    "messages": json.loads(row[3]),
+                    "messages_html": row[4],
+                    "version": row[5] if row[5] is not None else 1
+                }
+        return None
+
+    def get_all_conversations(self) -> List[tuple]:
+        """
+        Retrieves a lightweight summary list of all conversations, ordered by most recent.
+        """
+        import libsql_client
+        rows = []
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            res = client.execute('SELECT id, title, timestamp FROM conversations ORDER BY timestamp DESC')
+            for row in res.rows:
+                rows.append((int(row[0]), str(row[1]), str(row[2])))
+        return rows
+
+    def delete_conversation(self, conv_id: int) -> None:
+        """
+        Deletes a specific conversation thread and all its history from the database by its ID.
+        """
+        import libsql_client
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            client.execute('DELETE FROM conversations WHERE id = ?', (conv_id,))
+
+    def clear_all(self) -> None:
+        """
+        Wipes all conversations from the database tables. Used for global cleanups.
+        """
+        import libsql_client
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            client.execute('DELETE FROM conversations')
+
+    # --- Phase 8: JSON Config Purge ---
+    def save_model(self, model_id: str, provider: str, payload: dict) -> None:
+        import libsql_client
+        payload_json = json.dumps(payload)
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            client.execute('''
+                INSERT INTO models (id, provider, payload_json) 
+                VALUES (?, ?, ?) 
+                ON CONFLICT(id) DO UPDATE SET provider = excluded.provider, payload_json = excluded.payload_json
+            ''', (model_id, provider, payload_json))
+
+    def load_all_models(self) -> List[dict]:
+        import libsql_client
+        models = []
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            res = client.execute('SELECT payload_json FROM models')
+            for row in res.rows:
+                models.append(json.loads(row[0]))
+        return models
+
+    def set_config(self, key: str, value: dict) -> None:
+        import libsql_client
+        value_json = json.dumps(value)
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            client.execute('''
+                INSERT INTO system_config (key, value_json) 
+                VALUES (?, ?) 
+                ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json
+            ''', (key, value_json))
+
+    def get_config(self, key: str) -> Optional[dict]:
+        import libsql_client
+        with libsql_client.create_client_sync(self.url, auth_token=self.auth_token) as client:
+            res = client.execute('SELECT value_json FROM system_config WHERE key = ?', (key,))
+            if res.rows:
+                return json.loads(res.rows[0][0])
+        return None

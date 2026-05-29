@@ -8,8 +8,8 @@ import os
 # Add project root to path for local imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from saas.tenant_db import TenantDatabaseManager
-from logic.llm_client import LLMClient
+from web.tenant_db import TenantDatabaseManager
+from server.logic.llm_client import LLMClient
 
 # Ensure default admin is provisioned
 db = TenantDatabaseManager()

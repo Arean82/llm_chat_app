@@ -10,9 +10,9 @@ import unittest
 # Ensure root workspace is in sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.services import ServiceRegistry
-from saas.app import create_saas_app
-from saas.tenant_db import TenantDatabaseManager
+from server.logic.services import ServiceRegistry
+from web.app import create_saas_app
+from web.tenant_db import TenantDatabaseManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] (%(threadName)s) %(message)s")
 logger = logging.getLogger("TestPhase3Gateway")
@@ -23,18 +23,18 @@ class TestPhase3Gateway(unittest.TestCase):
         logger.info("Setting up Phase 3 Integration Gateway Test Suite...")
         
         # We explicitly mock/live start redis first
-        from logic.services.redis_manager import RedisManager
+        from server.logic.services.redis_manager import RedisManager
         redis_mgr = RedisManager()
         redis_mgr.enabled = False # Force Mock mode for clean isolated test runs
         redis_mgr.use_mock = True
         redis_mgr.initialize()
         ServiceRegistry.register("redis", redis_mgr)
         
-        from logic.services.rate_limiter_service import RateLimiterService
-        from logic.services.security_service import SecurityService
-        from logic.services.cognitive_router_service import CognitiveRouterService
-        from logic.services.auth_service import AuthService
-        from logic.reliability.circuit_breaker import CircuitBreaker
+        from server.logic.services.rate_limiter_service import RateLimiterService
+        from server.logic.services.security_service import SecurityService
+        from server.logic.services.cognitive_router_service import CognitiveRouterService
+        from server.logic.services.auth_service import AuthService
+        from server.logic.reliability.circuit_breaker import CircuitBreaker
         
         # Hydrate all services
         ServiceRegistry.initialize_all()
@@ -271,7 +271,7 @@ class TestPhase3Gateway(unittest.TestCase):
         self.circuit_breaker.is_failover_enabled = True
         
         # Test directly calling the circuit breaker's execution harness
-        from logic.llm_client import LLMClient
+        from server.logic.llm_client import LLMClient
         llm_client = LLMClient()
         llm_client.set_model("meta/llama-3.1-8b-instruct")
         

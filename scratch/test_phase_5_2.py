@@ -5,8 +5,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.services.base_service import ServiceRegistry
-from logic.agents import ResearchAgent, CodingAgent, ReviewAgent, WorkflowEngine, PlanStep
+from server.logic.services.base_service import ServiceRegistry
+from server.logic.agents import ResearchAgent, CodingAgent, ReviewAgent, WorkflowEngine, PlanStep
 
 class TestPhase5_2(unittest.TestCase):
     @classmethod

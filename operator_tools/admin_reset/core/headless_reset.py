@@ -10,7 +10,7 @@ else:
 
 sys.path.insert(0, root_dir)
 
-from saas.tenant_db import TenantDatabaseManager
+from web.tenant_db import TenantDatabaseManager
 
 def run_headless_reset():
     print("======================================================================")

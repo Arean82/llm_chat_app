@@ -10,11 +10,11 @@ from unittest.mock import patch, MagicMock
 # Ensure the app can be imported
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
-from logic.migration_bridge import migrate_database
-from logic.model_io import load_all_models, save_all_models
-from logic.services.base_service import ServiceRegistry
-from utils.path_utils import get_models_directory_path, get_resource_path
+from server.logic.storage_drivers.sqlite_driver import LocalSQLiteDriver
+from server.logic.migration_bridge import migrate_database
+from server.logic.model_io import load_all_models, save_all_models
+from server.logic.services.base_service import ServiceRegistry
+from server.utils.path_utils import get_models_directory_path, get_resource_path
 
 class TestPhase8DataMigration(unittest.TestCase):
     def setUp(self):
@@ -37,7 +37,7 @@ class TestPhase8DataMigration(unittest.TestCase):
         self.dest_driver.close_pool()
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch("logic.model_io.get_models_directory")
+    @patch("server.logic.model_io.get_models_directory")
     def test_8_1_2_json_purge_and_migration_hook(self, mock_get_models_dir):
         """Test that legacy JSON files are parsed into the DB and then deleted."""
         # Create a mock models directory

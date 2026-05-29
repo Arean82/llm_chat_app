@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from utils.hybrid_ssh_tunnel import HybridSSHTunnel
+from server.utils.hybrid_ssh_tunnel import HybridSSHTunnel
 
 class TestPhase7(unittest.TestCase):
     def test_7_1_2_hybrid_ssh_tunnel_init(self):
@@ -25,10 +25,10 @@ class TestPhase7(unittest.TestCase):
     def test_7_1_1_headless_main_imports(self):
         """Test that main.py does not import PySide6 globally."""
         # By removing it from sys.modules, we force a clean load
-        if "main" in sys.modules:
-            del sys.modules["main"]
+        if "desktop.main" in sys.modules:
+            del sys.modules["desktop.main"]
             
-        import main
+        import desktop.main as main
         
         # Check if PySide6.QtWidgets was loaded globally
         # (It shouldn't be, because it's now wrapped in the GUI block)

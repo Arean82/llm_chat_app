@@ -8,7 +8,7 @@ import os
 # Add root folder to python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from logic.services.conversation_service import TokenBucketRateLimiter
+from server.logic.services.conversation_service import TokenBucketRateLimiter
 
 def run_rate_limit_test():
     print("==================================================")

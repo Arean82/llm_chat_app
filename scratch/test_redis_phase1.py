@@ -16,8 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("QuantumRedisTest")
 
-from logic.services.base_service import ServiceRegistry
-from utils.path_utils import get_app_settings
+from server.logic.services.base_service import ServiceRegistry
+from server.utils.path_utils import get_app_settings
 
 def test_connection_pool_and_thread_safety():
     logger.info("=== TEST 1: Thread-Safe Redis Connection Pool ===")

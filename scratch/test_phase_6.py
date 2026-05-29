@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from logic.services.base_service import ServiceRegistry
+from server.logic.services.base_service import ServiceRegistry
 
 class TestPhase6(unittest.TestCase):
     @classmethod
@@ -51,7 +51,7 @@ class TestPhase6(unittest.TestCase):
         
     def test_6_1_3_conversation_repository(self):
         """Test ConversationRepository wraps StorageService correctly."""
-        from logic.repositories.conversation_repository import ConversationRepository
+        from server.logic.repositories.conversation_repository import ConversationRepository
         repo = ConversationRepository("test_tenant")
         
         # Save a conversation
