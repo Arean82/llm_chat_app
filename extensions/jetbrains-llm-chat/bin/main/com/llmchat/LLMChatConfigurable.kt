@@ -17,7 +17,7 @@ class LLMChatConfigurable : Configurable {
     private val apiTokenField = JPasswordField()
 
     override fun getDisplayName(): String {
-        return "LLM Chat App"
+        return "Synora Studio"
     }
 
     override fun createComponent(): JComponent? {
@@ -27,7 +27,7 @@ class LLMChatConfigurable : Configurable {
         c.insets = Insets(5, 5, 5, 5)
 
         // Title Label
-        val titleLabel = JLabel("LLM Chat App Settings Configuration")
+        val titleLabel = JLabel("Synora Studio Settings Configuration")
         titleLabel.font = titleLabel.font.deriveFont(java.awt.Font.BOLD, 14f)
         c.gridx = 0
         c.gridy = 0

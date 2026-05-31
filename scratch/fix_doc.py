@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-doc_path = r'c:\Users\user\OneDrive\Desktop\python\llm_chat_app\WORKING_DOCUMENT_V8_ATTAINMENT.md'
+doc_path = r'c:\Users\user\OneDrive\Desktop\python\synora_studio\WORKING_DOCUMENT_V8_ATTAINMENT.md'
 
 # 1. Restore file from git to undo the corruption
 subprocess.run(['git', 'checkout', 'WORKING_DOCUMENT_V8_ATTAINMENT.md'], cwd=os.path.dirname(doc_path))
@@ -44,7 +44,7 @@ Phase 11 strips environment-setup logic out of the main desktop client, ensuring
 
 **Technical Notes (Phase 11):**
 * **Zero Client Pollution**: Moving gigabytes of vector caches or modifying service registries is inherently risky to perform while the main app is running. Doing this from the standalone operator suite guarantees that the main application is cleanly shut down, preventing OS file locks and database corruption.
-* **Separation of Concerns**: End-users receive the `single` build (just `LLM Chat App.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.
+* **Separation of Concerns**: End-users receive the `single` build (just `Synora Studio.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.
 """
 
 text = text.strip() + "\n" + phase_11

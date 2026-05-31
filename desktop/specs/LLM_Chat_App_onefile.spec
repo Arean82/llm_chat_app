@@ -25,6 +25,6 @@ pyz_main = PYZ(a_main.pure, a_main.zipped_data, cipher=block_cipher)
 # OneFile Executables
 exe_main = EXE(
     pyz_main, a_main.scripts, a_main.binaries, a_main.zipfiles, a_main.datas, [],
-    name='LLM_Chat_App', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, upx_exclude=[],
+    name='Synora_Studio', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, upx_exclude=[],
     runtime_tmpdir=None, console=False, disable_windowed_traceback=False, argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None,
 )

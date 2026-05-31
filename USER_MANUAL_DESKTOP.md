@@ -1,6 +1,6 @@
-# 🖥️ LLM Chat App - Desktop User Guide
+# 🖥️ Synora Studio - Desktop User Guide
 
-Welcome to the **LLM Chat App Desktop Client**, a sleek, high-performance workstation for interacting with the world's most powerful AI ecosystems including OpenAI, Google Gemini, Anthropic, Ollama, NVIDIA NIM, Groq, and custom local endpoints.
+Welcome to the **Synora Studio Desktop Client**, a sleek, high-performance workstation for interacting with the world's most powerful AI ecosystems including OpenAI, Google Gemini, Anthropic, Ollama, NVIDIA NIM, Groq, and custom local endpoints.
 
 ---
 
@@ -14,7 +14,7 @@ python main.py
 *(You can also use the packaged desktop shortcut if provided by your administrator).*
 
 ### 🔑 The Secure Admin Login Gate
-Upon launching the client, you will be greeted by the **Quantum Admin Login Gateway**:
+Upon launching the client, you will be greeted by the **Synora Admin Login Gateway**:
 1. Log in with your Super Admin credentials (`admin` / `admin` by default). Your credentials are secure and validated against the partitioned database.
 2. The login screen features a high-fidelity vector eyelash eye toggle button directly inside the password field to securely show or hide your typed password.
 

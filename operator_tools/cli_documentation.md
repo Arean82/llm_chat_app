@@ -54,7 +54,7 @@ When executed, the tool bypasses PySide6/GUI dependencies completely and directl
 ======================================================================
  🚀 UNIVERSAL MASTER PASSWORD RESET SEQUENCE (CLI MODE)
 ======================================================================
-Resolving project root directory: C:\path\to\llm_chat_app
+Resolving project root directory: C:\path\to\synora_studio
 Detecting active database driver from 'saas/config.ini'...
 
 ✅ Successfully synchronized default Master Credentials across ALL ecosystems!

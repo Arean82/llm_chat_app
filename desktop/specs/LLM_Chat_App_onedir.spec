@@ -25,7 +25,7 @@ pyz_main = PYZ(a_main.pure, a_main.zipped_data, cipher=block_cipher)
 # OneDir EXEs
 exe_main = EXE(
     pyz_main, a_main.scripts, [], exclude_binaries=True,
-    name='LLM_Chat_App', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, console=False, disable_windowed_traceback=False, argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None,
+    name='Synora_Studio', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, console=False, disable_windowed_traceback=False, argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None,
 )
 
 coll = COLLECT(
@@ -33,5 +33,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='LLM_Chat_App'
+    name='Synora_Studio'
 )

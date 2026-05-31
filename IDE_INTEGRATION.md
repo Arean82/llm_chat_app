@@ -6,7 +6,7 @@
 
 ## Prerequisites
 
-1. **LLM Chat App must be running** with API server enabled (Tools → Universal API Server).
+1. **Synora Studio must be running** with API server enabled (Tools → Universal API Server).
 2. ✅ icon indicates server is running on `http://localhost:5000`.
 3. 🔐 **API Key Management:** You can view, disable, or regenerate your Local API Key using the GUI Settings, the new CLI command `python main.py --api-manager`, or remotely via the SaaS Admin Dashboard (Node Config → Local API Control).
 
@@ -22,7 +22,7 @@
 ```json
 {
   "models": [{
-    "title": "LLM Chat App",
+    "title": "Synora Studio",
     "provider": "openai",
     "model": "any",
     "apiBase": "http://localhost:5000/v1",
@@ -35,7 +35,7 @@
 
 ### Option B: Official LLM Chat Extension (V2.0.0 Multi-Tenant & Onboarding)
 
-1. Download **[vscode-llm-chat-2.0.0.vsix](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/extension/vscode-llm-chat-2.0.0.vsix)** from the `extension/` folder in the project root.
+1. Download **[vscode-llm-chat-2.0.0.vsix](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/extension/vscode-llm-chat-2.0.0.vsix)** from the `extension/` folder in the project root.
 2. VS Code → Extensions (Ctrl+Shift+X) → `...` → **Install from VSIX...**
 3. On first load, if unconfigured or unreachable, it launches the interactive **Onboarding Gateway** panel. Enter your server URL (e.g. `http://localhost:5000` for offline local, or `http://localhost:8888` for SaaS Multi-Tenant Cloud), log in or register, and the plugin will securely save your Bearer Passport token directly inside VS Code's native OS keychain secrets vault.
 4. You can manually adjust these inside VS Code Preferences under the `llmChat.apiUrl` and `llmChat.apiToken` settings.
@@ -70,7 +70,7 @@
 
 ### Installation & Onboarding (V2.0.0 Multi-Tenant & Onboarding)
 
-1. Download **[jetbrains-llm-chat-2.0.0.zip](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/extension/jetbrains-llm-chat-2.0.0.zip)** from the `extension/` folder in the project root.
+1. Download **[jetbrains-llm-chat-2.0.0.zip](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/extension/jetbrains-llm-chat-2.0.0.zip)** from the `extension/` folder in the project root.
 2. **File → Settings → Plugins** (or **Ctrl+Alt+S**)
 3. Click ⚙️ → **Install Plugin from Disk...** and select the `.zip` file.
 4. Restart your IDE.
@@ -137,9 +137,9 @@ A dedicated Visual Studio 2022 extension can be built using the same API. Reques
 
 | Issue | Solution |
 |-------|----------|
-| "Failed to connect" | Ensure LLM Chat App is running with API server enabled (✅ icon) |
+| "Failed to connect" | Ensure Synora Studio is running with API server enabled (✅ icon) |
 | Port 5000 conflict | Port 5000 is mandatory for most integrations. On macOS, disable **AirPlay Receiver** in System Settings. On Windows, check for other web services. |
-| No response | Check that a model is selected in LLM Chat App |
+| No response | Check that a model is selected in Synora Studio |
 | Model capability mismatch | Active chat selection popup strictly filters for Chat models (`type == "chat"`). For embeddings or rerankers, the server exposes them directly through specialized endpoints. |
 | Timeout | Increase timeout in your IDE settings or check network connectivity |
 

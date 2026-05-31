@@ -143,7 +143,7 @@ class MySQLTenantDriver(BaseTenantDriver):
                     cur.execute("""
                         INSERT INTO users (username, email, password_hash, api_key, key_type)
                         VALUES (%s, %s, %s, %s, %s)
-                    """, ("admin", "admin@quantum-saas.local", admin_hash, "admin_master_passport", "admin_funded"))
+                    """, ("admin", "admin@synora-studio.local", admin_hash, "admin_master_passport", "admin_funded"))
                     conn.commit()
                     print(f"===========================================================")
                     print(f"[SECURITY NOTIFICATION]: Default Super Admin Provisioned (MySQL)")
@@ -338,13 +338,13 @@ class MySQLTenantDriver(BaseTenantDriver):
             if row:
                 cur.execute("""
                     UPDATE users 
-                    SET password_hash = %s, api_key = 'admin_master_passport', email = 'admin@quantum-saas.local', key_type = 'admin_funded', status = 'active'
+                    SET password_hash = %s, api_key = 'admin_master_passport', email = 'admin@synora-studio.local', key_type = 'admin_funded', status = 'active'
                     WHERE username = 'admin'
                 """, (admin_hash,))
             else:
                 cur.execute("""
                     INSERT INTO users (username, email, password_hash, api_key, key_type, status)
-                    VALUES ('admin', 'admin@quantum-saas.local', %s, 'admin_master_passport', 'admin_funded', 'active')
+                    VALUES ('admin', 'admin@synora-studio.local', %s, 'admin_master_passport', 'admin_funded', 'active')
                 """, (admin_hash,))
             conn.commit()
             return True

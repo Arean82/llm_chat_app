@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Quantum Admin Login</string>
+   <string>Synora Admin Login</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QDialog {
@@ -64,7 +64,7 @@ QPushButton {
       <string notr="true">font-size: 16px; font-weight: bold; color: #0078d4; margin-bottom: 5px;</string>
      </property>
      <property name="text">
-      <string>🔑 Quantum Admin Login</string>
+      <string>🔑 Synora Admin Login</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>

@@ -17,7 +17,7 @@ async function getApiConfig(context: vscode.ExtensionContext): Promise<{ apiUrl:
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('LLM Chat App extension activated');
+    console.log('Synora Studio extension activated');
 
     // 1. Inline suggestions (triggered by typing)
     const inlineProvider: vscode.InlineCompletionItemProvider = {
@@ -224,7 +224,7 @@ export function activate(context: vscode.ExtensionContext) {
     const onboardCommand = vscode.commands.registerCommand('llmchat.onboard', () => {
         const panel = vscode.window.createWebviewPanel(
             'llmChatOnboard',
-            'Quantum SaaS: Onboard Workspace',
+            'Synora Studio SaaS: Onboard Workspace',
             vscode.ViewColumn.One,
             { enableScripts: true }
         );
@@ -371,7 +371,7 @@ async function sendToAPI(apiUrl: string, authHeader: string, content: string, ti
         panel.webview.html = getResponseHtml(aiResponse, title);
         
     } catch (error: any) {
-        vscode.window.showErrorMessage(`Failed to connect to LLM Chat App: ${error.message}`);
+        vscode.window.showErrorMessage(`Failed to connect to Synora Studio: ${error.message}`);
     }
 }
 

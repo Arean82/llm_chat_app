@@ -1,10 +1,10 @@
 #!/bin/bash
 # build_mac.sh - macOS PKG Installer Pipeline
 
-APP_NAME="LLM Chat App"
+APP_NAME="Synora Studio"
 BUNDLE_NAME="$APP_NAME.app"
 VERSION="8.0.0"
-IDENTIFIER="com.arean82.llmchatapp"
+IDENTIFIER="com.arean82.synorastudio"
 OUTPUT_PKG="LLM_Chat_App_Installer.pkg"
 
 echo "Building macOS .pkg for $APP_NAME v$VERSION..."

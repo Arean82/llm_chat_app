@@ -1,7 +1,7 @@
 # utils/constants.py
-# This file contains constant values used throughout the LLM Chat App.
+# This file contains constant values used throughout the Synora Studio.
 
-APP_NAME = "LLM Chat App"
+APP_NAME = "Synora Studio"
 APP_VERSION = "8.0.0"
 APP_AUTHOR = "Arean Narrayan"
 

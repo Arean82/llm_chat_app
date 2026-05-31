@@ -2,18 +2,18 @@
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-1234567890AB}
-AppName=LLM Chat App
+AppName=Synora Studio
 AppVersion=8.0.0
 AppPublisher=Arean Narrayan
-DefaultDirName={commonpf}\LLM Chat App
-DefaultGroupName=LLM Chat App
+DefaultDirName={commonpf}\Synora Studio
+DefaultGroupName=Synora Studio
 DisableProgramGroupPage=yes
 OutputDir=installer_output
 OutputBaseFilename=LLM_Chat_App_Setup_v8.0.0
 Compression=lzma2/ultra64
 SolidCompression=yes
 SetupIconFile=resources\app_icon.ico
-UninstallDisplayIcon={app}\LLM Chat App.exe
+UninstallDisplayIcon={app}\Synora Studio.exe
 WizardStyle=modern
 PrivilegesRequired=admin
 CloseApplications=yes
@@ -32,10 +32,10 @@ Source: "dist\LLM_Chat_dir\*"; DestDir: "{app}"; Flags: ignoreversion recursesub
 
 [Icons]
 ; Create Desktop Shortcut
-Name: "{commondesktop}\LLM Chat App"; Filename: "{app}\LLM Chat App.exe"; IconFilename: "{app}\LLM Chat App.exe"
+Name: "{commondesktop}\Synora Studio"; Filename: "{app}\Synora Studio.exe"; IconFilename: "{app}\Synora Studio.exe"
 ; Create Start Menu Shortcut
-Name: "{commonprograms}\LLM Chat App"; Filename: "{app}\LLM Chat App.exe"; IconFilename: "{app}\LLM Chat App.exe"
+Name: "{commonprograms}\Synora Studio"; Filename: "{app}\Synora Studio.exe"; IconFilename: "{app}\Synora Studio.exe"
 
 [Run]
 ; Optional: Let user launch the app immediately after installing
-Filename: "{app}\LLM Chat App.exe"; Description: "Launch LLM Chat App"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Synora Studio.exe"; Description: "Launch Synora Studio"; Flags: nowait postinstall skipifsilent

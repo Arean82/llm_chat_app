@@ -4,7 +4,7 @@ Welcome to the **SaaS Platform User Guide**. This document explains how you can 
 
 ## 1. Registration and Passport Keys
 
-To access the LLM Chat App network, you must create an account. Once registered, your account is secured by a unique **API Passport Key**. This key is an encrypted token mapped strictly to your tenant identity.
+To access the Synora Studio network, you must create an account. Once registered, your account is secured by a unique **API Passport Key**. This key is an encrypted token mapped strictly to your tenant identity.
 
 - To retrieve your Passport Key, log into the Web Dashboard. Your key will be displayed on the main welcome screen.
 - **Never share this key** publicly. It provides direct access to your billing and token quotas.

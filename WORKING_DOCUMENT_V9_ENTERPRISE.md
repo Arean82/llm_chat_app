@@ -214,7 +214,7 @@ Phase 9 acts as the final "cleanup and packaging" phase once all functional feat
 When Phase 9 is executed, the repository will be structured as follows:
 
 ```text
-llm_chat_app/
+synora_studio/
 │
 ├── server/                         # ⚙️ CENTRAL HEADLESS CORE ENGINE (The "Backend Server")
 │   ├── logic/                      # LLM Client, RAG pipelines, Storage Drivers

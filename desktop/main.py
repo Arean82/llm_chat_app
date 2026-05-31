@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # main.py
-# This is the main entry point for the LLM Chat App. It initializes the application and shows the main window.  
+# This is the main entry point for the Synora Studio. It initializes the application and shows the main window.  
 import sys
 import os
 import platform
@@ -10,7 +10,7 @@ import platform
 # 1. SET APP IDENTITY (Windows Taskbar Grouping) - MUST BE SET BEFORE ANY QT GUI CLASS/DLL INITS
 if platform.system() == "Windows":
     import ctypes
-    myappid = 'arean82.llmchatapp.v8.0'
+    myappid = 'arean82.synorastudio.v8.0'
     try:
         # Explicitly declare argument and return types for wide-string (Unicode) translation
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [ctypes.c_wchar_p]
@@ -171,7 +171,7 @@ def main():
     
     # Initialize Core Telemetry Logger
     logger = AppLogger.get_instance()
-    logger.info("Quantum SaaS Multi-Tenant Cloud Platform initializing...")
+    logger.info("Synora Studio SaaS Multi-Tenant Cloud Platform initializing...")
     
     # Create the App instance first so we can apply styles/icons to it (safely wrapped)
     app = None
@@ -207,11 +207,11 @@ def main():
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)
             msg.setWindowTitle("Already Running")
-            msg.setText("Another instance of LLM Chat App is already running.")
+            msg.setText("Another instance of Synora Studio is already running.")
             msg.setInformativeText("Please close the existing instance before launching a new one.")
             msg.exec()
         else:
-            print("[!] Error: Another instance of LLM Chat App is already running.")
+            print("[!] Error: Another instance of Synora Studio is already running.")
         return
     
     # --- STORAGE CONFIGURATION LAYER ---

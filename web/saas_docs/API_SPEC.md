@@ -1,6 +1,6 @@
 # SaaS API Specification
 
-This document outlines the exposed API surfaces for the LLM Chat App SaaS module.
+This document outlines the exposed API surfaces for the Synora Studio SaaS module.
 
 ## 1. OpenAI-Compatible Gateway (`/v1`)
 The platform supports native OpenAI compatibility to allow easy drop-in replacement for downstream applications.

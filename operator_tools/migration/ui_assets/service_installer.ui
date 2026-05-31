@@ -85,7 +85,7 @@
       <item row="2" column="1">
        <widget class="QLineEdit" name="svcDesc">
         <property name="text">
-         <string>Background API daemon for the LLM Chat App</string>
+         <string>Background API daemon for the Synora Studio</string>
         </property>
        </widget>
       </item>

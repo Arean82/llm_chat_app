@@ -9,7 +9,7 @@ The SaaS module is driven by Flask and nested securely inside a PySide6 QThread 
 ### Default Super Admin Credentials
 When `tenant_db.py` is initialized for the first time on a fresh database (`data/saas_tenants.db`), it automatically provisions a secure super admin account.
 - **Username**: `admin`
-- **Email**: `admin@quantum-saas.local`
+- **Email**: `admin@synora-studio.local`
 - **Password**: Auto-generated via `secrets.token_urlsafe(12)`. Printed to the console strictly *once* upon the very first initialization.
 
 > [!WARNING]

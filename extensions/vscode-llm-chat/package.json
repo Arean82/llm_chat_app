@@ -1,7 +1,7 @@
 {
   "name": "vscode-llm-chat",
-  "displayName": "LLM Chat App",
-  "description": "Connect VS Code to LLM Chat App",
+  "displayName": "Synora Studio",
+  "description": "Connect VS Code to Synora Studio",
   "version": "2.0.0",
   "engines": {
     "vscode": "^1.116.0"
@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Arean82/llm_chat_app"
+    "url": "https://github.com/Arean82/synora_studio"
   },
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -68,7 +68,7 @@
       }
     ],
     "configuration": {
-      "title": "LLM Chat App Settings",
+      "title": "Synora Studio Settings",
       "properties": {
         "llmChat.apiUrl": {
           "type": "string",

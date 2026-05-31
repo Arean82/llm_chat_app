@@ -422,7 +422,7 @@ class ArenaViewWidget(QWidget):
 {l_text}
 
 ---
-*This automated benchmark report was manufactured locally via the LLM Chat App Arena.*
+*This automated benchmark report was manufactured locally via the Synora Studio Arena.*
 """
         try:
             with open(file_path, "w", encoding="utf-8") as f:

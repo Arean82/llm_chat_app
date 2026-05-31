@@ -13,7 +13,7 @@ cp -r "dist/LLM_Chat_dir/"* "$APPDIR/usr/bin/"
 # 3. Create Linux Desktop Shortcut
 cat << 'EOF' > "$APPDIR/LLMChatApp.desktop"
 [Desktop Entry]
-Name=LLM Chat App
+Name=Synora Studio
 Exec=AppRun
 Icon=app_icon
 Type=Application

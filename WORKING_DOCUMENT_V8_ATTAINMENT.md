@@ -206,11 +206,11 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 **Technical Notes :**
 
 * **libSQL / Turso Driver (3.1)**: Successfully integrated the `LibSQLStorageDriver` as the absolute primary, zero-configuration default engine inside `ConversationManager`. By default, if no remote cloud URL is configured, it dynamically maps connection paths to a local libSQL database using the `file:` scheme (offline-first local libSQL execution). This eliminates legacy SQLite as the main active codebase default while ensuring perfect zero-friction local boots and 100% preparation for local replication sync.
-* **PostgreSQL Concurrency Engine (3.2)**: Developed [logic/storage_drivers/postgres_driver.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/storage_drivers/postgres_driver.py) implementing `PostgreSQLStorageDriver` over the pure-Python DB-API 2.0 `pg8000` client. Outlines robust tables initialization, indices setups, parameters escaping, and high-concurrency TRUNCATE support. Implemented atomic auto-increment serial ID return using PostgreSQL's native `RETURNING id` clause. Integrated the PG engine dynamically inside `ConversationManager` to automatically route database calls if `"database_type": "postgres"` is configured.
-* **Live Migration Bridge (3.3)**: Designed a database-agnostic live data migration utility at [logic/migration_bridge.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/migration_bridge.py). By leveraging the abstract `BaseStorageDriver` methods, it safely extracts all thread headers, timestamps, message arrays, model IDs, and HTML caches from a source engine (e.g. Turso) and transactionally writes them into the newly targeted engine (e.g. PostgreSQL) without destroying the source records. This enables perfect, lossless database migrations when switching backend engines.
+* **PostgreSQL Concurrency Engine (3.2)**: Developed [logic/storage_drivers/postgres_driver.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/storage_drivers/postgres_driver.py) implementing `PostgreSQLStorageDriver` over the pure-Python DB-API 2.0 `pg8000` client. Outlines robust tables initialization, indices setups, parameters escaping, and high-concurrency TRUNCATE support. Implemented atomic auto-increment serial ID return using PostgreSQL's native `RETURNING id` clause. Integrated the PG engine dynamically inside `ConversationManager` to automatically route database calls if `"database_type": "postgres"` is configured.
+* **Live Migration Bridge (3.3)**: Designed a database-agnostic live data migration utility at [logic/migration_bridge.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/migration_bridge.py). By leveraging the abstract `BaseStorageDriver` methods, it safely extracts all thread headers, timestamps, message arrays, model IDs, and HTML caches from a source engine (e.g. Turso) and transactionally writes them into the newly targeted engine (e.g. PostgreSQL) without destroying the source records. This enables perfect, lossless database migrations when switching backend engines.
 
 > [!TIP]
-> **Turso Engine Configuration Guide**: Since Turso/libSQL is now the native, out-of-the-box default database engine, you do **not** need to configure any database types. Simply set your connection details in your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/config.json) (or define them in your environment):
+> **Turso Engine Configuration Guide**: Since Turso/libSQL is now the native, out-of-the-box default database engine, you do **not** need to configure any database types. Simply set your connection details in your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/config.json) (or define them in your environment):
 >
 > ```json
 > "database_url": "libsql://<your-database-name-and-username>.turso.io",
@@ -220,7 +220,7 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 > Once configured, all concurrent interfaces (GUI, CLI, and SaaS API) run on the zero-locking, high-concurrency Turso engine instantly!
 
 > [!TIP]
-> **PostgreSQL Engine Activation Guide**: To easily swap your database from Turso to PostgreSQL and run on native row-level locking enterprise connections, configure your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/config.json) (or environment) as follows:
+> **PostgreSQL Engine Activation Guide**: To easily swap your database from Turso to PostgreSQL and run on native row-level locking enterprise connections, configure your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/config.json) (or environment) as follows:
 >
 > ```json
 > "database_type": "postgres",
@@ -245,7 +245,7 @@ Once the local storage layer is successfully decoupled and audited, Phase 3 impl
 > migrate_database(source_driver=source, dest_driver=target, progress_callback=print)
 > ```
 >
-> Once migration logs verify success, simply swap `"database_type"` in your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/config.json) settings, and the app resumes running on the new high-concurrency database instantly!
+> Once migration logs verify success, simply swap `"database_type"` in your [config.json](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/config.json) settings, and the app resumes running on the new high-concurrency database instantly!
 
 ---
 
@@ -401,7 +401,7 @@ flowchart TD
 **Technical Notes (5.1):**
 
 * **Two-Stage Reranking Pipeline (5.1 - 5.2)**: Orchestrated pluggable Cross-Encoder selection, loading BGE-Reranker-v2-m3 locally via ONNX for absolute offline privacy and 8k token length capability, or routing dynamically to Cohere Rerank v3 or OpenAPI-compatible endpoints for high-speed cloud precision.
-* **Direct UI XML Integration**: Abandoned dynamic python-side widget creation to protect structural integrity. All visual controls (`QGroupBox`, `QCheckBox`, `QComboBox`, `QLineEdit` for secret keys/endpoints) are defined directly inside [gen_settings.ui](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui_designer/gen_settings.ui), completely avoiding XML schema drifts.
+* **Direct UI XML Integration**: Abandoned dynamic python-side widget creation to protect structural integrity. All visual controls (`QGroupBox`, `QCheckBox`, `QComboBox`, `QLineEdit` for secret keys/endpoints) are defined directly inside [gen_settings.ui](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui_designer/gen_settings.ui), completely avoiding XML schema drifts.
 * **Hybrid A: Structural Code Bias (5.3)**: Dynamically checks code chunks for architectural declarations (`class `, `def `, `interface `, `function `) or core workspace config paths, scaling their similarity scores by `1.2` to prioritize systemic skeletons over comments or helpers.
 * **Hybrid B: Diversity MMR (5.4)**: Executes Jaccard token overlap similarity checking across Top 20 candidates, penalizing duplicate/redundant chunks to guarantee the final Top 5 chunks represent diverse, distinct modules.
 
@@ -431,7 +431,7 @@ flowchart TD
     classDef screen fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4;
     classDef sub fill:#313244,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4;
 
-    App["🌐 Quantum SaaS Web Portal"]:::main
+    App["🌐 Synora Studio SaaS Web Portal"]:::main
   
     App --> S1["🛡️ Screen A: Secure Passport Gate<br>(Auth/Onboarding)"]:::screen
     App --> S2["💬 Screen B: Quantum Grid Workspace<br>(Chat Console & Arena)"]:::screen
@@ -713,11 +713,11 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 **Technical Notes (10.1):**
 
-* **Transient Cryptographic Key Derivation**: Introduced [security_utils.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/utils/security_utils.py) using PBKDF2-HMAC-SHA256 key derivation to dynamically build a symmetric 256-bit encryption key from the user's master login password. Raw API credentials in the OS keyring are encrypted as Base64 ciphers, decryptable only while `SESSION_MASTER_PASSWORD` is loaded in transient system memory.
-* **Gated Desktop Auth Gate**: Gated GUI boots behind [user_login.ui](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui_designer/user_login.ui) and [user_login.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/user_login.py). Strictly restricts entry to the SaaS Super Admin (`admin` username). Integrates a premium vector-drawn **pure white eyelashes eye toggle button** inside the password field using `QPainterPath` vectors.
-* **Transparent Keyring Binding**: Re-routed `hydrate()` in [llm_client.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/llm_client.py) to transparently decrypt keyring credentials on-the-fly using the cached session master password derived key.
-* **Intelligent capability descriptions**: Removed hardcoded `"Recovered chat model (untested)."` fallbacks from [model_fetch_worker.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/model_fetch_worker.py). It now scans model identifiers for keywords (`code`, `math`, `vision`, `instruct`) to generate high-quality capability descriptions dynamically. Added a cleanup utility [clean_descriptions.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/scratch/clean_descriptions.py) to immediately refresh existing static model databases in place.
-* **Hot-Swappable Description Generator**: Refactored the description generator inside [model_manager.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/model_manager.py) and [description_generator.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/description_generator.py). It completely bypasses manual model selection popups and routes completions directly through the parent `llm_client` using the active main tab selection, dynamically supporting Google Gemini and OpenAI-compatible pipelines.
+* **Transient Cryptographic Key Derivation**: Introduced [security_utils.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/utils/security_utils.py) using PBKDF2-HMAC-SHA256 key derivation to dynamically build a symmetric 256-bit encryption key from the user's master login password. Raw API credentials in the OS keyring are encrypted as Base64 ciphers, decryptable only while `SESSION_MASTER_PASSWORD` is loaded in transient system memory.
+* **Gated Desktop Auth Gate**: Gated GUI boots behind [user_login.ui](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui_designer/user_login.ui) and [user_login.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/user_login.py). Strictly restricts entry to the SaaS Super Admin (`admin` username). Integrates a premium vector-drawn **pure white eyelashes eye toggle button** inside the password field using `QPainterPath` vectors.
+* **Transparent Keyring Binding**: Re-routed `hydrate()` in [llm_client.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/llm_client.py) to transparently decrypt keyring credentials on-the-fly using the cached session master password derived key.
+* **Intelligent capability descriptions**: Removed hardcoded `"Recovered chat model (untested)."` fallbacks from [model_fetch_worker.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/workers/model_fetch_worker.py). It now scans model identifiers for keywords (`code`, `math`, `vision`, `instruct`) to generate high-quality capability descriptions dynamically. Added a cleanup utility [clean_descriptions.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/scratch/clean_descriptions.py) to immediately refresh existing static model databases in place.
+* **Hot-Swappable Description Generator**: Refactored the description generator inside [model_manager.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/model_manager.py) and [description_generator.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/workers/description_generator.py). It completely bypasses manual model selection popups and routes completions directly through the parent `llm_client` using the active main tab selection, dynamically supporting Google Gemini and OpenAI-compatible pipelines.
 
 ### 10.2 SaaS Tenant Enterprise SQL Migration Flow (Modular Driver Architecture)
 
@@ -746,7 +746,7 @@ The current desktop application utilizes a "Login Dialog" that functions primari
 
 ### 10.3 Standalone Migration Companion App & Operator Admin Portfolio
 
-To provide administrative security and prevent end-user tampering in production, all maintenance, data relocation, and credential recovery scripts are strictly isolated inside a private `operator_tools/` folder. The PyInstaller specification compiles three distinct binaries: `LLM Chat App.exe` (public client), `Migration Companion.exe` (private relocator), and `reset_admin.exe` (private password manager).
+To provide administrative security and prevent end-user tampering in production, all maintenance, data relocation, and credential recovery scripts are strictly isolated inside a private `operator_tools/` folder. The PyInstaller specification compiles three distinct binaries: `Synora Studio.exe` (public client), `Migration Companion.exe` (private relocator), and `reset_admin.exe` (private password manager).
 
 | #                | Task                                                                                                                                                                                                                           | Status           |
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- |
@@ -863,4 +863,4 @@ Phase 11 strips environment-setup logic out of the main desktop client, ensuring
 **Technical Notes (Phase 11):**
 
 * **Zero Client Pollution**: Moving gigabytes of vector caches or modifying service registries is inherently risky to perform while the main app is running. Doing this from the standalone operator suite guarantees that the main application is cleanly shut down, preventing OS file locks and database corruption.
-* **Separation of Concerns**: End-users receive the `single` build (just `LLM Chat App.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.
+* **Separation of Concerns**: End-users receive the `single` build (just `Synora Studio.exe`) without the ability to accidentally corrupt their install path or install services. The hosting administrator compiles the `full` suite to orchestrate the environment.

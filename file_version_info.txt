@@ -19,10 +19,10 @@ VSVersionInfo(
         [StringStruct(u'CompanyName', u'Arean Narrayan'),
         StringStruct(u'FileDescription', u'Multi-Provider Desktop LLM Chat Client'),
         StringStruct(u'FileVersion', u'8.0.0.0'),
-        StringStruct(u'InternalName', u'llmchatapp'),
+        StringStruct(u'InternalName', u'synorastudio'),
         StringStruct(u'LegalCopyright', u'Copyright © 2026 Arean Narrayan. All rights reserved.'),
-        StringStruct(u'OriginalFilename', u'LLM Chat App.exe'),
-        StringStruct(u'ProductName', u'LLM Chat App'),
+        StringStruct(u'OriginalFilename', u'Synora Studio.exe'),
+        StringStruct(u'ProductName', u'Synora Studio'),
         StringStruct(u'ProductVersion', u'8.0.0.0')])
       ]), 
     VarFileInfo([VarStruct(u'Translation', [1033, 1200])])

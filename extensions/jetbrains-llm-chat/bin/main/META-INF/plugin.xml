@@ -1,10 +1,10 @@
 <idea-plugin>
     <id>com.llmchat.plugin</id>
-    <name>LLM Chat App</name>
-    <vendor email="support@llmchat.com" url="https://github.com/Arean82/llm_chat_app">Arean Narrayan</vendor>
+    <name>Synora Studio</name>
+    <vendor email="support@llmchat.com" url="https://github.com/Arean82/synora_studio">Arean Narrayan</vendor>
     
     <description><![CDATA[
-        Connect JetBrains IDE to LLM Chat App.
+        Connect JetBrains IDE to Synora Studio.
         Features: code explanation, fixing, commit messages, docstrings, unit tests, terminal commands.
     ]]></description>
     
@@ -18,7 +18,7 @@
         <applicationConfigurable
                 instance="com.llmchat.LLMChatConfigurable"
                 id="com.llmchat.LLMChatConfigurable"
-                displayName="LLM Chat App"
+                displayName="Synora Studio"
                 groupId="tools"/>
     </extensions>
     

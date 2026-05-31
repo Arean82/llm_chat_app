@@ -38,7 +38,7 @@ class UserLoginClass(QDialog):
         # Styling and Window config
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowCloseButtonHint)
         set_app_icon(self)
-        self.setWindowTitle("Quantum Admin Login")
+        self.setWindowTitle("Synora Admin Login")
         
         # 2. Extract widgets
         self.txt_username = self.ui.findChild(QLineEdit, "txt_username")

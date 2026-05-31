@@ -1,4 +1,4 @@
-# LLM Chat App (v8.0 Stable Release)
+# Synora Studio (v8.0 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -10,7 +10,7 @@ A sleek, high-performance desktop chat application built with Python and PySide6
 
 ## 📖 About the Project
 
-**LLM Chat App** is engineered to be the definitive, secure gateway for modern Artificial Intelligence exploration. Developed for high-velocity prototyping and native desktop comfort, this workstation utility centralizes fragmented AI provider landscapes into a single, performant orchestrator.
+**Synora Studio** is engineered to be the definitive, secure gateway for modern Artificial Intelligence exploration. Developed for high-velocity prototyping and native desktop comfort, this workstation utility centralizes fragmented AI provider landscapes into a single, performant orchestrator.
 
 Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor-lock constraints by unifying **Cloud inference** and **Local compute** within one elite codebase. Leveraging hardware acceleration, OS-level credential custody, and recursive Adaptive Memory buffering, it delivers a fluid, virtually limitless conversational cognition engine.
 
@@ -125,13 +125,13 @@ The application ships with isolated, administrative Operator Tools that execute 
 
 > **Note for macOS / Apple Silicon Users:** It is highly recommended to run `pip install pyside6` manually before installing the full requirements, as Apple Silicon occasionally struggles with Qt bindings depending on your Python environment.
 > 
-> **Note for ARM / Cloud IaaS Deployments:** If deploying headless to an Oracle Cloud VM (aarch64) or Raspberry Pi, please refer to **Section 8** of the [`HEADLESS_GUIDE.md`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/HEADLESS_GUIDE.md) for critical OS-level dependencies required before running pip, and how to safely run Qdrant.
+> **Note for ARM / Cloud IaaS Deployments:** If deploying headless to an Oracle Cloud VM (aarch64) or Raspberry Pi, please refer to **Section 8** of the [`HEADLESS_GUIDE.md`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/HEADLESS_GUIDE.md) for critical OS-level dependencies required before running pip, and how to safely run Qdrant.
 
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/Arean82/llm_chat_app.git   
-   cd llm_chat_app   
+   git clone https://github.com/Arean82/synora_studio.git   
+   cd synora_studio   
    ```
 2. **Create and activate a virtual environment (Optional but recommended):**
 
@@ -156,7 +156,7 @@ The application ships with isolated, administrative Operator Tools that execute 
    ```bash
    python main.py   
    ```
-2. 🔑 **Secure Authentication Gate:** On startup, you will be greeted by the **Quantum Admin Login Gateway**. Sign in with your Super Admin credentials (`admin` / `admin` by default). Your credentials are validated against the partitioned database layer.
+2. 🔑 **Secure Authentication Gate:** On startup, you will be greeted by the **Synora Admin Login Gateway**. Sign in with your Super Admin credentials (`admin` / `admin` by default). Your credentials are validated against the partitioned database layer.
 3. 📸 **Dynamic Ecosystem Configuration:** If no ecosystem is active, the **Switch Ecosystem** dialog appears. Enter your API Key or select keyless local providers. Your keys are immediately encrypted using zero-trust PBKDF2 ciphers derived from your master password and securely stored in your OS keychain.
 4. 🤖 **Select Model:** Click the chat model selector in the main window to choose from your active providers.
 5. 💬 **Start Chatting:** Type your message. Press `Enter` to send, or `Shift+Enter` for a new line.
@@ -170,7 +170,7 @@ The application ships with isolated, administrative Operator Tools that execute 
 ## 📁 Project Structure
 
 ```text
-llm_chat_app/
+synora_studio/
 │
 ├── main.py                         # 🚀 Entry point
 ├── LLM_Chat_App_onedir.spec        # PyInstaller spec - One-dir build (App only)
@@ -210,7 +210,7 @@ llm_chat_app/
 │   │   │   └── migration_companion.ui
 │   │   └── migration_companion.py  # GUI + CLI/Headless Controller entrypoint
 │
-├── saas/                           # 🌐 Quantum SaaS Web Portal (V7)
+├── saas/                           # 🌐 Synora Studio SaaS Web Portal (V7)
 │   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
 │   ├── config.ini                  # ⚙️ SaaS configuration (driver selection, network, SMTP)
 │   ├── tenant_db.py                # 🗄️ Factory Switchboard (Turso/Postgres/MySQL routing)
@@ -524,7 +524,7 @@ pyinstaller LLM_Chat_App_mac_full.spec
 **Build outputs:**
 
 - One-dir: `dist/LLM_Chat_dir/` (folder containing the executable and all dependencies)
-- One-file: `dist/LLM_Chat_one_file/LLM Chat App.exe` (single executable file)
+- One-file: `dist/LLM_Chat_one_file/Synora Studio.exe` (single executable file)
 - Full builds will simultaneously compile `Migration Companion` and `Reset Admin` into `dist/`.
 - On first launch, the executable checks directory permissions. If running from a restricted system folder (like `C:\Program Files`), it automatically creates data resources inside `AppData` to ensure zero-crash operation.
 - If run from a writable folder (USB drive/Desktop), it prompts the user to select between **Portable**, **Standard**, or **Custom** storage paths.
@@ -568,7 +568,7 @@ pyinstaller LLM_Chat_App_onedir.spec
 bash build_appimage.sh
 ```
 
-Uninstall DEB: `sudo apt remove llmchatapp`
+Uninstall DEB: `sudo apt remove synorastudio`
 
 #### 🍎 macOS (PKG)
 
@@ -616,7 +616,7 @@ This framework is architected and curated with the vision of building transparen
 * **Jaccard Similarity Integrity Audits**: Post-relocation verification compares row counts across all 6 tenant tables with formatted ASCII summary tables and a computed Jaccard Similarity Index.
 * **Settings Menu Subprocess Forking**: Added `🔄 Database Relocator` to the desktop Settings menu. Triggers auto-save, gracefully shuts down the main app to release database locks, then launches the companion as a detached subprocess.
 * **Isolated Operator Admin Portfolio**: All administrative scripts relocated to `operator_tools/`. The legacy `scripts/reset_admin.py` is deprecated and redirects to the canonical version.
-* **Triple PyInstaller Bundling**: Restructured `LLM_Chat_App_combined.spec` to compile three distinct binaries: `LLM Chat App.exe` (public), `Migration Companion.exe` (private), and `Reset Admin.exe` (private).
+* **Triple PyInstaller Bundling**: Restructured `LLM_Chat_App_combined.spec` to compile three distinct binaries: `Synora Studio.exe` (public), `Migration Companion.exe` (private), and `Reset Admin.exe` (private).
 * **Service-Friendly Pathing**: All operator tools use `sys.executable` parent resolution for frozen builds, ensuring correct operation when mounted as Windows Services or systemd daemons.
 
 ### v7.3.0 – Secure Multi-Tenant Data Relocation & Standalone Migration Suite
@@ -633,7 +633,7 @@ This framework is architected and curated with the vision of building transparen
 
 * **Windows ctypes unicode translation**: Solved a crucial C-level bug where `SetCurrentProcessExplicitAppUserModelID` received garbage ANSI string pointers, successfully forcing wide-string `c_wchar_p` interpretation.
 * **Master App ID Consolidation**: Removed conflicting duplicate calls inside the UI main window shell, centralizing startup registration as a single source of truth.
-* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.llmchatapp.v8.0`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
+* **Bypassed Windows Icon Cache**: Migrated taskbar grouping variables to a fresh ID (`arean82.synorastudio.v8.0`) to instantly force the Windows shell to clear generic icon associations and display the custom app icon.
 
 ### v7.0.0 – Headless SaaS Platform & Cloud Multi-Tenancy Architecture
 

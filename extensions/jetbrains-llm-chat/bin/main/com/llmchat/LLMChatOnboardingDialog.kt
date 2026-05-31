@@ -36,7 +36,7 @@ class LLMChatOnboardingDialog(project: Project?) : DialogWrapper(project, true) 
     private val regStatusLabel = JLabel("")
 
     init {
-        title = "LLM Chat App Onboarding Gateway"
+        title = "Synora Studio Onboarding Gateway"
         init()
     }
 
@@ -45,7 +45,7 @@ class LLMChatOnboardingDialog(project: Project?) : DialogWrapper(project, true) 
         
         // Add Header
         val headerPanel = JPanel(BorderLayout())
-        val titleLabel = JLabel("Connect IDE to LLM Chat App", SwingConstants.CENTER)
+        val titleLabel = JLabel("Connect IDE to Synora Studio", SwingConstants.CENTER)
         titleLabel.font = titleLabel.font.deriveFont(java.awt.Font.BOLD, 16f)
         val subtitleLabel = JLabel("Configure dynamic server credentials to activate completions", SwingConstants.CENTER)
         headerPanel.add(titleLabel, BorderLayout.NORTH)

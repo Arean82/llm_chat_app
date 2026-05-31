@@ -1,4 +1,4 @@
-# Project Audit Report: LLM Chat App
+# Project Audit Report: Synora Studio
 
 **Date:** 2026-05-24
 **Status:** 77/77 ITEMS RESOLVED - 0 OPEN ISSUES REMAINING
@@ -144,8 +144,8 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Status:** ✅ **Resolved**
 * **Details:** Upgraded backend callback channels to support delivery of pre-built message list objects directly down into the inference client.
 * **Fix Map:**
-  1. Replaced static concatenations in [`ui/main_window.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/main_window.py) with flexible list argument piping.
-  2. Implemented bridge passing serialization in [`logic/api_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/api_manager.py).
+  1. Replaced static concatenations in [`ui/main_window.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/main_window.py) with flexible list argument piping.
+  2. Implemented bridge passing serialization in [`logic/api_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/api_manager.py).
 
 #### 2. Audit ID 002: Native Vault Credential Migrations
 
@@ -153,7 +153,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Status:** ✅ **Resolved**
 * **Details:** Transferred core persistence ownership for plain-text API access tokens away from standard Windows Registry into the OS keychain subsystem via Python `keyring`.
 * **Fix Map:**
-  1. Refactored setup UI hooks in [`ui/login_dialog.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/login_dialog.py).
+  1. Refactored setup UI hooks in [`ui/login_dialog.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/login_dialog.py).
   2. Integrated purge logic wiping local cache upon manual explicit logout.
 
 #### 3. Audit ID 003: Memory Leak Preclusion
@@ -161,7 +161,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
 * **Details:** Preempted unbounded dictionary growth which threatened process bloating over infinite sessions.
-* **Implementation:** Replaced native dictionary with bound `collections.OrderedDict` (Limit: 100 sessions), establishing zero-maintenance automated pruning strategy inside [`logic/api_server.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/api_server.py).
+* **Implementation:** Replaced native dictionary with bound `collections.OrderedDict` (Limit: 100 sessions), establishing zero-maintenance automated pruning strategy inside [`logic/api_server.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/api_server.py).
 
 #### 4. Audit ID 004: Parametric Generation Unlocking
 
@@ -169,7 +169,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Status:** ✅ **Resolved**
 * **Details:** Deprecated universal hardcoded values in favor of fully dynamic, user-controllable variables with immediate persistence triggers.
 * **Fix Map:**
-  1. Built modern [`ui_designer/gen_settings.ui`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui_designer/gen_settings.ui) interface with visual helpers.
+  1. Built modern [`ui_designer/gen_settings.ui`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui_designer/gen_settings.ui) interface with visual helpers.
   2. Ripped explicit overrides out of payload generation constructor.
   3. Unlocked total Server Passthrough (None) model controls.
 
@@ -179,7 +179,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 * **Status:** ✅ **Resolved**
 * **Details:** Repudiated slow iterate-and-sleep fetching methodologies throttling large model rosters.
 * **Fix Map:**
-  1. Introduced massive 10x parallel dispatch aggregator logic inside [`logic/llm_client.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/llm_client.py).
+  1. Introduced massive 10x parallel dispatch aggregator logic inside [`logic/llm_client.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/llm_client.py).
   2. Implemented structural fallback recovery protecting JSON validation if disparate backend model types resist formatting.
 
 #### 6. Audit ID 006: Database Operation Shielding
@@ -367,7 +367,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🔴 High
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/model_manager.py:L461`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/model_manager.py#L461)
+* **Location:** [`ui/model_manager.py:L461`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/model_manager.py#L461)
 * **Details:** Automated backend fetchers were attempting to retrieve cached keys from plain text `settings.ini`, yielding `""` and disabling model sync functions.
 * **Remediation:** Imported and integrated the native system vault loader into the Model Manager. Deployed triple-pass dynamic extraction logic allowing the "Fetch Models" engine to target the active ecosystem's specific URL/APIKey chain securely.
 
@@ -375,7 +375,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
-* **Location:** [`workers/model_fetch_worker.py:L21`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/model_fetch_worker.py#L21)
+* **Location:** [`workers/model_fetch_worker.py:L21`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/workers/model_fetch_worker.py#L21)
 * **Details:** The background fetcher carried hardcoded static strings pointing to future, non-existent models (`llama-4`, `gemma-3`) as the universal "Describer" generator, resulting in instantaneous startup exception waterfalls.
 * **Remediation:** Stripped all static future hardcodes. Overhauled description logic into an **Autogenous Reflection Engine**: Every candidate model now actively targets its OWN endpoint to generate its specific description, providing perfect universality across any vendor ecosystem without arbitrary dependencies.
 
@@ -383,7 +383,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/chat_view.py)
 * **Details:** Restored the isolated `save_conversation` and `load_conversation` methods from external buffers back into runtime.
 * **Remediation:** Fully integrated methods back into Chat View widget and successfully registered against Shell Controller (main window) file menu system. Operations confirmed functional.
 
@@ -391,7 +391,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/model_io.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/model_io.py)
+* **Location:** [`logic/model_io.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/model_io.py)
 * **Details:** A 162KB binary corrupted file `recover_full.py` clutters root causing interpreter compiler warnings.
 * **Remediation:** Expunged corrupted backup artifacts and secondary diagnostic debris from active production tree. Workspace now reports clean, warning-free compiler scan.
 
@@ -408,7 +408,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/model_io.py:L54`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/model_io.py#L54)
+* **Location:** [`logic/model_io.py:L54`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/model_io.py#L54)
 * **Details:** The new ecosystem loader relied on hardcoded conditional branching to guess providers from filenames.
 * **Remediation:** Replaced static matching with a completely dynamic text parsing algorithm. The logic now directly derives the provider identification payload dynamically from any arbitrary filename shard (`models_{name}.json`), guaranteeing perfect zero-maintenance scale for 3rd party users.
 
@@ -416,7 +416,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/formatter.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/formatter.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+* **Location:** [`logic/formatter.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/formatter.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/chat_view.py)
 * **Details:** Resolved missing interactivity limitation by converting static textual code blocks into live interactive runtime environments.
 * **Remediation:**
   1. **Visual Injection:** Upgraded Markdown formatter to inject active HTML anchor tags.
@@ -429,7 +429,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/rag_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/rag_manager.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+* **Location:** [`logic/rag_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/rag_manager.py), [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/chat_view.py)
 * **Details:** Broken limit thresholding for massive context payloads resolved by enabling smart dataset compression via localized vector orchestration.
 * **Remediation:**
   1. **Pure-Native Vector Matrix:** Engineered an ultra-lightweight high-dimensional RAG engine powered purely by NumPy linear algebra, requiring ZERO external server dependencies and zero cost.
@@ -440,7 +440,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/tool_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/tool_manager.py), [`logic/chat_worker.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/chat_worker.py)
+* **Location:** [`logic/tool_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/tool_manager.py), [`logic/chat_worker.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/chat_worker.py)
 * **Details:** Resolved LLM temporal amnesia by injecting instantaneous environment data and establishing a non-blocking bridge to query dynamic internet resources.
 * **Remediation:**
   1. **Real-Time OS Ingestion:** Created always-on system monitor injection providing timestamp, day of week, platform, and runtime variables.
@@ -458,7 +458,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟠 Med
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/api_manager.py:L87`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/api_manager.py#L87)
+* **Location:** [`logic/api_manager.py:L87`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/api_manager.py#L87)
 * **Details:** Background API events caused instant visual overwrites to human textbox drafts.
 * **Remediation:** Refactored `send_message` signature across UI system to accept native argument overrides. Removed UI `.setPlainText()` clearing operations on API triggers, successfully fully insulating user drafting buffers from external automated injections.
 
@@ -466,7 +466,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py), [`logic/chat_worker.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/chat_worker.py)
+* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/chat_view.py), [`logic/chat_worker.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/chat_worker.py)
 * **Details:** Expanded app capacity beyond simple plaintext file loading into full visual and productivity-document intelligence.
 * **Remediation:**
   1. **Office Engines:** Integrated `pypdf`, `docx2txt`, `pandas`, `python-pptx`, and `odfpy` to support universal text extraction from PDFs, Word, Excel, and PowerPoint decks.
@@ -478,7 +478,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🔴 High
 * **Status:** ✅ **Resolved**
-* **Location:** [`logic/vector_db.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/vector_db.py)
+* **Location:** [`logic/vector_db.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/vector_db.py)
 * **Details:** Library upgrades (qdrant-client v1.18.0) deprecated standard `QdrantClient.search()` direct endpoints in favor of unified unified endpoints.
 * **Remediation:** Refactored retrieval engine to target high-level `query_points()` structure, securely extracting node contents from `response.points` collections.
 
@@ -486,7 +486,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
-* **Location:** [`workers/local_model_detector.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/workers/local_model_detector.py)
+* **Location:** [`workers/local_model_detector.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/workers/local_model_detector.py)
 * **Details:** Manual model mapping was high-friction. Adding local servers caused startup delay without careful timeout gates.
 * **Remediation:** Built a dedicated, low-footprint startup `QThread` using 1.5s timeout gates to discover, parse, and register Ollama and LM Studio services seamlessly into user configs.
 
@@ -494,7 +494,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/chat_view.py)
 * **Details:** Standard directory recursion threatened memory exhaustion if encountering massive package repositories.
 * **Remediation:** Encapsulated directory drops behind a global ignore-list (`.git`, `node_modules`, `.venv`), preserving lightning execution speeds for raw folder onboardings.
 
@@ -502,7 +502,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/chat_view.py)
+* **Location:** [`ui/chat_view.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/chat_view.py)
 * **Details:** Executing dynamic code generation on parent event queues blocks GUI execution and risks system hangs.
 * **Remediation:** Orchestrated native base64 parsing bridges piping markdown completions directly to host `QProcess` runtimes, unlocking recursive automated mock-up sandboxing.
 
@@ -510,7 +510,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟡 Low
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/theme_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/theme_manager.py)
+* **Location:** [`ui/theme_manager.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/theme_manager.py)
 * **Details:** Input box placeholder "Ask me anything..." was virtually invisible due to missing explicit palette overrides.
 * **Remediation:** Engineered recursive sweeping method injecting high-contrast overrides across viewport widgets.
 * **🔄 REOPENED & PATCHED (Phase 2.5):** Global theme updates strictly targeted the active viewport, leaving background stack containers (e.g., the Arena mode) styled improperly until toggled manually.
@@ -552,14 +552,14 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🔴 High
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/login_dialog.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/login_dialog.py)
+* **Location:** [`ui/login_dialog.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/login_dialog.py)
 * **Details:** When loading the settings dialog, the Platform combo-box defaults to index `0` ("OpenAI Compatible SDK"). If the active system provider is `nvidia` (which belongs to group index `0`), the subsequent activation call `setCurrentIndex(0)` is treated as a no-op by PySide and does not emit the `currentIndexChanged` event signal. As a result, the dependent Service combo-box was left completely unpopulated (empty dropdown), and instruction labels remained blank.
 * **Remediation:** Patched `load_active_state()` to always explicitly execute the group filtering callback `on_group_switched()` during initial hydration, guaranteeing proper ecosystem and field loading on startup.
 
 #### 53. Audit ID 053: Duplicate MainWindow Log Viewer Methods
 
 * **Status:** ✅ **Resolved**
-* **Location:** [`ui/main_window.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/main_window.py)
+* **Location:** [`ui/main_window.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/main_window.py)
 * **Details:** The methods `show_update_log` and `clear_update_log` were declared twice in `ui/main_window.py`, resulting in silent namespace overrides, dead code, and developer confusion.
 * **Remediation:** Removed the duplicate, dead first declarations of `show_update_log` and `clear_update_log` from `ui/main_window.py`. Patched the active `clear_update_log` method to replace the intrusive `QMessageBox.information` pop-up alert with a clean, non-obstructive inline chat view system notification: `"🗑️ Update logs purged successfully."`. This completely eliminates redundant code and delivers a premium, seamless log clearing flow.
 
@@ -567,7 +567,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
-* **Location:** [`requirements.txt`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/requirements.txt), [`logic/storage_drivers/libsql_driver.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/storage_drivers/libsql_driver.py), [`logic/storage_drivers/postgres_driver.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/logic/storage_drivers/postgres_driver.py)
+* **Location:** [`requirements.txt`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/requirements.txt), [`logic/storage_drivers/libsql_driver.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/storage_drivers/libsql_driver.py), [`logic/storage_drivers/postgres_driver.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/logic/storage_drivers/postgres_driver.py)
 * **Details:** The storage layer implements drivers and connections to remote SQL environments, supporting both Turso databases (via `libsql-client`) and PostgreSQL clusters (via `pg8000`). However, these external dependencies were completely omitted from the project's dependency manifest, causing launch crashes when selected.
 * **Implementation:** Added a dedicated `# Database Drivers` section to `requirements.txt` containing the required dependencies `libsql-client` and `pg8000` to support remote Turso and PostgreSQL configuration targets. Verified using a comprehensive test sweep covering local SQLite, file-based LibSQL, and mocked PostgreSQL driver transaction protocols.
 
@@ -575,7 +575,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🟠 Medium
 * **Status:** ✅ **Resolved**
-* **Location:** [`main.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/main.py), [`ui/shared_widgets.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/shared_widgets.py)
+* **Location:** [`main.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/main.py), [`ui/shared_widgets.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/shared_widgets.py)
 * **Details:** Launching standalone windows or child dialogs in Windows using the `python.exe` interpreter resulted in generic default wireframe/grid icons on the system taskbar, rather than the branded application icon.
 * **Remediation:**
   1. **Robust Multi-Resolution Loading:** Updated `set_app_icon` inside `ui/shared_widgets.py` to intelligently detect Windows environments and load the dedicated `resources/app_icon.ico` instead of flat PNG streams. The `.ico` file houses multiple resolutions matching Windows desktop scaling natively.
@@ -586,7 +586,7 @@ Below is the full technical breakdown of every stabilization applied to the envi
 
 * **Severity:** 🔴 High
 * **Status:** ✅ **Resolved**
-* **Location:** [`saas/app.py`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/app.py), [`saas/templates/index.html`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/templates/index.html), [`saas/static/js/system_health.js`](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/static/js/system_health.js)
+* **Location:** [`saas/app.py`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/saas/app.py), [`saas/templates/index.html`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/saas/templates/index.html), [`saas/static/js/system_health.js`](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/saas/static/js/system_health.js)
 * **Details:** The SaaS Multi-Tenant Web Console lacked the real-time diagnostic indicators and troubleshooting controls available on the desktop administration panel.
 * **Remediation:**
   1. **Telemetry Endpoint Enrichment:** Upgraded `/api/admin/telemetry` inside `saas/app.py` to dynamically query and append the active LED status dictionary, core circuit breaker state, and active worker processing queues and thread pool mappings from the `JobQueueEngine`.

@@ -1,6 +1,6 @@
 # Implementation Plan: SaaS IDE Extensions Distribution Portal (v7.3 Expansion)
 
-This plan describes the architectural changes required to introduce a beautiful, high-fidelity **IDE Extensions Portal** into the **Quantum SaaS Gateway Web Application** and the **Native Desktop Administration Settings Dialog**. 
+This plan describes the architectural changes required to introduce a beautiful, high-fidelity **IDE Extensions Portal** into the **Synora Studio SaaS Gateway Web Application** and the **Native Desktop Administration Settings Dialog**. 
 
 It combines a **Config-Driven Metadata Ledger** (Option 2) with an **AI-Assisted Administration Dashboard** (Option 1) to enable SaaS Admins to publish extensions and generate professional marketing/changelog copy dynamically using the active system LLM directly from both the Desktop GUI and Web admin consoles.
 
@@ -25,7 +25,7 @@ graph TD
 
 ## Proposed Changes
 
-### 1. [NEW] [extensions_config.json](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/extension/extensions_config.json)
+### 1. [NEW] [extensions_config.json](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/extension/extensions_config.json)
 Provides an isolated, lightweight registry tracking file parameters:
 ```json
 {
@@ -52,7 +52,7 @@ Provides an isolated, lightweight registry tracking file parameters:
 
 ---
 
-### 2. [MODIFY] [saas_settings_dialog.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/ui/saas_settings_dialog.py)
+### 2. [MODIFY] [saas_settings_dialog.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/ui/saas_settings_dialog.py)
 We will dynamically inject the **"🔌 IDE Plugins"** tab programmatically into `self.ui.tabWidget` on initialization to avoid fragile XML changes:
 * **Table of Extensions**: Lists crawled `.vsix` and `.zip` files from `extension/` alongside their file sizes and configured status.
 * **Metadata Editor**:
@@ -63,7 +63,7 @@ We will dynamically inject the **"🔌 IDE Plugins"** tab programmatically into 
 
 ---
 
-### 3. [MODIFY] [app.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/app.py)
+### 3. [MODIFY] [app.py](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/saas/app.py)
 We will add four core API endpoints inside the web dashboard app factory:
 1. **`GET /api/extensions`**:
    * Scans the `extension/` directory.
@@ -80,14 +80,14 @@ We will add four core API endpoints inside the web dashboard app factory:
 
 ---
 
-### 4. [NEW] [extensions.html](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/templates/modals/extensions.html)
+### 4. [NEW] [extensions.html](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/saas/templates/modals/extensions.html)
 The web viewport dashboard modal:
 * **Tenant UI**: A premium glassmorphic list with off-white high-contrast badges for platforms (blue themed for VS Code, violet/orange themed for JetBrains) rendering Markdown dynamically via `marked.js`.
 * **Admin Controls**: Sub-controls displaying checkboxes, textareas, and **"🧠 AI Generate Description"** triggers with smooth loading spinners.
 
 ---
 
-### 5. [MODIFY] [header.html](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/saas/templates/partials/header.html)
+### 5. [MODIFY] [header.html](file:///c:/Users/user/OneDrive/Desktop/python/synora_studio/saas/templates/partials/header.html)
 Add a navigation menu action **"🔌 IDE Plugins"** linking directly to render the extensions modal.
 
 ---

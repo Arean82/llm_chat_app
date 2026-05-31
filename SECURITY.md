@@ -1,6 +1,6 @@
 # 🛡️ Security & Privacy Policy
 
-**LLM Chat App** is built from the ground up around absolute user data privacy and localized operational integrity. As a workstation tool for AI interaction, it adopts strict, zero-compromise security principles.
+**Synora Studio** is built from the ground up around absolute user data privacy and localized operational integrity. As a workstation tool for AI interaction, it adopts strict, zero-compromise security principles.
 
 ---
 

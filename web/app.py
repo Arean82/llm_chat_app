@@ -56,7 +56,7 @@ def create_saas_app():
                 
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"LLM Chat App Security <{smtp_user}>"
+            msg["From"] = f"Synora Studio Security <{smtp_user}>"
             msg["To"] = to_email
             
             msg.attach(MIMEText(html_content, "html"))
@@ -398,7 +398,7 @@ def create_saas_app():
         <p>Your secured SaaS sandbox has been successfully provisioned.</p>
         <p><b>Key Type Tier:</b> {key_type.upper()}</p>
         """
-        send_alert_email(email, "Workspace Provisoned - LLM Chat App", welcome_html)
+        send_alert_email(email, "Workspace Provisoned - Synora Studio", welcome_html)
 
         try:
             from server.logic.services import ServiceRegistry

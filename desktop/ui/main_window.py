@@ -31,7 +31,7 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("LLM Chat App v8.0")
+        self.setWindowTitle("Synora Studio v8.0")
         
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)
@@ -397,7 +397,7 @@ class MainWindowClass(QMainWindow):
         reply = QMessageBox.question(
             self,
             "Launch Migration Companion",
-            "This will close the LLM Chat App to release all database locks, "
+            "This will close the Synora Studio to release all database locks, "
             "then launch the standalone Migration Companion utility.\n\n"
             "⚠️ All unsaved conversations will be auto-saved before closing.\n\n"
             "Continue?",
@@ -516,7 +516,7 @@ class MainWindowClass(QMainWindow):
         
         text = f"""
         <div style="font-family: 'Segoe UI', Arial, sans-serif;">
-            <h2 style="color: #0078d4; margin-bottom: 5px;">LLM Chat App</h2>
+            <h2 style="color: #0078d4; margin-bottom: 5px;">Synora Studio</h2>
             <p><b>Version:</b> {APP_VERSION}<br>
             <b>Lead Architect:</b> Arean Narrayan</p>
             
@@ -581,7 +581,7 @@ class MainWindowClass(QMainWindow):
     def setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(str(get_resource_path("resources/app_icon.png"))))
-        self.tray_icon.setToolTip("LLM Chat App")
+        self.tray_icon.setToolTip("Synora Studio")
         
         m = QMenu()
         m.addAction("Restore", self.show_and_activate)

@@ -1,4 +1,4 @@
-# 🌐 LLM Chat App: Universal API Server
+# 🌐 Synora Studio: Universal API Server
 
 The **Universal API Server** acts as a bridge between your local LLM and any external IDE or application. It exposes an **OpenAI-compatible REST API**, allowing you to integrate powerful local intelligence into your existing development workflow.
 
@@ -172,7 +172,7 @@ Modify `~/.continue/config.json`:
 ```json
 {
   "models": [{
-    "title": "LLM Chat App",
+    "title": "Synora Studio",
     "provider": "openai",
     "model": "any",
     "apiBase": "http://localhost:5000/v1",

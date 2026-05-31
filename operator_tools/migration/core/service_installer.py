@@ -23,7 +23,7 @@ class ServiceInstallerCore:
         try:
             current_dir = Path(os.path.abspath(os.path.dirname(__file__)))
             root_dir = current_dir.parent.parent.parent
-            main_exe_path = root_dir / "LLM Chat App.exe"
+            main_exe_path = root_dir / "Synora Studio.exe"
             
             # Executable Target
             if main_exe_path.exists():

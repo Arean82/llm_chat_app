@@ -1,7 +1,7 @@
 #!/bin/bash
 # build_deb.sh - Automates the creation of a Linux .deb package
 
-APP_NAME="llmchatapp"
+APP_NAME="synorastudio"
 VERSION="8.0.0"
 PACKAGE_DIR="build_deb_pkg"
 BUILD_OUTPUT="dist/LLM_Chat_dir"
@@ -33,8 +33,8 @@ fi
 # 5. Create Desktop Entry
 cat > "$PACKAGE_DIR/usr/share/applications/$APP_NAME.desktop" << EOF
 [Desktop Entry]
-Name=LLM Chat App
-Exec="/usr/local/bin/LLM Chat App"
+Name=Synora Studio
+Exec="/usr/local/bin/Synora Studio"
 Icon=$APP_NAME
 Type=Application
 Categories=Utility;
@@ -57,8 +57,8 @@ EOF
 # 7. Create PRERM script (Kills processes before uninstall)
 cat > "$PACKAGE_DIR/DEBIAN/prerm" << 'EOF'
 #!/bin/bash
-echo "Stopping any running instances of LLM Chat App..."
-pkill -f "LLM Chat App" || true
+echo "Stopping any running instances of Synora Studio..."
+pkill -f "Synora Studio" || true
 exit 0
 EOF
 chmod 755 "$PACKAGE_DIR/DEBIAN/prerm"
@@ -68,7 +68,7 @@ cat > "$PACKAGE_DIR/DEBIAN/postrm" << 'EOF'
 #!/bin/bash
 if [ "$1" = "purge" ] || [ "$1" = "remove" ]; then
     echo "Purging all user data..."
-    rm -rf "/usr/local/bin/LLM Chat App*"
+    rm -rf "/usr/local/bin/Synora Studio*"
 fi
 exit 0
 EOF
@@ -77,8 +77,8 @@ chmod 755 "$PACKAGE_DIR/DEBIAN/postrm"
 # 9. Create POSTINST script
 cat > "$PACKAGE_DIR/DEBIAN/postinst" << 'EOF'
 #!/bin/bash
-chmod +x "/usr/local/bin/LLM Chat App"
-echo "LLM Chat App installed successfully. You can find it in your Applications menu."
+chmod +x "/usr/local/bin/Synora Studio"
+echo "Synora Studio installed successfully. You can find it in your Applications menu."
 exit 0
 EOF
 chmod 755 "$PACKAGE_DIR/DEBIAN/postinst"

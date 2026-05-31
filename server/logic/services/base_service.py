@@ -4,7 +4,7 @@ logger = logging.getLogger("QuantumServices")
 
 class BaseService:
     """
-    Abstract base service for all Quantum SaaS and Desktop background services.
+    Abstract base service for all Synora Studio SaaS and Desktop background services.
     Enforces standardized initialization and shutdown lifecycles.
     """
     def __init__(self):

@@ -1,5 +1,5 @@
 #!/bin/bash
-# build_all_plugins.sh - LLM Chat App IDE Plugins Bundler (V2.0.0 RELEASE)
+# build_all_plugins.sh - Synora Studio IDE Plugins Bundler (V2.0.0 RELEASE)
 
 echo "============================================================"
 echo "🚀 LLM CHAT APP - IDE PLUGINS BUNDLER (V2.0.0 RELEASE)"

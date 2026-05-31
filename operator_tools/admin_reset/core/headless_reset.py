@@ -40,7 +40,7 @@ def run_headless_reset(random_pass=False, custom_pass=None):
         print("----------------------------------------------------------------------")
         print("  Master Profile:")
         print("  Username: admin")
-        print("  Email:    admin@quantum-saas.local")
+        print("  Email:    admin@synora-studio.local")
         print(f"  Password: {new_password}")
         print("  API Key:  admin_master_passport")
         print("----------------------------------------------------------------------")

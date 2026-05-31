@@ -1,6 +1,6 @@
 # Headless & API Engine Guide (v8.0)
 
-This guide explains how to use the **LLM Chat App** in Headless mode for IDE integration, API serving, and CLI model management.
+This guide explains how to use the **Synora Studio** in Headless mode for IDE integration, API serving, and CLI model management.
 
 ---
 
@@ -185,4 +185,4 @@ python main.py --headless
 | **No models shown** | Run `python main.py --update-models` to refresh the local sharded manifests. |
 
 ---
-*Maintenance: SaaS Web Architecture v8.0. Base: arean82.llmchatapp.v8.0*
+*Maintenance: SaaS Web Architecture v8.0. Base: arean82.synorastudio.v8.0*

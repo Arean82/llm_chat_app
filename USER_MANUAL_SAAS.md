@@ -1,6 +1,6 @@
-# ☁️ LLM Chat App - SaaS Multi-Tenant Guide
+# ☁️ Synora Studio - SaaS Multi-Tenant Guide
 
-Welcome to the **Quantum SaaS Multi-Tenant Gateway**. This platform allows organizations to centrally host and orchestrate LLM inference across hundreds of concurrent users, offering enterprise-grade telemetry, isolated sandboxes, and hybrid authentication models.
+Welcome to the **Synora Studio SaaS Multi-Tenant Gateway**. This platform allows organizations to centrally host and orchestrate LLM inference across hundreds of concurrent users, offering enterprise-grade telemetry, isolated sandboxes, and hybrid authentication models.
 
 ---
 
