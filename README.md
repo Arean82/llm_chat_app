@@ -1,6 +1,6 @@
-# Synora Studio (v8.0 Stable Release)
+# Synora Studio (v8.1 Stable Release)
 
-![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900)  ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900) ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-GPLv3-blue)
 
 A sleek, high-performance desktop chat application built with Python and PySide6. Designed as a universal multi-ecosystem hub, it interfaces seamlessly with **Google Gemini**, **NVIDIA NIM**, **Groq**, **Ollama**, and **LM Studio**—alongside infinite support for your own custom local endpoints—to provide unified streaming, blazing-fast markdown rendering, and enterprise-grade conversation management.
 
@@ -185,7 +185,7 @@ synora_studio/
 ├── build_all_plugins.bat           # 📦 Windows plugins compile & bundler script
 ├── build_all_plugins.sh            # 📦 Unix plugins compile & bundler script
 ├── README.md                       # 📖 Documentation
-├── LICENSE                         # ⚖️ MIT License
+├── LICENSE                         # ⚖️ GPLv3 License
 ├── SECURITY.md                     # 🛡️ Security policy and vulnerability disclosure
 ├── API_SERVER.md                   # 📡 API documentation
 ├── IDE_INTEGRATION.md              # 🔌 IDE setup guide
@@ -609,6 +609,12 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📅 Change Log
 
+### v8.1.0 – Synora Studio Transformation, Enhanced Admin Security & GPLv3 Licensing
+
+* **Application Rebranding**: Fully transformed the project identity to **Synora Studio**, complete with a stunning new glassmorphic 3D icon suite featuring true alpha transparency masks and dynamic native OS resolutions (.ico, .icns).
+* **Advanced Admin Reset Utility**: Upgraded the Operator Admin Reset Tool with a new PySide6 UI offering granular control. You can now select between Default (`admin/admin`), Dynamic (secure randomly generated hashes), and Custom password resets directly from the dashboard.
+* **GPLv3 Licensing (Copyleft)**: Transitioned the core application license from MIT to the GNU General Public License v3.0. This guarantees that all downstream modifications, bug fixes, and SaaS forks remain open-source and can be legally integrated back into the core project.
+
 ### v8.0.0 – Standalone Migration Companion App & Operator Admin Portfolio
 
 * **Standalone Migration Companion**: Created `operator_tools/migration_companion.py` — a dual-mode (PySide6 GUI + Headless CLI) database relocator for safely migrating SaaS tenant data between Turso/libSQL and PostgreSQL/MySQL clusters.
@@ -709,4 +715,4 @@ This framework is architected and curated with the vision of building transparen
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 (GPLv3) - see the [LICENSE](LICENSE) file for details.
