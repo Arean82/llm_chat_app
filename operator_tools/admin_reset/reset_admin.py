@@ -48,6 +48,12 @@ def run_gui_reset():
             self.btn_close = self.dialog.findChild(QPushButton, "btn_close")
             self.log_output = self.dialog.findChild(QTextEdit, "log_output")
 
+            from PySide6.QtWidgets import QRadioButton, QLineEdit
+            self.radio_custom = self.dialog.findChild(QRadioButton, "radio_custom")
+            self.custom_pass = self.dialog.findChild(QLineEdit, "custom_pass")
+            if self.radio_custom and self.custom_pass:
+                self.radio_custom.toggled.connect(self.custom_pass.setEnabled)
+
             self.btn_reset.clicked.connect(self.on_reset)
             self.btn_close.clicked.connect(self.dialog.close)
             
@@ -125,15 +131,34 @@ def run_gui_reset():
             """)
 
         def on_reset(self):
+            from PySide6.QtWidgets import QRadioButton, QLineEdit
+            import string
+            import random
+
+            radio_default = self.dialog.findChild(QRadioButton, "radio_default")
+            radio_random = self.dialog.findChild(QRadioButton, "radio_random")
+            radio_custom = self.dialog.findChild(QRadioButton, "radio_custom")
+            line_edit = self.dialog.findChild(QLineEdit, "custom_pass")
+
+            if radio_random and radio_random.isChecked():
+                new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+            elif radio_custom and radio_custom.isChecked():
+                new_password = line_edit.text()
+                if not new_password:
+                    QMessageBox.critical(self.dialog, "Error", "Custom password cannot be empty.")
+                    return
+            else:
+                new_password = "admin"
+
             reply = QMessageBox.question(self.dialog, "Confirm Global Reset", "Are you sure you want to reset the Master Admin Credentials?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.log_output.append("\n▶ Initiating universal master reset sequence...")
                 try:
                     db = TenantDatabaseManager()
-                    db.reset_admin_account()
-                    self.log_output.append("✅ Successfully synchronized default Master Credentials!")
-                    self.log_output.append("  Username: admin\n  Password: admin\n  API Key: admin_master_passport")
-                    QMessageBox.information(self.dialog, "Success", "Master admin account reset to defaults.")
+                    db.reset_admin_account(new_password)
+                    self.log_output.append("✅ Successfully synchronized Master Credentials!")
+                    self.log_output.append(f"  Username: admin\n  Password: {new_password}\n  API Key: admin_master_passport")
+                    QMessageBox.information(self.dialog, "Success", "Master admin account reset to specified password.")
                 except Exception as e:
                     self.log_output.append(f"❌ Failed: {str(e)}")
                     QMessageBox.critical(self.dialog, "Error", f"Reset failed:\n{e}")
@@ -154,10 +179,12 @@ def run_gui_reset():
 def main():
     parser = argparse.ArgumentParser(description="Universal Master Password Reset Sequence")
     parser.add_argument("--headless", "--cli", action="store_true", help="Run in CLI mode without GUI.")
+    parser.add_argument("--random-password", action="store_true", help="Generate a random password.")
+    parser.add_argument("--custom-password", type=str, help="Set a custom password.")
     args = parser.parse_args()
 
     if args.headless:
-        sys.exit(run_headless_reset())
+        sys.exit(run_headless_reset(random_pass=args.random_password, custom_pass=args.custom_password))
     else:
         sys.exit(run_gui_reset())
 

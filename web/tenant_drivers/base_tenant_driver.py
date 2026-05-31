@@ -106,7 +106,7 @@ class BaseTenantDriver(ABC):
     # --- ADMIN ROUTINES ---
 
     @abstractmethod
-    def reset_admin_account(self):
+    def reset_admin_account(self, new_password="admin"):
         """Forcefully resets the super admin account to default credentials."""
         pass
 

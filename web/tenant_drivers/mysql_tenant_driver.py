@@ -328,8 +328,8 @@ class MySQLTenantDriver(BaseTenantDriver):
 
     # --- ADMIN ROUTINES ---
 
-    def reset_admin_account(self):
-        admin_hash = self.hash_password("admin")
+    def reset_admin_account(self, new_password="admin"):
+        admin_hash = self.hash_password(new_password)
         conn = self.get_connection()
         try:
             cur = conn.cursor()

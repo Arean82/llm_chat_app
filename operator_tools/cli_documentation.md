@@ -33,11 +33,20 @@ For automated environments, you can bypass the interactive menu by passing an `-
 The `reset_admin.exe` tool allows you to reset the Master Admin Credentials across all environments.
 
 ### Execution
-Run the following command to securely invoke the reset sequence:
+Run the following command to securely invoke the reset sequence with the default "admin" password:
 ```bash
 ./reset_admin.exe --headless
 ```
 *(You may also use `--cli` interchangeably with `--headless`)*
+
+You can also specify how the password should be generated using the following flags:
+- `--random-password`: Generates a secure, randomized 12-character alphanumeric password.
+- `--custom-password "your_pass_here"`: Sets an explicit custom password string.
+
+**Example: Dynamic Password Reset**
+```bash
+./reset_admin.exe --headless --random-password
+```
 
 ### Behavior & Expected Output
 When executed, the tool bypasses PySide6/GUI dependencies completely and directly interfaces with the SQLite/PostgreSQL `TenantDatabaseManager`. It will output the following to `stdout`:

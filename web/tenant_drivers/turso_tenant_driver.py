@@ -285,8 +285,8 @@ class TursoTenantDriver(BaseTenantDriver):
 
     # --- ADMIN ROUTINES ---
 
-    def reset_admin_account(self):
-        admin_hash = self.hash_password("admin")
+    def reset_admin_account(self, new_password="admin"):
+        admin_hash = self.hash_password(new_password)
         with self.get_connection() as conn:
             cursor = conn.execute("SELECT id FROM users WHERE username = 'admin'")
             row = cursor.fetchone()
