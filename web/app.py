@@ -1030,6 +1030,34 @@ def create_saas_app():
             return jsonify({"success": False, "error": str(e)}), 500
 
 
+    # --- USER SETTINGS APIs ---
+
+    @app.route('/api/tenant/settings', methods=['GET', 'POST'])
+    def manage_tenant_settings():
+        """Retrieve or update tenant-specific configuration blobs."""
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"error": "Unauthorized"}), 401
+            
+        try:
+            from server.logic.services import ServiceRegistry
+            auth_service = ServiceRegistry.get("auth")
+            
+            if request.method == 'GET':
+                settings = auth_service.get_user_settings(user['id'])
+                return jsonify({"success": True, "settings": settings})
+                
+            if request.method == 'POST':
+                new_settings = request.get_json(silent=True) or {}
+                current_settings = auth_service.get_user_settings(user['id'])
+                if "failover_provider_sequence" in new_settings:
+                    current_settings["failover_provider_sequence"] = new_settings["failover_provider_sequence"]
+                    
+                auth_service.update_user_settings(user['id'], current_settings)
+                return jsonify({"success": True, "settings": current_settings})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
     # --- MEMORY EXPLORER APIs ---
 
     @app.route('/api/memory/list', methods=['GET'])
@@ -1250,6 +1278,16 @@ def create_saas_app():
         # Record telemetry counters (simulated for now, fully aggregated in production)
         prompt_chars = sum(len(m.get("content", "")) for m in messages)
         approx_prompt_tokens = int(prompt_chars / 4)
+
+        # --- SECURITY BLOCK (SSRF) ---
+        final_url = getattr(llm_client, "base_url", "")
+        if final_url and user.get('username') != 'admin':
+            if any(host in final_url.lower() for host in ['localhost', '127.0.0.1', '0.0.0.0']):
+                return jsonify({
+                    "error": "Forbidden", 
+                    "message": "Local infrastructure models (Ollama/LM Studio) are restricted to the Super Admin."
+                }), 403
+        # -----------------------------
 
         try:
             from server.logic.services import ServiceRegistry

@@ -181,6 +181,23 @@ class CircuitBreaker(BaseService):
 
             elif provider in ("ollama", "local", "lm_studio"):
                 # Offline/Local models don't leak budgets! Standard Ollama failover.
+                
+                # --- SECURITY BLOCK (SSRF) ---
+                is_admin = False
+                try:
+                    all_tenants = auth_service.db.get_all_tenants()
+                    for t in all_tenants:
+                        if str(t['id']) == str(tenant_id) and t['username'] == 'admin':
+                            is_admin = True
+                            break
+                except Exception:
+                    pass
+                    
+                if not is_admin:
+                    logger.warning(f"Local fallback '{provider}' denied for non-admin tenant '{tenant_id}'.")
+                    continue
+                # -----------------------------
+                
                 logger.info("Initiating local offline model failover query route (Ollama/LM Studio)...")
                 try:
                     # Point to standard local address
