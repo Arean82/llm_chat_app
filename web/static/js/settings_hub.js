@@ -3,7 +3,23 @@ import { App } from './state.js';
 import { fetchTenantCredentials, saveTenantCredentials } from './api.js';
 import { loadModels } from './workspace.js';
 
+function isValidKey(key) {
+  // Allow only alphanumeric, hyphen, underscore keys and block prototype properties
+  return typeof key === "string" && /^[a-zA-Z0-9_-]+$/.test(key) && !["__proto__", "prototype", "constructor"].includes(key);
+}
+
+function safeGet(obj, key) {
+  return isValidKey(key) && Object.prototype.hasOwnProperty.call(obj, key) ? Reflect.get(obj, key) : undefined;
+}
+
+function safeSet(obj, key, value) {
+  if (isValidKey(key)) {
+    Reflect.set(obj, key, value);
+  }
+}
+
 let tenantCredentialsCache = {};
+
 let systemProviders = [];
 let currentActiveProvider = localStorage.getItem('active_provider') || 'nvidia';
 
@@ -30,6 +46,11 @@ export async function loadSettingsHub() {
         populateEcosystemFilter();
         filterModels();
         
+        // Initialize Failover Sequence
+        if (window.renderFailoverUI) {
+            await window.renderFailoverUI();
+        }
+        
     } catch (e) {
         console.error("Failed to load settings hub credentials", e);
     }
@@ -45,7 +66,7 @@ function populateCredentialTable() {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border-glow)';
         
-        const hasKey = !!tenantCredentialsCache[p.id];
+        const hasKey = !!safeGet(tenantCredentialsCache, p.id);
         const isActive = (currentActiveProvider === p.id);
         
         let statusHtml = '';
@@ -57,21 +78,58 @@ function populateCredentialTable() {
             statusHtml = '<span style="color: var(--text-dim);"><i class="fa-solid fa-xmark"></i> UNAVAILABLE</span>';
         }
         
-        const currentUrl = tenantCredentialsCache[`${p.id}_base_url`] || p.default_url;
+        const currentUrl = safeGet(tenantCredentialsCache, `${p.id}_base_url`) || p.default_url;
         let keyDisplay = hasKey ? '********' : 'Missing';
         let keyStyle = hasKey ? '' : 'color: var(--accent-red);';
         
-        tr.innerHTML = `
-            <td style="text-align: center; font-size: 0.75rem;">${statusHtml}</td>
-            <td style="font-family: monospace; color: var(--text-dim);">${p.sdk}</td>
-            <td style="font-weight: 500;">${p.ecosystem}</td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${currentUrl}</td>
-            <td style="font-family: monospace; ${keyStyle}">${keyDisplay}</td>
-            <td style="text-align: right;">
-                <button onclick="window.editCredential('${p.id}')" class="btn-new" style="padding: 4px 10px; font-size: 0.75rem; width: auto; margin: 0 4px 0 0;">Edit</button>
-                <button onclick="window.setActiveProvider('${p.id}')" class="btn-new" style="padding: 4px 10px; font-size: 0.75rem; width: auto; margin: 0; background: ${isActive ? 'var(--accent-cyan)' : ''}; color: ${isActive ? '#000' : ''};" ${isActive ? 'disabled' : ''}>Set Active</button>
-            </td>
-        `;
+        // Safe DOM Construction to prevent XSS
+        const tdStatus = document.createElement('td');
+        tdStatus.style.cssText = "text-align: center; font-size: 0.75rem;";
+        tdStatus.innerHTML = statusHtml; // Safe, built strictly from internal logic
+
+        const tdSdk = document.createElement('td');
+        tdSdk.style.cssText = "font-family: monospace; color: var(--text-dim);";
+        tdSdk.textContent = p.sdk; // Unescaped user data: Use textContent
+
+        const tdEco = document.createElement('td');
+        tdEco.style.cssText = "font-weight: 500;";
+        tdEco.textContent = p.ecosystem; // Unescaped user data: Use textContent
+
+        const tdUrl = document.createElement('td');
+        tdUrl.style.cssText = "font-size: 0.8rem; color: var(--text-muted);";
+        tdUrl.textContent = currentUrl; // Unescaped user data: Use textContent
+
+        const tdKey = document.createElement('td');
+        tdKey.style.cssText = `font-family: monospace; ${keyStyle}`;
+        tdKey.textContent = keyDisplay; // Unescaped user data: Use textContent
+
+        const tdActions = document.createElement('td');
+        tdActions.style.textAlign = "right";
+        
+        // Use textContent for p.id just in case, though it is usually safe. 
+        // We will build the buttons cleanly.
+        const btnEdit = document.createElement('button');
+        btnEdit.className = "btn-new";
+        btnEdit.style.cssText = "padding: 4px 10px; font-size: 0.75rem; width: auto; margin: 0 4px 0 0;";
+        btnEdit.textContent = "Edit";
+        btnEdit.onclick = () => window.editCredential(p.id);
+
+        const btnActive = document.createElement('button');
+        btnActive.className = "btn-new";
+        btnActive.style.cssText = `padding: 4px 10px; font-size: 0.75rem; width: auto; margin: 0; background: ${isActive ? 'var(--accent-cyan)' : ''}; color: ${isActive ? '#000' : ''};`;
+        btnActive.textContent = "Set Active";
+        btnActive.disabled = isActive;
+        btnActive.onclick = () => window.setActiveProvider(p.id);
+
+        tdActions.appendChild(btnEdit);
+        tdActions.appendChild(btnActive);
+
+        tr.appendChild(tdStatus);
+        tr.appendChild(tdSdk);
+        tr.appendChild(tdEco);
+        tr.appendChild(tdUrl);
+        tr.appendChild(tdKey);
+        tr.appendChild(tdActions);
         
         tbody.appendChild(tr);
     });
@@ -81,12 +139,12 @@ window.editCredential = async function(providerId) {
     const p = systemProviders.find(x => x.id === providerId);
     if (!p) return;
     
-    const currentKey = tenantCredentialsCache[providerId] || '';
+    const currentKey = safeGet(tenantCredentialsCache, providerId) || '';
     const newKey = prompt(`Enter new API Key for ${p.ecosystem}:`, currentKey);
     
     if (newKey === null) return;
     
-    const currentUrl = tenantCredentialsCache[`${providerId}_base_url`] || p.default_url;
+    const currentUrl = safeGet(tenantCredentialsCache, `${providerId}_base_url`) || p.default_url;
     const newUrl = prompt(`Enter custom Base URL for ${p.ecosystem} (Leave as default if unsure):`, currentUrl);
     
     if (newUrl === null) return;
@@ -95,19 +153,19 @@ window.editCredential = async function(providerId) {
         const payload = {};
         
         if (newKey.trim() !== '' && !newKey.includes('***')) {
-            payload[providerId] = newKey.trim();
+            Reflect.set(payload, providerId, newKey.trim());
         } else if (newKey.trim() === '') {
-            payload[providerId] = '';
+            Reflect.set(payload, providerId, '');
         }
         
         if (newUrl.trim() !== '') {
-            payload[`${providerId}_base_url`] = newUrl.trim();
+            Reflect.set(payload, `${providerId}_base_url`, newUrl.trim());
         }
         
         await saveTenantCredentials(App.token, payload);
         
-        tenantCredentialsCache[providerId] = payload[providerId] !== undefined ? payload[providerId] : currentKey;
-        tenantCredentialsCache[`${providerId}_base_url`] = newUrl.trim();
+        safeSet(tenantCredentialsCache, providerId, Reflect.get(payload, providerId) !== undefined ? Reflect.get(payload, providerId) : currentKey);
+        safeSet(tenantCredentialsCache, `${providerId}_base_url`, newUrl.trim());
         
         populateCredentialTable();
         populateEcosystemFilter();
@@ -148,7 +206,7 @@ function populateEcosystemFilter() {
     // Only add ecosystems that have keys
     const connected = new Set();
     systemProviders.forEach(p => {
-        if (tenantCredentialsCache[p.id]) {
+        if (safeGet(tenantCredentialsCache, p.id)) {
             connected.add(p.ecosystem);
         }
     });
@@ -236,14 +294,21 @@ function renderModelDeveloperTabs(filterEcosystem) {
         if (typeof dev === 'string' && dev.length > 0) {
             dev = dev.charAt(0).toUpperCase() + dev.slice(1).toLowerCase();
         }
-        if (!modelsByDev[dev]) modelsByDev[dev] = [];
-        modelsByDev[dev].push(m);
+        if (!Reflect.has(modelsByDev, dev)) Reflect.set(modelsByDev, dev, []);
+        Reflect.get(modelsByDev, dev).push(m);
     });
     
     const sortedDevs = Object.keys(modelsByDev).sort();
     
     if (sortedDevs.length === 0) {
-        tabsContent.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-dim);">No models available for ${filterEcosystem}.</div>`;
+        // Clear previous content
+        while (tabsContent.firstChild) tabsContent.removeChild(tabsContent.firstChild);
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.textAlign = 'center';
+        emptyDiv.style.padding = '2rem';
+        emptyDiv.style.color = 'var(--text-dim)';
+        emptyDiv.textContent = `No models available for ${filterEcosystem}.`;
+        tabsContent.appendChild(emptyDiv);
         return;
     }
     
@@ -263,37 +328,79 @@ function renderModelDeveloperTabs(filterEcosystem) {
         
         const isGlobal = (filterEcosystem === "All");
         
-        let tableHtml = `
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
-                <thead style="border-bottom: 1px solid var(--border-glow); background: rgba(0,0,0,0.2);">
-                    <tr>
-                        <th>Model Name</th>
-                        ${isGlobal ? '<th>Ecosystem</th>' : ''}
-                        <th>Description</th>
-                        <th style="text-align: center;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        const table = document.createElement('table');
+        table.style.cssText = "width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;";
         
-        modelsByDev[dev].forEach(m => {
+        const thead = document.createElement('thead');
+        thead.style.cssText = "border-bottom: 1px solid var(--border-glow); background: rgba(0,0,0,0.2);";
+        const trHead = document.createElement('tr');
+        
+        const thName = document.createElement('th');
+        thName.textContent = "Model Name";
+        trHead.appendChild(thName);
+        
+        if (isGlobal) {
+            const thEco = document.createElement('th');
+            thEco.textContent = "Ecosystem";
+            trHead.appendChild(thEco);
+        }
+        
+        const thDesc = document.createElement('th');
+        thDesc.textContent = "Description";
+        trHead.appendChild(thDesc);
+        
+        const thStatus = document.createElement('th');
+        thStatus.textContent = "Status";
+        thStatus.style.textAlign = "center";
+        trHead.appendChild(thStatus);
+        
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        
+        Reflect.get(modelsByDev, dev).forEach(m => {
             const isFree = m.free !== undefined ? m.free : true;
             const statusText = isFree ? 'Free' : 'Paid';
             const statusStyle = isFree ? 'color: #28a745; border: 1px solid #28a745; background: transparent;' : 'color: #dc3545; border: 1px solid #dc3545; background: transparent;';
-            const badge = `<span style="padding: 2px 6px; border-radius: 2px; font-size: 0.8rem; font-weight: bold; display: inline-block; ${statusStyle}">${statusText}</span>`;
             
-            tableHtml += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                    <td style="font-weight: 500;">${m.name || m.id}</td>
-                    ${isGlobal ? `<td style="color: var(--accent-cyan);">${(m.provider || 'nvidia').toUpperCase()}</td>` : ''}
-                    <td style="color: var(--text-dim); font-size: 0.8rem;">${stripMarkdown(m.description || '')}</td>
-                    <td style="text-align: center;">${badge}</td>
-                </tr>
-            `;
+            const tr = document.createElement('tr');
+            tr.style.cssText = "border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer;";
+            tr.onmouseover = () => tr.style.background = 'rgba(255,255,255,0.05)';
+            tr.onmouseout = () => tr.style.background = 'transparent';
+            
+            const tdName = document.createElement('td');
+            tdName.style.fontWeight = "500";
+            tdName.textContent = m.name || m.id;
+            tr.appendChild(tdName);
+            
+            if (isGlobal) {
+                const tdEco = document.createElement('td');
+                tdEco.style.color = "var(--accent-cyan)";
+                tdEco.textContent = (m.provider || 'nvidia').toUpperCase();
+                tr.appendChild(tdEco);
+            }
+            
+            const tdDesc = document.createElement('td');
+            tdDesc.style.cssText = "color: var(--text-dim); font-size: 0.8rem;";
+            tdDesc.textContent = stripMarkdown(m.description || '');
+            tr.appendChild(tdDesc);
+            
+            const tdStatus = document.createElement('td');
+            tdStatus.style.textAlign = "center";
+            const badge = document.createElement('span');
+            badge.style.cssText = `padding: 2px 6px; border-radius: 2px; font-size: 0.8rem; font-weight: bold; display: inline-block; ${statusStyle}`;
+            badge.textContent = statusText;
+            tdStatus.appendChild(badge);
+            tr.appendChild(tdStatus);
+            
+            tbody.appendChild(tr);
         });
         
-        tableHtml += `</tbody></table>`;
-        contentDiv.innerHTML = tableHtml;
+        table.appendChild(tbody);
+        
+        while (contentDiv.firstChild) contentDiv.removeChild(contentDiv.firstChild);
+        contentDiv.appendChild(table);
         
         btn.onclick = () => {
             Array.from(tabsHeader.children).forEach(c => {
@@ -336,7 +443,8 @@ window.onSdkChanged = function() {
     };
     
     const ecosystems = sdkMap[sdk] || ["Custom..."];
-    ecoSelect.innerHTML = '';
+    // Clear ecosystem select options safely
+    while (ecoSelect.firstChild) ecoSelect.removeChild(ecoSelect.firstChild);
     
     ecosystems.forEach(eco => {
         const opt = document.createElement('option');
@@ -465,5 +573,161 @@ window.saveAdminModel = async function() {
     } catch (e) {
         console.error("Failed to save model", e);
         alert("Failed to save model. Check console.");
+    }
+};
+
+// --- AUTO-FAILOVER LOGIC (DRAG AND DROP) ---
+
+window.renderFailoverUI = async function() {
+    const listEl = document.getElementById('failover-sortable-list');
+    if (!listEl) return;
+    // Show loading placeholder safely
+    while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+    const loadingLi = document.createElement('li');
+    loadingLi.style.padding = '10px';
+    loadingLi.style.color = '#888';
+    loadingLi.textContent = 'Loading...';
+    listEl.appendChild(loadingLi);
+
+    try {
+        const resp = await fetch('/api/tenant/settings', {
+            headers: { 'Authorization': `Bearer ${App.token}` }
+        });
+        const data = await resp.json();
+        const settings = data.settings || {};
+        
+        // Parse current sequence
+        let sequence = [];
+        if (settings.failover_provider_sequence) {
+            sequence = settings.failover_provider_sequence.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+        }
+        
+        // Identify all connected providers
+        const connectedProviders = [];
+        systemProviders.forEach(p => {
+            if (safeGet(tenantCredentialsCache, p.id)) {
+                connectedProviders.push(p.id.toLowerCase());
+            }
+        });
+        
+        // Also add admin's offline models to list if they are admin, but since we don't know here, we'll just show what's requested
+        // Actually, let's just let them see all connected keys.
+        // If they don't have keys, they shouldn't failover.
+        if (connectedProviders.length === 0) {
+            listEl.innerHTML = '<li style="padding:10px; color:#888;">No providers configured yet. Add API keys first.</li>';
+            return;
+        }
+
+        // Build final list: Selected ones in order, then unselected ones
+        const finalList = [];
+        sequence.forEach(pId => {
+            if (connectedProviders.includes(pId)) {
+                finalList.push({ id: pId, selected: true });
+            }
+        });
+        
+        connectedProviders.forEach(pId => {
+            if (!sequence.includes(pId)) {
+                finalList.push({ id: pId, selected: false });
+            }
+        });
+        
+        listEl.innerHTML = '';
+        finalList.forEach(item => {
+            const li = document.createElement('li');
+            li.style.cssText = "display:flex; align-items:center; padding:10px; margin-bottom:5px; background:rgba(255,255,255,0.05); border:1px solid var(--border-glow); border-radius:4px; cursor:grab;";
+            li.draggable = true;
+            li.dataset.providerId = item.id;
+            
+            // Build list item using DOM APIs for safety
+            const dragSpan = document.createElement('span');
+            dragSpan.style.marginRight = '10px';
+            dragSpan.style.color = '#888';
+            dragSpan.textContent = '☰';
+            li.appendChild(dragSpan);
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'failover-cb';
+            checkbox.value = item.id;
+            if (item.selected) checkbox.checked = true;
+            checkbox.style.marginRight = '15px';
+            checkbox.style.cursor = 'pointer';
+            checkbox.style.transform = 'scale(1.2)';
+            li.appendChild(checkbox);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.fontWeight = 'bold';
+            nameSpan.style.color = 'var(--text-bright)';
+            nameSpan.style.textTransform = 'capitalize';
+            nameSpan.textContent = item.id;
+            li.appendChild(nameSpan);
+            
+            // Drag logic
+            li.addEventListener('dragstart', (e) => {
+                li.style.opacity = '0.5';
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.id);
+                setTimeout(() => li.classList.add('dragging'), 0);
+            });
+            
+            li.addEventListener('dragend', () => {
+                li.style.opacity = '1';
+                li.classList.remove('dragging');
+            });
+            
+            listEl.appendChild(li);
+        });
+        
+        // Handle Drag Over
+        listEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingNode = listEl.querySelector('.dragging');
+            if (!draggingNode) return;
+            
+            const siblings = [...listEl.querySelectorAll('li:not(.dragging)')];
+            let nextSibling = siblings.find(sibling => {
+                return e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2;
+            });
+            
+            listEl.insertBefore(draggingNode, nextSibling);
+        });
+
+    } catch(e) {
+        console.error("Failover load error", e);
+        listEl.innerHTML = '<li style="padding:10px; color:var(--accent-red);">Failed to load settings.</li>';
+    }
+};
+
+window.saveFailoverSequence = async function() {
+    const listEl = document.getElementById('failover-sortable-list');
+    if (!listEl) return;
+    
+    const checkboxes = listEl.querySelectorAll('.failover-cb');
+    const selected = [];
+    
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            selected.push(cb.value);
+        }
+    });
+    
+    const sequenceStr = selected.join(',');
+    
+    try {
+        const resp = await fetch('/api/tenant/settings', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${App.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ failover_provider_sequence: sequenceStr })
+        });
+        
+        if (resp.ok) {
+            alert("Failover configuration saved successfully!");
+        } else {
+            alert("Failed to save configuration.");
+        }
+    } catch(e) {
+        console.error("Failover save error", e);
+        alert("Error saving configuration.");
     }
 };

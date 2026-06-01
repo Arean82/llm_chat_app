@@ -33,6 +33,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 📊 **Live Performance Metrics:** Track AI speed with real-time stats (Time to First Token, Tokens/sec, and usage usage) displayed beautifully after every response.
 - 📎 **File Attachments:** Upload code (`.py`, `.js`), text, or data files directly into the chat for instant analysis.
 - 🔐 **Centralized Credential Hub:** Unified single-pane-of-glass management for all API keys, base URLs, and ecosystems. Features SDK-to-Ecosystem mapping and isolated OS-level vault storage (Audit ID 046).
+- 🛡️ **Hardened Settings Hub:** Addressed prototype pollution and XSS vulnerabilities in the settings interface by replacing raw HTML injections with strict DOM manipulation.
 - 🛡️ **Secure Transition Gate:** Switching "Live" ecosystems now triggers a mandatory logout confirmation gate, preventing session leakage and ensuring clean state transitions (Audit ID 028).
 - 🔄 **Background Model Fetching:** Smarter "Fetch Models" logic with ecosystem-aware background workers and real-time status telemetry (Audit ID 024).
 - 🛡️ **Universal Key-Aware Filtering:** The UI automatically hides models from providers lacking active credentials, ensuring a zero-pollution catalog (Audit ID 047).
@@ -611,6 +612,7 @@ This framework is architected and curated with the vision of building transparen
 
 ### v8.1.0 – Synora Studio Transformation, Enhanced Admin Security & GPLv3 Licensing
 
+* **Settings Hub Security Hardening**: Completely refactored the settings panel (`settings_hub.js`) to remove insecure `innerHTML` rendering and bracket object notation. Implemented robust DOM manipulation and safe `Reflect` accessors to eliminate cross-site scripting (XSS) and prototype pollution vulnerabilities (Audit IDs: 049).
 * **Application Rebranding**: Fully transformed the project identity to **Synora Studio**, complete with a stunning new glassmorphic 3D icon suite featuring true alpha transparency masks and dynamic native OS resolutions (.ico, .icns).
 * **Advanced Admin Reset Utility**: Upgraded the Operator Admin Reset Tool with a new PySide6 UI offering granular control. You can now select between Default (`admin/admin`), Dynamic (secure randomly generated hashes), and Custom password resets directly from the dashboard.
 * **GPLv3 Licensing (Copyleft)**: Transitioned the core application license from MIT to the GNU General Public License v3.0. This guarantees that all downstream modifications, bug fixes, and SaaS forks remain open-source and can be legally integrated back into the core project.
