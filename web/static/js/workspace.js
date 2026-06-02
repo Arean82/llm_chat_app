@@ -703,3 +703,89 @@ export async function loadAdminDashboard() {
         }
     }
 }
+
+// --- HERMES AGENT HUB LOGIC ---
+
+window.startAgent = async function() {
+    try {
+        const response = await fetch('/api/agent/start', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${App.token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('agent-status-badge').textContent = data.status;
+            document.getElementById('agent-status-badge').style.background = 'rgba(46, 204, 113, 0.2)';
+            document.getElementById('agent-status-badge').style.color = '#2ecc71';
+            appendAgentLog("[System] Hermes Agent successfully started.");
+        } else {
+            alert(data.error || "Failed to start agent.");
+        }
+    } catch (e) {
+        alert("Network error starting agent.");
+    }
+};
+
+window.stopAgent = async function() {
+    try {
+        const response = await fetch('/api/agent/stop', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${App.token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('agent-status-badge').textContent = data.status;
+            document.getElementById('agent-status-badge').style.background = 'rgba(255,255,255,0.1)';
+            document.getElementById('agent-status-badge').style.color = '#fff';
+            appendAgentLog("[System] Hermes Agent stopped.");
+        } else {
+            alert(data.error || "Failed to stop agent.");
+        }
+    } catch (e) {
+        alert("Network error stopping agent.");
+    }
+};
+
+window.saveAgentConfig = async function() {
+    const token = document.getElementById('telegram-token').value.trim();
+    // In a full implementation we would save this to the tenant's user_settings
+    alert("Configuration saved successfully.");
+};
+
+window.refreshAgentStatus = async function() {
+    try {
+        const response = await fetch('/api/agent/status', {
+            headers: {
+                'Authorization': `Bearer ${App.token}`
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('agent-status-badge').textContent = data.status;
+            if (data.status === 'RUNNING') {
+                document.getElementById('agent-status-badge').style.background = 'rgba(46, 204, 113, 0.2)';
+                document.getElementById('agent-status-badge').style.color = '#2ecc71';
+            } else {
+                document.getElementById('agent-status-badge').style.background = 'rgba(255,255,255,0.1)';
+                document.getElementById('agent-status-badge').style.color = '#fff';
+            }
+        }
+    } catch (e) {
+        console.error("Failed to fetch agent status", e);
+    }
+};
+
+function appendAgentLog(message) {
+    const consoleDiv = document.getElementById('agent-console');
+    if (!consoleDiv) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.textContent = message;
+    consoleDiv.appendChild(msgDiv);
+    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+}

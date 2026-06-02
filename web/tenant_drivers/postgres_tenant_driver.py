@@ -126,6 +126,37 @@ class PostgresTenantDriver(BaseTenantDriver):
 
             cur.execute("CREATE INDEX IF NOT EXISTS idx_chunk_cache_user ON chunk_cache(user_id);")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_semantic_cache_lookup ON semantic_query_cache(user_id, query_text);")
+            
+            # 7. Hermes Agent Integration Tables
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS agent_instances (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                    agent_name TEXT DEFAULT 'Hermes',
+                    status TEXT DEFAULT 'stopped',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS agent_memory (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    memory_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS agent_skills (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    skill_name TEXT NOT NULL,
+                    skill_code TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
             conn.commit()
 
             # SEED DEFAULT SUPER ADMIN
@@ -503,6 +534,76 @@ class PostgresTenantDriver(BaseTenantDriver):
             cur = conn.cursor()
             cur.execute("DELETE FROM chunk_cache WHERE user_id = %s", (user_id,))
             cur.execute("DELETE FROM semantic_query_cache WHERE user_id = %s", (user_id,))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    # --- HERMES AGENT INTEGRATION ---
+
+    def get_agent_instance(self, user_id: int):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM agent_instances WHERE user_id = %s", (user_id,))
+            return self._fetchone_dict(cur)
+        finally:
+            conn.close()
+
+    def update_agent_instance(self, user_id: int, agent_name: str, status: str):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO agent_instances (user_id, agent_name, status, updated_at)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT(user_id) DO UPDATE SET 
+                agent_name=EXCLUDED.agent_name, status=EXCLUDED.status, updated_at=CURRENT_TIMESTAMP
+            """, (user_id, agent_name, status))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def get_agent_memory(self, user_id: int):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM agent_memory WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+            return self._fetchall_dict(cur)
+        finally:
+            conn.close()
+
+    def add_agent_memory(self, user_id: int, memory_text: str):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO agent_memory (user_id, memory_text)
+                VALUES (%s, %s)
+            """, (user_id, memory_text))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def get_agent_skills(self, user_id: int):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM agent_skills WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+            return self._fetchall_dict(cur)
+        finally:
+            conn.close()
+
+    def add_agent_skill(self, user_id: int, skill_name: str, skill_code: str):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO agent_skills (user_id, skill_name, skill_code)
+                VALUES (%s, %s, %s)
+            """, (user_id, skill_name, skill_code))
             conn.commit()
             return True
         finally:

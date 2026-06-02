@@ -189,6 +189,51 @@ def create_saas_app():
                 return jsonify({"success": True, "message": "Settings updated"})
             return jsonify({"success": False, "error": "Failed to update settings"}), 500
 
+    # --- HERMES AGENT ROUTES ---
+    @app.route('/api/agent/status', methods=['GET'])
+    @app.route('/v1/agent/status', methods=['GET'])
+    def agent_status():
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
+            
+        from web.agent_manager import AgentManager
+        mgr = AgentManager.get_instance()
+        status = mgr.get_status(user['id'])
+        return jsonify({"success": True, "status": status})
+
+    @app.route('/api/agent/start', methods=['POST'])
+    @app.route('/v1/agent/start', methods=['POST'])
+    def agent_start():
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
+            
+        from web.agent_manager import AgentManager
+        mgr = AgentManager.get_instance()
+        # Ensure agent requests route back through this SaaS Universal API via environment variable injection
+        gateway_url = f"http://localhost:{os.getenv('PORT', 5000)}/v1"
+        success = mgr.start_agent(user['id'], user['api_key'], gateway_url)
+        if success:
+            db.update_agent_instance(user['id'], "Hermes", "running")
+            return jsonify({"success": True, "status": "RUNNING"})
+        return jsonify({"success": False, "error": "Failed to start agent"}), 500
+
+    @app.route('/api/agent/stop', methods=['POST'])
+    @app.route('/v1/agent/stop', methods=['POST'])
+    def agent_stop():
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
+            
+        from web.agent_manager import AgentManager
+        mgr = AgentManager.get_instance()
+        success = mgr.stop_agent(user['id'])
+        if success:
+            db.update_agent_instance(user['id'], "Hermes", "stopped")
+            return jsonify({"success": True, "status": "STOPPED"})
+        return jsonify({"success": False, "error": "Failed to stop agent"}), 500
+
     @app.route('/api/admin/gen_params', methods=['GET', 'POST'])
     @app.route('/v1/admin/gen_params', methods=['GET', 'POST'])
     @app.route('/v2/admin/gen_params', methods=['GET', 'POST'])

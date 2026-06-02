@@ -166,6 +166,32 @@ class BaseTenantDriver(ABC):
 
     # --- ISOLATION DATA ROUTING ---
 
+    # --- HERMES AGENT INTEGRATION ---
+
+    @abstractmethod
+    def get_agent_instance(self, user_id: int):
+        pass
+
+    @abstractmethod
+    def update_agent_instance(self, user_id: int, agent_name: str, status: str):
+        pass
+
+    @abstractmethod
+    def get_agent_memory(self, user_id: int):
+        pass
+
+    @abstractmethod
+    def add_agent_memory(self, user_id: int, memory_text: str):
+        pass
+
+    @abstractmethod
+    def get_agent_skills(self, user_id: int):
+        pass
+
+    @abstractmethod
+    def add_agent_skill(self, user_id: int, skill_name: str, skill_code: str):
+        pass
+
     @staticmethod
     def get_user_workspace(user_id: int) -> dict:
         """

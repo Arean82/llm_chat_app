@@ -101,6 +101,9 @@ function setupEventListeners() {
         switchView('memory-screen');
         loadMemoryRoster();
     });
+    document.getElementById('nav-agent').addEventListener('click', () => {
+        switchView('agent-screen');
+    });
     document.getElementById('nav-admin').addEventListener('click', () => {
         switchView('admin-screen');
         loadAdminDashboard();

@@ -123,6 +123,41 @@ class TursoTenantDriver(BaseTenantDriver):
             # Phase 9 Indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_chunk_cache_user ON chunk_cache(user_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_semantic_cache_lookup ON semantic_query_cache(user_id, query_text);")
+
+            # 7. Hermes Agent Integration Tables
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_instances (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    agent_name TEXT DEFAULT 'Hermes',
+                    status TEXT DEFAULT 'stopped',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id),
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    memory_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_skills (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    skill_name TEXT NOT NULL,
+                    skill_code TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
             conn.commit()
 
             # 4. SEED DEFAULT SUPER ADMIN
@@ -415,5 +450,51 @@ class TursoTenantDriver(BaseTenantDriver):
         with self.get_connection() as conn:
             conn.execute("DELETE FROM chunk_cache WHERE user_id = ?", (user_id,))
             conn.execute("DELETE FROM semantic_query_cache WHERE user_id = ?", (user_id,))
+            conn.commit()
+            return True
+
+    # --- HERMES AGENT INTEGRATION ---
+
+    def get_agent_instance(self, user_id: int):
+        with self.get_connection() as conn:
+            row = conn.execute("SELECT * FROM agent_instances WHERE user_id = ?", (user_id,)).fetchone()
+            return dict(row) if row else None
+
+    def update_agent_instance(self, user_id: int, agent_name: str, status: str):
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO agent_instances (user_id, agent_name, status, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(user_id) DO UPDATE SET 
+                agent_name=EXCLUDED.agent_name, status=EXCLUDED.status, updated_at=CURRENT_TIMESTAMP
+            """, (user_id, agent_name, status))
+            conn.commit()
+            return True
+
+    def get_agent_memory(self, user_id: int):
+        with self.get_connection() as conn:
+            rows = conn.execute("SELECT * FROM agent_memory WHERE user_id = ? ORDER BY created_at DESC", (user_id,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def add_agent_memory(self, user_id: int, memory_text: str):
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO agent_memory (user_id, memory_text)
+                VALUES (?, ?)
+            """, (user_id, memory_text))
+            conn.commit()
+            return True
+
+    def get_agent_skills(self, user_id: int):
+        with self.get_connection() as conn:
+            rows = conn.execute("SELECT * FROM agent_skills WHERE user_id = ? ORDER BY created_at DESC", (user_id,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def add_agent_skill(self, user_id: int, skill_name: str, skill_code: str):
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO agent_skills (user_id, skill_name, skill_code)
+                VALUES (?, ?, ?)
+            """, (user_id, skill_name, skill_code))
             conn.commit()
             return True

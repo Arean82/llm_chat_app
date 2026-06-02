@@ -19,6 +19,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 ## ✨ Features
 
 - ☁️ **SaaS Multi-Tenant Gateway:** An enterprise-grade web orchestration layer supporting Admin Vault and BYOK (Bring Your Own Key) tiers. Features real-time telemetry, Dead Letter Queues (DLQ), live worker metrics, and physical tenant isolation.
+- 🤖 **Hermes Autonomous Agent:** Seamlessly integrates autonomous background agents into the tenant sandbox, featuring omnichannel messaging connections (e.g., Telegram) and centralized persistent memory loops tied directly to the tenant's BYOK credentials.
 - ✨ **Premium Glassmorphic UI:** Stunning 4K visual design featuring dynamic glowing gradients, micro-animations, and seamless Dark/Light theme switching for both the Desktop and Web environments.
 - ⚔️ **AI Model Arena:** Brand-new competitive benchmark engine. Run dual LLMs concurrently side-by-side with real-time visual comparison, blind-mode evaluation, and victory elections.
 - 🧬 **Hybrid Vector RAG Memory:** Deep long-term recollections. Synthesizes high-velocity NumPy TF-IDF crawls with industrial-grade, local Qdrant Vector Database storage for persistent semantic retrieval.
@@ -211,8 +212,9 @@ synora_studio/
 │   │   │   └── migration_companion.ui
 │   │   └── migration_companion.py  # GUI + CLI/Headless Controller entrypoint
 │
-├── saas/                           # 🌐 Synora Studio SaaS Web Portal (V7)
+├── web/                            # 🌐 Synora Studio SaaS Web Portal (V7 & Hermes)
 │   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
+│   ├── agent_manager.py            # 🤖 Hermes Agent background orchestrator
 │   ├── config.ini                  # ⚙️ SaaS configuration (driver selection, network, SMTP)
 │   ├── tenant_db.py                # 🗄️ Factory Switchboard (Turso/Postgres/MySQL routing)
 │   ├── tenant_drivers/             # 🔌 Pluggable Multi-Backend Tenant Database Drivers
@@ -230,6 +232,7 @@ synora_studio/
 │       │   ├── header.html         # 📊 Telemetry indicators & active completions selectors
 │       │   ├── chat_pane.html      # 💬 Dynamic scroll viewport & chat welcoming panels
 │       │   ├── memory_screen.html  # 🧠 RAG document index manager
+│       │   ├── agent_screen.html   # 🤖 Hermes Agent Hub control interface
 │       │   └── admin_screen.html   # 👑 Operator console dashboard, DLQ rows & user management
 │       ├── modals/
 │       │   ├── credentials.html    # ⚙️ settings tabbed hub: dynamic custom LLM providers

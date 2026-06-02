@@ -201,6 +201,9 @@ def migrate_saas_tenant_database(source_driver, dest_driver, progress_callback=N
             progress_callback("Cleaning destination tables to avoid primary key collisions...")
             
         # Clear target tables first to allow clean overwrite
+        dst_cur.execute("DELETE FROM agent_skills")
+        dst_cur.execute("DELETE FROM agent_memory")
+        dst_cur.execute("DELETE FROM agent_instances")
         dst_cur.execute("DELETE FROM semantic_query_cache")
         dst_cur.execute("DELETE FROM chunk_cache")
         dst_cur.execute("DELETE FROM tenant_credentials")
@@ -295,6 +298,45 @@ def migrate_saas_tenant_database(source_driver, dest_driver, progress_callback=N
         if progress_callback:
             progress_callback(f"Transferred {len(queries)} semantic query cache hits.")
 
+        # 7. agent_instances
+        if progress_callback:
+            progress_callback("Migrating table: agent_instances...")
+        src_cur.execute("SELECT id, user_id, agent_name, status, created_at, updated_at FROM agent_instances")
+        agents = [dict(r) for r in src_cur.fetchall()]
+        for a in agents:
+            dst_cur.execute(f"""
+                INSERT INTO agent_instances (id, user_id, agent_name, status, created_at, updated_at)
+                VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph})
+            """, (a["id"], a["user_id"], a["agent_name"], a["status"], a["created_at"], a["updated_at"]))
+        if progress_callback:
+            progress_callback(f"Transferred {len(agents)} agent instances.")
+
+        # 8. agent_memory
+        if progress_callback:
+            progress_callback("Migrating table: agent_memory...")
+        src_cur.execute("SELECT id, user_id, memory_text, created_at FROM agent_memory")
+        memories = [dict(r) for r in src_cur.fetchall()]
+        for m in memories:
+            dst_cur.execute(f"""
+                INSERT INTO agent_memory (id, user_id, memory_text, created_at)
+                VALUES ({ph}, {ph}, {ph}, {ph})
+            """, (m["id"], m["user_id"], m["memory_text"], m["created_at"]))
+        if progress_callback:
+            progress_callback(f"Transferred {len(memories)} agent memory records.")
+
+        # 9. agent_skills
+        if progress_callback:
+            progress_callback("Migrating table: agent_skills...")
+        src_cur.execute("SELECT id, user_id, skill_name, skill_code, created_at FROM agent_skills")
+        skills = [dict(r) for r in src_cur.fetchall()]
+        for s in skills:
+            dst_cur.execute(f"""
+                INSERT INTO agent_skills (id, user_id, skill_name, skill_code, created_at)
+                VALUES ({ph}, {ph}, {ph}, {ph}, {ph})
+            """, (s["id"], s["user_id"], s["skill_name"], s["skill_code"], s["created_at"]))
+        if progress_callback:
+            progress_callback(f"Transferred {len(skills)} agent skills.")
+
         dst_conn.commit()
         if progress_callback:
             progress_callback("All tenant data tables successfully committed to target database.")
@@ -324,7 +366,7 @@ def verify_saas_tenant_integrity(source_driver, dest_driver, progress_callback=N
         src_cur = src_conn.cursor()
         dst_cur = dst_conn.cursor()
         
-        tables = ["users", "user_usage", "tenant_credentials", "shared_orbits", "chunk_cache", "semantic_query_cache"]
+        tables = ["users", "user_usage", "tenant_credentials", "shared_orbits", "chunk_cache", "semantic_query_cache", "agent_instances", "agent_memory", "agent_skills"]
         audit_results = {}
         all_passed = True
         
