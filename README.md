@@ -560,7 +560,7 @@ pyinstaller LLM_Chat_App_mac_full.spec
 2. Place `installer_script.iss` in the project root folder.
 3. Open the `installer_script.iss` file in Inno Setup.
 4. Go to **Build > Compile** (or press `Ctrl+F9`).
-5. *Output:* `installer_output/LLM_Chat_App_Setup_v8.1.0.exe`
+5. *Output:* `installer_output/Synora_Studio_Setup_v9.0.0.exe`
 
 The installer copies the entire `dist/LLM_Chat_dir/` folder to `Program Files` and creates desktop/start menu shortcuts.
 
@@ -572,18 +572,18 @@ For Ubuntu/Debian, use the automated build scripts:
 
 ```bash
 # Build onedir first
-pyinstaller LLM_Chat_App_onedir.spec
+pyinstaller synora_studio.spec
 # Run the automation script
 bash build_deb.sh
 # Install
-sudo dpkg -i llmchatapp_8.1.0.deb
+sudo dpkg -i synorastudio_9.0.0.deb
 ```
 
 **2. Create a Portable AppImage:**
 
 ```bash
 # Build onedir first
-pyinstaller LLM_Chat_App_onedir.spec
+pyinstaller synora_studio.spec
 # Run the AppImage script
 bash build_appimage.sh
 ```
@@ -628,6 +628,13 @@ This framework is architected and curated with the vision of building transparen
 ---
 
 ## 📅 Change Log
+
+### v9.0.0 – Distributed Micro-Agent Enterprise Ecosystem & Companion Operation
+
+* **Distributed Micro-Agent Architecture**: Decoupled the SaaS architecture into a distributed ecosystem leveraging a central Redis event bus (Pub/Sub) and job queues (Celery/asynchronous workers) for asynchronous background processing, telemetry tracking, and thread-safe operations.
+* **Companion Operation Dashboard**: Created the unified `Companion Operation` dashboard (located at [operator_tools/companion/companion_operation.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/operator_tools/companion/companion_operation.py)), providing full GUI and CLI support for database migrations (Turso edge shards to PostgreSQL/MySQL), SaaS web portal interface port binding configurations, and system service daemon installations.
+* **Decoupled Local Component Specifications**: Distributed dedicated, standalone `.spec`, `build.py`, `installer_script.iss`, and `file_version_info.txt` configuration files directly into each individual component folder ([desktop](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/desktop), [server](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/server), [web](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/web), [operator_tools/admin_reset](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/operator_tools/admin_reset), and [operator_tools/companion](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/operator_tools/companion)) for decoupled packaging, anchored by a global [synora_studio.spec](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/synora_studio.spec) in the root.
+* **Isolated Operator Admin Tools**: Repositioned administrative recovery controls under [operator_tools/admin_reset/reset_admin.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/operator_tools/admin_reset/reset_admin.py) and cleaned all legacy references to ensure security boundaries.
 
 ### v8.1.0 – Synora Studio Transformation, Enhanced Admin Security & GPLv3 Licensing
 
