@@ -1,4 +1,4 @@
-# Synora Studio (v8.1 Stable Release)
+# Synora Studio (v9.0 Stable Release)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)  ![PySide6](https://img.shields.io/badge/PySide6-6.11%2B-green)  ![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-412991) ![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900) ![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75C2) ![Groq](https://img.shields.io/badge/Groq-LPU-F55036) ![Ollama](https://img.shields.io/badge/Ollama-Local-000000) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Offline-6A0DAD) ![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-D92C2F) ![Turso](https://img.shields.io/badge/Turso-000000?style=flat&logo=turso&logoColor=cyan) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![License](https://img.shields.io/badge/License-GPLv3-blue)
 
@@ -25,7 +25,7 @@ Born from the drive for a truly ecosystem-agnostic environment, it breaks vendor
 - 🧬 **Hybrid Vector RAG Memory:** Deep long-term recollections. Synthesizes high-velocity NumPy TF-IDF crawls with industrial-grade, local Qdrant Vector Database storage for persistent semantic retrieval.
 - 🛠️ **Interactive Python Sandbox:** Secure, decoupled execution environment. Spawns fully-isolated processes to automatically compile and execute generated Python and PySide GUI codebases safely on your desktop.
 - ⚡ **Zero-Config Auto-Sweep:** Automated discovery of Ollama and LM Studio servers. A non-blocking, isolated background sweeper intelligently probes local ports to sync offline libraries with zero user configuration.
-- 🤖 **Scalable Architecture (V8.1):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
+- 🤖 **Scalable Architecture (V9.0):** Advanced modular chassis natively supporting hot-swappable viewports across **Google**, **NVIDIA**, **Ollama**, **LM Studio**, **Groq**, and **Official OpenAI**.
 - 🎛️ **Dynamic Capability-Based Filtering:** Intelligently filter models by **General Chat**, **Supports Tools**, **Vision/Multimodal**, **Embeddings**, **Rerankers**, or **Audio/Voice** using a unified, re-ordered UI filter that prioritizes active conversational models first.
 - 📂 **Universal Model Cataloging:** Dynamically auto-classifies and indexes non-chat models from API endpoints during background fetches. The chat selection popup remains cleanly partitioned (strictly showing chat-capable models), while specialized layers (Embeddings, Rerankers, Audio) are cataloged for backend integrations.
 - 🔍 **Pluggable Two-Stage Reranking Pipeline:** Maximizes code context and prompt grounding precision. Pairs candidate retrieval (Top 20) with high-recall cross-encoder rerankers (Local BGE / Cloud Cohere / Custom OpenAPI-compatible endpoints), featuring Hybrid A Structural Code Bias (scoring class/def blocks higher) and Hybrid B Diversity MMR (Maximal Marginal Relevance) overlap pruning.
@@ -214,11 +214,19 @@ synora_studio/
 │   │   │   └── headless_reset.py   # CLI/Daemon logic engine
 │   │   ├── ui_assets/
 │   │   │   └── reset_admin.ui      # Qt Designer UI layout
+│   │   ├── reset_admin.spec        # Local PyInstaller spec configuration
+│   │   ├── build.py                # Local admin reset build script
+│   │   ├── installer_script.iss    # Local Inno Setup script for admin reset
+│   │   ├── file_version_info.txt   # Local version metadata resource info
 │   │   └── reset_admin.py          # MVC Controller entrypoint
-│   ├── migration/                  # 🔄 Standalone DB Relocator (MVC Architecture)
-│   │   ├── ui_assets/
-│   │   │   └── migration_companion.ui
-│   │   └── migration_companion.py  # GUI + CLI/Headless Controller entrypoint
+│   └── companion/                  # 🔄 Standalone DB Relocator (MVC Architecture)
+│       ├── ui_assets/
+│       │   └── dashboard.ui        # Master wizard UI container
+│       ├── companion_operation.spec # Local PyInstaller spec configuration
+│       ├── build.py                # Local companion build script
+│       ├── installer_script.iss    # Local Inno Setup script for companion
+│       ├── file_version_info.txt   # Local version metadata resource info
+│       └── companion_operation.py  # GUI + CLI/Headless Controller entrypoint
 │
 ├── web/                            # 🌐 Synora Studio SaaS Web Portal (V7 & Hermes)
 │   ├── app.py                      # 🛡️ Secure SaaS Gateway & JWT Server
@@ -628,9 +636,9 @@ This framework is architected and curated with the vision of building transparen
 * **Advanced Admin Reset Utility**: Upgraded the Operator Admin Reset Tool with a new PySide6 UI offering granular control. You can now select between Default (`admin/admin`), Dynamic (secure randomly generated hashes), and Custom password resets directly from the dashboard.
 * **GPLv3 Licensing (Copyleft)**: Transitioned the core application license from MIT to the GNU General Public License v3.0. This guarantees that all downstream modifications, bug fixes, and SaaS forks remain open-source and can be legally integrated back into the core project.
 
-### v8.0.0 – Standalone Migration Companion App & Operator Admin Portfolio
+### v8.0.0 – Standalone Companion Operation Tool & Operator Admin Portfolio
 
-* **Standalone Migration Companion**: Created `operator_tools/migration_companion.py` — a dual-mode (PySide6 GUI + Headless CLI) database relocator for safely migrating SaaS tenant data between Turso/libSQL and PostgreSQL/MySQL clusters.
+* **Standalone Companion Operation**: Created `operator_tools/companion/companion_operation.py` — a dual-mode (PySide6 GUI + Headless CLI) database relocator for safely migrating SaaS tenant data between Turso/libSQL and PostgreSQL/MySQL clusters.
 * **Glassmorphic Migration Wizard**: GUI mode features a GitHub-dark themed wizard with real-time progress bars, step indicators, and scrolling log consoles powered by background `QThread` workers.
 * **Jaccard Similarity Integrity Audits**: Post-relocation verification compares row counts across all 6 tenant tables with formatted ASCII summary tables and a computed Jaccard Similarity Index.
 * **Settings Menu Subprocess Forking**: Added `🔄 Database Relocator` to the desktop Settings menu. Triggers auto-save, gracefully shuts down the main app to release database locks, then launches the companion as a detached subprocess.

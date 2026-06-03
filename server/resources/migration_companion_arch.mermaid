@@ -8,7 +8,7 @@ flowchart TD
     subgraph App1 ["📱 App 1: Synora Studio (Main GUI/Headless)"]
         UI["⚙️ Settings Panel Admin Console"]:::main
         Trigger["🚀 Click 'Operator Tools Dashboard'"]:::main
-        Spawn["Spawn subprocess:<br>operator_tools/migration/migration_companion.py"]:::process
+        Spawn["Spawn subprocess:<br>operator_tools/companion/companion_operation.py"]:::process
         Close["🚪 Terminate Main App Process<br>(Release Database Locks)"]:::process
     end
 

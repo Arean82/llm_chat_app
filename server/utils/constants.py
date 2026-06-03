@@ -2,7 +2,7 @@
 # This file contains constant values used throughout the Synora Studio.
 
 APP_NAME = "Synora Studio"
-APP_VERSION = "8.1.0"
+APP_VERSION = "9.0.0"
 APP_AUTHOR = "Arean Narrayan"
 
 

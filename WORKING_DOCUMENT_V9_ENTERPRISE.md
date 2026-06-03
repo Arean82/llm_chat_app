@@ -65,7 +65,7 @@ While V9 operates primarily as a headless, distributed cloud service for end-use
 To ensure a frictionless, zero-configuration installation out-of-the-box, the V9 architecture will follow a staged database lifecycle:
 
 1. **Bootstrap Phase**: Fresh installations default entirely to **Turso / libSQL** (embedded local SQLite). This allows the application to start instantly without requiring a complex PostgreSQL cluster setup.
-2. **Enterprise Migration**: Once the server administrator is ready to scale up to production, they launch the `operator_tools/migration_companion.py` to seamlessly migrate all Turso data into their enterprise **PostgreSQL (pg)** cluster.
+2. **Enterprise Migration**: Once the server administrator is ready to scale up to production, they launch the [companion_operation.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/operator_tools/companion/companion_operation.py) to seamlessly migrate all Turso data into their enterprise **PostgreSQL (pg)** cluster.
 
 ---
 
@@ -201,7 +201,7 @@ Phase 8 implements the staged installation pipeline from local bootstrap to ente
 | :-------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------ |
 | **8.1.1** | **Turso Bootstrap Architecture**: Configure the default setup routine to use an embedded local Turso/libSQL instance for frictionless, zero-configuration out-of-the-box installation.              | ✅ **DONE** |
 | **8.1.2** | **JSON Configuration Purge**: Eradicate flat-file `.json` configs (like model settings) and `.ini` files. Migrate all persistent configurations directly into the backend database schema.      | ✅ **DONE** |
-| **8.1.3** | **PostgreSQL Enterprise Migration**: Expand `operator_tools/migration_companion.py` to seamlessly execute a one-click Turso-to-PostgreSQL schema and data migration for scaling up to production. | ✅ **DONE** |
+| **8.1.3** | **PostgreSQL Enterprise Migration**: Expand [companion_operation.py](file:///c:/Users/user/OneDrive/Desktop/python/llm_chat_app/operator_tools/companion/companion_operation.py) to seamlessly execute a one-click Turso-to-PostgreSQL schema and data migration for scaling up to production. | ✅ **DONE** |
 
 ---
 

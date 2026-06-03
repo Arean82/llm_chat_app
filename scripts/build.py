@@ -1,6 +1,6 @@
-# build.py
+# scripts/build.py
 """
-Synora Studio - Unified Build & Packaging Orchestrator (v8.1.0)
+Synora Studio - Unified Build & Packaging Orchestrator (v9.0.0)
 Auto-detects host environment and bundles public clients, admin panels, and extensions.
 """
 
@@ -10,7 +10,7 @@ import platform
 import subprocess
 import shutil
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def run_command(cmd, cwd=None):
     print(f"\n[*] Executing: {' '.join(cmd) if isinstance(cmd, list) else cmd}")
@@ -25,7 +25,9 @@ def build_pyinstaller_executables():
     print("\n=============================================================")
     # Check specs directory
     specs = [
-        os.path.join(ROOT_DIR, "desktop", "specs", "LLM_Chat_App_onedir.spec"),
+        os.path.join(ROOT_DIR, "desktop", "desktop.spec"),
+        os.path.join(ROOT_DIR, "server", "server.spec"),
+        os.path.join(ROOT_DIR, "web", "web.spec"),
         os.path.join(ROOT_DIR, "operator_tools", "admin_reset", "reset_admin.spec"),
         os.path.join(ROOT_DIR, "operator_tools", "companion", "companion_operation.spec")
     ]
@@ -81,7 +83,7 @@ def package_distributions():
 
 def main():
     print("=============================================================")
-    print("🚀 SYNORA STUDIO UNIFIED BUILD PIPELINE (v8.1.0)")
+    print("🚀 SYNORA STUDIO UNIFIED BUILD PIPELINE (v9.0.0)")
     print("=============================================================")
     
     # Run the sections

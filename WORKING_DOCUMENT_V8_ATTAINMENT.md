@@ -773,15 +773,15 @@ To provide administrative security and prevent end-user tampering in production,
   if getattr(sys, 'frozen', False):
       # Packaged environment (Production)
       exe_dir = os.path.dirname(sys.executable)
-      companion_bin = os.path.join(exe_dir, "Migration Companion.exe" if sys.platform == "win32" else "Migration Companion")
+      companion_bin = os.path.join(exe_dir, "Companion_Operation.exe" if sys.platform == "win32" else "Companion_Operation")
       subprocess.Popen([companion_bin], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0)
   else:
       # Loose script environment (Development)
-      subprocess.Popen([sys.executable, "operator_tools/migration_companion.py"])
+      subprocess.Popen([sys.executable, "operator_tools/companion/companion_operation.py"])
   sys.exit(0) # Terminate main app to immediately release Turso / libSQL handles
   ```
 * **Lock-Free Turso Access**: Shutting down the main application ensures no remaining database connection locks are active on the local Turso engine database file, providing a clean, exclusive environment for relocation.
-* **Relocation Architecture Diagram**: Fully mapped inside `resources/migration_companion_arch.mermaid`.
+* **Relocation Architecture Diagram**: Fully mapped inside `resources/companion_operation_arch.mermaid`.
 
 ---
 
@@ -807,7 +807,7 @@ To turn the SaaS platform into a fully integrated developer portal, we will cons
 >
 > **Audit Note 3**: Successful recovery of v6.6 production stability. Dynamic WAL local SQLite fallbacks reinstated seamlessly alongside remote enterprise drivers. Streaming visual selections anchored flawlessly against user prompts. Exit thread trace crashes completely resolved.
 
-*Phase 10.3 Complete: Standalone Migration Companion App (`operator_tools/migration_companion.py`), isolated Admin Reset (`operator_tools/reset_admin.py`), triple PyInstaller spec, and Settings menu subprocess forking all implemented and synchronized.*
+*Phase 10.3 Complete: Standalone Companion Operation Tool (`operator_tools/companion/companion_operation.py`), isolated Admin Reset (`operator_tools/admin_reset/reset_admin.py`), separate PyInstaller specs, and Settings menu subprocess forking all implemented and synchronized.*
 
 ---
 
@@ -819,19 +819,19 @@ Phase 11 strips environment-setup logic out of the main desktop client, ensuring
 
 | #                | Task                                                                                                                                                                                                                                                                                              | Status           |
 | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------- |
-| **11.1.1** | **Asset Isolation**: Move the Migration Companion to `operator_tools/migration/migration_companion.py` and the password resetter to `operator_tools/admin_reset/reset_admin.py` to support future modular assets.                                                                       | ✅**DONE** |
+| **11.1.1** | **Asset Isolation**: Move the Companion Operation to `operator_tools/companion/companion_operation.py` and the password resetter to `operator_tools/admin_reset/reset_admin.py` to support future modular assets.                                                                       | ✅**DONE** |
 | **11.1.2** | **Path Adjustments**: Update all relative `sys.path` append commands in the relocated scripts to resolve three-levels up to the project root. Update `main.py` cleanup logic.                                                                                                           | ✅**DONE** |
-| **11.1.3** | **Segmented Spec Strategy**: Create distinct PyInstaller `.spec` profiles: `onedir`/`onefile` for distributing just the Chat App, and `onedir_full`/`onefile_full` to bundle the Chat App + Reset Admin + Migration Companion. (Supersedes legacy `single.spec`/`full.spec`). | ✅**DONE** |
+| **11.1.3** | **Segmented Spec Strategy**: Create distinct PyInstaller `.spec` profiles: `onedir`/`onefile` for distributing just the Chat App, and separate specs for packaging server, web, admin reset, and companion operation. | ✅**DONE** |
 | **11.1.4** | **UI XML Externalization**: Strip all hardcoded `PySide6` widget construction code from both scripts. Design strict `.ui` XML layout files to be loaded dynamically via `QUiLoader`.                                                                                                  | ✅**DONE** |
 
-### 11.2 Feature Decoupling (Migration Companion Expansion)
+### 11.2 Feature Decoupling (Companion Operation Expansion)
 
 | #                | Task                                                                                                                | Status           |
 | :--------------- | :------------------------------------------------------------------------------------------------------------------ | :--------------- |
 | **11.2.1** | **Internal MVC Structure**: Establish `core/` and `ui_assets/` directories for scalable growth            | ✅**DONE** |
 | **11.2.2** | **Transplant Storage Manager**: Move local storage logic into `core/local_relocator.py`                     | ✅**DONE** |
 | **11.2.3** | **Service Setup Wizard**: Create `core/service_installer.py` (Windows Native OS Services)                   | ✅**DONE** |
-| **11.2.4** | **Unified Dashboard UI**: Refactor `migration_companion.py` into a multi-tab Master Window                  | ✅**DONE** |
+| **11.2.4** | **Unified Dashboard UI**: Refactor `companion_operation.py` into a multi-tab Master Window                  | ✅**DONE** |
 | **11.2.5** | **Dual-Mode Headless Support**: Ensure all tabs and tools can be executed via `--cli` / `--headless` args | ✅**DONE** |
 | **11.2.6** | **Main App Cleanup**: Eradicate `Storage Manager` buttons from `ui/main_window.py`                        | ✅**DONE** |
 

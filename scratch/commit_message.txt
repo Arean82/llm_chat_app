@@ -1,0 +1,10 @@
+docs: bump version to v9.0.0 and unify build scripts and documentation
+
+- Bumped app version to 9.0.0 in server/utils/constants.py
+- Updated myappid and CLI print versions to v9.0 in desktop/main.py
+- Changed main window title version to v9.0 in desktop/ui/main_window.py
+- Bumped hermes agent runner header version to v9.0.0 in server/logic/agents/hermes_runner.py
+- Updated versions to 9.0.0 in build_mac.sh and build_deb.sh
+- Documented localized spec, build, version, and ISS configuration files in desktop/README.md, server/README.md, web/README.md, operator_tools/admin_reset/README.md, and operator_tools/companion/README.md
+- Renamed all script and path references of migration_companion to companion_operation across README.md, WORKING_DOCUMENT_V9_ENTERPRISE.md, WORKING_DOCUMENT_V8_ATTAINMENT.md, USER_MANUAL_DESKTOP.md, migration_companion_arch.mermaid, and generate_screenshots.py
+- Updated root README.md version headers, changelog entries, and operator tools portfolio listings to v9.0 and companion_operation

@@ -1,6 +1,6 @@
-# Operation Companion & Service Daemon Installer
+# Companion Operation & Service Daemon Installer (v9.0)
 
-The Operation Companion is a dual-mode administrative utility that facilitates platform migration, local data relocations, database backups, network/web configuration, and system service daemon generation.
+The Companion Operation is a dual-mode administrative utility that facilitates platform migration, local data relocations, database backups, network/web configuration, and system service daemon generation.
 
 ## Features
 - **Database Relocation**: Autonomously migrates all schemas and data from local bootstrap environments (Turso/libSQL SQLite) up to production enterprise clusters (PostgreSQL).
@@ -13,6 +13,13 @@ The Operation Companion is a dual-mode administrative utility that facilitates p
   - **GUI Mode**: PySide6 step-by-step wizard panel.
   - **CLI Mode**: Interactive terminal wizard or scriptable actions (e.g. `--action=backup`).
 
+## Local Configuration & Packaging Files
+To support decoupled modular compilation, this directory contains its own self-contained packaging files:
+- **`companion_operation.spec`**: PyInstaller spec file specific to packaging the Companion Operation tool.
+- **`build.py`**: Local Python build script executing PyInstaller commands targeting `companion_operation.spec`. (Global orchestrator is in `scripts/build.py`).
+- **`file_version_info.txt`**: OS-level metadata defining the executable's version (v9.0.0.0), copyrights, and descriptions.
+- **`installer_script.iss`**: Local Inno Setup configuration to package the compiled Companion Operation tool.
+
 ## Execution
 
 ### CLI Mode:
@@ -21,7 +28,7 @@ python companion_operation.py --headless
 ```
 
 ### PyInstaller Spec
-A standalone binary `Companion Operation.exe` can be compiled using PyInstaller:
+To compile the standalone binary `Companion_Operation` using PyInstaller:
 ```bash
 pyinstaller companion_operation.spec
 ```

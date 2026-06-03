@@ -3,13 +3,13 @@
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-1234567890AB}
 AppName=Synora Studio
-AppVersion=8.1.0
+AppVersion=9.0.0
 AppPublisher=Arean Narrayan
 DefaultDirName={commonpf}\Synora Studio
 DefaultGroupName=Synora Studio
 DisableProgramGroupPage=yes
 OutputDir=installer_output
-OutputBaseFilename=LLM_Chat_App_Setup_v8.1.0
+OutputBaseFilename=Synora_Studio_Setup_v9.0.0
 Compression=lzma2/ultra64
 SolidCompression=yes
 SetupIconFile=resources\app_icon.ico
