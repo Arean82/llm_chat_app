@@ -32,7 +32,7 @@ class MainWindowClass(QMainWindow):
     def __init__(self):
         super().__init__()
         print("Initializing Main Window Host Shell...")
-        self.setWindowTitle("Synora Studio v8.0")
+        self.setWindowTitle("Synora Studio v8.1")
         
         # Master System Singletons (Shared by ALL views)
         self.theme_manager = ThemeManager(self)

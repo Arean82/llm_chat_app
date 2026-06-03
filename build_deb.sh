@@ -2,7 +2,7 @@
 # build_deb.sh - Automates the creation of a Linux .deb package
 
 APP_NAME="synorastudio"
-VERSION="8.0.0"
+VERSION="8.1.0"
 PACKAGE_DIR="build_deb_pkg"
 BUILD_OUTPUT="dist/LLM_Chat_dir"
 

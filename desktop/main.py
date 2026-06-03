@@ -10,7 +10,7 @@ import platform
 # 1. SET APP IDENTITY (Windows Taskbar Grouping) - MUST BE SET BEFORE ANY QT GUI CLASS/DLL INITS
 if platform.system() == "Windows":
     import ctypes
-    myappid = 'arean82.synorastudio.v8.0'
+    myappid = 'arean82.synorastudio.v8.1'
     try:
         # Explicitly declare argument and return types for wide-string (Unicode) translation
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [ctypes.c_wchar_p]
@@ -256,7 +256,7 @@ def main():
     # CLI Command Router
     if "--help" in sys.argv or "-h" in sys.argv:
         print("\n" + "="*50)
-        print(" LLM CHAT APP - Headless Engine v8.0")
+        print(" LLM CHAT APP - Headless Engine v8.1")
         print("="*50)
         print("Usage: python main.py [options]")
         print("\nOptions:")

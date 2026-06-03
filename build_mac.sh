@@ -3,7 +3,7 @@
 
 APP_NAME="Synora Studio"
 BUNDLE_NAME="$APP_NAME.app"
-VERSION="8.0.0"
+VERSION="8.1.0"
 IDENTIFIER="com.arean82.synorastudio"
 OUTPUT_PKG="LLM_Chat_App_Installer.pkg"
 
