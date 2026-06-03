@@ -50,7 +50,7 @@ class SaaSConfigManager:
                 defaults = {
                     ("NETWORK", "enabled"): "true",
                     ("NETWORK", "host"): "127.0.0.1",
-                    ("NETWORK", "port"): "8888",
+                    ("NETWORK", "port"): "8080",
                     ("SECURITY", "public_signup"): "true",
                     ("SMTP_RELAY", "enabled"): "false",
                     ("SMTP_RELAY", "host"): "smtp.gmail.com",
@@ -95,8 +95,8 @@ enabled = true
 #   - 0.0.0.0: Expose server to Wi-Fi/Local LAN network.
 host = 127.0.0.1
 
-# The network listener port (Default 8888)
-port = 8888
+# The network listener port (Default 8080)
+port = 8080
 
 [SECURITY]
 # Allows remote guests to access validation/registration portals (true/false)

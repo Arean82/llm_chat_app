@@ -185,7 +185,7 @@ class MainWindowClass(QMainWindow):
         settings_menu.addSeparator()
         settings_menu.addAction("📂 Open Data Folder", self.open_storage_location)
         settings_menu.addSeparator()
-        settings_menu.addAction("🔄 Database Relocator (Migration Companion)", self.launch_migration_companion)
+        settings_menu.addAction("🛠️ Companion Operation", self.launch_migration_companion)
 
         # Log menu
         log_menu = menubar.addMenu("Log")
@@ -399,14 +399,14 @@ class MainWindowClass(QMainWindow):
 
     def launch_migration_companion(self):
         """
-        Phase 10.3: Launches the standalone Migration Companion as a detached subprocess
+        Phase 10.3: Launches the standalone Companion Operation as a detached subprocess
         and gracefully exits the main application to release database locks.
         """
         reply = QMessageBox.question(
             self,
-            "Launch Migration Companion",
+            "Launch Companion Operation",
             "This will close the Synora Studio to release all database locks, "
-            "then launch the standalone Migration Companion utility.\n\n"
+            "then launch the standalone Companion Operation utility.\n\n"
             "⚠️ All unsaved conversations will be auto-saved before closing.\n\n"
             "Continue?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
@@ -424,12 +424,12 @@ class MainWindowClass(QMainWindow):
         if getattr(sys, 'frozen', False):
             # Frozen environment (Production .exe)
             exe_dir = os.path.dirname(sys.executable)
-            companion_name = "Migration Companion.exe" if sys.platform == "win32" else "Migration Companion"
+            companion_name = "Companion Operation.exe" if sys.platform == "win32" else "Companion Operation"
             companion_bin = os.path.join(exe_dir, companion_name)
             if not os.path.exists(companion_bin):
                 QMessageBox.critical(
                     self, "Not Found",
-                    f"Migration Companion executable not found at:\n{companion_bin}\n\n"
+                    f"Companion Operation executable not found at:\n{companion_bin}\n\n"
                     "Ensure it was compiled alongside the main application."
                 )
                 return
@@ -437,11 +437,11 @@ class MainWindowClass(QMainWindow):
             subprocess.Popen([companion_bin], creationflags=creation_flags)
         else:
             # Loose script environment (Development)
-            companion_script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "operator_tools", "migration_companion.py")
+            companion_script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "operator_tools", "companion", "companion_operation.py")
             subprocess.Popen([sys.executable, companion_script])
 
         # Gracefully terminate main app to release Turso/libSQL handles
-        print("[Migration Companion] Companion launched. Shutting down main application...")
+        print("[Companion Operation] Companion launched. Shutting down main application...")
         QApplication.instance().quit()
 
     def show_saas_settings(self):

@@ -27,7 +27,7 @@ def build_pyinstaller_executables():
     specs = [
         os.path.join(ROOT_DIR, "desktop", "specs", "LLM_Chat_App_onedir.spec"),
         os.path.join(ROOT_DIR, "operator_tools", "admin_reset", "reset_admin.spec"),
-        os.path.join(ROOT_DIR, "operator_tools", "migration", "migration.spec")
+        os.path.join(ROOT_DIR, "operator_tools", "companion", "companion_operation.spec")
     ]
     
     print("[Step 1]: Compiling PyInstaller binaries...")

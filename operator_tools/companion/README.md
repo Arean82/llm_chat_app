@@ -1,9 +1,10 @@
-# Migration Companion & Service Daemon Installer
+# Operation Companion & Service Daemon Installer
 
-The Migration Companion is a dual-mode administrative utility that facilitates platform migration, local data relocations, database backups, and system service daemon generation.
+The Operation Companion is a dual-mode administrative utility that facilitates platform migration, local data relocations, database backups, network/web configuration, and system service daemon generation.
 
 ## Features
 - **Database Relocation**: Autonomously migrates all schemas and data from local bootstrap environments (Turso/libSQL SQLite) up to production enterprise clusters (PostgreSQL).
+- **Network/Web Configuration**: Programmatically update host binding and ports for the SaaS Web Portal via GUI or CLI.
 - **Automated Service Generation (Daemon Installer)**:
   - Generates native background daemon configurations.
   - **Windows (NSSM)**: Generates a PowerShell script (`install_<name>.ps1`) that automatically downloads NSSM, configures execution, locks down permissions, and installs the API as a Windows Service.
@@ -16,12 +17,12 @@ The Migration Companion is a dual-mode administrative utility that facilitates p
 
 ### CLI Mode:
 ```bash
-python migration_companion.py --headless
+python companion_operation.py --headless
 ```
 
 ### PyInstaller Spec
-A standalone binary `Migration Companion.exe` can be compiled using PyInstaller:
+A standalone binary `Companion Operation.exe` can be compiled using PyInstaller:
 ```bash
-pyinstaller migration.spec
+pyinstaller companion_operation.spec
 ```
 This ensures private operator tools are compiled separate from the main desktop user bundle.

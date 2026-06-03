@@ -97,11 +97,11 @@ For IDE integration instructions, see [IDE Integration Guide](IDE_INTEGRATION.md
 
 The application ships with isolated, administrative Operator Tools that execute completely outside the main process to ensure safety and bypass UI locks.
 
-|           Migration Companion Dashboard           |           Admin Reset Console           |
+|           Operation Companion Dashboard           |           Admin Reset Console           |
 | :-----------------------------------------------: | :-------------------------------------: |
-| ![Migration Companion](operator_tools/migration/Migration_Companion.png) | ![Reset Admin](operator_tools/admin_reset/Reset_Admin.png) |
+| ![Operation Companion](operator_tools/companion/Operation_Companion.png) | ![Reset Admin](operator_tools/admin_reset/Reset_Admin.png) |
 
-- **Migration Companion**: An automated database and configuration relocator tool. It safely migrates Turso SQL credentials, Local SQLite blobs, Qdrant Vector Data, and user profiles across environments (Local to SaaS, or SaaS to Local).
+- **Operation Companion**: An automated database, web host/port, and configuration relocator tool. It safely migrates Turso SQL credentials, Local SQLite blobs, Qdrant Vector Data, and user profiles across environments (Local to SaaS, or SaaS to Local), and manages network interface configurations.
 - **Admin Reset Utility**: A specialized recovery tool designed to purge corrupted registries, wipe compromised API keys, and re-provision default Admin/Tenant databases without touching user chat history.
 
 📂 **Browse the Full Gallery:** See more detailed interface caps in the [📂 resources/screenshots](./resources/screenshots) folder.
@@ -113,6 +113,14 @@ The application ships with isolated, administrative Operator Tools that execute 
 - 📝 **System Instructions:** Access the Instruction Library via Settings to create, edit, and toggle system prompts.
 - 🔽 **System Tray Icon:** Right-click for menu options, double-click to restore window from tray.
 - **Universal API Server** - Start/stop local API server on port 5000. Checkmark indicates server is running. Compatible with any OpenAI-compatible IDE or plugin.
+
+---
+
+## 🌐 Network Port Configuration
+
+Synora Studio utilizes the following default network ports:
+- **Core Backend API Server**: Port `5000` (OpenAI-compatible local server).
+- **SaaS Web Portal**: Port `8080` (Fully customizable via the **Operation Companion** GUI/CLI or directly in `saas/config.ini`).
 
 ---
 

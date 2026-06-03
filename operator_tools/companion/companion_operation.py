@@ -1,5 +1,5 @@
-# operator_tools/migration/migration_companion.py
-# Standalone Migration Companion App (Phase 11.4)
+# operator_tools/companion/companion_operation.py
+# Standalone Companion Operation App (Phase 11.4)
 # Dual-Mode: Multi-Tab GUI Wizard + Headless CLI Terminal
 
 import sys
@@ -65,7 +65,7 @@ def save_config(driver, credentials):
 
 def run_headless_migration(args=None):
     print("======================================================================")
-    print(" 🛠️  MIGRATION COMPANION / ADMIN DASHBOARD (CLI MODE)")
+    print(" 🛠️  COMPANION OPERATION / ADMIN DASHBOARD (CLI MODE)")
     print("======================================================================")
     
     if not check_admin_access():
@@ -78,9 +78,29 @@ def run_headless_migration(args=None):
         if args.action == "backup":
             return _run_backup_cli(getattr(args, 'target_dir', None))
         elif args.action == "relocate":
-            # Add non-interactive relocate logic here if needed
             print("Action 'relocate' currently requires interactive prompts.")
             return 1
+        elif args.action == "web-config":
+            host = getattr(args, 'host', None)
+            port_str = getattr(args, 'port', None)
+            if not host or not port_str:
+                print("❌ Error: --host and --port are required for 'web-config' action.")
+                return 1
+            try:
+                port = int(port_str)
+                if not (1 <= port <= 65535):
+                    raise ValueError()
+            except ValueError:
+                print("❌ Error: Invalid port value.")
+                return 1
+            from web.core.config_manager import SaaSConfigManager
+            config = SaaSConfigManager()
+            config.set_val("NETWORK", "host", host)
+            config.set_val("NETWORK", "port", str(port))
+            config.set_local_url(host, port)
+            config.save()
+            print(f"✅ Network configuration successfully updated to http://{host}:{port}")
+            return 0
         else:
             print(f"Unknown action: {args.action}")
             return 1
@@ -91,10 +111,11 @@ def run_headless_migration(args=None):
         print("  2. 📂 Local Storage Relocator")
         print("  3. ⚙️ Background Service Installation")
         print("  4. 💾 Backup Local SaaS Database")
-        print("  5. Exit")
-        choice = input("\nSelect operation (1-5) [5]: ").strip() or "5"
+        print("  5. 🌐 Network/Web Config")
+        print("  6. Exit")
+        choice = input("\nSelect operation (1-6) [6]: ").strip() or "6"
         
-        if choice == "5":
+        if choice == "6":
             print("\nExiting. Goodbye.")
             return 0
             
@@ -106,6 +127,8 @@ def run_headless_migration(args=None):
             _run_service_installer_cli()
         elif choice == "4":
             _run_backup_cli()
+        elif choice == "5":
+            _run_web_settings_cli()
         else:
             print("Invalid choice.")
 
@@ -225,7 +248,6 @@ def _run_saas_tenant_relocation_cli():
     confirm = input("\nProceed with migration? (y/n) [n]: ").strip().lower()
     if confirm != 'y': return
     
-    # Pre-flight Check: Test the database connection before migrating
     print("\nRunning pre-flight database connection check...")
     try:
         if driver == "postgres":
@@ -302,6 +324,34 @@ def _run_saas_tenant_relocation_cli():
     except Exception as e:
         print(f"❌ Failed: {e}")
 
+def _run_web_settings_cli():
+    from web.core.config_manager import SaaSConfigManager
+    config = SaaSConfigManager()
+    print("\n--- Network/Web Config ---")
+    current_host = config.get_str("NETWORK", "host", "127.0.0.1")
+    current_port = config.get_str("NETWORK", "port", "8080")
+    
+    print(f"Current Host: {current_host}")
+    print(f"Current Port: {current_port}")
+    
+    new_host = input(f"Enter new host address [{current_host}]: ").strip() or current_host
+    new_port_str = input(f"Enter new listening port [{current_port}]: ").strip() or current_port
+    
+    try:
+        new_port = int(new_port_str)
+        if not (1 <= new_port <= 65535):
+            raise ValueError()
+    except ValueError:
+        print("❌ Error: Invalid port. Must be an integer between 1 and 65535.")
+        return
+        
+    config.set_val("NETWORK", "host", new_host)
+    config.set_val("NETWORK", "port", str(new_port))
+    config.set_local_url(new_host, new_port)
+    config.save()
+    print("✅ Network configuration updated successfully.")
+    print("ℹ️  Note: You must restart the Web Portal service to apply changes.")
+
 # ═══════════════════════════════════════════════════════════════════
 #  GUI MODE
 # ═══════════════════════════════════════════════════════════════════
@@ -316,7 +366,6 @@ def run_gui_migration():
     
     app = QApplication(sys.argv)
     
-    # Modern Light Theme StyleSheet
     style = """
     * {
         font-family: "Segoe UI", "Inter", "Roboto", "Helvetica Neue", Arial, sans-serif;
@@ -496,6 +545,10 @@ def run_gui_migration():
             self.mainTabs.addTab(self.service_tab, "⚙️ Service Setup Wizard")
             self._wire_service()
             
+            self.web_tab = loader.load(os.path.join(UI_ASSETS_DIR, "web_settings.ui"), self)
+            self.mainTabs.addTab(self.web_tab, "🌐 Network Config")
+            self._wire_web()
+            
         def _wire_saas(self):
             self.saas_btn = self.saas_tab.findChild(QPushButton, "btn_start")
             self.btn_backup = self.saas_tab.findChild(QPushButton, "btn_backup")
@@ -505,7 +558,6 @@ def run_gui_migration():
             self.sourceInfoLabel = self.saas_tab.findChild(QLabel, "sourceInfoLabel")
             self.lbl_row_2 = self.saas_tab.findChild(QLabel, "label_2")
             
-            # Dynamic Source Display
             if self.sourceInfoLabel:
                 import configparser
                 config_path = os.path.join(ROOT_DIR, "saas", "config.ini")
@@ -525,7 +577,6 @@ def run_gui_migration():
                             if self.btn_backup: self.btn_backup.setText("💾 Export MySQL Database\n(Native Dump Tool)")
                 self.sourceInfoLabel.setText(driver_display)
             
-            # Fields
             self.myHost = self.saas_tab.findChild(QLineEdit, "myHost")
             self.myPort = self.saas_tab.findChild(QLineEdit, "myPort")
             self.myUser = self.saas_tab.findChild(QLineEdit, "myUser")
@@ -533,7 +584,6 @@ def run_gui_migration():
             self.myDB = self.saas_tab.findChild(QLineEdit, "myDB")
             self.btn_eye = self.saas_tab.findChild(QPushButton, "btn_eye")
             
-            # Pre-fill from defaults.ini if provided by the administrator
             defaults_path = os.path.join(ROOT_DIR, "saas", "defaults.ini")
             if os.path.exists(defaults_path):
                 import configparser
@@ -545,12 +595,10 @@ def run_gui_migration():
                     if self.myUser and "user" in dp["TargetDatabase"]: self.myUser.setText(dp["TargetDatabase"]["user"])
                     if self.myDB and "database" in dp["TargetDatabase"]: self.myDB.setText(dp["TargetDatabase"]["database"])
             
-            # Strict numeric validator for Port
             from PySide6.QtGui import QIntValidator
             if self.myPort:
                 self.myPort.setValidator(QIntValidator(1, 65535, self.saas_tab))
                 
-            # Password Eye Toggle Logic
             if self.btn_eye and self.myPass:
                 def toggle_password(checked):
                     if checked:
@@ -625,7 +673,6 @@ def run_gui_migration():
                 
                 try:
                     from PySide6.QtCore import Qt
-                    # Run synchronously but show busy cursor
                     QApplication.setOverrideCursor(Qt.WaitCursor)
                     res = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True)
                     QApplication.restoreOverrideCursor()
@@ -726,7 +773,6 @@ def run_gui_migration():
             from PySide6.QtWidgets import QCheckBox
             self.hardeningCheck = self.service_tab.findChild(QCheckBox, "hardeningCheck")
             
-            # Simple syntax validation (Green check / Red X)
             def validate_text():
                 if self.logDir and self.osCombo.currentIndex() == 1:
                     val = self.logDir.text()
@@ -757,7 +803,6 @@ def run_gui_migration():
             if self.envFile: self.envFile.textChanged.connect(validate_text)
             if self.linuxUser: self.linuxUser.textChanged.connect(validate_text)
             
-            # Hide/show linux/win fields
             def toggle_linux_fields(idx):
                 is_linux = (idx == 1)
                 is_win = (idx == 0)
@@ -778,7 +823,6 @@ def run_gui_migration():
                 if self.winUser: self.winUser.setVisible(is_win)
                 if self.winPass: self.winPass.setVisible(is_win)
                 
-                # Default Paths based on OS
                 if self.logDir: self.logDir.setText("/var/log/llm-chat-backend" if is_linux else "logs")
                 if self.envFile: self.envFile.setText("/etc/llm-chat-backend/.env" if is_linux else ".env")
                 
@@ -832,7 +876,53 @@ def run_gui_migration():
             else:
                 self.srv_out.setStyleSheet("color: #ff7b72; font-weight: bold;")
 
-    app.setApplicationName("Administrator Dashboard")
+        def _wire_web(self):
+            from web.core.config_manager import SaaSConfigManager
+            self.web_config = SaaSConfigManager()
+            
+            self.hostEdit = self.web_tab.findChild(QLineEdit, "hostEdit")
+            self.portEdit = self.web_tab.findChild(QLineEdit, "portEdit")
+            self.btn_save = self.web_tab.findChild(QPushButton, "btn_save")
+            
+            if self.hostEdit:
+                self.hostEdit.setText(self.web_config.get_str("NETWORK", "host", "127.0.0.1"))
+            if self.portEdit:
+                self.portEdit.setText(self.web_config.get_str("NETWORK", "port", "8080"))
+                
+            from PySide6.QtGui import QIntValidator
+            if self.portEdit:
+                self.portEdit.setValidator(QIntValidator(1, 65535, self.web_tab))
+                
+            if self.btn_save:
+                self.btn_save.clicked.connect(self._save_web_settings)
+                
+        def _save_web_settings(self):
+            host = self.hostEdit.text().strip() if self.hostEdit else "127.0.0.1"
+            port_str = self.portEdit.text().strip() if self.portEdit else "8080"
+            
+            if not host:
+                QMessageBox.warning(self, "Validation Error", "Host Address cannot be empty.")
+                return
+            if not port_str:
+                QMessageBox.warning(self, "Validation Error", "Port cannot be empty.")
+                return
+                
+            try:
+                port = int(port_str)
+                if not (1 <= port <= 65535):
+                    raise ValueError("Port out of range")
+            except ValueError:
+                QMessageBox.warning(self, "Validation Error", "Please enter a valid port between 1 and 65535.")
+                return
+                
+            self.web_config.set_val("NETWORK", "host", host)
+            self.web_config.set_val("NETWORK", "port", str(port))
+            self.web_config.set_local_url(host, port)
+            self.web_config.save()
+            
+            QMessageBox.information(self, "Settings Saved", "Network configuration updated successfully!\nPlease restart the Web Portal service to apply changes.")
+
+    app.setApplicationName("Companion Operation")
     icon_path = os.path.join(ROOT_DIR, "resources", "app_icon.ico")
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
@@ -841,10 +931,12 @@ def run_gui_migration():
     return app.exec()
 
 def main():
-    parser = argparse.ArgumentParser(description="Migration Companion / Admin Dashboard")
+    parser = argparse.ArgumentParser(description="Companion Operation / Admin Dashboard")
     parser.add_argument("--headless", "--cli", action="store_true", dest="headless", help="Run in headless/CLI mode")
-    parser.add_argument("--action", type=str, choices=["backup", "relocate"], help="Automated scriptable action to perform")
+    parser.add_argument("--action", type=str, choices=["backup", "relocate", "web-config"], help="Automated scriptable action to perform")
     parser.add_argument("--target-dir", type=str, help="Target directory for backup")
+    parser.add_argument("--host", type=str, help="Host for network configuration")
+    parser.add_argument("--port", type=str, help="Port for network configuration")
     args = parser.parse_args()
     if args.headless:
         sys.exit(run_headless_migration(args))
