@@ -54,6 +54,37 @@
             
         </div>
 
+        <!-- Skill Builder -->
+        <div style="margin-top: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--accent);"><i class="fa-solid fa-code"></i> Skill Builder</h4>
+            <div class="auth-card" style="margin: 0; width: 100%;">
+                <div style="display: grid; gap: 1rem; grid-template-columns: 2fr 1fr;">
+                    <div>
+                        <div class="input-group">
+                            <label for="skill-name">Skill Name</label>
+                            <input type="text" id="skill-name" placeholder="e.g., get_weather">
+                        </div>
+                        <div class="input-group" style="margin-top: 1rem;">
+                            <label for="skill-code">Python Code (def function...)</label>
+                            <textarea id="skill-code" rows="8" placeholder="def get_weather(location):&#10;    return 'Sunny'" style="font-family: monospace; background: var(--bg-dark); color: #a6accd; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; width: 100%;"></textarea>
+                        </div>
+                        <button class="btn-primary" style="margin-top: 1rem;" onclick="window.addAgentSkill()">
+                            <i class="fa-solid fa-plus"></i> Add Plugin
+                        </button>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--text-color);">Active Skills</div>
+                        <div id="skills-list" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; min-height: 200px; max-height: 250px; overflow-y: auto;">
+                            <div style="color: var(--text-muted); font-size: 0.9rem; text-align: center; margin-top: 1rem;">No skills loaded.</div>
+                        </div>
+                        <button class="btn-new" style="margin-top: 0.5rem; width: 100%; padding: 4px;" onclick="window.fetchAgentSkills()">
+                            <i class="fa-solid fa-sync"></i> Refresh List
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Terminal / Logs -->
         <div style="margin-top: 2rem;">
             <h4 style="margin-bottom: 1rem; color: var(--accent);"><i class="fa-solid fa-terminal"></i> Activity Log</h4>

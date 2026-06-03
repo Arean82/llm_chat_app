@@ -17,7 +17,7 @@ class EmbeddingService(BaseService):
 
     def on_initialize(self) -> bool:
         logger.info("Initializing Quantum Embedding Service...")
-        from web.tenant_db import TenantDatabaseManager
+        from web.core.tenant_db import TenantDatabaseManager
         self.db_mgr = TenantDatabaseManager()
         return True
 

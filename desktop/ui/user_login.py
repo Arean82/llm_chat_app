@@ -8,7 +8,7 @@ from PySide6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QBrush, QPaint
 
 from server.utils.path_utils import get_resource_path
 from desktop.ui.shared_widgets import set_app_icon
-from web.tenant_db import TenantDatabaseManager
+from web.core.tenant_db import TenantDatabaseManager
 import server.utils.security_utils as security_utils
 
 def create_eye_icon(visible: bool) -> QIcon:

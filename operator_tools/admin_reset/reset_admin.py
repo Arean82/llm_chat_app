@@ -14,7 +14,7 @@ else:
 
 sys.path.insert(0, root_dir)
 
-from web.tenant_db import TenantDatabaseManager
+from web.core.tenant_db import TenantDatabaseManager
 import argparse
 from core.headless_reset import run_headless_reset
 

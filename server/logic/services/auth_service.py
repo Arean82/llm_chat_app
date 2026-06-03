@@ -2,7 +2,7 @@ import logging
 import datetime
 import hashlib
 from .base_service import BaseService, ServiceRegistry
-from web.tenant_db import TenantDatabaseManager
+from web.core.tenant_db import TenantDatabaseManager
 
 logger = logging.getLogger("QuantumAuthService")
 

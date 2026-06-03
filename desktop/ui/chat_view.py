@@ -65,6 +65,7 @@ class ChatViewWidget(QWidget):
         self.model_btn = self.ui.model_btn
         self.model_desc_label = self.ui.model_desc_label
         self.auth_btn = self.ui.auth_btn
+        self.agent_hub_btn = self.ui.agent_hub_btn
         self.upload_btn = self.ui.upload_btn
         self.theme_toggle_btn = self.ui.theme_toggle_btn
         self.connection_status_btn = self.ui.connection_status_btn
@@ -82,6 +83,7 @@ class ChatViewWidget(QWidget):
         self.send_btn.clicked.connect(self.handle_send_stop_toggle)
         self.model_btn.clicked.connect(self.window.show_model_popup)
         self.auth_btn.clicked.connect(self.window.handle_auth_button)
+        self.agent_hub_btn.clicked.connect(self.window.show_agent_hub_mode)
         self.upload_btn.clicked.connect(self.handle_upload)
         self.theme_toggle_btn.clicked.connect(self.window.toggle_theme)
         

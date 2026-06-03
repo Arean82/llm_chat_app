@@ -18,7 +18,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, request, jsonify, Response, stream_with_context, render_template, send_from_directory
 
-from web.tenant_db import TenantDatabaseManager
+from web.core.tenant_db import TenantDatabaseManager
 from server.logic.llm_client import LLMClient
 from server.utils.storage_config import StorageManager
 
@@ -197,7 +197,7 @@ def create_saas_app():
         if not user:
             return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
             
-        from web.agent_manager import AgentManager
+        from web.core.agent_manager import AgentManager
         mgr = AgentManager.get_instance()
         status = mgr.get_status(user['id'])
         return jsonify({"success": True, "status": status})
@@ -209,7 +209,7 @@ def create_saas_app():
         if not user:
             return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
             
-        from web.agent_manager import AgentManager
+        from web.core.agent_manager import AgentManager
         mgr = AgentManager.get_instance()
         # Ensure agent requests route back through this SaaS Universal API via environment variable injection
         gateway_url = f"http://localhost:{os.getenv('PORT', 5000)}/v1"
@@ -226,13 +226,45 @@ def create_saas_app():
         if not user:
             return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
             
-        from web.agent_manager import AgentManager
+        from web.core.agent_manager import AgentManager
         mgr = AgentManager.get_instance()
         success = mgr.stop_agent(user['id'])
         if success:
             db.update_agent_instance(user['id'], "Hermes", "stopped")
             return jsonify({"success": True, "status": "STOPPED"})
         return jsonify({"success": False, "error": "Failed to stop agent"}), 500
+    @app.route('/api/agent/skills', methods=['GET'])
+    @app.route('/v1/agent/skills', methods=['GET'])
+    def agent_skills_list():
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
+            
+        skills = db.get_agent_skills(user['id'])
+        # Convert sqlite3.Row objects to dicts for JSON serialization
+        skills_list = [dict(row) for row in skills]
+        return jsonify({"success": True, "skills": skills_list})
+
+    @app.route('/api/agent/skills/add', methods=['POST'])
+    @app.route('/v1/agent/skills/add', methods=['POST'])
+    def agent_skills_add():
+        user = getattr(request, 'tenant', None)
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized action scope."}), 401
+            
+        data = request.get_json() or {}
+        skill_name = data.get("skill_name", "").strip()
+        skill_code = data.get("skill_code", "").strip()
+        
+        if not skill_name or not skill_code:
+            return jsonify({"success": False, "error": "Missing skill name or code"}), 400
+            
+        try:
+            db.add_agent_skill(user['id'], skill_name, skill_code)
+            return jsonify({"success": True, "message": "Skill added successfully"})
+        except Exception as e:
+            logger.error(f"Failed to add skill: {e}")
+            return jsonify({"success": False, "error": "Database error adding skill"}), 500
 
     @app.route('/api/admin/gen_params', methods=['GET', 'POST'])
     @app.route('/v1/admin/gen_params', methods=['GET', 'POST'])
@@ -344,7 +376,7 @@ def create_saas_app():
                 return jsonify({"success": False, "error": "Unauthorized action scope."}), 403
             
         try:
-            from web.config_manager import SaaSConfigManager
+            from web.core.config_manager import SaaSConfigManager
             saas_cfg = SaaSConfigManager()
             
             if request.method == 'GET':
@@ -1294,7 +1326,7 @@ def create_saas_app():
                 
                 # Priority 2: Fallback to old SaaSConfigManager flatfile
                 if not funded_key:
-                    from web.config_manager import SaaSConfigManager
+                    from web.core.config_manager import SaaSConfigManager
                     cfg = SaaSConfigManager()
                     funded_key = cfg.get_str("GLOBAL_KEYS", f"{provider}_api_key", "").strip()
                     

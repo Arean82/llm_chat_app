@@ -187,7 +187,7 @@ class AsyncWorker:
 
             logger.info(f"Successfully generated memory summary segment ({len(summary_text)} chars).")
 
-            from web.tenant_db import TenantDatabaseManager
+            from web.core.tenant_db import TenantDatabaseManager
             db_mgr = TenantDatabaseManager()
             summary_hash = hashlib.sha256(summary_text.encode('utf-8')).hexdigest()
             db_mgr.set_cached_embedding(summary_hash, user_id, f"Summary Segment of Session {session_id}", [0.0] * 384)

@@ -478,7 +478,7 @@ def run_interactive_cli_migration():
             source = TursoTenantDriver()
             
             # Destination is factory-configured driver
-            from web.tenant_db import TenantDatabaseManager
+            from web.core.tenant_db import TenantDatabaseManager
             # We temporarily bypass singleton to initialize the new target driver
             target_manager = TenantDatabaseManager()
             

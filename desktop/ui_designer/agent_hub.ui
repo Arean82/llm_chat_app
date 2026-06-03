@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AgentHubView</class>
+ <widget class="QWidget" name="AgentHubView">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Hermes Agent Hub</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>20</number>
+   </property>
+   <property name="topMargin">
+    <number>20</number>
+   </property>
+   <property name="rightMargin">
+    <number>20</number>
+   </property>
+   <property name="bottomMargin">
+    <number>20</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="header_layout">
+     <item>
+      <widget class="QLabel" name="header_label">
+       <property name="text">
+        <string>🤖 Hermes Agent Hub</string>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="back_btn">
+       <property name="text">
+        <string>⬅ Back to Chat</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="controls_layout">
+     <item>
+      <widget class="QGroupBox" name="status_group">
+       <property name="title">
+        <string>Agent Controls</string>
+       </property>
+       <layout class="QVBoxLayout" name="status_vbox">
+        <item>
+         <widget class="QLabel" name="status_label">
+          <property name="text">
+           <string>Status: STOPPED</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="btn_hbox">
+          <item>
+           <widget class="QPushButton" name="start_btn">
+            <property name="text">
+             <string>▶ Start Agent</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="stop_btn">
+            <property name="text">
+             <string>⏹ Stop</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="telegram_group">
+       <property name="title">
+        <string>Omnichannel Connectors</string>
+       </property>
+       <layout class="QVBoxLayout" name="telegram_vbox">
+        <item>
+         <widget class="QLabel" name="telegram_lbl">
+          <property name="text">
+           <string>Telegram Bot Token:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="telegram_input">
+          <property name="echoMode">
+           <enum>QLineEdit::Password</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="save_config_btn">
+          <property name="text">
+           <string>💾 Save Configuration</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="skill_builder_group">
+     <property name="title">
+      <string>Skill Builder</string>
+     </property>
+     <layout class="QHBoxLayout" name="skill_builder_layout">
+      <item>
+       <layout class="QVBoxLayout" name="skill_input_vbox">
+        <item>
+         <widget class="QLabel" name="skill_name_lbl">
+          <property name="text">
+           <string>Skill Name:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="skill_name_input"/>
+        </item>
+        <item>
+         <widget class="QLabel" name="skill_code_lbl">
+          <property name="text">
+           <string>Python Code:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="skill_code_input">
+          <property name="font">
+           <font>
+            <family>Consolas</family>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="add_skill_btn">
+          <property name="text">
+           <string>➕ Add Plugin</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="skill_list_vbox">
+        <item>
+         <widget class="QLabel" name="active_skills_lbl">
+          <property name="text">
+           <string>Active Skills:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="skills_list_widget"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="refresh_skills_btn">
+          <property name="text">
+           <string>🔄 Refresh List</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="console_group">
+     <property name="title">
+      <string>Activity Log</string>
+     </property>
+     <layout class="QVBoxLayout" name="console_layout">
+      <item>
+       <widget class="QTextEdit" name="agent_console">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="font">
+         <font>
+          <family>Consolas</family>
+         </font>
+        </property>
+        <property name="html">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;color:#82aaff;&quot;&gt;[System] Hermes Agent Orchestrator Ready...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

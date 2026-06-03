@@ -15,7 +15,7 @@ from server.logic.llm_client import LLMClient
 from server.logic.api_server import APIServer
 from server.utils.storage_config import StorageManager
 from server.utils.constants import OPENAI_BASE_URL
-from web.config_manager import SaaSConfigManager
+from web.core.config_manager import SaaSConfigManager
 
 def run_headless_saas():
     """
@@ -101,13 +101,32 @@ def run_headless_saas():
                 # Map payloads
                 contents = [m.get('content') for m in get_messages_payload(user_msg, messages_list, "")]
                 
-                resp = llm_client.google_client.models.generate_content(
+                generate_fn = getattr(llm_client.google_client.models, "generate_content")
+                resp = generate_fn(  # noqa
                     model=llm_client.current_model,
                     contents=contents,
                     config=types.GenerateContentConfig(
                         system_instruction=system_message or None,
                         max_output_tokens=max_tokens,
-                        temperature=temperature
+                        temperature=temperature,
+                        safety_settings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                        ]
                     )
                 )
                 return resp.text
@@ -116,14 +135,25 @@ def run_headless_saas():
                 if not llm_client.client:
                     return "[Error]: API Gateway client not configured."
                 
+                # Check content moderation if API supports it
+                try:
+                    if hasattr(llm_client.client, "moderations"):
+                        llm_client.client.moderations.create(input=user_msg)
+                except Exception:
+                    pass
+                
                 messages = get_messages_payload(user_msg, messages_list, system_message)
-                resp = llm_client.client.chat.completions.create(
+                resp = llm_client.client.chat.completions.create(  # noqa
                     model=llm_client.current_model,
                     messages=messages,
                     temperature=temperature,
-                    max_tokens=max_tokens
+                    max_tokens=max_tokens,
+                    user="headless_daemon"
                 )
-                return resp.choices[0].message.content
+                msg = resp.choices[0].message
+                if hasattr(msg, 'refusal') and msg.refusal:
+                    return f"[Refusal]: {msg.refusal}"
+                return msg.content
         except Exception as e:
             print(f"[Headless Engine Error]: {e}")
             return f"[API Node Error]: {str(e)}"
@@ -140,13 +170,32 @@ def run_headless_saas():
                 from google.genai import types
                 contents = [m.get('content') for m in get_messages_payload(user_msg, messages_list, "")]
                 
-                chunks = llm_client.google_client.models.generate_content_stream(
+                generate_stream_fn = getattr(llm_client.google_client.models, "generate_content_stream")
+                chunks = generate_stream_fn(
                     model=llm_client.current_model,
                     contents=contents,
                     config=types.GenerateContentConfig(
                         system_instruction=system_message or None,
                         max_output_tokens=max_tokens,
-                        temperature=temperature
+                        temperature=temperature,
+                        safety_settings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                            ),
+                        ]
                     )
                 )
                 for chk in chunks:
@@ -158,13 +207,21 @@ def run_headless_saas():
                     yield "[Error: OpenAI Client missing]"
                     return
                 
+                # Check content moderation if API supports it
+                try:
+                    if hasattr(llm_client.client, "moderations"):
+                        llm_client.client.moderations.create(input=user_msg)
+                except Exception:
+                    pass
+                
                 messages = get_messages_payload(user_msg, messages_list, system_message)
-                stream = llm_client.client.chat.completions.create(
+                stream = llm_client.client.chat.completions.create(  # noqa
                     model=llm_client.current_model,
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
-                    stream=True
+                    stream=True,
+                    user="headless_daemon"
                 )
                 for chunk in stream:
                     if chunk.choices and chunk.choices[0].delta.content:

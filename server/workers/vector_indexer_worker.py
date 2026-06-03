@@ -32,7 +32,7 @@ class VectorIndexerWorker(QThread):
             
             # --- PHASE 9: SEMANTIC CHUNK CATCH WAREHOUSING ---
             import hashlib
-            from web.tenant_db import TenantDatabaseManager
+            from web.core.tenant_db import TenantDatabaseManager
             
             chunk_hash = hashlib.sha256(exchange_payload.encode('utf-8')).hexdigest()
             tenant_db = TenantDatabaseManager()

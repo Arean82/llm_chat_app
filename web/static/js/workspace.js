@@ -781,6 +781,72 @@ window.refreshAgentStatus = async function() {
     }
 };
 
+window.fetchAgentSkills = async function() {
+    try {
+        const response = await fetch('/api/agent/skills', {
+            headers: {
+                'Authorization': `Bearer ${App.token}`
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            const listDiv = document.getElementById('skills-list');
+            if (!listDiv) return;
+            listDiv.innerHTML = '';
+            if (data.skills && data.skills.length > 0) {
+                data.skills.forEach(skill => {
+                    const skillEl = document.createElement('div');
+                    skillEl.style.padding = '0.5rem';
+                    skillEl.style.borderBottom = '1px solid var(--border-color)';
+                    skillEl.innerHTML = `<strong style="color: var(--accent);">${skill.skill_name}</strong><br><small style="color: var(--text-muted);">${new Date(skill.created_at).toLocaleString()}</small>`;
+                    listDiv.appendChild(skillEl);
+                });
+            } else {
+                listDiv.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem; text-align: center; margin-top: 1rem;">No skills loaded.</div>';
+            }
+        }
+    } catch (e) {
+        console.error("Failed to fetch agent skills", e);
+    }
+};
+
+window.addAgentSkill = async function() {
+    const nameInput = document.getElementById('skill-name');
+    const codeInput = document.getElementById('skill-code');
+    const skillName = nameInput.value.trim();
+    const skillCode = codeInput.value.trim();
+    
+    if (!skillName || !skillCode) {
+        alert("Please provide both a Skill Name and Python Code.");
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/agent/skills/add', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${App.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                skill_name: skillName,
+                skill_code: skillCode
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert("Skill added successfully!");
+            nameInput.value = '';
+            codeInput.value = '';
+            window.fetchAgentSkills();
+        } else {
+            alert(data.error || "Failed to add skill.");
+        }
+    } catch (e) {
+        alert("Network error adding skill.");
+    }
+};
+
 function appendAgentLog(message) {
     const consoleDiv = document.getElementById('agent-console');
     if (!consoleDiv) return;

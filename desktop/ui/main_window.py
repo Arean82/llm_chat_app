@@ -18,11 +18,12 @@ from server.workers.local_model_detector import LocalModelDetector
 from server.utils.path_utils import get_resource_path, get_app_settings
 from desktop.ui.shared_widgets import set_app_icon
 from web.app import SaaSServer
-from web.config_manager import SaaSConfigManager
+from web.core.config_manager import SaaSConfigManager
 
 # Import child modules
 from desktop.ui.chat_view import ChatViewWidget
 from desktop.ui.arena_view import ArenaViewWidget
+from desktop.ui.agent_hub_view import AgentHubViewWidget
 
 # Shared Data Classes used by view internals
 from desktop.ui.shared_widgets import MessageData, ChatDisplay
@@ -50,6 +51,7 @@ class MainWindowClass(QMainWindow):
         # Instantiate Views dynamically!
         self.chat_view = ChatViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
         self.arena_view = ArenaViewWidget(self, self.llm_client, self.theme_manager, self.formatter)
+        self.agent_hub_view = AgentHubViewWidget(self)
         
         # Instantiate and auto-start SaaS Server if configured
         self.saas_server = SaaSServer()
@@ -59,6 +61,7 @@ class MainWindowClass(QMainWindow):
         # Push them into our master stack!
         self.ui.main_stack.addWidget(self.chat_view)
         self.ui.main_stack.addWidget(self.arena_view)
+        self.ui.main_stack.addWidget(self.agent_hub_view)
         
         # Default to Chat Mode on launch
         self.ui.main_stack.setCurrentWidget(self.chat_view)
@@ -103,6 +106,11 @@ class MainWindowClass(QMainWindow):
         self.ui.main_stack.setCurrentWidget(self.arena_view)
         if hasattr(self, 'act_arena_mode'): self.act_arena_mode.setChecked(True)
         self.statusBar().showMessage("Switched to Model Arena", 2000)
+
+    def show_agent_hub_mode(self):
+        self.ui.main_stack.setCurrentWidget(self.agent_hub_view)
+        self.agent_hub_view.refresh_ui()
+        self.statusBar().showMessage("Switched to Agent Hub", 2000)
 
     # ---------------------------------------------------------
     # SHARED GLOBAL CONTROLLERS (Forward to active view where needed)

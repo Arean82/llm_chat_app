@@ -103,6 +103,7 @@ function setupEventListeners() {
     });
     document.getElementById('nav-agent').addEventListener('click', () => {
         switchView('agent-screen');
+        if (typeof window.fetchAgentSkills === 'function') window.fetchAgentSkills();
     });
     document.getElementById('nav-admin').addEventListener('click', () => {
         switchView('admin-screen');

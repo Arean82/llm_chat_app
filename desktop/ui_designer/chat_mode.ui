@@ -156,6 +156,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="agent_hub_btn">
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+         <property name="text">
+          <string>🤖 Agent Hub</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="auth_btn">
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>

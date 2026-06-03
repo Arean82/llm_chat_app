@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QInputDial
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt
 from server.utils.path_utils import get_resource_path
-from web.config_manager import SaaSConfigManager
+from web.core.config_manager import SaaSConfigManager
 from desktop.ui.shared_widgets import set_app_icon
 
 class SaaSSettingsDialogClass(QDialog):
@@ -197,7 +197,7 @@ class SaaSSettingsDialogClass(QDialog):
         
         if reply == QMessageBox.Yes:
             try:
-                from web.tenant_db import TenantDatabaseManager
+                from web.core.tenant_db import TenantDatabaseManager
                 db = TenantDatabaseManager()
                 db.reset_admin_account()
                 
@@ -299,7 +299,7 @@ class SaaSSettingsDialogClass(QDialog):
         self.accept()
         
     def refresh_telemetry(self):
-        from web.tenant_db import TenantDatabaseManager
+        from web.core.tenant_db import TenantDatabaseManager
         db = TenantDatabaseManager()
         usage = db.get_global_usage().get("aggregate", {})
         prompt = usage.get("total_prompt") or 0
@@ -308,7 +308,7 @@ class SaaSSettingsDialogClass(QDialog):
         self.ui.lbl_global_completion.setText(f"Total Completion Tokens: {comp:,}")
         
     def refresh_tenants(self):
-        from web.tenant_db import TenantDatabaseManager
+        from web.core.tenant_db import TenantDatabaseManager
         db = TenantDatabaseManager()
         tenants = db.get_all_tenants()
         self.ui.table_tenants.setRowCount(len(tenants))
@@ -337,7 +337,7 @@ class SaaSSettingsDialogClass(QDialog):
             return
             
         new_status = "active" if current_status == "banned" else "banned"
-        from web.tenant_db import TenantDatabaseManager
+        from web.core.tenant_db import TenantDatabaseManager
         db = TenantDatabaseManager()
         db.update_user_status(user_id, new_status)
         self.refresh_tenants()
@@ -350,7 +350,7 @@ class SaaSSettingsDialogClass(QDialog):
         
         new_pass, ok = QInputDialog.getText(self, "Reset Password", f"Enter new password for {username}:")
         if ok and new_pass.strip():
-            from web.tenant_db import TenantDatabaseManager
+            from web.core.tenant_db import TenantDatabaseManager
             db = TenantDatabaseManager()
             success, msg = db.update_user_profile(user_id, password_raw=new_pass.strip())
             if success:
