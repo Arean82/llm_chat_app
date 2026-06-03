@@ -318,7 +318,7 @@ class CredentialManagerDialog(QDialog):
             table = QTableWidget()
             
             # Setup Table Columns and Headers
-            cols = ["Model Name", "Ecosystem", "Description", "Status"] if is_global else ["Model Name", "Description", "Status"]
+            cols = ["Model Name", "Ecosystem", "Capabilities", "Description", "Status"] if is_global else ["Model Name", "Capabilities", "Description", "Status"]
             table.setColumnCount(len(cols))
             table.setHorizontalHeaderLabels(cols)
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -335,16 +335,32 @@ class CredentialManagerDialog(QDialog):
             if is_global:
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
                 header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-                header.setSectionResizeMode(2, QHeaderView.Stretch)
-                header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(3, QHeaderView.Stretch)
+                header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
             else:
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-                header.setSectionResizeMode(1, QHeaderView.Stretch)
-                header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(2, QHeaderView.Stretch)
+                header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
             
             table.setRowCount(len(models))
             for row, m in enumerate(models):
                 table.setItem(row, 0, QTableWidgetItem(m.get('name', '')))
+                
+                # Resolve capabilities
+                caps = []
+                m_id_l = m.get("id", "").lower()
+                m_desc_l = m.get("description", "").lower()
+                if m.get("vision", False) or "vision" in m_id_l or "-vl" in m_id_l or "vision" in m_desc_l or "multimodal" in m_desc_l or "pixtral" in m_id_l or "gemini" in m_id_l:
+                    caps.append("👁️ Vision")
+                if m.get("audio", False) or any(k in m_id_l for k in ["audio", "voice", "canary", "stt", "tts"]) or "gemini" in m_id_l:
+                    caps.append("🎙️ Audio")
+                if m.get("video", False) or "video" in m_id_l or "gemini-1.5" in m_id_l or "gemini-2.0" in m_id_l or "gemini-exp" in m_id_l:
+                    caps.append("🎥 Video")
+                if m.get("coding", False) or any(k in m_id_l for k in ["code", "coder", "codellama"]) or "gemini" in m_id_l or "gpt-4" in m_id_l:
+                    caps.append("💻 Coding")
+                caps_str = ", ".join(caps) if caps else "💬 Chat"
                 
                 # Dynamic Status Badge Injection
                 status_text = "Free" if m.get('free', True) else "Paid"
@@ -360,11 +376,13 @@ class CredentialManagerDialog(QDialog):
 
                 if is_global:
                     table.setItem(row, 1, QTableWidgetItem(m.get('provider', 'nvidia').upper()))
+                    table.setItem(row, 2, QTableWidgetItem(caps_str))
+                    table.setItem(row, 3, QTableWidgetItem(strip_markdown(m.get('description', ''))))
+                    table.setCellWidget(row, 4, status_widget)
+                else:
+                    table.setItem(row, 1, QTableWidgetItem(caps_str))
                     table.setItem(row, 2, QTableWidgetItem(strip_markdown(m.get('description', ''))))
                     table.setCellWidget(row, 3, status_widget)
-                else:
-                    table.setItem(row, 1, QTableWidgetItem(strip_markdown(m.get('description', ''))))
-                    table.setCellWidget(row, 2, status_widget)
             
             layout.addWidget(table)
             self.ui.modelDeveloperTabs.addTab(tab, dev)

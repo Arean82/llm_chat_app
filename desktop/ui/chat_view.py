@@ -256,6 +256,52 @@ class ChatViewWidget(QWidget):
                     self.add_system_message(f"🖼️ Loaded Visual: {file_name} &nbsp;&nbsp; {magic_anchor}", allow_html=True)
                     return 
 
+            # --- TIER 1.1: AUDIO GUARD PROTECTION ---
+            elif file_ext in ['.mp3', '.wav', '.m4a', '.ogg', '.flac']:
+                if not self.llm_client.is_model_audio_capable():
+                    QMessageBox.warning(self, "Audio Security Conflict", 
+                        f"❌ ATTACHMENT REFUSED: '{file_name}'\n\n"
+                        f"The active model lacks an audio processing stack.\n"
+                        "Switch to a valid Audio model to enable audio interaction.")
+                    return
+                else:
+                    import base64
+                    with open(file_path, 'rb') as audio_f:
+                        bin_data = base64.b64encode(audio_f.read()).decode('utf-8')
+                    mime_map = {'.mp3': 'audio/mp3', '.wav': 'audio/wav', '.m4a': 'audio/m4a', '.ogg': 'audio/ogg', '.flac': 'audio/flac'}
+                    guessed_mime = mime_map.get(file_ext, 'audio/mp3')
+                    self.attached_files.append({
+                        'name': file_name, 
+                        'content': bin_data, 
+                        'type': 'audio', 
+                        'mime': guessed_mime
+                    })
+                    self.add_system_message(f"🎙️ Loaded Audio: {file_name}")
+                    return 
+
+            # --- TIER 1.2: VIDEO GUARD PROTECTION ---
+            elif file_ext in ['.mp4', '.mov', '.avi', '.mkv', '.webm']:
+                if not self.llm_client.is_model_video_capable():
+                    QMessageBox.warning(self, "Video Security Conflict", 
+                        f"❌ ATTACHMENT REFUSED: '{file_name}'\n\n"
+                        f"The active model lacks a video processing stack.\n"
+                        "Switch to a valid Video model to enable video interaction.")
+                    return
+                else:
+                    import base64
+                    with open(file_path, 'rb') as video_f:
+                        bin_data = base64.b64encode(video_f.read()).decode('utf-8')
+                    mime_map = {'.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo', '.mkv': 'video/x-matroska', '.webm': 'video/webm'}
+                    guessed_mime = mime_map.get(file_ext, 'video/mp4')
+                    self.attached_files.append({
+                        'name': file_name, 
+                        'content': bin_data, 
+                        'type': 'video', 
+                        'mime': guessed_mime
+                    })
+                    self.add_system_message(f"🎥 Loaded Video: {file_name}")
+                    return 
+
             # --- TIER 2: NATIVE DOCUMENT ENGINE SUITE ---
             elif file_ext == '.pdf':
                 import pypdf
@@ -292,6 +338,15 @@ class ChatViewWidget(QWidget):
                 
             # --- TIER 3: UNIVERSAL RAW TEXT FALLBACK (JSON, XML, UI, etc.) ---
             else:
+                if file_ext in ['.ui', '.xml', '.py', '.js', '.ts', '.html', '.css', '.json', '.sh', '.bat']:
+                    if not self.llm_client.is_model_coding_capable():
+                        reply = QMessageBox.question(self, "Model Optimization Recommendation",
+                            f"⚠️ The active model is not coder-optimized for handling code or UI layouts.\n\n"
+                            f"For better results, we recommend using a coder-optimized model.\n\n"
+                            f"Do you want to proceed anyway?",
+                            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+                        if reply == QMessageBox.No:
+                            return
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
                     
@@ -446,8 +501,10 @@ class ChatViewWidget(QWidget):
         
         # Segregate attachments into functional domains: textual logic vs multimodal vision
         active_files = [f for f in self.attached_files if f.get('active', True)]
-        txt_files = [f for f in active_files if f.get('type') != 'image']
+        txt_files = [f for f in active_files if f.get('type') not in ['image', 'audio', 'video']]
         img_files = [f for f in active_files if f.get('type') == 'image']
+        audio_files = [f for f in active_files if f.get('type') == 'audio']
+        video_files = [f for f in active_files if f.get('type') == 'video']
 
         if txt_files:
             agg_text = "\n\n".join([f"--- File: {f['name']} ---\n{f['content']}" for f in txt_files])
@@ -468,7 +525,7 @@ class ChatViewWidget(QWidget):
         self.add_user_message(display_msg)
 
         # Construct Final Payload Carrier (Support Mixed Multimodal Array)
-        if img_files:
+        if img_files or audio_files or video_files:
             # Advanced Carrier: Pack textual directive alongside binary asset frames
             carrier = [{"type": "text", "text": final_prompt}]
             for img in img_files:
@@ -476,6 +533,18 @@ class ChatViewWidget(QWidget):
                     "type": "image",
                     "data": img['content'],
                     "mime": img['mime']
+                })
+            for aud in audio_files:
+                carrier.append({
+                    "type": "audio",
+                    "data": aud['content'],
+                    "mime": aud['mime']
+                })
+            for vid in video_files:
+                carrier.append({
+                    "type": "video",
+                    "data": vid['content'],
+                    "mime": vid['mime']
                 })
             self.chat_history.append({"role": "user", "content": carrier})
         else:

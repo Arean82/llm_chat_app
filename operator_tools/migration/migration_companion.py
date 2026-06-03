@@ -225,6 +225,39 @@ def _run_saas_tenant_relocation_cli():
     confirm = input("\nProceed with migration? (y/n) [n]: ").strip().lower()
     if confirm != 'y': return
     
+    # Pre-flight Check: Test the database connection before migrating
+    print("\nRunning pre-flight database connection check...")
+    try:
+        if driver == "postgres":
+            try:
+                import importlib
+                psycopg2 = importlib.import_module("psycopg2")
+                conn = psycopg2.connect(credentials['pgConnStr'], connect_timeout=5)
+                conn.close()
+                print("✅ Pre-flight connection test: Connection successful!")
+            except ImportError:
+                print("⚠️  Warning: psycopg2 package not installed. Skipping pre-flight connection check.")
+        elif driver == "mysql":
+            try:
+                import importlib
+                mysql_connector = importlib.import_module("mysql.connector")
+                conn = mysql_connector.connect(
+                    host=credentials['myHost'], port=int(credentials['myPort']),
+                    user=credentials['myUser'], password=credentials['myPass'],
+                    database=credentials['myDB'],
+                    connection_timeout=5
+                )
+                conn.close()
+                print("✅ Pre-flight connection test: Connection successful!")
+            except ImportError:
+                print("⚠️  Warning: mysql-connector-python package not installed. Skipping pre-flight connection check.")
+    except Exception as check_err:
+        print(f"❌ Pre-flight connection test: Connection failed! {check_err}")
+        confirm_anyway = input("Do you want to proceed anyway? (y/n) [n]: ").strip().lower()
+        if confirm_anyway != 'y':
+            print("Migration aborted.")
+            return
+
     try:
         from web.tenant_drivers.turso_tenant_driver import TursoTenantDriver
         source = TursoTenantDriver(db_name="saas_tenants.db")

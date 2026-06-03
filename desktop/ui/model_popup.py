@@ -84,7 +84,8 @@ class ModelPopupClass(QDialog):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents) # Ecosystem
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents) # Developer
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # Model Name
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)          # Description Stretch
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents) # Capabilities
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)          # Description Stretch
         
         # Ensure row heights expand for wrapped text
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
@@ -137,24 +138,35 @@ class ModelPopupClass(QDialog):
             # Dynamic capability filtering
             filter_idx = self.ui.capability_filter.currentIndex()
             if filter_idx > 0:
-                from server.utils.model_config import does_model_support_tools
                 filtered_by_cap = []
                 for m in self.models_data:
                     m_id = m.get("id", "")
                     m_desc = m.get("description", "").lower()
                     m_id_lower = m_id.lower()
                     
-                    supports_tools = does_model_support_tools(m_id)
-                    is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc or "multimodal" in m_desc
+                    has_vision = m.get("vision", False) or "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc or "multimodal" in m_desc or "pixtral" in m_id_lower or "gemini" in m_id_lower
+                    has_audio = m.get("audio", False) or any(k in m_id_lower for k in ["audio", "voice", "canary", "stt", "tts"]) or "gemini" in m_id_lower
+                    has_video = m.get("video", False) or "video" in m_id_lower or "gemini-1.5" in m_id_lower or "gemini-2.0" in m_id_lower or "gemini-exp" in m_id_lower
+                    has_coding = m.get("coding", False) or any(k in m_id_lower for k in ["code", "coder", "codellama"]) or "gemini" in m_id_lower or "gpt-4" in m_id_lower
                     
                     if filter_idx == 1: # General Chat
-                        if not is_vision:
+                        if not has_vision and not has_audio and not has_video:
                             filtered_by_cap.append(m)
                     elif filter_idx == 2: # Supports Tools
-                        if supports_tools:
+                        from server.utils.model_config import does_model_support_tools
+                        if does_model_support_tools(m_id):
                             filtered_by_cap.append(m)
                     elif filter_idx == 3: # Multimodal / Vision
-                        if is_vision:
+                        if has_vision:
+                            filtered_by_cap.append(m)
+                    elif filter_idx == 4: # Audio / Voice
+                        if has_audio:
+                            filtered_by_cap.append(m)
+                    elif filter_idx == 5: # Video / Media
+                        if has_video:
+                            filtered_by_cap.append(m)
+                    elif filter_idx == 6: # Coding / Software
+                        if has_coding:
                             filtered_by_cap.append(m)
                 self.models_data = filtered_by_cap
         except Exception as e:
@@ -200,11 +212,29 @@ class ModelPopupClass(QDialog):
             name_item = QTableWidgetItem(model.get('name', 'Unnamed') + name_suffix)
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(row, 3, name_item)
+
+            # Col 4: Capabilities
+            caps = []
+            m_id_lower = model.get("id", "").lower()
+            m_desc_lower = model.get("description", "").lower()
+            if model.get("vision", False) or "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc_lower or "multimodal" in m_desc_lower or "pixtral" in m_id_lower or "gemini" in m_id_lower:
+                caps.append("👁️ Vision")
+            if model.get("audio", False) or any(k in m_id_lower for k in ["audio", "voice", "canary", "stt", "tts"]) or "gemini" in m_id_lower:
+                caps.append("🎙️ Audio")
+            if model.get("video", False) or "video" in m_id_lower or "gemini-1.5" in m_id_lower or "gemini-2.0" in m_id_lower or "gemini-exp" in m_id_lower:
+                caps.append("🎥 Video")
+            if model.get("coding", False) or any(k in m_id_lower for k in ["code", "coder", "codellama"]) or "gemini" in m_id_lower or "gpt-4" in m_id_lower:
+                caps.append("💻 Coding")
             
-            # Col 4: Description
+            caps_str = ", ".join(caps) if caps else "💬 Chat"
+            caps_item = QTableWidgetItem(caps_str)
+            caps_item.setFlags(caps_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            table.setItem(row, 4, caps_item)
+            
+            # Col 5: Description
             desc_item = QTableWidgetItem(strip_markdown(model.get('description', '')))
             desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            table.setItem(row, 4, desc_item)
+            table.setItem(row, 5, desc_item)
             
             if model['id'] == self.current_model_id:
                 self.set_row_active(row, True)
@@ -248,8 +278,8 @@ class ModelPopupClass(QDialog):
             bg_color = QColor("#FFFFFF")  # White
             text_color = QColor("#333333") # Dark gray text
         
-        # Apply to all 5 columns
-        for col in range(5):
+        # Apply to all 6 columns
+        for col in range(6):
             item = self.ui.model_table.item(row, col)
             if item:
                 item.setBackground(bg_color)

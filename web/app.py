@@ -672,6 +672,12 @@ def create_saas_app():
             # Global IP-based rate limiting (120 requests per minute)
             ip = request.remote_addr or "unknown_ip"
             if not rate_limiter.is_allowed(f"ip:{ip}", limit=120):
+                try:
+                    telemetry_service = ServiceRegistry.get("telemetry")
+                    if telemetry_service:
+                        telemetry_service.record_rate_limit_block()
+                except Exception:
+                    pass
                 return jsonify({"error": "Too Many Requests", "message": "Global IP rate limit exceeded."}), 429
 
             # Tenant-based rate limiting
@@ -679,6 +685,12 @@ def create_saas_app():
             rpm_limit = int(settings.get("requests_per_minute_limit", 60 if user['username'] != 'admin' else 0))
             if rpm_limit > 0:
                 if not rate_limiter.is_allowed(f"tenant:{user['id']}", limit=rpm_limit):
+                    try:
+                        telemetry_service = ServiceRegistry.get("telemetry")
+                        if telemetry_service:
+                            telemetry_service.record_rate_limit_block()
+                    except Exception:
+                        pass
                     return jsonify({"error": "Too Many Requests", "message": f"Tenant rate limit of {rpm_limit} RPM exceeded."}), 429
         except Exception as e:
             print(f"[RateLimiter Warning] Throttling check failed: {e}")

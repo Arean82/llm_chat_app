@@ -32,7 +32,8 @@ class TelemetryManager(BaseService):
             "error_count": 0,
             "cumulative_latency": 0.0,
             "cumulative_tokens": 0,
-            "active_connections": 0
+            "active_connections": 0,
+            "rate_limit_blocks": 0
         }
         
         # In-memory history for rolling throughput (timestamp, success_bool)
@@ -105,6 +106,10 @@ class TelemetryManager(BaseService):
         except Exception as e:
             logger.error(f"Failed to append to telemetry log file: {str(e)}")
 
+    def record_rate_limit_block(self) -> None:
+        with self._lock:
+            self.metrics["rate_limit_blocks"] += 1
+
     def increment_connections(self) -> None:
         with self._lock:
             self.metrics["active_connections"] += 1
@@ -143,7 +148,8 @@ class TelemetryManager(BaseService):
             "error_count": errors,
             "active_connections": self.metrics["active_connections"],
             "cache_hit_ratio_percent": cache_hit_ratio,
-            "average_tokens_per_req": round(avg_tokens, 1)
+            "average_tokens_per_req": round(avg_tokens, 1),
+            "rate_limit_blocks": self.metrics.get("rate_limit_blocks", 0)
         }
 
     def export_prometheus_metrics(self) -> str:

@@ -336,6 +336,16 @@ QComboBox QAbstractItemView {
           <string>🎙️ Audio / Voice</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>🎥 Video / Media</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>💻 Coding / Software</string>
+         </property>
+        </item>
        </widget>
       </item>
      <item>

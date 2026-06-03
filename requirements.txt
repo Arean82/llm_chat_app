@@ -58,3 +58,7 @@ paramiko>=3.0.0
 # Development & Packaging
 pyinstaller>=6.3.0
 Pillow>=10.0.0
+
+# Optional Database Drivers for Migration & Pre-flight checks
+psycopg2-binary>=2.9.0
+mysql-connector-python>=8.0.0

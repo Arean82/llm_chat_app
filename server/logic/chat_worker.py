@@ -243,7 +243,7 @@ class ChatWorker(QThread):
                 if isinstance(content, list):
                      for obj in content:
                           if obj.get('type') == 'text': current_parts.append(obj.get('text', ''))
-                          elif obj.get('type') == 'image':
+                          elif obj.get('type') in ['image', 'audio', 'video']:
                                bin_blob = base64.b64decode(obj.get('data', ''))
                                current_parts.append(types.Part.from_bytes(data=bin_blob, mime_type=obj.get('mime')))
                 else: current_parts = [content]

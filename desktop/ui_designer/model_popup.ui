@@ -136,6 +136,11 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
      </column>
      <column>
       <property name="text">
+       <string>Capabilities</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
        <string>Description</string>
       </property>
      </column>
@@ -221,6 +226,21 @@ QComboBox QAbstractItemView {
        <item>
         <property name="text">
          <string>👁️ Multimodal / Vision</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>🎙️ Audio / Voice</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>🎥 Video / Media</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>💻 Coding / Software</string>
         </property>
        </item>
       </widget>

@@ -110,10 +110,13 @@ class ModelManagerDialog(QDialog):
                 m_type = model.get("type", "chat")
                 
                 supports_tools = does_model_support_tools(m_id)
-                is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc or "multimodal" in m_desc
+                is_vision = model.get("vision", False) or "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in m_desc or "multimodal" in m_desc or "pixtral" in m_id_lower or "gemini" in m_id_lower
+                is_audio = model.get("audio", False) or any(k in m_id_lower for k in ["audio", "voice", "canary", "stt", "tts"]) or "gemini" in m_id_lower
+                is_video = model.get("video", False) or "video" in m_id_lower or "gemini-1.5" in m_id_lower or "gemini-2.0" in m_id_lower or "gemini-exp" in m_id_lower
+                is_coding = model.get("coding", False) or any(k in m_id_lower for k in ["code", "coder", "codellama"]) or "gemini" in m_id_lower or "gpt-4" in m_id_lower
                 
                 if filter_idx == 1: # General Chat
-                    if not is_vision and m_type == "chat":
+                    if not is_vision and not is_audio and not is_video and m_type == "chat":
                         filtered_models.append(model)
                 elif filter_idx == 2: # Supports Tools
                     if supports_tools and m_type == "chat":
@@ -128,7 +131,13 @@ class ModelManagerDialog(QDialog):
                     if m_type == "reranking" or "rerank" in m_id_lower:
                         filtered_models.append(model)
                 elif filter_idx == 6: # Audio / Voice
-                    if m_type == "audio" or any(k in m_id_lower for k in ["audio", "voice", "canary", "stt", "tts"]):
+                    if is_audio and m_type == "chat":
+                        filtered_models.append(model)
+                elif filter_idx == 7: # Video / Media
+                    if is_video and m_type == "chat":
+                        filtered_models.append(model)
+                elif filter_idx == 8: # Coding / Software
+                    if is_coding and m_type == "chat":
                         filtered_models.append(model)
         else:
             filtered_models = list(self.models)
@@ -148,10 +157,10 @@ class ModelManagerDialog(QDialog):
             tab_widget = QWidget()
             layout = QVBoxLayout(tab_widget)
 
-            # Create table with 3 columns (removed Model ID)
+            # Create table with 4 columns
             table = QTableWidget()
-            table.setColumnCount(3)
-            table.setHorizontalHeaderLabels(["Model Name", "Description", "Status"])
+            table.setColumnCount(4)
+            table.setHorizontalHeaderLabels(["Model Name", "Capabilities", "Description", "Status"])
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             table.setAlternatingRowColors(False)
@@ -163,9 +172,10 @@ class ModelManagerDialog(QDialog):
 
             # Set column widths
             table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-            table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-            table.setColumnWidth(2, 100)
+            table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+            table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+            table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+            table.setColumnWidth(3, 100)
 
             # Populate rows
             table.setRowCount(len(models))
@@ -176,10 +186,25 @@ class ModelManagerDialog(QDialog):
                 name_suffix = " 🛠️" if supports_tools else ""
                 table.setItem(row, 0, QTableWidgetItem(model.get("name", "") + name_suffix))
 
-                # Column 1: Description
-                table.setItem(row, 1, QTableWidgetItem(strip_markdown(model.get("description", ""))))
+                # Column 1: Capabilities
+                caps = []
+                m_id_l = model.get("id", "").lower()
+                m_desc_l = model.get("description", "").lower()
+                if model.get("vision", False) or "vision" in m_id_l or "-vl" in m_id_l or "vision" in m_desc_l or "multimodal" in m_desc_l or "pixtral" in m_id_l or "gemini" in m_id_l:
+                    caps.append("👁️ Vision")
+                if model.get("audio", False) or any(k in m_id_l for k in ["audio", "voice", "canary", "stt", "tts"]) or "gemini" in m_id_l:
+                    caps.append("🎙️ Audio")
+                if model.get("video", False) or "video" in m_id_l or "gemini-1.5" in m_id_l or "gemini-2.0" in m_id_l or "gemini-exp" in m_id_l:
+                    caps.append("🎥 Video")
+                if model.get("coding", False) or any(k in m_id_l for k in ["code", "coder", "codellama"]) or "gemini" in m_id_l or "gpt-4" in m_id_l:
+                    caps.append("💻 Coding")
+                caps_str = ", ".join(caps) if caps else "💬 Chat"
+                table.setItem(row, 1, QTableWidgetItem(caps_str))
 
-                # Column 2: Status (Using ThemeManager Badge style)
+                # Column 2: Description
+                table.setItem(row, 2, QTableWidgetItem(strip_markdown(model.get("description", ""))))
+
+                # Column 3: Status (Using ThemeManager Badge style)
                 status_text = "Free" if model.get("free", True) else "Paid"
                 status_label = QLabel(status_text)
                 status_label.setAlignment(Qt.AlignCenter)
@@ -192,7 +217,7 @@ class ModelManagerDialog(QDialog):
                 status_layout = QHBoxLayout(status_widget)
                 status_layout.setContentsMargins(4, 2, 4, 2)
                 status_layout.addWidget(status_label)
-                table.setCellWidget(row, 2, status_widget)
+                table.setCellWidget(row, 3, status_widget)
             
             # Store models for this tab
             table.setProperty("developer", developer)

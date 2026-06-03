@@ -155,8 +155,71 @@ class LLMClient:
                      return True
                 if m.get("multimodal") is True or str(m.get("multimodal")).lower() == "true":
                      return True
-                     
-        # If explicit metadata did not indicate vision capability, fall back to False
+                      
+        # Heuristic fallback for vision
+        mid_lower = self.current_model.lower()
+        if "vision" in mid_lower or "-vl" in mid_lower or "pixtral" in mid_lower or "gemini" in mid_lower:
+            return True
+        return False
+
+    def is_model_audio_capable(self) -> bool:
+        """
+        Smart Validation Guard: Evaluates if current model supports binary audio payloads.
+        Prioritizes JSON schema explicit metadata, falling back to algorithmic root matching.
+        """
+        if not self.current_model:
+            return False
+        
+        models_list = self.get_available_models()
+        for m in models_list:
+            if m.get("id") == self.current_model:
+                if m.get("audio") is True or str(m.get("audio")).lower() == "true":
+                    return True
+        
+        # Fallback keywords if metadata is missing
+        mid_lower = self.current_model.lower()
+        if "audio" in mid_lower or "voice" in mid_lower or "canary" in mid_lower or "gemini" in mid_lower:
+            return True
+        return False
+
+    def is_model_video_capable(self) -> bool:
+        """
+        Smart Validation Guard: Evaluates if current model supports binary video payloads.
+        Prioritizes JSON schema explicit metadata, falling back to algorithmic root matching.
+        """
+        if not self.current_model:
+            return False
+        
+        models_list = self.get_available_models()
+        for m in models_list:
+            if m.get("id") == self.current_model:
+                if m.get("video") is True or str(m.get("video")).lower() == "true":
+                    return True
+        
+        # Fallback keywords if metadata is missing (Gemini 1.5/2.0 natively support video)
+        mid_lower = self.current_model.lower()
+        if "video" in mid_lower or "gemini-1.5" in mid_lower or "gemini-2.0" in mid_lower or "gemini-exp" in mid_lower:
+            return True
+        return False
+
+    def is_model_coding_capable(self) -> bool:
+        """
+        Smart Validation Guard: Evaluates if current model is specialized/capable of coding/XML tasks.
+        Prioritizes JSON schema explicit metadata, falling back to algorithmic root matching.
+        """
+        if not self.current_model:
+            return False
+        
+        models_list = self.get_available_models()
+        for m in models_list:
+            if m.get("id") == self.current_model:
+                if m.get("coding") is True or str(m.get("coding")).lower() == "true":
+                    return True
+        
+        # Fallback keywords if metadata is missing
+        mid_lower = self.current_model.lower()
+        if "code" in mid_lower or "coder" in mid_lower or "codellama" in mid_lower or "gemini" in mid_lower or "gpt-4" in mid_lower:
+            return True
         return False
 
     def has_api_key(self) -> bool:

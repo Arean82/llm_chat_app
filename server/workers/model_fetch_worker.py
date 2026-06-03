@@ -146,6 +146,13 @@ class ModelFetchWorker(QThread):
                         cap_desc = " and ".join(caps[:2])
                         description = f"High-performance generative model developed by {developer.capitalize()} designed for {cap_desc}."
                     
+                    m_id_lower = model_id.lower()
+                    desc_lower = description.lower()
+                    is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in desc_lower or "multimodal" in desc_lower or "pixtral" in m_id_lower or "gemini" in m_id_lower
+                    is_audio = "audio" in m_id_lower or "voice" in m_id_lower or "canary" in m_id_lower or "stt" in m_id_lower or "tts" in m_id_lower or "gemini" in m_id_lower
+                    is_video = "video" in m_id_lower or "gemini-1.5" in m_id_lower or "gemini-2.0" in m_id_lower or "gemini-exp" in m_id_lower
+                    is_coding = "code" in m_id_lower or "coder" in m_id_lower or "codellama" in m_id_lower or "coding" in desc_lower or "programming" in desc_lower or "gemini" in m_id_lower or "gpt-4" in m_id_lower
+
                     working_models.append({
                         "id": model_id,
                         "name": self._format_name(model_id),
@@ -153,7 +160,11 @@ class ModelFetchWorker(QThread):
                         "developer": developer.capitalize(),
                         "free": True,
                         "context_length": getattr(model, 'max_model_len', None),
-                        "type": "chat"
+                        "type": "chat",
+                        "vision": is_vision,
+                        "audio": is_audio,
+                        "video": is_video,
+                        "coding": is_coding
                     })
                     
                     self.working_count += 1
@@ -209,6 +220,13 @@ class ModelFetchWorker(QThread):
                         description = f"Safety and content guardrail model from {developer.capitalize()}."
                         
                     if is_specialized:
+                        m_id_lower = model_id.lower()
+                        desc_lower = description.lower()
+                        is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in desc_lower or "multimodal" in desc_lower or "pixtral" in m_id_lower or "gemini" in m_id_lower
+                        is_audio = "audio" in m_id_lower or "voice" in m_id_lower or "canary" in m_id_lower or "stt" in m_id_lower or "tts" in m_id_lower or "gemini" in m_id_lower or model_type == "audio"
+                        is_video = "video" in m_id_lower or "gemini-1.5" in m_id_lower or "gemini-2.0" in m_id_lower or "gemini-exp" in m_id_lower
+                        is_coding = "code" in m_id_lower or "coder" in m_id_lower or "codellama" in m_id_lower or "coding" in desc_lower or "programming" in desc_lower
+
                         working_models.append({
                             "id": model_id,
                             "name": self._format_name(model_id),
@@ -216,7 +234,11 @@ class ModelFetchWorker(QThread):
                             "developer": developer.capitalize(),
                             "free": True,
                             "context_length": getattr(model, 'max_model_len', None),
-                            "type": model_type
+                            "type": model_type,
+                            "vision": is_vision,
+                            "audio": is_audio,
+                            "video": is_video,
+                            "coding": is_coding
                         })
                         self.working_count += 1
                         self.logger.add_log(f"✓ {model_id} - identified as {model_type} model ({self.working_count}/{total})", "SUCCESS")
@@ -235,6 +257,13 @@ class ModelFetchWorker(QThread):
                         cap_desc = " and ".join(caps[:2])
                         description = f"High-performance generative model developed by {developer.capitalize()} designed for {cap_desc}."
 
+                        m_id_lower = model_id.lower()
+                        desc_lower = description.lower()
+                        is_vision = "vision" in m_id_lower or "-vl" in m_id_lower or "vision" in desc_lower or "multimodal" in desc_lower or "pixtral" in m_id_lower or "gemini" in m_id_lower
+                        is_audio = "audio" in m_id_lower or "voice" in m_id_lower or "canary" in m_id_lower or "stt" in m_id_lower or "tts" in m_id_lower or "gemini" in m_id_lower
+                        is_video = "video" in m_id_lower or "gemini-1.5" in m_id_lower or "gemini-2.0" in m_id_lower or "gemini-exp" in m_id_lower
+                        is_coding = "code" in m_id_lower or "coder" in m_id_lower or "codellama" in m_id_lower or "coding" in desc_lower or "programming" in desc_lower or "gemini" in m_id_lower or "gpt-4" in m_id_lower
+
                         working_models.append({
                             "id": model_id,
                             "name": self._format_name(model_id),
@@ -242,7 +271,11 @@ class ModelFetchWorker(QThread):
                             "developer": developer.capitalize(),
                             "free": True,
                             "context_length": getattr(model, 'max_model_len', None),
-                            "type": "chat"
+                            "type": "chat",
+                            "vision": is_vision,
+                            "audio": is_audio,
+                            "video": is_video,
+                            "coding": is_coding
                         })
                         self.working_count += 1
                         if len(error_msg) > 100:
